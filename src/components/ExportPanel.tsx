@@ -225,6 +225,52 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
     };
   };
 
+  const preSanitizeElement = (element: HTMLElement) => {
+    const inlineBackups = new Map<HTMLElement, string>();
+    const elements = [element, ...Array.from(element.querySelectorAll('*'))];
+
+    for (const el of elements) {
+      if (!(el instanceof HTMLElement)) continue;
+      inlineBackups.set(el, el.getAttribute('style') || '');
+
+      const cs = window.getComputedStyle(el);
+
+      const setSafeColor = (prop: string, value: string, fallback: string) => {
+        if (!value || !shouldNormalizeColor(value)) return;
+        const normalized = normalizeCanvasColor(document, value);
+        el.style.setProperty(prop, normalized ?? fallback, 'important');
+      };
+
+      setSafeColor('background-color', cs.backgroundColor, 'transparent');
+      setSafeColor('color', cs.color, '#000000');
+      setSafeColor('border-color', cs.borderColor, 'transparent');
+      setSafeColor('border-top-color', cs.borderTopColor, 'transparent');
+      setSafeColor('border-right-color', cs.borderRightColor, 'transparent');
+      setSafeColor('border-bottom-color', cs.borderBottomColor, 'transparent');
+      setSafeColor('border-left-color', cs.borderLeftColor, 'transparent');
+      setSafeColor('outline-color', cs.outlineColor, 'transparent');
+      setSafeColor('text-decoration-color', cs.textDecorationColor, 'transparent');
+      setSafeColor('caret-color', cs.caretColor, '#000000');
+
+      if (shouldNormalizeColor(cs.boxShadow)) {
+        el.style.setProperty('box-shadow', 'none', 'important');
+      }
+      if (shouldNormalizeColor(cs.textShadow)) {
+        el.style.setProperty('text-shadow', 'none', 'important');
+      }
+    }
+
+    return () => {
+      for (const [el, backup] of inlineBackups) {
+        if (backup) {
+          el.setAttribute('style', backup);
+        } else {
+          el.removeAttribute('style');
+        }
+      }
+    };
+  };
+
   const exportPages = async () => {
     setIsExporting(true);
 
@@ -257,16 +303,22 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
           const exportBg =
             computedBg && computedBg !== 'rgba(0, 0, 0, 0)' ? computedBg : '#ffffff';
 
-          const canvas = await html2canvas(page, {
-            scale,
-            useCORS: true,
-            backgroundColor: exportBg,
-            onclone: (documentClone, elementClone) => {
-              applyExportSafeClone(documentClone, exportBg);
-              sanitizeCloneColors(documentClone, elementClone);
-            },
-            logging: false,
-          });
+          const restoreElement = preSanitizeElement(page);
+          let canvas: HTMLCanvasElement;
+          try {
+            canvas = await html2canvas(page, {
+              scale,
+              useCORS: true,
+              backgroundColor: exportBg,
+              onclone: (documentClone, elementClone) => {
+                applyExportSafeClone(documentClone, exportBg);
+                sanitizeCloneColors(documentClone, elementClone);
+              },
+              logging: false,
+            });
+          } finally {
+            restoreElement();
+          }
 
           const imgData = canvas.toDataURL('image/jpeg', 0.95);
           const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -289,16 +341,22 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
           const exportBg =
             computedBg && computedBg !== 'rgba(0, 0, 0, 0)' ? computedBg : '#ffffff';
 
-          const canvas = await html2canvas(page, {
-            scale,
-            useCORS: true,
-            backgroundColor: exportBg,
-            onclone: (documentClone, elementClone) => {
-              applyExportSafeClone(documentClone, exportBg);
-              sanitizeCloneColors(documentClone, elementClone);
-            },
-            logging: false,
-          });
+          const restoreElement = preSanitizeElement(page);
+          let canvas: HTMLCanvasElement;
+          try {
+            canvas = await html2canvas(page, {
+              scale,
+              useCORS: true,
+              backgroundColor: exportBg,
+              onclone: (documentClone, elementClone) => {
+                applyExportSafeClone(documentClone, exportBg);
+                sanitizeCloneColors(documentClone, elementClone);
+              },
+              logging: false,
+            });
+          } finally {
+            restoreElement();
+          }
 
           const link = document.createElement('a');
           link.download = `handwritten-page-${i + 1}.${format}`;
