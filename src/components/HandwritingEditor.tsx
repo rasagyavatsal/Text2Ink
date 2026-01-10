@@ -1,13 +1,16 @@
 'use client';
 
 import React, { useRef, useCallback, useMemo, useEffect, useState } from 'react';
-import { HandwritingSettings, HANDWRITING_FONTS } from '@/lib/types';
+import { HandwritingSettings, HANDWRITING_FONTS, TextField, EditorMode } from '@/lib/types';
+import { Type, PenLine } from 'lucide-react';
 
 interface HandwritingEditorProps {
   text: string;
   onTextChange: (text: string) => void;
   settings: HandwritingSettings;
   pageRefs: React.MutableRefObject<(HTMLDivElement | null)[]>;
+  textFields: TextField[];
+  onTextFieldsChange: (textFields: TextField[]) => void;
 }
 
 const PAGE_WIDTH = 612;
@@ -23,10 +26,17 @@ export default function HandwritingEditor({
   onTextChange,
   settings,
   pageRefs,
+  textFields,
+  onTextFieldsChange,
 }: HandwritingEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [cursorPosition, setCursorPosition] = useState(0);
+  const [editorMode, setEditorMode] = useState<EditorMode>('write');
+  const [activeTextFieldId, setActiveTextFieldId] = useState<string | null>(null);
+  const textFieldInputRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map());
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
   const fontClass = useMemo(() => {
     const font = HANDWRITING_FONTS.find((f) => f.value === settings.fontFamily);
@@ -152,17 +162,50 @@ export default function HandwritingEditor({
     [settings, lineHeightPx, linesPerPage, contentWidth, contentHeight]
   );
 
+  const handleCharClick = useCallback(
+    (e: React.MouseEvent, globalCharIndex: number, isLeftHalf: boolean) => {
+      e.stopPropagation();
+      const newPosition = isLeftHalf ? globalCharIndex : globalCharIndex + 1;
+      setCursorPosition(newPosition);
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(newPosition, newPosition);
+      }
+    },
+    []
+  );
+
   const renderCharacter = useCallback(
-    (char: string, charIndex: number, lineIndex: number, globalCharIndex: number, showCursor: boolean) => {
+    (char: string, charIndex: number, lineIndex: number, globalCharIndex: number, showCursor: boolean, showCursorBefore: boolean) => {
       if (char === ' ') {
         return (
-          <span key={globalCharIndex} className="relative">
+          <span 
+            key={globalCharIndex} 
+            className="relative cursor-text"
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const isLeftHalf = e.clientX < rect.left + rect.width / 2;
+              handleCharClick(e, globalCharIndex, isLeftHalf);
+            }}
+          >
+            {showCursorBefore && isFocused && (
+              <span 
+                className="absolute animate-pulse"
+                style={{
+                  left: 0,
+                  top: 0,
+                  width: 2,
+                  height: '1em',
+                  backgroundColor: settings.inkColor,
+                }}
+              />
+            )}
             <span style={{ whiteSpace: 'pre' }}>{' '}</span>
             {showCursor && isFocused && (
               <span 
                 className="absolute animate-pulse"
                 style={{
-                  left: 0,
+                  right: 0,
                   top: 0,
                   width: 2,
                   height: '1em',
@@ -179,9 +222,26 @@ export default function HandwritingEditor({
       return (
         <span
           key={globalCharIndex}
-          className="inline-block relative"
+          className="inline-block relative cursor-text"
           style={randomStyle}
+          onClick={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const isLeftHalf = e.clientX < rect.left + rect.width / 2;
+            handleCharClick(e, globalCharIndex, isLeftHalf);
+          }}
         >
+          {showCursorBefore && isFocused && (
+            <span 
+              className="absolute animate-pulse"
+              style={{
+                left: -1,
+                top: 0,
+                width: 2,
+                height: '1em',
+                backgroundColor: settings.inkColor,
+              }}
+            />
+          )}
           {char}
           {showCursor && isFocused && (
             <span 
@@ -198,7 +258,7 @@ export default function HandwritingEditor({
         </span>
       );
     },
-    [applyRandomness, isFocused, settings.inkColor]
+    [applyRandomness, isFocused, settings.inkColor, handleCharClick]
   );
 
   const pages = useMemo(() => {
@@ -244,8 +304,133 @@ export default function HandwritingEditor({
   }, []);
 
   const focusTextarea = useCallback(() => {
-    textareaRef.current?.focus();
+    if (editorMode === 'write') {
+      textareaRef.current?.focus();
+    }
+  }, [editorMode]);
+
+  const handlePageClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>, pageIndex: number) => {
+      if (editorMode === 'textfield') {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const newTextField: TextField = {
+          id: `tf-${Date.now()}`,
+          x,
+          y,
+          text: '',
+          pageIndex,
+        };
+        
+        onTextFieldsChange([...textFields, newTextField]);
+        setActiveTextFieldId(newTextField.id);
+        
+        setTimeout(() => {
+          const input = textFieldInputRefs.current.get(newTextField.id);
+          input?.focus();
+        }, 0);
+      } else {
+        textareaRef.current?.focus();
+      }
+    },
+    [editorMode, textFields, onTextFieldsChange]
+  );
+
+  const handleTextFieldChange = useCallback(
+    (id: string, newText: string) => {
+      onTextFieldsChange(
+        textFields.map((tf) => (tf.id === id ? { ...tf, text: newText } : tf))
+      );
+    },
+    [textFields, onTextFieldsChange]
+  );
+
+  const handleTextFieldDelete = useCallback(
+    (id: string) => {
+      onTextFieldsChange(textFields.filter((tf) => tf.id !== id));
+      setActiveTextFieldId(null);
+    },
+    [textFields, onTextFieldsChange]
+  );
+
+  const handleTextFieldKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>, id: string) => {
+      if (e.key === 'Backspace') {
+        const tf = textFields.find((t) => t.id === id);
+        if (tf && tf.text === '') {
+          e.preventDefault();
+          handleTextFieldDelete(id);
+        }
+      } else if (e.key === 'Escape') {
+        setActiveTextFieldId(null);
+        (e.target as HTMLTextAreaElement).blur();
+      }
+    },
+    [textFields, handleTextFieldDelete]
+  );
+
+  const handleDragStart = useCallback(
+    (e: React.MouseEvent, tf: TextField) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDraggingId(tf.id);
+      setActiveTextFieldId(tf.id);
+      const rect = (e.target as HTMLElement).closest('.text-field-container')?.getBoundingClientRect();
+      if (rect) {
+        setDragOffset({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        });
+      }
+    },
+    []
+  );
+
+  const handleDragMove = useCallback(
+    (e: MouseEvent) => {
+      if (!draggingId) return;
+      
+      const tf = textFields.find((t) => t.id === draggingId);
+      if (!tf) return;
+      
+      const pageEl = pageRefs.current[tf.pageIndex];
+      if (!pageEl) return;
+      
+      const pageRect = pageEl.getBoundingClientRect();
+      const newX = e.clientX - pageRect.left - dragOffset.x + 4;
+      const newY = e.clientY - pageRect.top - dragOffset.y + 12;
+      
+      onTextFieldsChange(
+        textFields.map((t) =>
+          t.id === draggingId ? { ...t, x: Math.max(0, newX), y: Math.max(0, newY) } : t
+        )
+      );
+    },
+    [draggingId, textFields, dragOffset, onTextFieldsChange, pageRefs]
+  );
+
+  const handleDragEnd = useCallback(() => {
+    setDraggingId(null);
   }, []);
+
+  useEffect(() => {
+    if (draggingId) {
+      window.addEventListener('mousemove', handleDragMove);
+      window.addEventListener('mouseup', handleDragEnd);
+      return () => {
+        window.removeEventListener('mousemove', handleDragMove);
+        window.removeEventListener('mouseup', handleDragEnd);
+      };
+    }
+  }, [draggingId, handleDragMove, handleDragEnd]);
+
+  useEffect(() => {
+    if (textareaRef.current && editorMode === 'write') {
+      textareaRef.current.focus();
+    }
+  }, [editorMode]);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -257,6 +442,37 @@ export default function HandwritingEditor({
 
   return (
     <div className="flex flex-col items-center gap-8 py-8">
+      {/* Mode Toggle Toolbar */}
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-20 bg-white rounded-lg shadow-lg border border-gray-200 p-1 flex gap-1">
+        <button
+          onClick={() => {
+            setEditorMode('write');
+            setTimeout(() => textareaRef.current?.focus(), 0);
+          }}
+          className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            editorMode === 'write'
+              ? 'bg-indigo-100 text-indigo-700'
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+          title="Write mode - Type text that flows on lines"
+        >
+          <PenLine className="w-4 h-4" />
+          Write
+        </button>
+        <button
+          onClick={() => setEditorMode('textfield')}
+          className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            editorMode === 'textfield'
+              ? 'bg-indigo-100 text-indigo-700'
+              : 'text-gray-600 hover:bg-gray-100'
+          }`}
+          title="Text Field mode - Click anywhere to add text"
+        >
+          <Type className="w-4 h-4" />
+          Text Field
+        </button>
+      </div>
+
       {/* Hidden textarea for input */}
       <textarea
         ref={textareaRef}
@@ -293,7 +509,7 @@ export default function HandwritingEditor({
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }}
-            onClick={focusTextarea}
+            onClick={(e) => handlePageClick(e, pageIndex)}
           >
             {renderPaperLines(pageIndex)}
 
@@ -356,14 +572,16 @@ export default function HandwritingEditor({
                           {line.text.split('').map((char, charIdx) => {
                             const currentGlobalChar = globalCharCount;
                             globalCharCount += 1;
-                            const showCursor = cursorPosition === currentGlobalChar + 1;
+                            const showCursorAfter = cursorPosition === currentGlobalChar + 1;
+                            const showCursorBefore = charIdx === 0 && cursorPosition === currentGlobalChar;
                             
                             return renderCharacter(
                               char,
                               charIdx,
                               line.lineIndex,
                               currentGlobalChar,
-                              showCursor
+                              showCursorAfter,
+                              showCursorBefore
                             );
                           })}
                           {(() => { globalCharCount += 1; return null; })()}
@@ -374,6 +592,72 @@ export default function HandwritingEditor({
                 })
               )}
             </div>
+
+            {/* Text Fields for this page */}
+            {textFields
+              .filter((tf) => tf.pageIndex === pageIndex)
+              .map((tf) => (
+                <div
+                  key={tf.id}
+                  className="absolute text-field-container group"
+                  style={{
+                    left: tf.x,
+                    top: tf.y,
+                    transform: 'translate(-4px, -12px)',
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Drag handle */}
+                  <div
+                    className="absolute -left-6 top-0 w-5 h-5 bg-gray-400 hover:bg-gray-600 rounded cursor-move flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    onMouseDown={(e) => handleDragStart(e, tf)}
+                    title="Drag to move"
+                  >
+                    <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" />
+                    </svg>
+                  </div>
+                  {/* Delete button */}
+                  <div
+                    className="absolute -top-6 -right-6 w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center cursor-pointer text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleTextFieldDelete(tf.id);
+                    }}
+                    title="Delete text field"
+                  >
+                    ×
+                  </div>
+                  <textarea
+                    ref={(el) => {
+                      if (el) {
+                        textFieldInputRefs.current.set(tf.id, el);
+                      } else {
+                        textFieldInputRefs.current.delete(tf.id);
+                      }
+                    }}
+                    value={tf.text}
+                    onChange={(e) => handleTextFieldChange(tf.id, e.target.value)}
+                    onKeyDown={(e) => handleTextFieldKeyDown(e, tf.id)}
+                    onFocus={() => setActiveTextFieldId(tf.id)}
+                    onBlur={() => setActiveTextFieldId(null)}
+                    className={`bg-transparent border-none outline-none resize-none ${fontClass}`}
+                    style={{
+                      fontSize: settings.fontSize,
+                      color: settings.inkColor,
+                      lineHeight: settings.lineHeight,
+                      minWidth: '20px',
+                      width: tf.text ? `${Math.max(20, tf.text.split('\n').reduce((max, line) => Math.max(max, line.length), 0) * settings.fontSize * 0.6)}px` : '20px',
+                      minHeight: `${settings.fontSize * settings.lineHeight}px`,
+                      height: 'auto',
+                      caretColor: settings.inkColor,
+                    }}
+                    placeholder=""
+                    autoComplete="off"
+                  />
+                </div>
+              ))}
           </div>
         );
       })}

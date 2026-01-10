@@ -4,7 +4,7 @@ import React, { useState, useRef } from 'react';
 import HandwritingEditor from '@/components/HandwritingEditor';
 import SettingsPanel from '@/components/SettingsPanel';
 import ExportPanel from '@/components/ExportPanel';
-import { HandwritingSettings, DEFAULT_SETTINGS } from '@/lib/types';
+import { HandwritingSettings, DEFAULT_SETTINGS, TextField } from '@/lib/types';
 import { PenLine, Settings, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Home() {
@@ -12,6 +12,7 @@ export default function Home() {
   const [settings, setSettings] = useState<HandwritingSettings>(DEFAULT_SETTINGS);
   const [activePanel, setActivePanel] = useState<'settings' | 'export'>('settings');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [textFields, setTextFields] = useState<TextField[]>([]);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   return (
@@ -92,6 +93,8 @@ export default function Home() {
             onTextChange={setText}
             settings={settings}
             pageRefs={pageRefs}
+            textFields={textFields}
+            onTextFieldsChange={setTextFields}
           />
         </div>
       </div>

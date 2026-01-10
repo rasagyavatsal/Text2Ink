@@ -87,3 +87,13 @@ export const PAPER_COLORS = [
   { name: 'Light Yellow', value: '#fffde7' },
   { name: 'Light Green', value: '#f0fff4' },
 ];
+
+export interface TextField {
+  id: string;
+  x: number;
+  y: number;
+  text: string;
+  pageIndex: number;
+}
+
+export type EditorMode = 'write' | 'textfield';
