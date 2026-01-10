@@ -51,7 +51,7 @@ export default function SettingsPanel({
     <div className="h-full overflow-y-auto p-6 space-y-8">
       <div>
         <div className="flex items-center gap-2 mb-5">
-          <Type className="w-5 h-5 text-primary" />
+          <Type className="w-5 h-5 text-[#E0A32A]" />
           <h3 className="font-semibold text-lg">Typography</h3>
         </div>
 
@@ -117,7 +117,7 @@ export default function SettingsPanel({
 
       <div>
         <div className="flex items-center gap-2 mb-5">
-          <FileText className="w-5 h-5 text-primary" />
+          <FileText className="w-5 h-5 text-[#E0A32A]" />
           <h3 className="font-semibold text-lg">Page Layout</h3>
         </div>
 
@@ -215,7 +215,7 @@ export default function SettingsPanel({
 
       <div>
         <div className="flex items-center gap-2 mb-5">
-          <Palette className="w-5 h-5 text-primary" />
+          <Palette className="w-5 h-5 text-[#E0A32A]" />
           <h3 className="font-semibold text-lg">Colors</h3>
         </div>
 
@@ -229,7 +229,7 @@ export default function SettingsPanel({
                   onClick={() => updateSetting('inkColor', color.value)}
                   className={`w-8 h-8 rounded-full border-2 transition-all ${
                     settings.inkColor === color.value
-                      ? 'border-primary scale-110 shadow-md'
+                      ? 'border-[#E0A32A] scale-110 shadow-md'
                       : 'border-transparent hover:scale-105'
                   }`}
                   style={{ backgroundColor: color.value }}
@@ -294,7 +294,7 @@ export default function SettingsPanel({
                   </button>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary hover:bg-gray-50 transition-colors">
+                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#E0A32A] hover:bg-[#E0A32A]/5 transition-colors">
                   <Upload className="w-6 h-6 text-gray-400 mb-1" />
                   <span className="text-sm text-gray-500">Upload PNG or JPG</span>
                   <input
@@ -358,7 +358,7 @@ export default function SettingsPanel({
                 />
                 <button
                   onClick={() => updateSetting('customLineSpacing', null)}
-                  className="text-xs text-primary hover:underline"
+                  className="text-xs text-[#E0A32A] hover:underline"
                 >
                   Reset to auto
                 </button>
@@ -375,7 +375,7 @@ export default function SettingsPanel({
 
       <div>
         <div className="flex items-center gap-2 mb-5">
-          <Sparkles className="w-5 h-5 text-primary" />
+          <Sparkles className="w-5 h-5 text-[#E0A32A]" />
           <h3 className="font-semibold text-lg">Realism Effects</h3>
         </div>
 

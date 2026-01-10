@@ -451,8 +451,8 @@ export default function HandwritingEditor({
           }}
           className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
             editorMode === 'write'
-              ? 'bg-indigo-100 text-indigo-700'
-              : 'text-gray-600 hover:bg-gray-100'
+              ? 'bg-[#E0A32A]/10 text-[#E0A32A]'
+              : 'text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
           }`}
           title="Write mode - Type text that flows on lines"
         >
@@ -463,8 +463,8 @@ export default function HandwritingEditor({
           onClick={() => setEditorMode('textfield')}
           className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
             editorMode === 'textfield'
-              ? 'bg-indigo-100 text-indigo-700'
-              : 'text-gray-600 hover:bg-gray-100'
+              ? 'bg-[#E0A32A]/10 text-[#E0A32A]'
+              : 'text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
           }`}
           title="Text Field mode - Click anywhere to add text"
         >

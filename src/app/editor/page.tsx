@@ -50,8 +50,8 @@ export default function EditorPage() {
             onClick={() => setActivePanel('settings')}
             className={`flex-1 py-3 px-4 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
               activePanel === 'settings'
-                ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/10'
+                : 'text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
             }`}
           >
             <Settings className="w-4 h-4" />
@@ -61,8 +61,8 @@ export default function EditorPage() {
             onClick={() => setActivePanel('export')}
             className={`flex-1 py-3 px-4 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
               activePanel === 'export'
-                ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/10'
+                : 'text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
             }`}
           >
             <Download className="w-4 h-4" />
@@ -83,13 +83,15 @@ export default function EditorPage() {
       {/* Toggle Sidebar Button */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-r-lg p-2 shadow-md hover:bg-gray-50 transition-all"
-        style={{ left: sidebarOpen ? '382px' : '0' }}
+        className={`fixed top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-r-lg p-2.5 shadow-lg hover:shadow-xl transition-all duration-300 group ${
+          sidebarOpen ? 'left-[384px]' : 'left-0'
+        }`}
+        aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
       >
         {sidebarOpen ? (
-          <ChevronLeft className="w-4 h-4 text-gray-600" />
+          <ChevronLeft className="w-5 h-5 text-gray-600 group-hover:text-[#E0A32A] transition-colors" />
         ) : (
-          <ChevronRight className="w-4 h-4 text-gray-600" />
+          <ChevronRight className="w-5 h-5 text-gray-600 group-hover:text-[#E0A32A] transition-colors" />
         )}
       </button>
 

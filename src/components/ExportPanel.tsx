@@ -384,7 +384,7 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
     <div className="p-6 space-y-8">
       <div>
         <h3 className="font-semibold text-lg mb-5 flex items-center gap-2">
-          <Download className="w-5 h-5 text-primary" />
+          <Download className="w-5 h-5 text-[#E0A32A]" />
           Export Options
         </h3>
 
