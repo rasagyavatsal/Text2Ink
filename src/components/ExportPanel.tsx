@@ -16,17 +16,222 @@ import jsPDF from 'jspdf';
 
 interface ExportPanelProps {
   pageRefs: React.MutableRefObject<(HTMLDivElement | null)[]>;
+  hasContent: boolean;
 }
 
 type ExportFormat = 'pdf' | 'png' | 'jpg';
 
-export default function ExportPanel({ pageRefs }: ExportPanelProps) {
+export default function ExportPanel({ pageRefs, hasContent }: ExportPanelProps) {
   const [format, setFormat] = useState<ExportFormat>('pdf');
   const [isExporting, setIsExporting] = useState(false);
   const [quality, setQuality] = useState<'standard' | 'high'>('high');
 
+  const shouldNormalizeColor = (value: string) =>
+    /(?:oklch|oklab|lab|lch|color-mix|color)\(/i.test(value);
+
+  const normalizeCanvasColor = (doc: Document, value: string) => {
+    const canvas = doc.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    const sentinel = 'rgb(1, 2, 3)';
+    ctx.fillStyle = sentinel;
+    try {
+      ctx.fillStyle = value;
+    } catch {
+      return null;
+    }
+
+    const normalized = ctx.fillStyle;
+    if (!normalized || normalized === sentinel) return null;
+    if (shouldNormalizeColor(normalized)) return null;
+    return normalized;
+  };
+
+  const sanitizeCloneColors = (documentClone: Document, elementClone: HTMLElement) => {
+    const win = documentClone.defaultView;
+    if (!win) return;
+
+    const elements = [elementClone, ...Array.from(elementClone.querySelectorAll('*'))];
+
+    for (const el of elements) {
+      if (!(el instanceof win.HTMLElement)) continue;
+      const cs = win.getComputedStyle(el);
+
+      const setSafeColor = (prop: string, value: string, fallback: string) => {
+        if (!value || !shouldNormalizeColor(value)) return;
+        const normalized = normalizeCanvasColor(documentClone, value);
+        el.style.setProperty(prop, normalized ?? fallback, 'important');
+      };
+
+      const setSafeValue = (prop: string, value: string, fallback: string) => {
+        if (!value || !shouldNormalizeColor(value)) return;
+        el.style.setProperty(prop, fallback, 'important');
+      };
+
+      setSafeColor('background-color', cs.backgroundColor, 'rgba(0, 0, 0, 0)');
+      setSafeColor('color', cs.color, 'rgb(0, 0, 0)');
+      setSafeColor('border-top-color', cs.borderTopColor, 'rgba(0, 0, 0, 0)');
+      setSafeColor('border-right-color', cs.borderRightColor, 'rgba(0, 0, 0, 0)');
+      setSafeColor('border-bottom-color', cs.borderBottomColor, 'rgba(0, 0, 0, 0)');
+      setSafeColor('border-left-color', cs.borderLeftColor, 'rgba(0, 0, 0, 0)');
+      setSafeColor('outline-color', cs.outlineColor, 'rgba(0, 0, 0, 0)');
+      setSafeColor(
+        'text-decoration-color',
+        cs.textDecorationColor,
+        'rgba(0, 0, 0, 0)'
+      );
+      setSafeColor('caret-color', cs.caretColor, 'rgb(0, 0, 0)');
+
+      setSafeValue('box-shadow', cs.boxShadow, 'none');
+      setSafeValue('text-shadow', cs.textShadow, 'none');
+      setSafeValue('background-image', cs.backgroundImage, 'none');
+      setSafeValue('filter', cs.filter, 'none');
+      setSafeValue('backdrop-filter', (cs as CSSStyleDeclaration).getPropertyValue('backdrop-filter'), 'none');
+
+      for (let i = 0; i < cs.length; i++) {
+        const prop = cs.item(i);
+        const value = cs.getPropertyValue(prop);
+        if (!value || !shouldNormalizeColor(value)) continue;
+
+        const lowerProp = prop.toLowerCase();
+        if (lowerProp === 'color') {
+          setSafeColor(prop, value, 'rgb(0, 0, 0)');
+          continue;
+        }
+
+        if (lowerProp.endsWith('color') || lowerProp.includes('color')) {
+          setSafeColor(prop, value, 'rgba(0, 0, 0, 0)');
+          continue;
+        }
+
+        if (lowerProp.includes('shadow')) {
+          el.style.setProperty(prop, 'none', 'important');
+          continue;
+        }
+
+        if (lowerProp === 'background' || lowerProp.startsWith('background-')) {
+          el.style.setProperty(prop, lowerProp === 'background-image' ? 'none' : 'transparent', 'important');
+          continue;
+        }
+
+        if (lowerProp.includes('filter')) {
+          el.style.setProperty(prop, 'none', 'important');
+          continue;
+        }
+
+        el.style.setProperty(prop, 'initial', 'important');
+      }
+    }
+  };
+
+  const applyExportSafeClone = (documentClone: Document, exportBg: string) => {
+    documentClone.documentElement.classList.remove('dark');
+
+    const safeTheme = documentClone.createElement('style');
+    safeTheme.textContent = `:root,.dark{
+  --background: #ffffff !important;
+  --foreground: #111827 !important;
+  --card: #ffffff !important;
+  --card-foreground: #111827 !important;
+  --popover: #ffffff !important;
+  --popover-foreground: #111827 !important;
+  --primary: #111827 !important;
+  --primary-foreground: #ffffff !important;
+  --secondary: #f3f4f6 !important;
+  --secondary-foreground: #111827 !important;
+  --muted: #f3f4f6 !important;
+  --muted-foreground: #6b7280 !important;
+  --accent: #f3f4f6 !important;
+  --accent-foreground: #111827 !important;
+  --destructive: #ef4444 !important;
+  --border: #e5e7eb !important;
+  --input: #e5e7eb !important;
+  --ring: #9ca3af !important;
+  --chart-1: #f59e0b !important;
+  --chart-2: #10b981 !important;
+  --chart-3: #3b82f6 !important;
+  --chart-4: #8b5cf6 !important;
+  --chart-5: #ec4899 !important;
+  --sidebar: #ffffff !important;
+  --sidebar-foreground: #111827 !important;
+  --sidebar-primary: #111827 !important;
+  --sidebar-primary-foreground: #ffffff !important;
+  --sidebar-accent: #f3f4f6 !important;
+  --sidebar-accent-foreground: #111827 !important;
+  --sidebar-border: #e5e7eb !important;
+  --sidebar-ring: #9ca3af !important;
+}`;
+    documentClone.head.appendChild(safeTheme);
+
+    const pseudo = documentClone.createElement('style');
+    pseudo.textContent = '*::before,*::after{content:none !important;}';
+    documentClone.head.appendChild(pseudo);
+
+    documentClone.documentElement.style.backgroundColor = exportBg;
+    documentClone.documentElement.style.color = 'rgb(0, 0, 0)';
+    documentClone.body.style.backgroundColor = exportBg;
+    documentClone.body.style.color = 'rgb(0, 0, 0)';
+  };
+
+  const applyExportSafeDocument = () => {
+    const cls = '__exporting_html2canvas_safe_theme';
+    document.body.classList.add(cls);
+
+    let style = document.getElementById(cls) as HTMLStyleElement | null;
+    if (!style) {
+      style = document.createElement('style');
+      style.id = cls;
+      style.textContent = `:root, .dark, body.${cls}{
+  --background: #ffffff !important;
+  --foreground: #111827 !important;
+  --card: #ffffff !important;
+  --card-foreground: #111827 !important;
+  --popover: #ffffff !important;
+  --popover-foreground: #111827 !important;
+  --primary: #111827 !important;
+  --primary-foreground: #ffffff !important;
+  --secondary: #f3f4f6 !important;
+  --secondary-foreground: #111827 !important;
+  --muted: #f3f4f6 !important;
+  --muted-foreground: #6b7280 !important;
+  --accent: #f3f4f6 !important;
+  --accent-foreground: #111827 !important;
+  --destructive: #ef4444 !important;
+  --border: #e5e7eb !important;
+  --input: #e5e7eb !important;
+  --ring: #9ca3af !important;
+  --chart-1: #f59e0b !important;
+  --chart-2: #10b981 !important;
+  --chart-3: #3b82f6 !important;
+  --chart-4: #8b5cf6 !important;
+  --chart-5: #ec4899 !important;
+  --sidebar: #ffffff !important;
+  --sidebar-foreground: #111827 !important;
+  --sidebar-primary: #111827 !important;
+  --sidebar-primary-foreground: #ffffff !important;
+  --sidebar-accent: #f3f4f6 !important;
+  --sidebar-accent-foreground: #111827 !important;
+  --sidebar-border: #e5e7eb !important;
+  --sidebar-ring: #9ca3af !important;
+}
+body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
+      document.head.appendChild(style);
+    }
+
+    return () => {
+      document.body.classList.remove(cls);
+      style?.remove();
+    };
+  };
+
   const exportPages = async () => {
     setIsExporting(true);
+
+    const cleanup = applyExportSafeDocument();
+
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
     try {
       const pages = pageRefs.current.filter((ref) => ref !== null);
@@ -48,10 +253,18 @@ export default function ExportPanel({ pageRefs }: ExportPanelProps) {
           const page = pages[i];
           if (!page) continue;
 
+          const computedBg = window.getComputedStyle(page).backgroundColor;
+          const exportBg =
+            computedBg && computedBg !== 'rgba(0, 0, 0, 0)' ? computedBg : '#ffffff';
+
           const canvas = await html2canvas(page, {
             scale,
             useCORS: true,
-            backgroundColor: null,
+            backgroundColor: exportBg,
+            onclone: (documentClone, elementClone) => {
+              applyExportSafeClone(documentClone, exportBg);
+              sanitizeCloneColors(documentClone, elementClone);
+            },
             logging: false,
           });
 
@@ -72,10 +285,18 @@ export default function ExportPanel({ pageRefs }: ExportPanelProps) {
           const page = pages[i];
           if (!page) continue;
 
+          const computedBg = window.getComputedStyle(page).backgroundColor;
+          const exportBg =
+            computedBg && computedBg !== 'rgba(0, 0, 0, 0)' ? computedBg : '#ffffff';
+
           const canvas = await html2canvas(page, {
             scale,
             useCORS: true,
-            backgroundColor: null,
+            backgroundColor: exportBg,
+            onclone: (documentClone, elementClone) => {
+              applyExportSafeClone(documentClone, exportBg);
+              sanitizeCloneColors(documentClone, elementClone);
+            },
             logging: false,
           });
 
@@ -96,6 +317,7 @@ export default function ExportPanel({ pageRefs }: ExportPanelProps) {
       console.error('Export failed:', error);
       alert('Export failed. Please try again.');
     } finally {
+      cleanup();
       setIsExporting(false);
     }
   };
@@ -161,7 +383,7 @@ export default function ExportPanel({ pageRefs }: ExportPanelProps) {
 
           <Button
             onClick={exportPages}
-            disabled={isExporting}
+            disabled={isExporting || !hasContent}
             className="w-full"
             size="lg"
           >
@@ -177,6 +399,12 @@ export default function ExportPanel({ pageRefs }: ExportPanelProps) {
               </>
             )}
           </Button>
+
+          {!hasContent && (
+            <p className="text-xs text-amber-600 text-center">
+              Start typing to enable export
+            </p>
+          )}
 
           <p className="text-xs text-muted-foreground text-center">
             {format === 'pdf'

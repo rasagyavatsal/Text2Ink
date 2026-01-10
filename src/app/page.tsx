@@ -66,7 +66,7 @@ export default function Home() {
           {activePanel === 'settings' ? (
             <SettingsPanel settings={settings} onSettingsChange={setSettings} />
           ) : (
-            <ExportPanel pageRefs={pageRefs} />
+            <ExportPanel pageRefs={pageRefs} hasContent={text.trim().length > 0} />
           )}
         </div>
       </div>
