@@ -1,0 +1,83 @@
+export interface HandwritingSettings {
+  fontFamily: string;
+  fontSize: number;
+  lineHeight: number;
+  marginTop: number;
+  marginBottom: number;
+  marginLeft: number;
+  marginRight: number;
+  paperStyle: 'blank' | 'lined' | 'ruled' | 'grid';
+  inkColor: string;
+  paperColor: string;
+  lineColor: string;
+  randomness: {
+    enabled: boolean;
+    spacing: number;
+    baseline: number;
+    rotation: number;
+  };
+}
+
+export interface FontOption {
+  name: string;
+  value: string;
+  className: string;
+}
+
+export const HANDWRITING_FONTS: FontOption[] = [
+  { name: 'Caveat', value: 'caveat', className: 'font-[family-name:var(--font-caveat)]' },
+  { name: 'Dancing Script', value: 'dancing-script', className: 'font-[family-name:var(--font-dancing-script)]' },
+  { name: 'Indie Flower', value: 'indie-flower', className: 'font-[family-name:var(--font-indie-flower)]' },
+  { name: 'Shadows Into Light', value: 'shadows-into-light', className: 'font-[family-name:var(--font-shadows-into-light)]' },
+  { name: 'Kalam', value: 'kalam', className: 'font-[family-name:var(--font-kalam)]' },
+  { name: 'Patrick Hand', value: 'patrick-hand', className: 'font-[family-name:var(--font-patrick-hand)]' },
+  { name: 'Architects Daughter', value: 'architects-daughter', className: 'font-[family-name:var(--font-architects-daughter)]' },
+  { name: 'Satisfy', value: 'satisfy', className: 'font-[family-name:var(--font-satisfy)]' },
+  { name: 'Homemade Apple', value: 'homemade-apple', className: 'font-[family-name:var(--font-homemade-apple)]' },
+];
+
+export const DEFAULT_SETTINGS: HandwritingSettings = {
+  fontFamily: 'caveat',
+  fontSize: 24,
+  lineHeight: 1.8,
+  marginTop: 60,
+  marginBottom: 60,
+  marginLeft: 60,
+  marginRight: 60,
+  paperStyle: 'lined',
+  inkColor: '#1a365d',
+  paperColor: '#fffef5',
+  lineColor: '#a8d4f0',
+  randomness: {
+    enabled: true,
+    spacing: 2,
+    baseline: 1,
+    rotation: 0.5,
+  },
+};
+
+export const PAPER_STYLES = [
+  { name: 'Blank', value: 'blank' },
+  { name: 'Lined', value: 'lined' },
+  { name: 'Ruled', value: 'ruled' },
+  { name: 'Grid', value: 'grid' },
+] as const;
+
+export const INK_COLORS = [
+  { name: 'Blue Black', value: '#1a365d' },
+  { name: 'Black', value: '#1a1a1a' },
+  { name: 'Blue', value: '#2563eb' },
+  { name: 'Dark Blue', value: '#1e3a5f' },
+  { name: 'Green', value: '#166534' },
+  { name: 'Red', value: '#991b1b' },
+  { name: 'Purple', value: '#581c87' },
+];
+
+export const PAPER_COLORS = [
+  { name: 'Cream', value: '#fffef5' },
+  { name: 'White', value: '#ffffff' },
+  { name: 'Aged', value: '#f5f0e1' },
+  { name: 'Light Blue', value: '#f0f7ff' },
+  { name: 'Light Yellow', value: '#fffde7' },
+  { name: 'Light Green', value: '#f0fff4' },
+];
