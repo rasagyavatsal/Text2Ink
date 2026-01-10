@@ -19,7 +19,7 @@ import {
   INK_COLORS,
   PAPER_COLORS,
 } from '@/lib/types';
-import { Type, Palette, FileText, Sparkles } from 'lucide-react';
+import { Type, Palette, FileText, Sparkles, Upload, X } from 'lucide-react';
 
 interface SettingsPanelProps {
   settings: HandwritingSettings;
@@ -273,6 +273,100 @@ export default function SettingsPanel({
                 </span>
               </div>
             </div>
+          )}
+
+          <div className="space-y-2">
+            <Label>Custom Background Image</Label>
+            <div className="space-y-2">
+              {settings.customBackgroundImage ? (
+                <div className="relative">
+                  <img
+                    src={settings.customBackgroundImage}
+                    alt="Custom background"
+                    className="w-full h-24 object-cover rounded border border-input"
+                  />
+                  <button
+                    onClick={() => updateSetting('customBackgroundImage', null)}
+                    className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                    title="Remove background image"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary hover:bg-gray-50 transition-colors">
+                  <Upload className="w-6 h-6 text-gray-400 mb-1" />
+                  <span className="text-sm text-gray-500">Upload PNG or JPG</span>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          const result = event.target?.result as string;
+                          updateSetting('customBackgroundImage', result);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Image will be used as page background
+              </p>
+            </div>
+          </div>
+
+          {settings.customBackgroundImage && (
+            <>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <Label>Line Offset (Y Position)</Label>
+                  <span className="text-sm text-muted-foreground">
+                    {settings.customLineOffset}px
+                  </span>
+                </div>
+                <Slider
+                  value={[settings.customLineOffset]}
+                  onValueChange={([value]) => updateSetting('customLineOffset', value)}
+                  min={-50}
+                  max={50}
+                  step={1}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Adjust vertical position of text to match background lines
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <Label>Custom Line Spacing</Label>
+                  <span className="text-sm text-muted-foreground">
+                    {settings.customLineSpacing ?? 'Auto'}
+                  </span>
+                </div>
+                <Slider
+                  value={[settings.customLineSpacing ?? Math.round(settings.fontSize * settings.lineHeight)]}
+                  onValueChange={([value]) => updateSetting('customLineSpacing', value)}
+                  min={20}
+                  max={80}
+                  step={1}
+                />
+                <button
+                  onClick={() => updateSetting('customLineSpacing', null)}
+                  className="text-xs text-primary hover:underline"
+                >
+                  Reset to auto
+                </button>
+                <p className="text-xs text-muted-foreground">
+                  Match spacing between lines in your background image
+                </p>
+              </div>
+            </>
           )}
         </div>
       </div>

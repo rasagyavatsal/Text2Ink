@@ -10,6 +10,9 @@ export interface HandwritingSettings {
   inkColor: string;
   paperColor: string;
   lineColor: string;
+  customBackgroundImage: string | null;
+  customLineOffset: number;
+  customLineSpacing: number | null;
   randomness: {
     enabled: boolean;
     spacing: number;
@@ -48,6 +51,9 @@ export const DEFAULT_SETTINGS: HandwritingSettings = {
   inkColor: '#1a365d',
   paperColor: '#fffef5',
   lineColor: '#a8d4f0',
+  customBackgroundImage: null,
+  customLineOffset: 0,
+  customLineSpacing: null,
   randomness: {
     enabled: true,
     spacing: 2,

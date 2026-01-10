@@ -35,8 +35,12 @@ export default function HandwritingEditor({
 
   const contentWidth = PAGE_WIDTH - settings.marginLeft - settings.marginRight;
   const contentHeight = PAGE_HEIGHT - settings.marginTop - settings.marginBottom;
-  const lineHeightPx = settings.fontSize * settings.lineHeight;
+  const baseLineHeightPx = settings.fontSize * settings.lineHeight;
+  const lineHeightPx = settings.customBackgroundImage && settings.customLineSpacing 
+    ? settings.customLineSpacing 
+    : baseLineHeightPx;
   const linesPerPage = Math.floor(contentHeight / lineHeightPx);
+  const lineOffset = settings.customBackgroundImage ? settings.customLineOffset : 0;
 
   const applyRandomness = useCallback(
     (charIndex: number, lineIndex: number) => {
@@ -62,7 +66,7 @@ export default function HandwritingEditor({
 
   const renderPaperLines = useCallback(
     (pageIndex: number) => {
-      if (settings.paperStyle === 'blank') return null;
+      if (settings.paperStyle === 'blank' || settings.customBackgroundImage) return null;
 
       const lines = [];
       const startY = settings.marginTop;
@@ -283,6 +287,11 @@ export default function HandwritingEditor({
               width: PAGE_WIDTH,
               height: PAGE_HEIGHT,
               backgroundColor: settings.paperColor,
+              backgroundImage: settings.customBackgroundImage
+                ? `url(${settings.customBackgroundImage})`
+                : undefined,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
             }}
             onClick={focusTextarea}
           >
@@ -291,12 +300,14 @@ export default function HandwritingEditor({
             <div
               className={`absolute select-none ${fontClass}`}
               style={{
-                top: settings.marginTop,
+                top: settings.marginTop + lineOffset,
                 left: settings.marginLeft,
                 width: contentWidth,
                 height: contentHeight,
                 fontSize: settings.fontSize,
-                lineHeight: settings.lineHeight,
+                lineHeight: settings.customBackgroundImage && settings.customLineSpacing 
+                  ? `${settings.customLineSpacing}px` 
+                  : settings.lineHeight,
                 color: settings.inkColor,
                 overflowWrap: 'break-word',
                 wordBreak: 'break-word',
