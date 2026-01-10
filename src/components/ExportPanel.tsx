@@ -323,14 +323,14 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-8">
       <div>
-        <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+        <h3 className="font-semibold text-lg mb-5 flex items-center gap-2">
           <Download className="w-5 h-5 text-primary" />
           Export Options
         </h3>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="export-format">Format</Label>
             <Select

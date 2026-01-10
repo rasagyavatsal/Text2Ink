@@ -48,14 +48,14 @@ export default function SettingsPanel({
   };
 
   return (
-    <div className="h-full overflow-y-auto p-6 space-y-6">
+    <div className="h-full overflow-y-auto p-6 space-y-8">
       <div>
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-5">
           <Type className="w-5 h-5 text-primary" />
           <h3 className="font-semibold text-lg">Typography</h3>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="font">Handwriting Style</Label>
             <Select
@@ -116,12 +116,12 @@ export default function SettingsPanel({
       <Separator />
 
       <div>
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-5">
           <FileText className="w-5 h-5 text-primary" />
           <h3 className="font-semibold text-lg">Page Layout</h3>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="paper-style">Paper Style</Label>
             <Select
@@ -214,12 +214,12 @@ export default function SettingsPanel({
       <Separator />
 
       <div>
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-5">
           <Palette className="w-5 h-5 text-primary" />
           <h3 className="font-semibold text-lg">Colors</h3>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div className="space-y-2">
             <Label>Ink Color</Label>
             <div className="flex flex-wrap gap-2">
@@ -374,12 +374,12 @@ export default function SettingsPanel({
       <Separator />
 
       <div>
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-5">
           <Sparkles className="w-5 h-5 text-primary" />
           <h3 className="font-semibold text-lg">Realism Effects</h3>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div className="flex items-center justify-between">
             <Label htmlFor="randomness-toggle">Enable Randomness</Label>
             <Switch

@@ -19,7 +19,7 @@ export default function Home() {
       {/* Sidebar */}
       <div
         className={`bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ${
-          sidebarOpen ? 'w-80' : 'w-0'
+          sidebarOpen ? 'w-96' : 'w-0'
         } overflow-hidden`}
       >
         {/* Header */}
@@ -75,7 +75,7 @@ export default function Home() {
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
         className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-r-lg p-2 shadow-md hover:bg-gray-50 transition-all"
-        style={{ left: sidebarOpen ? '318px' : '0' }}
+        style={{ left: sidebarOpen ? '382px' : '0' }}
       >
         {sidebarOpen ? (
           <ChevronLeft className="w-4 h-4 text-gray-600" />
