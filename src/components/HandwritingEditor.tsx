@@ -443,7 +443,7 @@ export default function HandwritingEditor({
   return (
     <div className="flex flex-col items-center gap-8 py-8">
       {/* Mode Toggle Toolbar */}
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-20 bg-white rounded-lg shadow-lg border border-gray-200 p-1 flex gap-1">
+      <div className="fixed top-24 left-1/2 -translate-x-1/2 z-20 bg-white rounded-lg shadow-lg border border-gray-200 p-1 flex gap-1">
         <button
           onClick={() => {
             setEditorMode('write');

@@ -1,103 +1,137 @@
-'use client';
+import Link from 'next/link';
+import { PenLine, Image, Sparkles, ArrowRight } from 'lucide-react';
 
-import React, { useState, useRef } from 'react';
-import HandwritingEditor from '@/components/HandwritingEditor';
-import SettingsPanel from '@/components/SettingsPanel';
-import ExportPanel from '@/components/ExportPanel';
-import { HandwritingSettings, DEFAULT_SETTINGS, TextField } from '@/lib/types';
-import { PenLine, Settings, Download, ChevronLeft, ChevronRight } from 'lucide-react';
-
-export default function Home() {
-  const [text, setText] = useState('');
-  const [settings, setSettings] = useState<HandwritingSettings>(DEFAULT_SETTINGS);
-  const [activePanel, setActivePanel] = useState<'settings' | 'export'>('settings');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [textFields, setTextFields] = useState<TextField[]>([]);
-  const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
-
+export default function LandingPage() {
   return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden">
-      {/* Sidebar */}
-      <div
-        className={`bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ${
-          sidebarOpen ? 'w-96' : 'w-0'
-        } overflow-hidden`}
-      >
-        {/* Header */}
-        <div className="p-4 border-b border-gray-200">
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <header className="border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-[#E0A32A] rounded-xl flex items-center justify-center">
               <PenLine className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <h1 className="font-bold text-xl text-gray-900">Text2Ink</h1>
-              <p className="text-xs text-gray-500">Text to Handwriting</p>
+            <span className="font-bold text-xl text-gray-900">Text2Ink</span>
+          </div>
+          <Link
+            href="/editor"
+            className="bg-[#E0A32A] text-white px-5 py-2 rounded-lg font-medium hover:bg-[#c99225] transition-colors"
+          >
+            Open Editor
+          </Link>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="py-20 px-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+            Transform Your Text Into{' '}
+            <span className="text-[#E0A32A]">Beautiful Handwriting</span>
+          </h1>
+          <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
+            Convert typed text into realistic handwritten notes with customizable fonts, 
+            paper styles, and authentic ink effects.
+          </p>
+          <Link
+            href="/editor"
+            className="inline-flex items-center gap-2 bg-[#E0A32A] text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-[#c99225] transition-colors"
+          >
+            Start Writing
+            <ArrowRight className="w-5 h-5" />
+          </Link>
+        </div>
+      </section>
+
+      {/* Sample Placeholder */}
+      <section className="py-16 px-6 bg-gray-50">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 justify-items-center">
+            <div className="bg-white border-2 border-gray-200 rounded-2xl flex items-center justify-center" style={{ aspectRatio: '210/297', maxHeight: '700px', width: '100%' }}>
+              <div className="text-center text-gray-400">
+                <PenLine className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                <p className="text-lg">Sample handwriting preview placeholder</p>
+              </div>
+            </div>
+            <div className="bg-white border-2 border-gray-200 rounded-2xl flex items-center justify-center" style={{ aspectRatio: '210/297', maxHeight: '700px', width: '100%' }}>
+              <div className="text-center text-gray-400">
+                <PenLine className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                <p className="text-lg">Sample handwriting preview placeholder</p>
+              </div>
             </div>
           </div>
         </div>
+      </section>
 
-        {/* Panel Tabs */}
-        <div className="flex border-b border-gray-200">
-          <button
-            onClick={() => setActivePanel('settings')}
-            className={`flex-1 py-3 px-4 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
-              activePanel === 'settings'
-                ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-            }`}
-          >
-            <Settings className="w-4 h-4" />
-            Settings
-          </button>
-          <button
-            onClick={() => setActivePanel('export')}
-            className={`flex-1 py-3 px-4 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
-              activePanel === 'export'
-                ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-            }`}
-          >
-            <Download className="w-4 h-4" />
-            Export
-          </button>
+      {/* Features Section */}
+      <section className="py-20 px-6">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-16">
+            Powerful Features
+          </h2>
+
+          {/* Feature 1: Background Image Upload */}
+          <div className="grid md:grid-cols-2 gap-12 items-center mb-20">
+            <div>
+              <div className="w-14 h-14 bg-[#E0A32A] rounded-xl flex items-center justify-center mb-6">
+                <Image className="w-7 h-7 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                Custom Background Images
+              </h3>
+              <p className="text-gray-600 text-lg leading-relaxed">
+                Upload your own paper textures, notebook pages, or any background image. 
+                Create handwritten notes that look like they were written on real paper, 
+                lined notebooks, or custom stationery.
+              </p>
+            </div>
+            <div className="bg-gray-100 border-2 border-gray-200 rounded-2xl aspect-video flex items-center justify-center">
+              <div className="text-center text-gray-400">
+                <Image className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>Video placeholder</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Feature 2: Realism Effects */}
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="order-2 md:order-1 bg-gray-100 border-2 border-gray-200 rounded-2xl aspect-video flex items-center justify-center">
+              <div className="text-center text-gray-400">
+                <Sparkles className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>Video placeholder</p>
+              </div>
+            </div>
+            <div className="order-1 md:order-2">
+              <div className="w-14 h-14 bg-[#E0A32A] rounded-xl flex items-center justify-center mb-6">
+                <Sparkles className="w-7 h-7 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                Realistic Ink Effects
+              </h3>
+              <p className="text-gray-600 text-lg leading-relaxed">
+                Add authentic handwriting imperfections with ink bleeding, pressure variation, 
+                and natural letter spacing. Your converted text will look genuinely handwritten, 
+                not computer-generated.
+              </p>
+            </div>
+          </div>
         </div>
+      </section>
 
-        {/* Panel Content */}
-        <div className="flex-1 overflow-hidden">
-          {activePanel === 'settings' ? (
-            <SettingsPanel settings={settings} onSettingsChange={setSettings} />
-          ) : (
-            <ExportPanel pageRefs={pageRefs} hasContent={text.trim().length > 0} />
-          )}
+      {/* Footer */}
+      <footer className="border-t border-gray-200 py-8 px-6">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-[#E0A32A] rounded-lg flex items-center justify-center">
+              <PenLine className="w-4 h-4 text-white" />
+            </div>
+            <span className="font-semibold text-gray-900">Text2Ink</span>
+          </div>
+          <p className="text-gray-500 text-sm">
+            © {new Date().getFullYear()} Text2Ink. All rights reserved.
+          </p>
         </div>
-      </div>
-
-      {/* Toggle Sidebar Button */}
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-r-lg p-2 shadow-md hover:bg-gray-50 transition-all"
-        style={{ left: sidebarOpen ? '382px' : '0' }}
-      >
-        {sidebarOpen ? (
-          <ChevronLeft className="w-4 h-4 text-gray-600" />
-        ) : (
-          <ChevronRight className="w-4 h-4 text-gray-600" />
-        )}
-      </button>
-
-      {/* Main Content - Editor */}
-      <div className="flex-1 overflow-auto bg-gray-200">
-        <div className="min-h-full flex justify-center">
-          <HandwritingEditor
-            text={text}
-            onTextChange={setText}
-            settings={settings}
-            pageRefs={pageRefs}
-            textFields={textFields}
-            onTextFieldsChange={setTextFields}
-          />
-        </div>
-      </div>
+      </footer>
     </div>
   );
 }
