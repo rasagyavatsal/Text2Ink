@@ -8,6 +8,7 @@ export interface HandwritingSettings {
   } | null;
   fontSize: number;
   lineHeight: number;
+  lineTilt: number;
   marginTop: number;
   marginBottom: number;
   marginLeft: number;
@@ -51,6 +52,7 @@ export const DEFAULT_SETTINGS: HandwritingSettings = {
   customFont: null,
   fontSize: 24,
   lineHeight: 1.8,
+  lineTilt: 0,
   marginTop: 60,
   marginBottom: 60,
   marginLeft: 60,

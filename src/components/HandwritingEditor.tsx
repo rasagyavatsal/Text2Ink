@@ -114,6 +114,7 @@ export default function HandwritingEditor({
 
       return {
         transform: `translateY(${baselineOffset}px) rotate(${rotationOffset}deg)`,
+        transformOrigin: 'left bottom',
         marginLeft: `${spacingOffset}px`,
       };
     },
@@ -603,6 +604,8 @@ export default function HandwritingEditor({
                     ? `${settings.customLineSpacing}px` 
                     : settings.lineHeight,
                   color: settings.inkColor,
+                  transform: settings.lineTilt ? `rotate(${settings.lineTilt}deg)` : undefined,
+                  transformOrigin: 'left top',
                   overflowWrap: 'break-word',
                   wordBreak: 'break-word',
                   whiteSpace: 'pre-wrap',

@@ -219,6 +219,22 @@ export default function SettingsPanel({
               step={0.1}
             />
           </div>
+
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <Label>Line Tilt</Label>
+              <span className="text-sm text-muted-foreground">
+                {settings.lineTilt}°
+              </span>
+            </div>
+            <Slider
+              value={[settings.lineTilt]}
+              onValueChange={([value]) => updateSetting('lineTilt', value)}
+              min={-15}
+              max={15}
+              step={0.5}
+            />
+          </div>
         </div>
       </div>
 
