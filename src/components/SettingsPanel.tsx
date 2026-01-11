@@ -19,7 +19,7 @@ import {
   INK_COLORS,
   PAPER_COLORS,
 } from '@/lib/types';
-import { Type, Palette, FileText, Sparkles, Upload, X } from 'lucide-react';
+import { Type, Palette, FileText, Wand2, Upload, X } from 'lucide-react';
 
 interface SettingsPanelProps {
   settings: HandwritingSettings;
@@ -500,7 +500,7 @@ export default function SettingsPanel({
 
       <div>
         <div className="flex items-center gap-2 mb-5">
-          <Sparkles className="w-5 h-5 text-[#E0A32A]" />
+          <Wand2 className="w-5 h-5 text-[#E0A32A]" />
           <h3 className="font-semibold text-lg">Realism Effects</h3>
         </div>
 

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import NextImage from 'next/image';
-import { PenLine, Image as ImageIcon, Sparkles, ArrowRight } from 'lucide-react';
+import { PenLine, Image as ImageIcon, Wand2, ArrowRight } from 'lucide-react';
 
 export default function LandingPage() {
   return (
@@ -119,7 +119,7 @@ export default function LandingPage() {
             </div>
             <div className="order-1 md:order-2">
               <div className="w-14 h-14 bg-[#E0A32A] rounded-xl flex items-center justify-center mb-6">
-                <Sparkles className="w-7 h-7 text-white" />
+                <Wand2 className="w-7 h-7 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
                 Realistic Ink Effects
