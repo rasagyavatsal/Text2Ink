@@ -13,15 +13,17 @@ import {
 import { Download, FileImage, FileText, Loader2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { HandwritingSettings } from '@/lib/types';
 
 interface ExportPanelProps {
   pageRefs: React.MutableRefObject<(HTMLDivElement | null)[]>;
   hasContent: boolean;
+  settings: HandwritingSettings;
 }
 
 type ExportFormat = 'pdf' | 'png' | 'jpg';
 
-export default function ExportPanel({ pageRefs, hasContent }: ExportPanelProps) {
+export default function ExportPanel({ pageRefs, hasContent, settings }: ExportPanelProps) {
   const [format, setFormat] = useState<ExportFormat>('pdf');
   const [isExporting, setIsExporting] = useState(false);
   const [quality, setQuality] = useState<'standard' | 'high'>('high');
@@ -127,6 +129,12 @@ export default function ExportPanel({ pageRefs, hasContent }: ExportPanelProps) 
 
   const applyExportSafeClone = (documentClone: Document, exportBg: string) => {
     documentClone.documentElement.classList.remove('dark');
+
+    if (settings.fontFamily === 'custom' && settings.customFont) {
+      const customFontStyle = documentClone.createElement('style');
+      customFontStyle.textContent = `@font-face{font-family:"${settings.customFont.family}";src:url("${settings.customFont.dataUrl}") format("${settings.customFont.format}");font-display:swap;}`;
+      documentClone.head.appendChild(customFontStyle);
+    }
 
     const safeTheme = documentClone.createElement('style');
     safeTheme.textContent = `:root,.dark{
@@ -275,6 +283,14 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
     setIsExporting(true);
 
     const cleanup = applyExportSafeDocument();
+
+    if (settings.fontFamily === 'custom' && settings.customFont) {
+      try {
+        await document.fonts.load(`16px "${settings.customFont.family}"`);
+        await document.fonts.ready;
+      } catch {
+      }
+    }
 
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));

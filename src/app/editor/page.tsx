@@ -78,7 +78,11 @@ export default function EditorPage() {
             {activePanel === 'settings' ? (
               <SettingsPanel settings={settings} onSettingsChange={setSettings} />
             ) : (
-              <ExportPanel pageRefs={pageRefs} hasContent={text.trim().length > 0} />
+              <ExportPanel
+                pageRefs={pageRefs}
+                hasContent={text.trim().length > 0}
+                settings={settings}
+              />
             )}
           </div>
         </div>

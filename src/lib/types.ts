@@ -1,5 +1,11 @@
 export interface HandwritingSettings {
   fontFamily: string;
+  customFont: {
+    name: string;
+    family: string;
+    dataUrl: string;
+    format: 'truetype' | 'opentype';
+  } | null;
   fontSize: number;
   lineHeight: number;
   marginTop: number;
@@ -37,10 +43,12 @@ export const HANDWRITING_FONTS: FontOption[] = [
   { name: 'Architects Daughter', value: 'architects-daughter', className: 'font-[family-name:var(--font-architects-daughter)]' },
   { name: 'Satisfy', value: 'satisfy', className: 'font-[family-name:var(--font-satisfy)]' },
   { name: 'Homemade Apple', value: 'homemade-apple', className: 'font-[family-name:var(--font-homemade-apple)]' },
+  { name: 'Custom Font', value: 'custom', className: '' },
 ];
 
 export const DEFAULT_SETTINGS: HandwritingSettings = {
   fontFamily: 'caveat',
+  customFont: null,
   fontSize: 24,
   lineHeight: 1.8,
   marginTop: 60,

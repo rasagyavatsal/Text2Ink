@@ -43,9 +43,51 @@ export default function HandwritingEditor({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
   const fontClass = useMemo(() => {
+    if (settings.fontFamily === 'custom' && !settings.customFont) {
+      return HANDWRITING_FONTS[0].className;
+    }
     const font = HANDWRITING_FONTS.find((f) => f.value === settings.fontFamily);
     return font?.className || HANDWRITING_FONTS[0].className;
-  }, [settings.fontFamily]);
+  }, [settings.fontFamily, settings.customFont]);
+
+  const customFontFamily =
+    settings.fontFamily === 'custom' && settings.customFont
+      ? settings.customFont.family
+      : null;
+
+  useEffect(() => {
+    const styleId = '__text2ink_custom_font_style';
+
+    if (!settings.customFont) {
+      document.getElementById(styleId)?.remove();
+      return;
+    }
+
+    const { family, dataUrl, format } = settings.customFont;
+
+    let styleEl = document.getElementById(styleId) as HTMLStyleElement | null;
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = styleId;
+      document.head.appendChild(styleEl);
+    }
+
+    styleEl.textContent = `@font-face{font-family:"${family}";src:url("${dataUrl}") format("${format}");font-display:swap;}`;
+
+    let cancelled = false;
+    const face = new FontFace(family, `url("${dataUrl}")`);
+    face
+      .load()
+      .then((loaded) => {
+        if (cancelled) return;
+        document.fonts.add(loaded);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [settings.customFont]);
 
   const contentWidth = PAGE_WIDTH - settings.marginLeft - settings.marginRight;
   const contentHeight = PAGE_HEIGHT - settings.marginTop - settings.marginBottom;
@@ -555,6 +597,7 @@ export default function HandwritingEditor({
                   left: settings.marginLeft,
                   width: contentWidth,
                   height: contentHeight,
+                  fontFamily: customFontFamily ? `"${customFontFamily}", cursive` : undefined,
                   fontSize: settings.fontSize,
                   lineHeight: settings.customBackgroundImage && settings.customLineSpacing 
                     ? `${settings.customLineSpacing}px` 
@@ -679,6 +722,7 @@ export default function HandwritingEditor({
                       onBlur={() => setActiveTextFieldId(null)}
                       className={`bg-transparent border-none outline-none resize-none ${fontClass}`}
                       style={{
+                        fontFamily: customFontFamily ? `"${customFontFamily}", cursive` : undefined,
                         fontSize: settings.fontSize,
                         color: settings.inkColor,
                         lineHeight: settings.lineHeight,

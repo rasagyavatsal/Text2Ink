@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
@@ -30,11 +30,17 @@ export default function SettingsPanel({
   settings,
   onSettingsChange,
 }: SettingsPanelProps) {
+  const [customFontError, setCustomFontError] = useState<string | null>(null);
+
   const updateSetting = <K extends keyof HandwritingSettings>(
     key: K,
     value: HandwritingSettings[K]
   ) => {
     onSettingsChange({ ...settings, [key]: value });
+  };
+
+  const updateSettings = (patch: Partial<HandwritingSettings>) => {
+    onSettingsChange({ ...settings, ...patch });
   };
 
   const updateRandomness = (
@@ -60,7 +66,10 @@ export default function SettingsPanel({
             <Label htmlFor="font">Handwriting Style</Label>
             <Select
               value={settings.fontFamily}
-              onValueChange={(value) => updateSetting('fontFamily', value)}
+              onValueChange={(value) => {
+                setCustomFontError(null);
+                updateSetting('fontFamily', value);
+              }}
             >
               <SelectTrigger id="font">
                 <SelectValue placeholder="Select font" />
@@ -78,6 +87,105 @@ export default function SettingsPanel({
               </SelectContent>
             </Select>
           </div>
+
+          {(settings.fontFamily === 'custom' || settings.customFont) && (
+            <div className="space-y-2">
+              <Label>Custom Font</Label>
+              <div className="space-y-2">
+                {settings.customFont ? (
+                  <div className="flex items-center justify-between gap-3 rounded-lg border border-input px-3 py-2">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium truncate">
+                        {settings.customFont.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {settings.customFont.format.toUpperCase()}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setCustomFontError(null);
+                        updateSettings({
+                          fontFamily:
+                            settings.fontFamily === 'custom'
+                              ? HANDWRITING_FONTS[0].value
+                              : settings.fontFamily,
+                          customFont: null,
+                        });
+                      }}
+                      className="shrink-0 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                      title="Remove custom font"
+                      type="button"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#E0A32A] hover:bg-[#E0A32A]/5 transition-colors">
+                    <Upload className="w-6 h-6 text-gray-400 mb-1" />
+                    <span className="text-sm text-gray-500">Upload TTF or OTF</span>
+                    <input
+                      type="file"
+                      accept=".ttf,.otf,font/ttf,font/otf,application/x-font-ttf,application/x-font-opentype"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        e.target.value = '';
+                        if (!file) return;
+
+                        setCustomFontError(null);
+
+                        const lowerName = file.name.toLowerCase();
+                        const format = lowerName.endsWith('.ttf')
+                          ? ('truetype' as const)
+                          : lowerName.endsWith('.otf')
+                            ? ('opentype' as const)
+                            : null;
+
+                        if (!format) {
+                          setCustomFontError('Please upload a .ttf or .otf font file.');
+                          return;
+                        }
+
+                        const reader = new FileReader();
+                        reader.onerror = () => {
+                          setCustomFontError('Failed to read the font file. Please try again.');
+                        };
+                        reader.onload = (event) => {
+                          const dataUrl = event.target?.result as string | undefined;
+                          if (!dataUrl) {
+                            setCustomFontError('Failed to read the font file. Please try again.');
+                            return;
+                          }
+
+                          const safeBase = file.name
+                            .replace(/\.(ttf|otf)$/i, '')
+                            .replace(/[^a-z0-9_-]/gi, '')
+                            .slice(0, 30);
+                          const family = `Text2InkCustom-${safeBase || 'Font'}-${Date.now()}`;
+
+                          updateSettings({
+                            fontFamily: 'custom',
+                            customFont: {
+                              name: file.name,
+                              family,
+                              dataUrl,
+                              format,
+                            },
+                          });
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </label>
+                )}
+
+                {customFontError && (
+                  <p className="text-xs text-red-600">{customFontError}</p>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <div className="flex justify-between">
