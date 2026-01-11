@@ -312,6 +312,8 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
               backgroundColor: exportBg,
               onclone: (documentClone, elementClone) => {
                 applyExportSafeClone(documentClone, exportBg);
+                (elementClone as HTMLElement).style.transform = 'none';
+                (elementClone as HTMLElement).style.transformOrigin = 'top left';
                 sanitizeCloneColors(documentClone, elementClone);
               },
               logging: false,
@@ -350,6 +352,8 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
               backgroundColor: exportBg,
               onclone: (documentClone, elementClone) => {
                 applyExportSafeClone(documentClone, exportBg);
+                (elementClone as HTMLElement).style.transform = 'none';
+                (elementClone as HTMLElement).style.transformOrigin = 'top left';
                 sanitizeCloneColors(documentClone, elementClone);
               },
               logging: false,

@@ -2,13 +2,15 @@
 
 import React, { useRef, useCallback, useMemo, useEffect, useState } from 'react';
 import { HandwritingSettings, HANDWRITING_FONTS, TextField, EditorMode } from '@/lib/types';
-import { Type, PenLine } from 'lucide-react';
+import { Type, PenLine, Plus, Minus } from 'lucide-react';
 
 interface HandwritingEditorProps {
   text: string;
   onTextChange: (text: string) => void;
   settings: HandwritingSettings;
   pageRefs: React.MutableRefObject<(HTMLDivElement | null)[]>;
+  previewScale: number;
+  onPreviewScaleChange: (value: number) => void;
   textFields: TextField[];
   onTextFieldsChange: (textFields: TextField[]) => void;
 }
@@ -26,6 +28,8 @@ export default function HandwritingEditor({
   onTextChange,
   settings,
   pageRefs,
+  previewScale,
+  onPreviewScaleChange,
   textFields,
   onTextFieldsChange,
 }: HandwritingEditorProps) {
@@ -313,8 +317,8 @@ export default function HandwritingEditor({
     (e: React.MouseEvent<HTMLDivElement>, pageIndex: number) => {
       if (editorMode === 'textfield') {
         const rect = e.currentTarget.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const x = (e.clientX - rect.left) / previewScale;
+        const y = (e.clientY - rect.top) / previewScale;
         
         const newTextField: TextField = {
           id: `tf-${Date.now()}`,
@@ -335,7 +339,7 @@ export default function HandwritingEditor({
         textareaRef.current?.focus();
       }
     },
-    [editorMode, textFields, onTextFieldsChange]
+    [editorMode, textFields, onTextFieldsChange, previewScale]
   );
 
   const handleTextFieldChange = useCallback(
@@ -380,12 +384,12 @@ export default function HandwritingEditor({
       const rect = (e.target as HTMLElement).closest('.text-field-container')?.getBoundingClientRect();
       if (rect) {
         setDragOffset({
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top,
+          x: (e.clientX - rect.left) / previewScale,
+          y: (e.clientY - rect.top) / previewScale,
         });
       }
     },
-    []
+    [previewScale]
   );
 
   const handleDragMove = useCallback(
@@ -399,8 +403,8 @@ export default function HandwritingEditor({
       if (!pageEl) return;
       
       const pageRect = pageEl.getBoundingClientRect();
-      const newX = e.clientX - pageRect.left - dragOffset.x + 4;
-      const newY = e.clientY - pageRect.top - dragOffset.y + 12;
+      const newX = (e.clientX - pageRect.left) / previewScale - dragOffset.x + 4;
+      const newY = (e.clientY - pageRect.top) / previewScale - dragOffset.y + 12;
       
       onTextFieldsChange(
         textFields.map((t) =>
@@ -408,7 +412,7 @@ export default function HandwritingEditor({
         )
       );
     },
-    [draggingId, textFields, dragOffset, onTextFieldsChange, pageRefs]
+    [draggingId, textFields, dragOffset, onTextFieldsChange, pageRefs, previewScale]
   );
 
   const handleDragEnd = useCallback(() => {
@@ -443,7 +447,7 @@ export default function HandwritingEditor({
   return (
     <div className="flex flex-col items-center gap-8 py-8">
       {/* Mode Toggle Toolbar */}
-      <div className="fixed top-24 left-1/2 -translate-x-1/2 z-20 bg-white rounded-lg shadow-lg border border-gray-200 p-1 flex gap-1">
+      <div className="fixed top-24 left-1/2 -translate-x-1/2 z-20 bg-white rounded-lg shadow-lg border border-gray-200 p-1 flex items-center gap-1">
         <button
           onClick={() => {
             setEditorMode('write');
@@ -471,6 +475,28 @@ export default function HandwritingEditor({
           <Type className="w-4 h-4" />
           Text Field
         </button>
+
+        <div className="w-px h-7 bg-gray-200 mx-1" />
+
+        <button
+          onClick={() => onPreviewScaleChange(Number((previewScale - 0.1).toFixed(2)))}
+          className="p-2 rounded-md text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5 transition-colors"
+          aria-label="Zoom out preview"
+          title="Zoom out"
+        >
+          <Minus className="w-4 h-4" />
+        </button>
+        <div className="px-2 min-w-14 text-center text-sm font-medium text-gray-700 select-none">
+          {Math.round(previewScale * 100)}%
+        </div>
+        <button
+          onClick={() => onPreviewScaleChange(Number((previewScale + 0.1).toFixed(2)))}
+          className="p-2 rounded-md text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5 transition-colors"
+          aria-label="Zoom in preview"
+          title="Zoom in"
+        >
+          <Plus className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Hidden textarea for input */}
@@ -495,169 +521,179 @@ export default function HandwritingEditor({
         return (
           <div
             key={pageIndex}
-            ref={(el) => {
-              pageRefs.current[pageIndex] = el;
-            }}
-            className="relative shadow-2xl cursor-text"
+            className="relative"
             style={{
-              width: PAGE_WIDTH,
-              height: PAGE_HEIGHT,
-              backgroundColor: settings.paperColor,
-              backgroundImage: settings.customBackgroundImage
-                ? `url(${settings.customBackgroundImage})`
-                : undefined,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
+              width: PAGE_WIDTH * previewScale,
+              height: PAGE_HEIGHT * previewScale,
             }}
-            onClick={(e) => handlePageClick(e, pageIndex)}
           >
-            {renderPaperLines(pageIndex)}
-
             <div
-              className={`absolute select-none ${fontClass}`}
-              style={{
-                top: settings.marginTop + lineOffset,
-                left: settings.marginLeft,
-                width: contentWidth,
-                height: contentHeight,
-                fontSize: settings.fontSize,
-                lineHeight: settings.customBackgroundImage && settings.customLineSpacing 
-                  ? `${settings.customLineSpacing}px` 
-                  : settings.lineHeight,
-                color: settings.inkColor,
-                overflowWrap: 'break-word',
-                wordBreak: 'break-word',
-                whiteSpace: 'pre-wrap',
-                overflow: 'hidden',
+              ref={(el) => {
+                pageRefs.current[pageIndex] = el;
               }}
+              className="relative shadow-2xl cursor-text"
+              style={{
+                width: PAGE_WIDTH,
+                height: PAGE_HEIGHT,
+                backgroundColor: settings.paperColor,
+                backgroundImage: settings.customBackgroundImage
+                  ? `url(${settings.customBackgroundImage})`
+                  : undefined,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                transform: `scale(${previewScale})`,
+                transformOrigin: 'top left',
+              }}
+              onClick={(e) => handlePageClick(e, pageIndex)}
             >
-              {pageLines.length === 0 || (pageLines.length === 1 && pageLines[0].text === '') ? (
-                <span className="text-gray-400 pointer-events-none">
-                  Click here to start typing...
-                  {isFocused && cursorPosition === 0 && (
-                    <span 
-                      className="inline-block animate-pulse ml-0"
-                      style={{
-                        width: 2,
-                        height: '1em',
-                        backgroundColor: settings.inkColor,
-                        verticalAlign: 'text-bottom',
-                      }}
-                    />
-                  )}
-                </span>
-              ) : (
-                pageLines.map((line, lineIdx) => {
-                  const lineStartChar = globalCharCount;
-                  
-                  return (
-                    <div key={lineIdx} style={{ minHeight: lineHeightPx }}>
-                      {line.text === '' ? (
-                        <>
-                          {isFocused && cursorPosition === lineStartChar && (
-                            <span 
-                              className="inline-block animate-pulse"
-                              style={{
-                                width: 2,
-                                height: '1em',
-                                backgroundColor: settings.inkColor,
-                                verticalAlign: 'text-bottom',
-                              }}
-                            />
-                          )}
-                          {(() => { globalCharCount += 1; return null; })()}
-                        </>
-                      ) : (
-                        <>
-                          {line.text.split('').map((char, charIdx) => {
-                            const currentGlobalChar = globalCharCount;
-                            globalCharCount += 1;
-                            const showCursorAfter = cursorPosition === currentGlobalChar + 1;
-                            const showCursorBefore = charIdx === 0 && cursorPosition === currentGlobalChar;
-                            
-                            return renderCharacter(
-                              char,
-                              charIdx,
-                              line.lineIndex,
-                              currentGlobalChar,
-                              showCursorAfter,
-                              showCursorBefore
-                            );
-                          })}
-                          {(() => { globalCharCount += 1; return null; })()}
-                        </>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </div>
+              {renderPaperLines(pageIndex)}
 
-            {/* Text Fields for this page */}
-            {textFields
-              .filter((tf) => tf.pageIndex === pageIndex)
-              .map((tf) => (
-                <div
-                  key={tf.id}
-                  className="absolute text-field-container group"
-                  style={{
-                    left: tf.x,
-                    top: tf.y,
-                    transform: 'translate(-4px, -12px)',
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {/* Drag handle */}
+              <div
+                className={`absolute select-none ${fontClass}`}
+                style={{
+                  top: settings.marginTop + lineOffset,
+                  left: settings.marginLeft,
+                  width: contentWidth,
+                  height: contentHeight,
+                  fontSize: settings.fontSize,
+                  lineHeight: settings.customBackgroundImage && settings.customLineSpacing 
+                    ? `${settings.customLineSpacing}px` 
+                    : settings.lineHeight,
+                  color: settings.inkColor,
+                  overflowWrap: 'break-word',
+                  wordBreak: 'break-word',
+                  whiteSpace: 'pre-wrap',
+                  overflow: 'hidden',
+                }}
+              >
+                {pageLines.length === 0 || (pageLines.length === 1 && pageLines[0].text === '') ? (
+                  <span className="text-gray-400 pointer-events-none">
+                    Click here to start typing...
+                    {isFocused && cursorPosition === 0 && (
+                      <span 
+                        className="inline-block animate-pulse ml-0"
+                        style={{
+                          width: 2,
+                          height: '1em',
+                          backgroundColor: settings.inkColor,
+                          verticalAlign: 'text-bottom',
+                        }}
+                      />
+                    )}
+                  </span>
+                ) : (
+                  pageLines.map((line, lineIdx) => {
+                    const lineStartChar = globalCharCount;
+                    
+                    return (
+                      <div key={lineIdx} style={{ minHeight: lineHeightPx }}>
+                        {line.text === '' ? (
+                          <>
+                            {isFocused && cursorPosition === lineStartChar && (
+                              <span 
+                                className="inline-block animate-pulse"
+                                style={{
+                                  width: 2,
+                                  height: '1em',
+                                  backgroundColor: settings.inkColor,
+                                  verticalAlign: 'text-bottom',
+                                }}
+                              />
+                            )}
+                            {(() => { globalCharCount += 1; return null; })()}
+                          </>
+                        ) : (
+                          <>
+                            {line.text.split('').map((char, charIdx) => {
+                              const currentGlobalChar = globalCharCount;
+                              globalCharCount += 1;
+                              const showCursorAfter = cursorPosition === currentGlobalChar + 1;
+                              const showCursorBefore = charIdx === 0 && cursorPosition === currentGlobalChar;
+                              
+                              return renderCharacter(
+                                char,
+                                charIdx,
+                                line.lineIndex,
+                                currentGlobalChar,
+                                showCursorAfter,
+                                showCursorBefore
+                              );
+                            })}
+                            {(() => { globalCharCount += 1; return null; })()}
+                          </>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Text Fields for this page */}
+              {textFields
+                .filter((tf) => tf.pageIndex === pageIndex)
+                .map((tf) => (
                   <div
-                    className="absolute -left-6 top-0 w-5 h-5 bg-gray-400 hover:bg-gray-600 rounded cursor-move flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    onMouseDown={(e) => handleDragStart(e, tf)}
-                    title="Drag to move"
-                  >
-                    <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" />
-                    </svg>
-                  </div>
-                  {/* Delete button */}
-                  <div
-                    className="absolute -top-6 -right-6 w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center cursor-pointer text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleTextFieldDelete(tf.id);
-                    }}
-                    title="Delete text field"
-                  >
-                    ×
-                  </div>
-                  <textarea
-                    ref={(el) => {
-                      if (el) {
-                        textFieldInputRefs.current.set(tf.id, el);
-                      } else {
-                        textFieldInputRefs.current.delete(tf.id);
-                      }
-                    }}
-                    value={tf.text}
-                    onChange={(e) => handleTextFieldChange(tf.id, e.target.value)}
-                    onKeyDown={(e) => handleTextFieldKeyDown(e, tf.id)}
-                    onFocus={() => setActiveTextFieldId(tf.id)}
-                    onBlur={() => setActiveTextFieldId(null)}
-                    className={`bg-transparent border-none outline-none resize-none ${fontClass}`}
+                    key={tf.id}
+                    className="absolute text-field-container group"
                     style={{
-                      fontSize: settings.fontSize,
-                      color: settings.inkColor,
-                      lineHeight: settings.lineHeight,
-                      minWidth: '20px',
-                      width: tf.text ? `${Math.max(20, tf.text.split('\n').reduce((max, line) => Math.max(max, line.length), 0) * settings.fontSize * 0.6)}px` : '20px',
-                      minHeight: `${settings.fontSize * settings.lineHeight}px`,
-                      height: 'auto',
-                      caretColor: settings.inkColor,
+                      left: tf.x,
+                      top: tf.y,
+                      transform: 'translate(-4px, -12px)',
                     }}
-                    placeholder=""
-                    autoComplete="off"
-                  />
-                </div>
-              ))}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Drag handle */}
+                    <div
+                      className="absolute -left-6 top-0 w-5 h-5 bg-gray-400 hover:bg-gray-600 rounded cursor-move flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      onMouseDown={(e) => handleDragStart(e, tf)}
+                      title="Drag to move"
+                    >
+                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" />
+                      </svg>
+                    </div>
+                    {/* Delete button */}
+                    <div
+                      className="absolute -top-6 -right-6 w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center cursor-pointer text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleTextFieldDelete(tf.id);
+                      }}
+                      title="Delete text field"
+                    >
+                      ×
+                    </div>
+                    <textarea
+                      ref={(el) => {
+                        if (el) {
+                          textFieldInputRefs.current.set(tf.id, el);
+                        } else {
+                          textFieldInputRefs.current.delete(tf.id);
+                        }
+                      }}
+                      value={tf.text}
+                      onChange={(e) => handleTextFieldChange(tf.id, e.target.value)}
+                      onKeyDown={(e) => handleTextFieldKeyDown(e, tf.id)}
+                      onFocus={() => setActiveTextFieldId(tf.id)}
+                      onBlur={() => setActiveTextFieldId(null)}
+                      className={`bg-transparent border-none outline-none resize-none ${fontClass}`}
+                      style={{
+                        fontSize: settings.fontSize,
+                        color: settings.inkColor,
+                        lineHeight: settings.lineHeight,
+                        minWidth: '20px',
+                        width: tf.text ? `${Math.max(20, tf.text.split('\n').reduce((max, line) => Math.max(max, line.length), 0) * settings.fontSize * 0.6)}px` : '20px',
+                        minHeight: `${settings.fontSize * settings.lineHeight}px`,
+                        height: 'auto',
+                        caretColor: settings.inkColor,
+                      }}
+                      placeholder=""
+                      autoComplete="off"
+                    />
+                  </div>
+                ))}
+            </div>
           </div>
         );
       })}
