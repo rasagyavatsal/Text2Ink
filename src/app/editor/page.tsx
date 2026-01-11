@@ -20,9 +20,9 @@ export default function EditorPage() {
   const clampPreviewScale = (value: number) => Math.min(2, Math.max(0.5, value));
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="h-screen bg-white flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="border-b border-gray-200">
+      <header className="border-b border-gray-200 shrink-0">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 bg-[#E0A32A] rounded-xl flex items-center justify-center">
@@ -40,10 +40,10 @@ export default function EditorPage() {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex bg-gray-100 overflow-hidden">
+      <div className="flex-1 flex min-h-0 bg-gray-100 overflow-hidden">
         {/* Sidebar */}
         <div
-          className={`bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ${
+          className={`bg-white border-r border-gray-200 flex flex-col min-h-0 transition-all duration-300 ${
             sidebarOpen ? 'w-96' : 'w-0'
           } overflow-hidden`}
         >
@@ -74,7 +74,7 @@ export default function EditorPage() {
           </div>
 
           {/* Panel Content */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
             {activePanel === 'settings' ? (
               <SettingsPanel settings={settings} onSettingsChange={setSettings} />
             ) : (
@@ -103,7 +103,7 @@ export default function EditorPage() {
         </button>
 
         {/* Main Content - Editor */}
-        <div className="flex-1 overflow-auto bg-gray-200">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-gray-200">
           <div className="min-h-full flex justify-center">
             <HandwritingEditor
               text={text}
@@ -119,20 +119,6 @@ export default function EditorPage() {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-200 py-8 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#E0A32A] rounded-lg flex items-center justify-center">
-              <PenLine className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-semibold text-gray-900">Text2Ink</span>
           </div>
-          <p className="text-gray-500 text-sm">
-            © {new Date().getFullYear()} Text2Ink. All rights reserved.
-          </p>
-        </div>
-      </footer>
-    </div>
   );
 }
