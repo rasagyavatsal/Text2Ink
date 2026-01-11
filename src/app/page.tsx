@@ -9,9 +9,14 @@ export default function LandingPage() {
       <header className="border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-[#E0A32A] rounded-xl flex items-center justify-center">
-              <PenLine className="w-5 h-5 text-white" />
-            </div>
+            <NextImage
+              src="/logo-without-background.png"
+              alt="Text2Ink logo"
+              width={40}
+              height={40}
+              className="w-10 h-10"
+              priority
+            />
             <span className="font-bold text-xl text-gray-900">Text2Ink</span>
           </div>
           <Link

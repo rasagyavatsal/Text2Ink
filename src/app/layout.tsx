@@ -64,6 +64,9 @@ const homemadeApple = Homemade_Apple({
 export const metadata: Metadata = {
   title: "Text2Ink - Text to Handwriting Converter",
   description: "Convert your typed text into beautiful handwritten notes with customizable fonts, paper styles, and realistic effects.",
+  icons: {
+    icon: "/logo-without-background.png",
+  },
 };
 
 export default function RootLayout({

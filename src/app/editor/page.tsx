@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import HandwritingEditor from '@/components/HandwritingEditor';
 import SettingsPanel from '@/components/SettingsPanel';
 import ExportPanel from '@/components/ExportPanel';
 import { HandwritingSettings, DEFAULT_SETTINGS, TextField } from '@/lib/types';
-import { PenLine, Settings, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Settings, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function EditorPage() {
   const [text, setText] = useState('');
@@ -25,9 +26,14 @@ export default function EditorPage() {
       <header className="border-b border-gray-200 shrink-0">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-[#E0A32A] rounded-xl flex items-center justify-center">
-              <PenLine className="w-5 h-5 text-white" />
-            </div>
+            <Image
+              src="/logo-without-background.png"
+              alt="Text2Ink logo"
+              width={40}
+              height={40}
+              className="w-10 h-10"
+              priority
+            />
             <span className="font-bold text-xl text-gray-900">Text2Ink</span>
           </div>
           <Link
