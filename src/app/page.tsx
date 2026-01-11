@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { PenLine, Image, Sparkles, ArrowRight } from 'lucide-react';
+import NextImage from 'next/image';
+import { PenLine, Image as ImageIcon, Sparkles, ArrowRight } from 'lucide-react';
 
 export default function LandingPage() {
   return (
@@ -47,17 +48,24 @@ export default function LandingPage() {
       <section className="py-16 px-6 bg-gray-50">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-8 justify-items-center">
-            <div className="bg-white border-2 border-gray-200 rounded-2xl flex items-center justify-center" style={{ aspectRatio: '210/297', maxHeight: '700px', width: '100%' }}>
-              <div className="text-center text-gray-400">
-                <PenLine className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p className="text-lg">Sample handwriting preview placeholder</p>
-              </div>
+            <div className="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden" style={{ aspectRatio: '210/297', maxHeight: '700px', width: '100%' }}>
+              <NextImage
+                src="/Sample-handwriting-preview1.png"
+                alt="Sample handwriting preview"
+                width={840}
+                height={1188}
+                className="w-full h-full object-cover"
+                priority
+              />
             </div>
-            <div className="bg-white border-2 border-gray-200 rounded-2xl flex items-center justify-center" style={{ aspectRatio: '210/297', maxHeight: '700px', width: '100%' }}>
-              <div className="text-center text-gray-400">
-                <PenLine className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p className="text-lg">Sample handwriting preview placeholder</p>
-              </div>
+            <div className="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden" style={{ aspectRatio: '210/297', maxHeight: '700px', width: '100%' }}>
+              <NextImage
+                src="/Sample-handwriting-preview2.png"
+                alt="Sample handwriting preview"
+                width={840}
+                height={1188}
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
         </div>
@@ -74,7 +82,7 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-2 gap-12 items-center mb-20">
             <div>
               <div className="w-14 h-14 bg-[#E0A32A] rounded-xl flex items-center justify-center mb-6">
-                <Image className="w-7 h-7 text-white" />
+                <ImageIcon className="w-7 h-7 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
                 Custom Background Images
@@ -85,21 +93,29 @@ export default function LandingPage() {
                 lined notebooks, or custom stationery.
               </p>
             </div>
-            <div className="bg-gray-100 border-2 border-gray-200 rounded-2xl aspect-video flex items-center justify-center">
-              <div className="text-center text-gray-400">
-                <Image className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>Video placeholder</p>
-              </div>
+            <div className="bg-gray-100 border-2 border-gray-200 rounded-2xl aspect-video overflow-hidden">
+              <NextImage
+                src="/Custom-Background-Images.gif"
+                alt="Custom background images feature preview"
+                width={1280}
+                height={720}
+                className="w-full h-full object-cover"
+                unoptimized
+              />
             </div>
           </div>
 
           {/* Feature 2: Realism Effects */}
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="order-2 md:order-1 bg-gray-100 border-2 border-gray-200 rounded-2xl aspect-video flex items-center justify-center">
-              <div className="text-center text-gray-400">
-                <Sparkles className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>Video placeholder</p>
-              </div>
+            <div className="order-2 md:order-1 bg-gray-100 border-2 border-gray-200 rounded-2xl aspect-video overflow-hidden">
+              <NextImage
+                src="/realistic-ink-effects.gif"
+                alt="Realistic ink effects feature preview"
+                width={1280}
+                height={720}
+                className="w-full h-full object-cover"
+                unoptimized
+              />
             </div>
             <div className="order-1 md:order-2">
               <div className="w-14 h-14 bg-[#E0A32A] rounded-xl flex items-center justify-center mb-6">
