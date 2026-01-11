@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Caveat, Dancing_Script, Indie_Flower, Shadows_Into_Light, Kalam, Patrick_Hand, Architects_Daughter, Satisfy, Homemade_Apple } from "next/font/google";
 import "./globals.css";
+import FirebaseAnalytics from "./firebase-analytics";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -79,6 +80,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${caveat.variable} ${dancingScript.variable} ${indieFlower.variable} ${shadowsIntoLight.variable} ${kalam.variable} ${patrickHand.variable} ${architectsDaughter.variable} ${satisfy.variable} ${homemadeApple.variable} antialiased font-sans`}
       >
+        <FirebaseAnalytics />
         {children}
       </body>
     </html>
