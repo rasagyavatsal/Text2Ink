@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import HandwritingEditor from '@/components/HandwritingEditor';
@@ -10,6 +10,7 @@ import { HandwritingSettings, DEFAULT_SETTINGS, TextField } from '@/lib/types';
 import { Settings, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function EditorPage() {
+  const [isMobileBlocked, setIsMobileBlocked] = useState(false);
   const [text, setText] = useState('');
   const [settings, setSettings] = useState<HandwritingSettings>(DEFAULT_SETTINGS);
   const [activePanel, setActivePanel] = useState<'settings' | 'export'>('settings');
@@ -19,6 +20,58 @@ export default function EditorPage() {
   const [previewScale, setPreviewScale] = useState(1);
 
   const clampPreviewScale = (value: number) => Math.min(2, Math.max(0.5, value));
+
+  useEffect(() => {
+    const isLikelyMobile = () => {
+      const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+      const uaMobile = /Mobi|Android|iPhone|iPad|iPod|IEMobile|Windows Phone/i.test(ua);
+      const smallViewport = typeof window !== 'undefined' ? window.innerWidth < 1024 : false;
+      const coarsePointer =
+        typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+          ? window.matchMedia('(pointer: coarse)').matches
+          : false;
+
+      return uaMobile || (smallViewport && coarsePointer);
+    };
+
+    const update = () => setIsMobileBlocked(isLikelyMobile());
+
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  if (isMobileBlocked) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center px-6">
+        <div className="max-w-md w-full text-center">
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <Image
+              src="/logo-without-background.png"
+              alt="Text2Ink logo"
+              width={48}
+              height={48}
+              className="w-12 h-12"
+              priority
+            />
+            <span className="font-bold text-2xl text-gray-900">Text2Ink</span>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900">Editor is desktop-only</h1>
+          <p className="text-gray-600 mt-3">
+            Please open this page on a desktop/laptop for the best experience.
+          </p>
+          <div className="mt-8">
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center bg-[#E0A32A] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#c99225] transition-colors"
+            >
+              Back to Home
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen bg-white flex flex-col overflow-hidden">
