@@ -3,7 +3,7 @@ import { Inter, Caveat, Dancing_Script, Indie_Flower, Shadows_Into_Light, Kalam,
 import "./globals.css";
 import FirebaseAnalytics from "./firebase-analytics";
 
-const siteUrl = "https://text2ink.web.app";
+const siteUrl = "https://text2ink.com";
 const siteName = "Text2Ink";
 const siteDescription = "Convert your typed text into beautiful, realistic handwritten notes. Customize fonts, paper styles, ink effects, and export as PDF or images. Free online text to handwriting converter.";
 const siteKeywords = [
