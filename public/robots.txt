@@ -1,0 +1,16 @@
+# robots.txt for Text2Ink
+# https://text2ink.web.app
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://text2ink.web.app/sitemap.xml
+
+# Crawl-delay for polite crawling
+Crawl-delay: 1
+
+# Block common bot paths (if any)
+Disallow: /api/
+Disallow: /_next/
+Disallow: /static/

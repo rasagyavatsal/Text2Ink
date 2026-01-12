@@ -1,0 +1,27 @@
+{
+  "name": "Text2Ink - Text to Handwriting Converter",
+  "short_name": "Text2Ink",
+  "description": "Convert your typed text into beautiful, realistic handwritten notes. Customize fonts, paper styles, ink effects, and export as PDF or images.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#E0A32A",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo-without-background.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["utilities", "productivity"],
+  "lang": "en",
+  "dir": "ltr"
+}

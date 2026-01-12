@@ -6,7 +6,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="border-b border-gray-200">
+      <header className="border-b border-gray-200" role="banner">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <NextImage
@@ -29,9 +29,10 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 px-6">
+      <main>
+      <section className="py-20 px-6" aria-labelledby="hero-heading">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+          <h1 id="hero-heading" className="text-5xl font-bold text-gray-900 mb-6">
             Transform Your Text Into{' '}
             <span className="text-[#E0A32A] italic font-serif tracking-wide">Real Handwriting</span>
           </h1>
@@ -50,7 +51,7 @@ export default function LandingPage() {
       </section>
 
       {/* Sample Placeholder */}
-      <section className="py-16 px-6 bg-gray-50">
+      <section className="py-16 px-6 bg-gray-50" aria-label="Sample handwriting previews">
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-8 justify-items-center">
             <div className="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden" style={{ aspectRatio: '210/297', maxHeight: '700px', width: '100%' }}>
@@ -77,9 +78,9 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-6">
+      <section className="py-20 px-6" aria-labelledby="features-heading">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-16">
+          <h2 id="features-heading" className="text-3xl font-bold text-gray-900 text-center mb-16">
             Powerful Features
           </h2>
 
@@ -138,9 +139,10 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 py-8 px-6">
+      <footer className="border-t border-gray-200 py-8 px-6" role="contentinfo">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-[#E0A32A] rounded-lg flex items-center justify-center">
