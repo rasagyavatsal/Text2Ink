@@ -79,15 +79,11 @@ export default function EditorPage() {
       <header className="border-b border-gray-200 shrink-0">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Image
-              src="/logo-without-background.png"
-              alt="Text2Ink logo"
-              width={40}
-              height={40}
-              className="w-10 h-10"
-              priority
-            />
-            <span className="font-bold text-xl text-gray-900">Text2Ink</span>
+            <span className="font-bold text-3xl font-dancing-script">
+              <span className="text-[#E0A32A]">Text</span>
+              <span className="text-black">2</span>
+              <span className="text-[#E0A32A]">Ink</span>
+            </span>
           </div>
           <Link
             href="/"
