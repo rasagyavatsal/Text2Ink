@@ -145,10 +145,14 @@ export default function LandingPage() {
       <footer className="border-t border-gray-200 py-8 px-6" role="contentinfo">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#E0A32A] rounded-lg flex items-center justify-center">
-              <PenLine className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-semibold text-gray-900">Text2Ink</span>
+            <NextImage
+              src="/logo-without-background.png"
+              alt="Text2Ink logo"
+              width={64}
+              height={64}
+              className="w-16 h-16"
+              priority
+            />
           </div>
           <p className="text-gray-500 text-sm">
             © {new Date().getFullYear()} Text2Ink. All rights reserved.
