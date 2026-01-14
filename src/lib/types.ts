@@ -26,6 +26,11 @@ export interface HandwritingSettings {
     baseline: number;
     rotation: number;
   };
+  errorStrokes: {
+    enabled: boolean;
+    frequency: number;
+    lineWidth: number;
+  };
 }
 
 export interface FontOption {
@@ -69,6 +74,11 @@ export const DEFAULT_SETTINGS: HandwritingSettings = {
     spacing: 2,
     baseline: 1,
     rotation: 0.5,
+  },
+  errorStrokes: {
+    enabled: false,
+    frequency: 0.1,
+    lineWidth: 2,
   },
 };
 

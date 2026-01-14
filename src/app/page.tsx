@@ -15,12 +15,20 @@ export default function LandingPage() {
               <span className="text-[#E0A32A]">Ink</span>
             </span>
           </div>
-          <Link
-            href="/editor"
-            className="bg-[#E0A32A] text-white px-4 sm:px-5 py-2 rounded-lg font-medium text-sm sm:text-base hover:bg-[#c99225] transition-colors"
-          >
-            Open Editor
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/contact"
+              className="text-gray-700 hover:text-[#E0A32A] font-medium text-sm sm:text-base transition-colors"
+            >
+              Contact
+            </Link>
+            <Link
+              href="/editor"
+              className="bg-[#E0A32A] text-white px-4 sm:px-5 py-2 rounded-lg font-medium text-sm sm:text-base hover:bg-[#c99225] transition-colors"
+            >
+              Open Editor
+            </Link>
+          </div>
         </div>
       </header>
 

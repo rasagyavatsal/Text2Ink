@@ -79,11 +79,11 @@ export default function EditorPage() {
       <header className="border-b border-gray-200 shrink-0">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-3xl font-dancing-script">
+            <Link href="/" className="font-bold text-3xl font-dancing-script hover:text-[#E0A32A] transition-colors">
               <span className="text-[#E0A32A]">Text</span>
               <span className="text-black">2</span>
               <span className="text-[#E0A32A]">Ink</span>
-            </span>
+            </Link>
           </div>
           <Link
             href="/"

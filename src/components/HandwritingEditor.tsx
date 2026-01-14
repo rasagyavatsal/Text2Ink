@@ -23,6 +23,112 @@ function seededRandom(seed: number): number {
   return x - Math.floor(x);
 }
 
+interface TextSegment {
+  text: string;
+  isError: boolean;
+  originalWord?: string;
+}
+
+const TYPO_PATTERNS: Array<(word: string, seed: number) => string> = [
+  (word) => word.split('').reverse().slice(0, Math.min(3, word.length)).join('') + word.slice(3),
+  (word) => word.slice(0, 2) + word[3] + word[2] + word.slice(4),
+  (word, seed) => {
+    const pos = Math.floor(seededRandom(seed) * (word.length - 1)) + 1;
+    return word.slice(0, pos) + word.slice(pos + 1);
+  },
+  (word, seed) => {
+    const pos = Math.floor(seededRandom(seed) * word.length);
+    const chars = 'aeiou';
+    const char = chars[Math.floor(seededRandom(seed + 1) * chars.length)];
+    return word.slice(0, pos) + char + word.slice(pos);
+  },
+  (word, seed) => {
+    const pos = Math.floor(seededRandom(seed) * word.length);
+    const adjacent: Record<string, string> = { a: 's', e: 'r', i: 'o', o: 'p', u: 'i', s: 'a', t: 'y', n: 'm' };
+    const char = word[pos];
+    const replacement = adjacent[char.toLowerCase()] || char;
+    return word.slice(0, pos) + replacement + word.slice(pos + 1);
+  },
+];
+
+function generateTypo(word: string, seed: number): string {
+  if (word.length < 3) return word;
+  const patternIndex = Math.floor(seededRandom(seed) * TYPO_PATTERNS.length);
+  try {
+    return TYPO_PATTERNS[patternIndex](word, seed);
+  } catch {
+    return word;
+  }
+}
+
+function processTextWithErrors(
+  text: string,
+  frequency: number,
+  enabled: boolean
+): { segments: TextSegment[]; displayText: string } {
+  if (!enabled) {
+    return { segments: [{ text, isError: false }], displayText: text };
+  }
+
+  const words = text.split(/(\s+)/);
+  const segments: TextSegment[] = [];
+  let displayText = '';
+  let wordIndex = 0;
+
+  for (const part of words) {
+    if (/^\s+$/.test(part)) {
+      segments.push({ text: part, isError: false });
+      displayText += part;
+    } else if (part.length >= 3) {
+      const seed = wordIndex * 7919 + part.length * 13;
+      const shouldError = seededRandom(seed) < frequency;
+      
+      if (shouldError) {
+        const typo = generateTypo(part, seed + 1);
+        segments.push({ text: typo, isError: true, originalWord: part });
+        segments.push({ text: ' ', isError: false });
+        segments.push({ text: part, isError: false });
+        displayText += typo + ' ' + part;
+      } else {
+        segments.push({ text: part, isError: false });
+        displayText += part;
+      }
+      wordIndex++;
+    } else {
+      segments.push({ text: part, isError: false });
+      displayText += part;
+    }
+  }
+
+  return { segments, displayText };
+}
+
+function makeScribblePath(seed: number): string {
+  const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+  const points = 4;
+  const width = 100;
+  const height = 12;
+  const midY = height / 2;
+  const amp = 0.15 + seededRandom(seed + 11) * 0.35;
+
+  const y = (i: number) => {
+    const base = Math.sin((i / (points - 1)) * Math.PI * 2 + seededRandom(seed + 3) * 2) * amp;
+    const noise = (seededRandom(seed + 100 + i) - 0.5) * 0.35;
+    return clamp(midY + base + noise, 1, height - 1);
+  };
+
+  let d = `M 0 ${y(0).toFixed(2)}`;
+  for (let i = 1; i < points; i++) {
+    const x0 = ((i - 1) / (points - 1)) * width;
+    const x1 = (i / (points - 1)) * width;
+    const cx = (x0 + x1) / 2;
+    const cy = clamp((y(i - 1) + y(i)) / 2 + (seededRandom(seed + 200 + i) - 0.5) * 0.25, 1, height - 1);
+    d += ` Q ${cx.toFixed(2)} ${cy.toFixed(2)} ${x1.toFixed(2)} ${y(i).toFixed(2)}`;
+  }
+
+  return d;
+}
+
 export default function HandwritingEditor({
   text,
   onTextChange,
@@ -308,18 +414,27 @@ export default function HandwritingEditor({
     [applyRandomness, isFocused, settings.inkColor, handleCharClick]
   );
 
-  const pages = useMemo(() => {
+  const processedData = useMemo(() => {
     const lines = text.split('\n');
-    const allLines: { text: string; lineIndex: number }[] = [];
+    const allLines: { segments: TextSegment[]; lineIndex: number }[] = [];
 
     lines.forEach((line, idx) => {
-      allLines.push({ text: line, lineIndex: idx });
+      const { segments } = processTextWithErrors(
+        line,
+        settings.errorStrokes.frequency,
+        settings.errorStrokes.enabled
+      );
+      allLines.push({ segments, lineIndex: idx });
     });
 
-    const pagesData: { text: string; lineIndex: number }[][] = [];
-    let currentPage: { text: string; lineIndex: number }[] = [];
+    return allLines;
+  }, [text, settings.errorStrokes.enabled, settings.errorStrokes.frequency]);
 
-    allLines.forEach((line) => {
+  const pages = useMemo(() => {
+    const pagesData: { segments: TextSegment[]; lineIndex: number }[][] = [];
+    let currentPage: { segments: TextSegment[]; lineIndex: number }[] = [];
+
+    processedData.forEach((line) => {
       if (currentPage.length >= linesPerPage) {
         pagesData.push(currentPage);
         currentPage = [];
@@ -332,7 +447,7 @@ export default function HandwritingEditor({
     }
 
     return pagesData;
-  }, [text, linesPerPage]);
+  }, [processedData, linesPerPage]);
 
   const handleTextChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -557,9 +672,11 @@ export default function HandwritingEditor({
       />
 
       {pages.map((pageLines, pageIndex) => {
+        const getLineText = (line: { segments: TextSegment[] }) => 
+          line.segments.map(s => s.text).join('');
         const pageStartChar = pages
           .slice(0, pageIndex)
-          .reduce((acc, p) => acc + p.reduce((a, l) => a + l.text.length + 1, 0), 0);
+          .reduce((acc, p) => acc + p.reduce((a, l) => a + getLineText(l).length + 1, 0), 0);
 
         return (
           <div
@@ -609,10 +726,9 @@ export default function HandwritingEditor({
                   overflowWrap: 'break-word',
                   wordBreak: 'break-word',
                   whiteSpace: 'pre-wrap',
-                  overflow: 'hidden',
                 }}
               >
-                {pageLines.length === 0 || (pageLines.length === 1 && pageLines[0].text === '') ? (
+                {pageLines.length === 0 || (pageLines.length === 1 && getLineText(pageLines[0]) === '') ? (
                   <span className="text-gray-400 pointer-events-none">
                     Click here to start typing...
                     {isFocused && cursorPosition === 0 && (
@@ -630,10 +746,11 @@ export default function HandwritingEditor({
                 ) : (
                   pageLines.map((line, lineIdx) => {
                     const lineStartChar = globalCharCount;
+                    const lineText = getLineText(line);
                     
                     return (
                       <div key={lineIdx} style={{ minHeight: lineHeightPx }}>
-                        {line.text === '' ? (
+                        {lineText === '' ? (
                           <>
                             {isFocused && cursorPosition === lineStartChar && (
                               <span 
@@ -650,21 +767,51 @@ export default function HandwritingEditor({
                           </>
                         ) : (
                           <>
-                            {line.text.split('').map((char, charIdx) => {
-                              const currentGlobalChar = globalCharCount;
-                              globalCharCount += 1;
-                              const showCursorAfter = cursorPosition === currentGlobalChar + 1;
-                              const showCursorBefore = charIdx === 0 && cursorPosition === currentGlobalChar;
-                              
-                              return renderCharacter(
-                                char,
-                                charIdx,
-                                line.lineIndex,
-                                currentGlobalChar,
-                                showCursorAfter,
-                                showCursorBefore
-                              );
-                            })}
+                            {line.segments.map((segment, segIdx) => (
+                              <span
+                                key={segIdx}
+                                className={segment.isError ? 'relative inline-block' : ''}
+                              >
+                                {segment.text.split('').map((char: string, charIdx: number) => {
+                                  const currentGlobalChar = globalCharCount;
+                                  globalCharCount += 1;
+                                  const showCursorAfter = cursorPosition === currentGlobalChar + 1;
+                                  const showCursorBefore = charIdx === 0 && segIdx === 0 && cursorPosition === currentGlobalChar;
+                                  
+                                  return renderCharacter(
+                                    char,
+                                    charIdx,
+                                    line.lineIndex,
+                                    currentGlobalChar,
+                                    showCursorAfter,
+                                    showCursorBefore
+                                  );
+                                })}
+                                {segment.isError && (
+                                  <svg
+                                    className="absolute pointer-events-none"
+                                    viewBox="0 0 100 12"
+                                    preserveAspectRatio="none"
+                                    style={{
+                                      left: 0,
+                                      width: '100%',
+                                      top: '45%',
+                                      height: Math.max(10, Math.round(settings.fontSize * 0.45)),
+                                      transform: `rotate(${-1 + seededRandom(line.lineIndex * 1000 + segIdx * 97) * 2}deg)`,
+                                    }}
+                                  >
+                                    <path
+                                      d={makeScribblePath(line.lineIndex * 1000 + segIdx * 97)}
+                                      fill="none"
+                                      stroke={settings.inkColor}
+                                      strokeWidth={settings.errorStrokes.lineWidth}
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                  </svg>
+                                )}
+                              </span>
+                            ))}
                             {(() => { globalCharCount += 1; return null; })()}
                           </>
                         )}
