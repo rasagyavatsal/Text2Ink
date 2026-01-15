@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import NextImage from 'next/image';
 import { PenLine, Image as ImageIcon, Wand2, ArrowRight } from 'lucide-react';
+import SamplePreviewGallery from '@/components/SamplePreviewGallery';
 
 export default function LandingPage() {
   return (
@@ -57,27 +58,7 @@ export default function LandingPage() {
       {/* Sample Placeholder */}
       <section className="py-10 sm:py-12 md:py-16 px-4 sm:px-6 bg-gray-50" aria-label="Sample handwriting previews">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 justify-items-center">
-            <div className="bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl overflow-hidden w-full max-w-sm md:max-w-none" style={{ aspectRatio: '210/297', maxHeight: '500px' }}>
-              <NextImage
-                src="/Sample-handwriting-preview1.png"
-                alt="Sample handwriting preview"
-                width={840}
-                height={1188}
-                className="w-full h-full object-cover"
-                priority
-              />
-            </div>
-            <div className="bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl overflow-hidden w-full max-w-sm md:max-w-none" style={{ aspectRatio: '210/297', maxHeight: '500px' }}>
-              <NextImage
-                src="/Sample-handwriting-preview2.png"
-                alt="Sample handwriting preview"
-                width={840}
-                height={1188}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
+          <SamplePreviewGallery />
         </div>
       </section>
 

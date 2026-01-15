@@ -53,16 +53,6 @@ export default function SettingsPanel({
     });
   };
 
-  const updateErrorStrokes = (
-    key: keyof HandwritingSettings['errorStrokes'],
-    value: number | boolean
-  ) => {
-    onSettingsChange({
-      ...settings,
-      errorStrokes: { ...settings.errorStrokes, [key]: value },
-    });
-  };
-
   return (
     <div className="p-6 space-y-8">
       <div>
@@ -590,59 +580,6 @@ export default function SettingsPanel({
                   max={3}
                   step={0.1}
                 />
-              </div>
-            </>
-          )}
-
-          <Separator className="my-4" />
-
-          <div className="flex items-center justify-between">
-            <Label htmlFor="error-strokes-toggle">Enable Error Strokes</Label>
-            <Switch
-              id="error-strokes-toggle"
-              checked={settings.errorStrokes.enabled}
-              onCheckedChange={(checked) => updateErrorStrokes('enabled', checked)}
-            />
-          </div>
-
-          {settings.errorStrokes.enabled && (
-            <>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <Label>Error Frequency</Label>
-                  <span className="text-sm text-muted-foreground">
-                    {Math.round(settings.errorStrokes.frequency * 100)}%
-                  </span>
-                </div>
-                <Slider
-                  value={[settings.errorStrokes.frequency]}
-                  onValueChange={([value]) => updateErrorStrokes('frequency', value)}
-                  min={0.01}
-                  max={0.15}
-                  step={0.01}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Randomly adds typos with strikethrough corrections
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <Label>Error Line Width</Label>
-                  <span className="text-sm text-muted-foreground">
-                    {settings.errorStrokes.lineWidth}px
-                  </span>
-                </div>
-                <Slider
-                  value={[settings.errorStrokes.lineWidth]}
-                  onValueChange={([value]) => updateErrorStrokes('lineWidth', value)}
-                  min={1}
-                  max={5}
-                  step={0.5}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Thickness of the strikethrough correction lines
-                </p>
               </div>
             </>
           )}
