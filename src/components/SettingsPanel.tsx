@@ -343,6 +343,24 @@ export default function SettingsPanel({
               />
             </div>
           </div>
+
+          {settings.paperStyle === 'ruled' && (
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label>Margin Line Offset</Label>
+                <span className="text-sm text-muted-foreground">
+                  {settings.ruledMarginLineOffset}px
+                </span>
+              </div>
+              <Slider
+                value={[settings.ruledMarginLineOffset]}
+                onValueChange={([value]) => updateSetting('ruledMarginLineOffset', value)}
+                min={-80}
+                max={240}
+                step={2}
+              />
+            </div>
+          )}
         </div>
       </div>
 

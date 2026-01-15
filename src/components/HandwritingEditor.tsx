@@ -8,6 +8,7 @@ interface HandwritingEditorProps {
   text: string;
   onTextChange: (text: string) => void;
   settings: HandwritingSettings;
+  onSettingsChange?: (settings: HandwritingSettings) => void;
   pageRefs: React.MutableRefObject<(HTMLDivElement | null)[]>;
   previewScale: number;
   onPreviewScaleChange: (value: number) => void;
@@ -133,6 +134,7 @@ export default function HandwritingEditor({
   text,
   onTextChange,
   settings,
+  onSettingsChange,
   pageRefs,
   previewScale,
   onPreviewScaleChange,
@@ -147,6 +149,8 @@ export default function HandwritingEditor({
   const textFieldInputRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map());
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isDraggingMarginLine, setIsDraggingMarginLine] = useState(false);
+  const marginLineDragRef = useRef({ pageIndex: 0 });
 
   const fontClass = useMemo(() => {
     if (settings.fontFamily === 'custom' && !settings.customFont) {
@@ -197,6 +201,11 @@ export default function HandwritingEditor({
 
   const contentWidth = PAGE_WIDTH - settings.marginLeft - settings.marginRight;
   const contentHeight = PAGE_HEIGHT - settings.marginTop - settings.marginBottom;
+  const ruledTextLeft =
+    settings.paperStyle === 'ruled' && !settings.customBackgroundImage
+      ? settings.marginLeft + settings.ruledMarginLineOffset + 10
+      : settings.marginLeft;
+  const ruledTextWidth = PAGE_WIDTH - ruledTextLeft - settings.marginRight;
   const baseLineHeightPx = settings.fontSize * settings.lineHeight;
   const lineHeightPx = settings.customBackgroundImage && settings.customLineSpacing 
     ? settings.customLineSpacing 
@@ -256,17 +265,42 @@ export default function HandwritingEditor({
 
         if (settings.paperStyle === 'ruled') {
           lines.push(
-            <div
-              key={`margin-line-${pageIndex}`}
-              className="absolute pointer-events-none"
-              style={{
-                left: settings.marginLeft - 10,
-                top: settings.marginTop,
-                width: 2,
-                height: contentHeight,
-                backgroundColor: '#ffb3b3',
-              }}
-            />
+            <div key={`margin-line-wrap-${pageIndex}`} className="absolute" style={{ left: 0, top: 0 }}>
+              <div
+                key={`margin-line-${pageIndex}`}
+                className="absolute pointer-events-none"
+                style={{
+                  left: settings.marginLeft + settings.ruledMarginLineOffset,
+                  top: settings.marginTop,
+                  width: 2,
+                  height: contentHeight,
+                  backgroundColor: '#ffb3b3',
+                }}
+              />
+              {onSettingsChange && (
+                <div
+                  key={`margin-line-handle-${pageIndex}`}
+                  className="absolute"
+                  style={{
+                    left: settings.marginLeft + settings.ruledMarginLineOffset - 6,
+                    top: settings.marginTop,
+                    width: 14,
+                    height: contentHeight,
+                    cursor: 'col-resize',
+                    backgroundColor: 'transparent',
+                  }}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDraggingMarginLine(true);
+                    marginLineDragRef.current = {
+                      pageIndex,
+                    };
+                  }}
+                  title="Drag to reposition margin line"
+                />
+              )}
+            </div>
           );
         }
       } else if (settings.paperStyle === 'grid') {
@@ -312,8 +346,46 @@ export default function HandwritingEditor({
 
       return lines;
     },
-    [settings, lineHeightPx, linesPerPage, contentWidth, contentHeight]
+    [settings, lineHeightPx, linesPerPage, contentWidth, contentHeight, onSettingsChange]
   );
+
+  useEffect(() => {
+    if (!isDraggingMarginLine) return;
+
+    const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+
+    const handleMove = (e: MouseEvent) => {
+      if (!onSettingsChange) return;
+      const { pageIndex } = marginLineDragRef.current;
+      const pageEl = pageRefs.current[pageIndex];
+      if (!pageEl) return;
+
+      const pageRect = pageEl.getBoundingClientRect();
+      const x = (e.clientX - pageRect.left) / previewScale;
+      const minLeft = 0;
+      const maxLeft = PAGE_WIDTH;
+      const clampedLeft = clamp(x, minLeft, maxLeft);
+      const newOffset = clampedLeft - settings.marginLeft;
+
+      const minOffset = -settings.marginLeft;
+      const maxOffset = PAGE_WIDTH - settings.marginLeft;
+      const clampedOffset = clamp(newOffset, minOffset, maxOffset);
+
+      if (clampedOffset === settings.ruledMarginLineOffset) return;
+      onSettingsChange({ ...settings, ruledMarginLineOffset: clampedOffset });
+    };
+
+    const handleUp = () => {
+      setIsDraggingMarginLine(false);
+    };
+
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+  }, [isDraggingMarginLine, onSettingsChange, pageRefs, previewScale, settings]);
 
   const handleCharClick = useCallback(
     (e: React.MouseEvent, globalCharIndex: number, isLeftHalf: boolean) => {
@@ -712,8 +784,8 @@ export default function HandwritingEditor({
                 className={`absolute select-none ${fontClass}`}
                 style={{
                   top: settings.marginTop + lineOffset,
-                  left: settings.marginLeft,
-                  width: contentWidth,
+                  left: ruledTextLeft,
+                  width: ruledTextWidth,
                   height: contentHeight,
                   fontFamily: customFontFamily ? `"${customFontFamily}", cursive` : undefined,
                   fontSize: settings.fontSize,

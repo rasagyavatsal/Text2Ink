@@ -164,6 +164,7 @@ export default function EditorPage() {
               text={text}
               onTextChange={setText}
               settings={settings}
+              onSettingsChange={setSettings}
               pageRefs={pageRefs}
               previewScale={previewScale}
               onPreviewScaleChange={(value: number) => setPreviewScale(clampPreviewScale(value))}

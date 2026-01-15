@@ -13,6 +13,7 @@ export interface HandwritingSettings {
   marginBottom: number;
   marginLeft: number;
   marginRight: number;
+  ruledMarginLineOffset: number;
   paperStyle: 'blank' | 'lined' | 'ruled' | 'grid';
   inkColor: string;
   paperColor: string;
@@ -62,6 +63,7 @@ export const DEFAULT_SETTINGS: HandwritingSettings = {
   marginBottom: 60,
   marginLeft: 60,
   marginRight: 60,
+  ruledMarginLineOffset: -10,
   paperStyle: 'lined',
   inkColor: '#1a365d',
   paperColor: '#fffef5',
