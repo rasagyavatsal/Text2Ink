@@ -361,72 +361,6 @@ export default function SettingsPanel({
               />
             </div>
           )}
-        </div>
-      </div>
-
-      <Separator />
-
-      <div>
-        <div className="flex items-center gap-2 mb-5">
-          <Palette className="w-5 h-5 text-[#E0A32A]" />
-          <h3 className="font-semibold text-lg">Colors</h3>
-        </div>
-
-        <div className="space-y-5">
-          <div className="space-y-2">
-            <Label>Ink Color</Label>
-            <div className="flex flex-wrap gap-2">
-              {INK_COLORS.map((color) => (
-                <button
-                  key={color.value}
-                  onClick={() => updateSetting('inkColor', color.value)}
-                  className={`w-8 h-8 rounded-full border-2 transition-all ${
-                    settings.inkColor === color.value
-                      ? 'border-[#E0A32A] scale-110 shadow-md'
-                      : 'border-transparent hover:scale-105'
-                  }`}
-                  style={{ backgroundColor: color.value }}
-                  title={color.name}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Paper Color</Label>
-            <div className="flex flex-wrap gap-2">
-              {PAPER_COLORS.map((color) => (
-                <button
-                  key={color.value}
-                  onClick={() => updateSetting('paperColor', color.value)}
-                  className={`w-8 h-8 rounded-full border-2 transition-all ${
-                    settings.paperColor === color.value
-                      ? 'border-primary scale-110 shadow-md'
-                      : 'border-gray-300 hover:scale-105'
-                  }`}
-                  style={{ backgroundColor: color.value }}
-                  title={color.name}
-                />
-              ))}
-            </div>
-          </div>
-
-          {settings.paperStyle !== 'blank' && (
-            <div className="space-y-2">
-              <Label>Line Color</Label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={settings.lineColor}
-                  onChange={(e) => updateSetting('lineColor', e.target.value)}
-                  className="w-10 h-10 rounded cursor-pointer border border-input"
-                />
-                <span className="text-sm text-muted-foreground">
-                  {settings.lineColor}
-                </span>
-              </div>
-            </div>
-          )}
 
           <div className="space-y-2">
             <Label>Custom Background Image</Label>
@@ -520,6 +454,72 @@ export default function SettingsPanel({
                 </p>
               </div>
             </>
+          )}
+        </div>
+      </div>
+
+      <Separator />
+
+      <div>
+        <div className="flex items-center gap-2 mb-5">
+          <Palette className="w-5 h-5 text-[#E0A32A]" />
+          <h3 className="font-semibold text-lg">Colors</h3>
+        </div>
+
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <Label>Ink Color</Label>
+            <div className="flex flex-wrap gap-2">
+              {INK_COLORS.map((color) => (
+                <button
+                  key={color.value}
+                  onClick={() => updateSetting('inkColor', color.value)}
+                  className={`w-8 h-8 rounded-full border-2 transition-all ${
+                    settings.inkColor === color.value
+                      ? 'border-[#E0A32A] scale-110 shadow-md'
+                      : 'border-transparent hover:scale-105'
+                  }`}
+                  style={{ backgroundColor: color.value }}
+                  title={color.name}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Paper Color</Label>
+            <div className="flex flex-wrap gap-2">
+              {PAPER_COLORS.map((color) => (
+                <button
+                  key={color.value}
+                  onClick={() => updateSetting('paperColor', color.value)}
+                  className={`w-8 h-8 rounded-full border-2 transition-all ${
+                    settings.paperColor === color.value
+                      ? 'border-primary scale-110 shadow-md'
+                      : 'border-gray-300 hover:scale-105'
+                  }`}
+                  style={{ backgroundColor: color.value }}
+                  title={color.name}
+                />
+              ))}
+            </div>
+          </div>
+
+          {settings.paperStyle !== 'blank' && (
+            <div className="space-y-2">
+              <Label>Line Color</Label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={settings.lineColor}
+                  onChange={(e) => updateSetting('lineColor', e.target.value)}
+                  className="w-10 h-10 rounded cursor-pointer border border-input"
+                />
+                <span className="text-sm text-muted-foreground">
+                  {settings.lineColor}
+                </span>
+              </div>
+            </div>
           )}
         </div>
       </div>
