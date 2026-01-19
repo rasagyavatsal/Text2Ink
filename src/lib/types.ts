@@ -1,3 +1,14 @@
+// Per-page settings that can be customized for each page
+export interface PageSettings {
+  paperColor: string;
+  customBackgroundImage: string | null;
+  customLineOffset: number;
+  customLineSpacing: number | null;
+  inkColor: string;
+  lineColor: string;
+  paperStyle: 'blank' | 'lined' | 'ruled' | 'grid';
+}
+
 export interface HandwritingSettings {
   fontFamily: string;
   customFont: {
@@ -27,6 +38,8 @@ export interface HandwritingSettings {
     baseline: number;
     rotation: number;
   };
+  // Per-page settings overrides (indexed by page number)
+  perPageSettings: Record<number, Partial<PageSettings>>;
 }
 
 export interface FontOption {
@@ -72,6 +85,7 @@ export const DEFAULT_SETTINGS: HandwritingSettings = {
     baseline: 1,
     rotation: 0.5,
   },
+  perPageSettings: {},
 };
 
 export const PAPER_STYLES = [

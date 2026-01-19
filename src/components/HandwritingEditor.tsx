@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useRef, useCallback, useMemo, useEffect, useState } from 'react';
-import { HandwritingSettings, HANDWRITING_FONTS, TextField, EditorMode } from '@/lib/types';
-import { Type, PenLine, Plus, Minus } from 'lucide-react';
+import { HandwritingSettings, HANDWRITING_FONTS, TextField, EditorMode, PageSettings } from '@/lib/types';
+import { Type, PenLine, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface HandwritingEditorProps {
   text: string;
@@ -14,6 +14,8 @@ interface HandwritingEditorProps {
   onPreviewScaleChange: (value: number) => void;
   textFields: TextField[];
   onTextFieldsChange: (textFields: TextField[]) => void;
+  currentPageIndex: number;
+  onCurrentPageChange: (pageIndex: number) => void;
 }
 
 const PAGE_WIDTH = 612;
@@ -34,6 +36,8 @@ export default function HandwritingEditor({
   onPreviewScaleChange,
   textFields,
   onTextFieldsChange,
+  currentPageIndex,
+  onCurrentPageChange,
 }: HandwritingEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isFocused, setIsFocused] = useState(false);
@@ -57,6 +61,27 @@ export default function HandwritingEditor({
     settings.fontFamily === 'custom' && settings.customFont
       ? settings.customFont.family
       : null;
+
+  // Helper to get effective settings for a specific page
+  const getPageSettings = useCallback(
+    (pageIndex: number): PageSettings => {
+      const pageOverrides = settings.perPageSettings[pageIndex] || {};
+      return {
+        paperColor: pageOverrides.paperColor ?? settings.paperColor,
+        customBackgroundImage: pageOverrides.customBackgroundImage !== undefined
+          ? pageOverrides.customBackgroundImage
+          : settings.customBackgroundImage,
+        customLineOffset: pageOverrides.customLineOffset ?? settings.customLineOffset,
+        customLineSpacing: pageOverrides.customLineSpacing !== undefined
+          ? pageOverrides.customLineSpacing
+          : settings.customLineSpacing,
+        inkColor: pageOverrides.inkColor ?? settings.inkColor,
+        lineColor: pageOverrides.lineColor ?? settings.lineColor,
+        paperStyle: pageOverrides.paperStyle ?? settings.paperStyle,
+      };
+    },
+    [settings]
+  );
 
   useEffect(() => {
     const styleId = '__text2ink_custom_font_style';
@@ -85,7 +110,7 @@ export default function HandwritingEditor({
         if (cancelled) return;
         document.fonts.add(loaded);
       })
-      .catch(() => {});
+      .catch(() => { });
 
     return () => {
       cancelled = true;
@@ -100,8 +125,8 @@ export default function HandwritingEditor({
       : settings.marginLeft;
   const ruledTextWidth = PAGE_WIDTH - ruledTextLeft - settings.marginRight;
   const baseLineHeightPx = settings.fontSize * settings.lineHeight;
-  const lineHeightPx = settings.customBackgroundImage && settings.customLineSpacing 
-    ? settings.customLineSpacing 
+  const lineHeightPx = settings.customBackgroundImage && settings.customLineSpacing
+    ? settings.customLineSpacing
     : baseLineHeightPx;
   const linesPerPage = Math.floor(contentHeight / lineHeightPx);
   const lineOffset = settings.customBackgroundImage ? settings.customLineOffset : 0;
@@ -131,12 +156,14 @@ export default function HandwritingEditor({
 
   const renderPaperLines = useCallback(
     (pageIndex: number) => {
-      if (settings.paperStyle === 'blank' || settings.customBackgroundImage) return null;
+      const pageSettings = getPageSettings(pageIndex);
+
+      if (pageSettings.paperStyle === 'blank' || pageSettings.customBackgroundImage) return null;
 
       const lines = [];
       const startY = settings.marginTop;
 
-      if (settings.paperStyle === 'lined' || settings.paperStyle === 'ruled') {
+      if (pageSettings.paperStyle === 'lined' || pageSettings.paperStyle === 'ruled') {
         for (let i = 0; i <= linesPerPage; i++) {
           const y = startY + i * lineHeightPx;
           if (y < PAGE_HEIGHT - settings.marginBottom + lineHeightPx) {
@@ -149,14 +176,14 @@ export default function HandwritingEditor({
                   left: settings.marginLeft,
                   height: 1,
                   width: contentWidth,
-                  backgroundColor: settings.lineColor,
+                  backgroundColor: pageSettings.lineColor,
                 }}
               />
             );
           }
         }
 
-        if (settings.paperStyle === 'ruled') {
+        if (pageSettings.paperStyle === 'ruled') {
           lines.push(
             <div key={`margin-line-wrap-${pageIndex}`} className="absolute" style={{ left: 0, top: 0 }}>
               <div
@@ -196,7 +223,7 @@ export default function HandwritingEditor({
             </div>
           );
         }
-      } else if (settings.paperStyle === 'grid') {
+      } else if (pageSettings.paperStyle === 'grid') {
         const gridSize = lineHeightPx;
         for (let i = 0; i <= linesPerPage; i++) {
           const y = startY + i * gridSize;
@@ -210,7 +237,7 @@ export default function HandwritingEditor({
                   left: settings.marginLeft,
                   height: 1,
                   width: contentWidth,
-                  backgroundColor: settings.lineColor,
+                  backgroundColor: pageSettings.lineColor,
                   opacity: 0.5,
                 }}
               />
@@ -229,7 +256,7 @@ export default function HandwritingEditor({
                 top: settings.marginTop,
                 width: 1,
                 height: contentHeight,
-                backgroundColor: settings.lineColor,
+                backgroundColor: pageSettings.lineColor,
                 opacity: 0.5,
               }}
             />
@@ -239,7 +266,7 @@ export default function HandwritingEditor({
 
       return lines;
     },
-    [settings, lineHeightPx, linesPerPage, contentWidth, contentHeight, onSettingsChange]
+    [settings, lineHeightPx, linesPerPage, contentWidth, contentHeight, onSettingsChange, getPageSettings]
   );
 
   useEffect(() => {
@@ -297,8 +324,8 @@ export default function HandwritingEditor({
     (char: string, charIndex: number, lineIndex: number, globalCharIndex: number, showCursor: boolean, showCursorBefore: boolean) => {
       if (char === ' ') {
         return (
-          <span 
-            key={globalCharIndex} 
+          <span
+            key={globalCharIndex}
             className="relative cursor-text"
             onClick={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
@@ -307,7 +334,7 @@ export default function HandwritingEditor({
             }}
           >
             {showCursorBefore && isFocused && (
-              <span 
+              <span
                 className="absolute animate-pulse"
                 style={{
                   left: 0,
@@ -320,7 +347,7 @@ export default function HandwritingEditor({
             )}
             <span style={{ whiteSpace: 'pre' }}>{' '}</span>
             {showCursor && isFocused && (
-              <span 
+              <span
                 className="absolute animate-pulse"
                 style={{
                   right: 0,
@@ -349,7 +376,7 @@ export default function HandwritingEditor({
           }}
         >
           {showCursorBefore && isFocused && (
-            <span 
+            <span
               className="absolute animate-pulse"
               style={{
                 left: -1,
@@ -362,7 +389,7 @@ export default function HandwritingEditor({
           )}
           {char}
           {showCursor && isFocused && (
-            <span 
+            <span
               className="absolute animate-pulse"
               style={{
                 right: -1,
@@ -425,7 +452,7 @@ export default function HandwritingEditor({
         const rect = e.currentTarget.getBoundingClientRect();
         const x = (e.clientX - rect.left) / previewScale;
         const y = (e.clientY - rect.top) / previewScale;
-        
+
         const newTextField: TextField = {
           id: `tf-${Date.now()}`,
           x,
@@ -433,9 +460,9 @@ export default function HandwritingEditor({
           text: '',
           pageIndex,
         };
-        
+
         onTextFieldsChange([...textFields, newTextField]);
-        
+
         setTimeout(() => {
           const input = textFieldInputRefs.current.get(newTextField.id);
           input?.focus();
@@ -497,17 +524,17 @@ export default function HandwritingEditor({
   const handleDragMove = useCallback(
     (e: MouseEvent) => {
       if (!draggingId) return;
-      
+
       const tf = textFields.find((t) => t.id === draggingId);
       if (!tf) return;
-      
+
       const pageEl = pageRefs.current[tf.pageIndex];
       if (!pageEl) return;
-      
+
       const pageRect = pageEl.getBoundingClientRect();
       const newX = (e.clientX - pageRect.left) / previewScale - dragOffset.x + 4;
       const newY = (e.clientY - pageRect.top) / previewScale - dragOffset.y + 12;
-      
+
       onTextFieldsChange(
         textFields.map((t) =>
           t.id === draggingId ? { ...t, x: Math.max(0, newX), y: Math.max(0, newY) } : t
@@ -544,7 +571,14 @@ export default function HandwritingEditor({
     }
   }, []);
 
+  // Calculate the global character count offset for the current page
+  // (sum of all characters + newlines from previous pages)
   let globalCharCount = 0;
+  for (let i = 0; i < currentPageIndex && i < pages.length; i++) {
+    for (const line of pages[i]) {
+      globalCharCount += line.text.length + 1; // +1 for newline
+    }
+  }
 
   return (
     <div className="flex flex-col items-center gap-8 py-8">
@@ -555,11 +589,10 @@ export default function HandwritingEditor({
             setEditorMode('write');
             setTimeout(() => textareaRef.current?.focus(), 0);
           }}
-          className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-            editorMode === 'write'
-              ? 'bg-[#E0A32A]/10 text-[#E0A32A]'
-              : 'text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
-          }`}
+          className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${editorMode === 'write'
+            ? 'bg-[#E0A32A]/10 text-[#E0A32A]'
+            : 'text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
+            }`}
           title="Write mode - Type text that flows on lines"
         >
           <PenLine className="w-4 h-4" />
@@ -567,11 +600,10 @@ export default function HandwritingEditor({
         </button>
         <button
           onClick={() => setEditorMode('textfield')}
-          className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-            editorMode === 'textfield'
-              ? 'bg-[#E0A32A]/10 text-[#E0A32A]'
-              : 'text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
-          }`}
+          className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${editorMode === 'textfield'
+            ? 'bg-[#E0A32A]/10 text-[#E0A32A]'
+            : 'text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
+            }`}
           title="Text Field mode - Click anywhere to add text"
         >
           <Type className="w-4 h-4" />
@@ -599,6 +631,31 @@ export default function HandwritingEditor({
         >
           <Plus className="w-4 h-4" />
         </button>
+
+        <div className="w-px h-7 bg-gray-200 mx-1" />
+
+        {/* Page Navigation */}
+        <button
+          onClick={() => onCurrentPageChange(Math.max(0, currentPageIndex - 1))}
+          disabled={currentPageIndex === 0}
+          className="p-2 rounded-md text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          aria-label="Previous page"
+          title="Previous page"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <div className="px-2 min-w-16 text-center text-sm font-medium text-gray-700 select-none">
+          Page {currentPageIndex + 1} / {pages.length}
+        </div>
+        <button
+          onClick={() => onCurrentPageChange(Math.min(pages.length - 1, currentPageIndex + 1))}
+          disabled={currentPageIndex >= pages.length - 1}
+          className="p-2 rounded-md text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          aria-label="Next page"
+          title="Next page"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Hidden textarea for input */}
@@ -615,7 +672,16 @@ export default function HandwritingEditor({
         autoFocus
       />
 
-      {pages.map((pageLines, pageIndex) => {
+      {/* Only render the current page - no scrolling, use prev/next buttons to navigate */}
+      {pages.length > 0 && (() => {
+        const pageIndex = currentPageIndex;
+        const pageLines = pages[pageIndex] || [];
+        const pageSettings = getPageSettings(pageIndex);
+        const pageLineOffset = pageSettings.customBackgroundImage ? pageSettings.customLineOffset : 0;
+        const pageLineHeightPx = pageSettings.customBackgroundImage && pageSettings.customLineSpacing
+          ? pageSettings.customLineSpacing
+          : baseLineHeightPx;
+
         return (
           <div
             key={pageIndex}
@@ -633,9 +699,9 @@ export default function HandwritingEditor({
               style={{
                 width: PAGE_WIDTH,
                 height: PAGE_HEIGHT,
-                backgroundColor: settings.paperColor,
-                backgroundImage: settings.customBackgroundImage
-                  ? `url(${settings.customBackgroundImage})`
+                backgroundColor: pageSettings.paperColor,
+                backgroundImage: pageSettings.customBackgroundImage
+                  ? `url(${pageSettings.customBackgroundImage})`
                   : undefined,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
@@ -649,16 +715,16 @@ export default function HandwritingEditor({
               <div
                 className={`absolute select-none ${fontClass}`}
                 style={{
-                  top: settings.marginTop + lineOffset,
+                  top: settings.marginTop + pageLineOffset,
                   left: ruledTextLeft,
                   width: ruledTextWidth,
                   height: contentHeight,
                   fontFamily: customFontFamily ? `"${customFontFamily}", cursive` : undefined,
                   fontSize: settings.fontSize,
-                  lineHeight: settings.customBackgroundImage && settings.customLineSpacing 
-                    ? `${settings.customLineSpacing}px` 
+                  lineHeight: pageSettings.customBackgroundImage && pageSettings.customLineSpacing
+                    ? `${pageSettings.customLineSpacing}px`
                     : settings.lineHeight,
-                  color: settings.inkColor,
+                  color: pageSettings.inkColor,
                   transform: settings.lineTilt ? `rotate(${settings.lineTilt}deg)` : undefined,
                   transformOrigin: 'left top',
                   overflowWrap: 'break-word',
@@ -670,12 +736,12 @@ export default function HandwritingEditor({
                   <span className="text-gray-400 pointer-events-none">
                     Click here to start typing...
                     {isFocused && cursorPosition === 0 && (
-                      <span 
+                      <span
                         className="inline-block animate-pulse ml-0"
                         style={{
                           width: 2,
                           height: '1em',
-                          backgroundColor: settings.inkColor,
+                          backgroundColor: pageSettings.inkColor,
                           verticalAlign: 'text-bottom',
                         }}
                       />
@@ -685,18 +751,18 @@ export default function HandwritingEditor({
                   pageLines.map((line, lineIdx) => {
                     const lineStartChar = globalCharCount;
                     const lineText = line.text;
-                    
+
                     return (
-                      <div key={lineIdx} style={{ minHeight: lineHeightPx }}>
+                      <div key={lineIdx} style={{ minHeight: pageLineHeightPx }}>
                         {lineText === '' ? (
                           <>
                             {isFocused && cursorPosition === lineStartChar && (
-                              <span 
+                              <span
                                 className="inline-block animate-pulse"
                                 style={{
                                   width: 2,
                                   height: '1em',
-                                  backgroundColor: settings.inkColor,
+                                  backgroundColor: pageSettings.inkColor,
                                   verticalAlign: 'text-bottom',
                                 }}
                               />
@@ -796,7 +862,7 @@ export default function HandwritingEditor({
             </div>
           </div>
         );
-      })}
+      })()}
     </div>
   );
 }

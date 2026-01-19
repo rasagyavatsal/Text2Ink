@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import HandwritingEditor from '@/components/HandwritingEditor';
@@ -18,8 +18,34 @@ export default function EditorPage() {
   const [textFields, setTextFields] = useState<TextField[]>([]);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [previewScale, setPreviewScale] = useState(1);
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
 
   const clampPreviewScale = (value: number) => Math.min(2, Math.max(0.5, value));
+
+  // Calculate total pages (same logic as HandwritingEditor)
+  const totalPages = useMemo(() => {
+    const PAGE_HEIGHT = 792;
+    const contentHeight = PAGE_HEIGHT - settings.marginTop - settings.marginBottom;
+    const baseLineHeightPx = settings.fontSize * settings.lineHeight;
+    const lineHeightPx = settings.customBackgroundImage && settings.customLineSpacing
+      ? settings.customLineSpacing
+      : baseLineHeightPx;
+    const linesPerPage = Math.floor(contentHeight / lineHeightPx);
+
+    const lines = text.split('\n');
+    let pageCount = 1;
+    let currentPageLines = 0;
+
+    for (const line of lines) {
+      if (currentPageLines >= linesPerPage) {
+        pageCount++;
+        currentPageLines = 0;
+      }
+      currentPageLines++;
+    }
+
+    return Math.max(1, pageCount);
+  }, [text, settings.marginTop, settings.marginBottom, settings.fontSize, settings.lineHeight, settings.customBackgroundImage, settings.customLineSpacing]);
 
   useEffect(() => {
     const isLikelyMobile = () => {
@@ -98,30 +124,27 @@ export default function EditorPage() {
       <div className="flex-1 flex min-h-0 bg-gray-100 overflow-hidden">
         {/* Sidebar */}
         <div
-          className={`bg-white border-r border-gray-200 flex flex-col min-h-0 transition-all duration-300 ${
-            sidebarOpen ? 'w-96' : 'w-0'
-          } overflow-hidden`}
+          className={`bg-white border-r border-gray-200 flex flex-col min-h-0 transition-all duration-300 ${sidebarOpen ? 'w-96' : 'w-0'
+            } overflow-hidden`}
         >
           {/* Panel Tabs */}
           <div className="flex border-b border-gray-200">
             <button
               onClick={() => setActivePanel('settings')}
-              className={`flex-1 py-3 px-4 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
-                activePanel === 'settings'
-                  ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/10'
-                  : 'text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
-              }`}
+              className={`flex-1 py-3 px-4 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${activePanel === 'settings'
+                ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/10'
+                : 'text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
+                }`}
             >
               <Settings className="w-4 h-4" />
               Settings
             </button>
             <button
               onClick={() => setActivePanel('export')}
-              className={`flex-1 py-3 px-4 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
-                activePanel === 'export'
-                  ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/10'
-                  : 'text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
-              }`}
+              className={`flex-1 py-3 px-4 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${activePanel === 'export'
+                ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/10'
+                : 'text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
+                }`}
             >
               <Download className="w-4 h-4" />
               Export
@@ -131,7 +154,12 @@ export default function EditorPage() {
           {/* Panel Content */}
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
             {activePanel === 'settings' ? (
-              <SettingsPanel settings={settings} onSettingsChange={setSettings} />
+              <SettingsPanel
+                settings={settings}
+                onSettingsChange={setSettings}
+                currentPageIndex={currentPageIndex}
+                totalPages={totalPages}
+              />
             ) : (
               <ExportPanel
                 pageRefs={pageRefs}
@@ -145,9 +173,8 @@ export default function EditorPage() {
         {/* Toggle Sidebar Button */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className={`fixed top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-r-lg p-2.5 shadow-lg hover:shadow-xl transition-all duration-300 group ${
-            sidebarOpen ? 'left-[384px]' : 'left-0'
-          }`}
+          className={`fixed top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-r-lg p-2.5 shadow-lg hover:shadow-xl transition-all duration-300 group ${sidebarOpen ? 'left-[384px]' : 'left-0'
+            }`}
           aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
         >
           {sidebarOpen ? (
@@ -170,11 +197,13 @@ export default function EditorPage() {
               onPreviewScaleChange={(value: number) => setPreviewScale(clampPreviewScale(value))}
               textFields={textFields}
               onTextFieldsChange={setTextFields}
+              currentPageIndex={currentPageIndex}
+              onCurrentPageChange={setCurrentPageIndex}
             />
           </div>
         </div>
       </div>
 
-          </div>
+    </div>
   );
 }
