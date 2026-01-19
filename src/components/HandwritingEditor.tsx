@@ -21,6 +21,12 @@ interface HandwritingEditorProps {
 const PAGE_WIDTH = 612;
 const PAGE_HEIGHT = 792;
 
+type WrappedLine = {
+  text: string;
+  globalStartIndex: number;
+  displayLineIndex: number;
+};
+
 function seededRandom(seed: number): number {
   const x = Math.sin(seed) * 10000;
   return x - Math.floor(x);
@@ -406,16 +412,57 @@ export default function HandwritingEditor({
     [applyRandomness, isFocused, settings.inkColor, handleCharClick]
   );
 
-  const linesData = useMemo(() => {
-    const lines = text.split('\n');
-    return lines.map((line, idx) => ({ text: line, lineIndex: idx }));
-  }, [text]);
+  const wrappedLines = useMemo((): WrappedLine[] => {
+    // Heuristic wrapping based on estimated average character width.
+    // This keeps layout stable across fonts without expensive measuring.
+    const avgCharWidth = Math.max(1, settings.fontSize * 0.6);
+    const maxCharsPerLine = Math.max(1, Math.floor(ruledTextWidth / avgCharWidth));
+
+    const out: WrappedLine[] = [];
+    let current = '';
+    let lineStartGlobal = 0;
+    let displayLineIndex = 0;
+
+    const pushCurrent = () => {
+      out.push({
+        text: current,
+        globalStartIndex: lineStartGlobal,
+        displayLineIndex,
+      });
+      displayLineIndex += 1;
+      lineStartGlobal += current.length;
+      current = '';
+    };
+
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+
+      if (ch === '\n') {
+        // Preserve explicit line breaks.
+        pushCurrent();
+        lineStartGlobal += 1; // account for the newline char in the source
+        continue;
+      }
+
+      // If adding the next char would exceed the line, wrap.
+      if (current.length >= maxCharsPerLine) {
+        pushCurrent();
+      }
+
+      current += ch;
+    }
+
+    // Always push the trailing line (including empty when text ends with '\n' or is empty)
+    pushCurrent();
+
+    return out;
+  }, [text, ruledTextWidth, settings.fontSize]);
 
   const pages = useMemo(() => {
-    const pagesData: { text: string; lineIndex: number }[][] = [];
-    let currentPage: { text: string; lineIndex: number }[] = [];
+    const pagesData: WrappedLine[][] = [];
+    let currentPage: WrappedLine[] = [];
 
-    linesData.forEach((line) => {
+    wrappedLines.forEach((line) => {
       if (currentPage.length >= linesPerPage) {
         pagesData.push(currentPage);
         currentPage = [];
@@ -428,7 +475,7 @@ export default function HandwritingEditor({
     }
 
     return pagesData;
-  }, [linesData, linesPerPage]);
+  }, [wrappedLines, linesPerPage]);
 
   const handleTextChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -570,15 +617,6 @@ export default function HandwritingEditor({
       textareaRef.current.focus();
     }
   }, []);
-
-  // Calculate the global character count offset for the current page
-  // (sum of all characters + newlines from previous pages)
-  let globalCharCount = 0;
-  for (let i = 0; i < currentPageIndex && i < pages.length; i++) {
-    for (const line of pages[i]) {
-      globalCharCount += line.text.length + 1; // +1 for newline
-    }
-  }
 
   return (
     <div className="flex flex-col items-center gap-8 py-8">
@@ -749,7 +787,7 @@ export default function HandwritingEditor({
                   </span>
                 ) : (
                   pageLines.map((line, lineIdx) => {
-                    const lineStartChar = globalCharCount;
+                    const lineStartChar = line.globalStartIndex;
                     const lineText = line.text;
 
                     return (
@@ -767,26 +805,23 @@ export default function HandwritingEditor({
                                 }}
                               />
                             )}
-                            {(() => { globalCharCount += 1; return null; })()}
                           </>
                         ) : (
                           <>
                             {lineText.split('').map((char: string, charIdx: number) => {
-                              const currentGlobalChar = globalCharCount;
-                              globalCharCount += 1;
+                              const currentGlobalChar = lineStartChar + charIdx;
                               const showCursorAfter = cursorPosition === currentGlobalChar + 1;
                               const showCursorBefore = charIdx === 0 && cursorPosition === currentGlobalChar;
 
                               return renderCharacter(
                                 char,
                                 charIdx,
-                                line.lineIndex,
+                                line.displayLineIndex,
                                 currentGlobalChar,
                                 showCursorAfter,
                                 showCursorBefore
                               );
                             })}
-                            {(() => { globalCharCount += 1; return null; })()}
                           </>
                         )}
                       </div>

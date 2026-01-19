@@ -24,7 +24,15 @@ export default function EditorPage() {
 
   // Calculate total pages (same logic as HandwritingEditor)
   const totalPages = useMemo(() => {
+    const PAGE_WIDTH = 612;
     const PAGE_HEIGHT = 792;
+
+    const ruledTextLeft =
+      settings.paperStyle === 'ruled' && !settings.customBackgroundImage
+        ? settings.marginLeft + settings.ruledMarginLineOffset + 10
+        : settings.marginLeft;
+    const ruledTextWidth = PAGE_WIDTH - ruledTextLeft - settings.marginRight;
+
     const contentHeight = PAGE_HEIGHT - settings.marginTop - settings.marginBottom;
     const baseLineHeightPx = settings.fontSize * settings.lineHeight;
     const lineHeightPx = settings.customBackgroundImage && settings.customLineSpacing
@@ -32,20 +40,49 @@ export default function EditorPage() {
       : baseLineHeightPx;
     const linesPerPage = Math.floor(contentHeight / lineHeightPx);
 
-    const lines = text.split('\n');
-    let pageCount = 1;
-    let currentPageLines = 0;
+    const avgCharWidth = Math.max(1, settings.fontSize * 0.6);
+    const maxCharsPerLine = Math.max(1, Math.floor(ruledTextWidth / avgCharWidth));
 
-    for (const line of lines) {
-      if (currentPageLines >= linesPerPage) {
-        pageCount++;
-        currentPageLines = 0;
+    let displayLines = 0;
+    let currentLen = 0;
+
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === '\n') {
+        displayLines += 1;
+        currentLen = 0;
+        continue;
       }
-      currentPageLines++;
+
+      if (currentLen >= maxCharsPerLine) {
+        displayLines += 1;
+        currentLen = 0;
+      }
+
+      currentLen += 1;
     }
 
-    return Math.max(1, pageCount);
-  }, [text, settings.marginTop, settings.marginBottom, settings.fontSize, settings.lineHeight, settings.customBackgroundImage, settings.customLineSpacing]);
+    // Trailing line (including empty for empty text / text ending with '\n')
+    displayLines += 1;
+
+    return Math.max(1, Math.ceil(displayLines / Math.max(1, linesPerPage)));
+  }, [
+    text,
+    settings.paperStyle,
+    settings.customBackgroundImage,
+    settings.marginLeft,
+    settings.marginRight,
+    settings.ruledMarginLineOffset,
+    settings.marginTop,
+    settings.marginBottom,
+    settings.fontSize,
+    settings.lineHeight,
+    settings.customLineSpacing,
+  ]);
+
+  useEffect(() => {
+    setCurrentPageIndex((prev) => Math.min(prev, totalPages - 1));
+  }, [totalPages]);
 
   useEffect(() => {
     const isLikelyMobile = () => {

@@ -20,7 +20,7 @@ import {
   PAPER_COLORS,
   PageSettings,
 } from '@/lib/types';
-import { Type, Palette, FileText, Wand2, Upload, X, Copy } from 'lucide-react';
+import { Type, Palette, FileText, Wand2, Upload, X } from 'lucide-react';
 
 interface SettingsPanelProps {
   settings: HandwritingSettings;
@@ -84,22 +84,6 @@ export default function SettingsPanel({
     onSettingsChange({ ...settings, perPageSettings: newPerPageSettings });
   };
 
-  // Apply current page settings to all pages
-  const applyToAllPages = () => {
-    // Clear all per-page settings and update global settings with current page values
-    onSettingsChange({
-      ...settings,
-      paperColor: currentPageSettings.paperColor,
-      customBackgroundImage: currentPageSettings.customBackgroundImage,
-      customLineOffset: currentPageSettings.customLineOffset,
-      customLineSpacing: currentPageSettings.customLineSpacing,
-      inkColor: currentPageSettings.inkColor,
-      lineColor: currentPageSettings.lineColor,
-      paperStyle: currentPageSettings.paperStyle,
-      perPageSettings: {},
-    });
-  };
-
   const updateRandomness = (
     key: keyof HandwritingSettings['randomness'],
     value: number | boolean
@@ -125,13 +109,6 @@ export default function SettingsPanel({
         <p className="text-xs text-gray-600 mb-3">
           Settings below apply to the current page in preview. Use the navigation buttons in the toolbar to switch pages.
         </p>
-        <button
-          onClick={applyToAllPages}
-          className="flex items-center gap-2 w-full justify-center px-4 py-2 bg-[#E0A32A] text-white rounded-lg font-medium hover:bg-[#c99225] transition-colors text-sm"
-        >
-          <Copy className="w-4 h-4" />
-          Apply Current Page Settings to All Pages
-        </button>
       </div>
 
       <Separator />
