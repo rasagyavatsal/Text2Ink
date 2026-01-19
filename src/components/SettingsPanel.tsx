@@ -21,6 +21,7 @@ import {
   PageSettings,
 } from '@/lib/types';
 import { Type, Palette, FileText, Wand2, Upload, X, Copy } from 'lucide-react';
+import ApplySettingModal from './ApplySettingModal';
 
 interface SettingsPanelProps {
   settings: HandwritingSettings;
@@ -36,6 +37,11 @@ export default function SettingsPanel({
   totalPages,
 }: SettingsPanelProps) {
   const [customFontError, setCustomFontError] = useState<string | null>(null);
+  const [applyModal, setApplyModal] = useState<{
+    isOpen: boolean;
+    settingKey: keyof PageSettings | null;
+    settingName: string;
+  }>({ isOpen: false, settingKey: null, settingName: '' });
 
   // Get effective settings for the current page
   const getCurrentPageSettings = (): PageSettings => {
@@ -84,20 +90,33 @@ export default function SettingsPanel({
     onSettingsChange({ ...settings, perPageSettings: newPerPageSettings });
   };
 
-  // Apply current page settings to all pages
-  const applyToAllPages = () => {
-    // Clear all per-page settings and update global settings with current page values
-    onSettingsChange({
-      ...settings,
-      paperColor: currentPageSettings.paperColor,
-      customBackgroundImage: currentPageSettings.customBackgroundImage,
-      customLineOffset: currentPageSettings.customLineOffset,
-      customLineSpacing: currentPageSettings.customLineSpacing,
-      inkColor: currentPageSettings.inkColor,
-      lineColor: currentPageSettings.lineColor,
-      paperStyle: currentPageSettings.paperStyle,
-      perPageSettings: {},
-    });
+  // Apply a specific setting to selected pages
+  const applySettingToPages = (settingKey: keyof PageSettings, pageIndices: number[]) => {
+    const currentValue = currentPageSettings[settingKey];
+    const newPerPageSettings = { ...settings.perPageSettings };
+
+    for (const pageIndex of pageIndices) {
+      if (!newPerPageSettings[pageIndex]) {
+        newPerPageSettings[pageIndex] = {};
+      }
+      newPerPageSettings[pageIndex] = {
+        ...newPerPageSettings[pageIndex],
+        [settingKey]: currentValue,
+      };
+    }
+
+    onSettingsChange({ ...settings, perPageSettings: newPerPageSettings });
+  };
+
+  // Open apply modal for a setting
+  const openApplyModal = (settingKey: keyof PageSettings, settingName: string) => {
+    setApplyModal({ isOpen: true, settingKey, settingName });
+  };
+
+  const handleApplyModalConfirm = (pageIndices: number[]) => {
+    if (applyModal.settingKey) {
+      applySettingToPages(applyModal.settingKey, pageIndices);
+    }
   };
 
   const updateRandomness = (
@@ -112,26 +131,27 @@ export default function SettingsPanel({
 
   return (
     <div className="p-6 space-y-8">
+      {/* Apply Setting Modal */}
+      <ApplySettingModal
+        isOpen={applyModal.isOpen}
+        onClose={() => setApplyModal({ isOpen: false, settingKey: null, settingName: '' })}
+        onApply={handleApplyModalConfirm}
+        settingName={applyModal.settingName}
+        currentPageIndex={currentPageIndex}
+        totalPages={totalPages}
+      />
+
       {/* Page Settings Header */}
       <div className="bg-gradient-to-r from-[#E0A32A]/10 to-[#E0A32A]/5 rounded-lg p-4 border border-[#E0A32A]/20">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-[#E0A32A]" />
-            <span className="font-semibold text-gray-900">
-              Page {currentPageIndex + 1} of {totalPages}
-            </span>
-          </div>
+        <div className="flex items-center gap-2">
+          <FileText className="w-5 h-5 text-[#E0A32A]" />
+          <span className="font-semibold text-gray-900">
+            Page {currentPageIndex + 1} of {totalPages}
+          </span>
         </div>
-        <p className="text-xs text-gray-600 mb-3">
-          Settings below apply to the current page in preview. Use the navigation buttons in the toolbar to switch pages.
+        <p className="text-xs text-gray-600 mt-2">
+          Settings below apply to the current page. Use the <Copy className="w-3 h-3 inline" /> button next to each setting to apply it to other pages.
         </p>
-        <button
-          onClick={applyToAllPages}
-          className="flex items-center gap-2 w-full justify-center px-4 py-2 bg-[#E0A32A] text-white rounded-lg font-medium hover:bg-[#c99225] transition-colors text-sm"
-        >
-          <Copy className="w-4 h-4" />
-          Apply Current Page Settings to All Pages
-        </button>
       </div>
 
       <Separator />
@@ -540,7 +560,16 @@ export default function SettingsPanel({
 
         <div className="space-y-5">
           <div className="space-y-2">
-            <Label>Ink Color</Label>
+            <div className="flex items-center justify-between">
+              <Label>Ink Color</Label>
+              <button
+                onClick={() => openApplyModal('inkColor', 'Ink Color')}
+                className="p-1.5 rounded-md text-gray-400 hover:text-[#E0A32A] hover:bg-[#E0A32A]/10 transition-colors"
+                title="Apply to other pages"
+              >
+                <Copy className="w-3.5 h-3.5" />
+              </button>
+            </div>
             <div className="flex flex-wrap gap-2">
               {INK_COLORS.map((color) => (
                 <button
@@ -558,7 +587,16 @@ export default function SettingsPanel({
           </div>
 
           <div className="space-y-2">
-            <Label>Paper Color</Label>
+            <div className="flex items-center justify-between">
+              <Label>Paper Color</Label>
+              <button
+                onClick={() => openApplyModal('paperColor', 'Paper Color')}
+                className="p-1.5 rounded-md text-gray-400 hover:text-[#E0A32A] hover:bg-[#E0A32A]/10 transition-colors"
+                title="Apply to other pages"
+              >
+                <Copy className="w-3.5 h-3.5" />
+              </button>
+            </div>
             <div className="flex flex-wrap gap-2">
               {PAPER_COLORS.map((color) => (
                 <button
@@ -577,7 +615,16 @@ export default function SettingsPanel({
 
           {currentPageSettings.paperStyle !== 'blank' && (
             <div className="space-y-2">
-              <Label>Line Color</Label>
+              <div className="flex items-center justify-between">
+                <Label>Line Color</Label>
+                <button
+                  onClick={() => openApplyModal('lineColor', 'Line Color')}
+                  className="p-1.5 rounded-md text-gray-400 hover:text-[#E0A32A] hover:bg-[#E0A32A]/10 transition-colors"
+                  title="Apply to other pages"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              </div>
               <div className="flex items-center gap-2">
                 <input
                   type="color"
