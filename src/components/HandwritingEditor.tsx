@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useCallback, useMemo, useEffect, useState } from 'react';
-import { HandwritingSettings, HANDWRITING_FONTS, TextField, EditorMode, PageSettings } from '@/lib/types';
+import { HandwritingSettings, HANDWRITING_FONTS, TextField, EditorMode } from '@/lib/types';
 import { Type, PenLine, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface HandwritingEditorProps {
@@ -21,23 +21,23 @@ interface HandwritingEditorProps {
 const PAGE_WIDTH = 612;
 const PAGE_HEIGHT = 792;
 
- type LineData = {
-   text: string;
-   lineIndex: number;
-   hasNewline: boolean;
- };
+type LineData = {
+  text: string;
+  lineIndex: number;
+  hasNewline: boolean;
+};
 
- const FONT_VARIABLES: Record<string, string> = {
-   'caveat': '--font-caveat',
-   'dancing-script': '--font-dancing-script',
-   'indie-flower': '--font-indie-flower',
-   'shadows-into-light': '--font-shadows-into-light',
-   'kalam': '--font-kalam',
-   'patrick-hand': '--font-patrick-hand',
-   'architects-daughter': '--font-architects-daughter',
-   'satisfy': '--font-satisfy',
-   'homemade-apple': '--font-homemade-apple',
- };
+const FONT_VARIABLES: Record<string, string> = {
+  'caveat': '--font-caveat',
+  'dancing-script': '--font-dancing-script',
+  'indie-flower': '--font-indie-flower',
+  'shadows-into-light': '--font-shadows-into-light',
+  'kalam': '--font-kalam',
+  'patrick-hand': '--font-patrick-hand',
+  'architects-daughter': '--font-architects-daughter',
+  'satisfy': '--font-satisfy',
+  'homemade-apple': '--font-homemade-apple',
+};
 
 function seededRandom(seed: number): number {
   const x = Math.sin(seed) * 10000;
@@ -102,26 +102,7 @@ export default function HandwritingEditor({
     };
   }, [fontClass, customFontFamily, settings.fontSize]);
 
-  // Helper to get effective settings for a specific page
-  const getPageSettings = useCallback(
-    (pageIndex: number): PageSettings => {
-      const pageOverrides = settings.perPageSettings[pageIndex] || {};
-      return {
-        paperColor: pageOverrides.paperColor ?? settings.paperColor,
-        customBackgroundImage: pageOverrides.customBackgroundImage !== undefined
-          ? pageOverrides.customBackgroundImage
-          : settings.customBackgroundImage,
-        customLineOffset: pageOverrides.customLineOffset ?? settings.customLineOffset,
-        customLineSpacing: pageOverrides.customLineSpacing !== undefined
-          ? pageOverrides.customLineSpacing
-          : settings.customLineSpacing,
-        inkColor: pageOverrides.inkColor ?? settings.inkColor,
-        lineColor: pageOverrides.lineColor ?? settings.lineColor,
-        paperStyle: pageOverrides.paperStyle ?? settings.paperStyle,
-      };
-    },
-    [settings]
-  );
+
 
   useEffect(() => {
     const styleId = '__text2ink_custom_font_style';
@@ -222,14 +203,12 @@ export default function HandwritingEditor({
 
   const renderPaperLines = useCallback(
     (pageIndex: number) => {
-      const pageSettings = getPageSettings(pageIndex);
-
-      if (pageSettings.paperStyle === 'blank' || pageSettings.customBackgroundImage) return null;
+      if (settings.paperStyle === 'blank' || settings.customBackgroundImage) return null;
 
       const lines = [];
       const startY = settings.marginTop;
 
-      if (pageSettings.paperStyle === 'lined' || pageSettings.paperStyle === 'ruled') {
+      if (settings.paperStyle === 'lined' || settings.paperStyle === 'ruled') {
         for (let i = 0; i <= linesPerPage; i++) {
           const y = startY + i * lineHeightPx;
           if (y < PAGE_HEIGHT - settings.marginBottom + lineHeightPx) {
@@ -242,14 +221,14 @@ export default function HandwritingEditor({
                   left: settings.marginLeft,
                   height: 1,
                   width: contentWidth,
-                  backgroundColor: pageSettings.lineColor,
+                  backgroundColor: settings.lineColor,
                 }}
               />
             );
           }
         }
 
-        if (pageSettings.paperStyle === 'ruled') {
+        if (settings.paperStyle === 'ruled') {
           lines.push(
             <div key={`margin-line-wrap-${pageIndex}`} className="absolute" style={{ left: 0, top: 0 }}>
               <div
@@ -289,7 +268,7 @@ export default function HandwritingEditor({
             </div>
           );
         }
-      } else if (pageSettings.paperStyle === 'grid') {
+      } else if (settings.paperStyle === 'grid') {
         const gridSize = lineHeightPx;
         for (let i = 0; i <= linesPerPage; i++) {
           const y = startY + i * gridSize;
@@ -303,7 +282,7 @@ export default function HandwritingEditor({
                   left: settings.marginLeft,
                   height: 1,
                   width: contentWidth,
-                  backgroundColor: pageSettings.lineColor,
+                  backgroundColor: settings.lineColor,
                   opacity: 0.5,
                 }}
               />
@@ -322,7 +301,7 @@ export default function HandwritingEditor({
                 top: settings.marginTop,
                 width: 1,
                 height: contentHeight,
-                backgroundColor: pageSettings.lineColor,
+                backgroundColor: settings.lineColor,
                 opacity: 0.5,
               }}
             />
@@ -332,7 +311,7 @@ export default function HandwritingEditor({
 
       return lines;
     },
-    [settings, lineHeightPx, linesPerPage, contentWidth, contentHeight, onSettingsChange, getPageSettings]
+    [settings, lineHeightPx, linesPerPage, contentWidth, contentHeight, onSettingsChange]
   );
 
   useEffect(() => {
@@ -879,10 +858,9 @@ export default function HandwritingEditor({
       {pages.length > 0 && (() => {
         const pageIndex = currentPageIndex;
         const pageLines = pages[pageIndex] || [];
-        const pageSettings = getPageSettings(pageIndex);
-        const pageLineOffset = pageSettings.customBackgroundImage ? pageSettings.customLineOffset : 0;
-        const pageLineHeightPx = pageSettings.customBackgroundImage && pageSettings.customLineSpacing
-          ? pageSettings.customLineSpacing
+        const pageLineOffset = settings.customBackgroundImage ? settings.customLineOffset : 0;
+        const pageLineHeightPx = settings.customBackgroundImage && settings.customLineSpacing
+          ? settings.customLineSpacing
           : baseLineHeightPx;
 
         return (
@@ -902,9 +880,9 @@ export default function HandwritingEditor({
               style={{
                 width: PAGE_WIDTH,
                 height: PAGE_HEIGHT,
-                backgroundColor: pageSettings.paperColor,
-                backgroundImage: pageSettings.customBackgroundImage
-                  ? `url(${pageSettings.customBackgroundImage})`
+                backgroundColor: settings.paperColor,
+                backgroundImage: settings.customBackgroundImage
+                  ? `url(${settings.customBackgroundImage})`
                   : undefined,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
@@ -924,10 +902,10 @@ export default function HandwritingEditor({
                   height: contentHeight,
                   fontFamily: customFontFamily ? `"${customFontFamily}", cursive` : undefined,
                   fontSize: settings.fontSize,
-                  lineHeight: pageSettings.customBackgroundImage && pageSettings.customLineSpacing
-                    ? `${pageSettings.customLineSpacing}px`
+                  lineHeight: settings.customBackgroundImage && settings.customLineSpacing
+                    ? `${settings.customLineSpacing}px`
                     : settings.lineHeight,
-                  color: pageSettings.inkColor,
+                  color: settings.inkColor,
                   transform: settings.lineTilt ? `rotate(${settings.lineTilt}deg)` : undefined,
                   transformOrigin: 'left top',
                   overflowWrap: 'break-word',
@@ -944,7 +922,7 @@ export default function HandwritingEditor({
                         style={{
                           width: 2,
                           height: '1em',
-                          backgroundColor: pageSettings.inkColor,
+                          backgroundColor: settings.inkColor,
                           verticalAlign: 'text-bottom',
                         }}
                       />
@@ -965,7 +943,7 @@ export default function HandwritingEditor({
                                 style={{
                                   width: 2,
                                   height: '1em',
-                                  backgroundColor: pageSettings.inkColor,
+                                  backgroundColor: settings.inkColor,
                                   verticalAlign: 'text-bottom',
                                 }}
                               />

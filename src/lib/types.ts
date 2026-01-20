@@ -38,8 +38,6 @@ export interface HandwritingSettings {
     baseline: number;
     rotation: number;
   };
-  // Per-page settings overrides (indexed by page number)
-  perPageSettings: Record<number, Partial<PageSettings>>;
 }
 
 export interface FontOption {
@@ -85,7 +83,6 @@ export const DEFAULT_SETTINGS: HandwritingSettings = {
     baseline: 1,
     rotation: 0.5,
   },
-  perPageSettings: {},
 };
 
 export const PAPER_STYLES = [

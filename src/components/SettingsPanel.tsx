@@ -18,44 +18,21 @@ import {
   PAPER_STYLES,
   INK_COLORS,
   PAPER_COLORS,
-  PageSettings,
 } from '@/lib/types';
 import { Type, Palette, FileText, Wand2, Upload, X } from 'lucide-react';
 
 interface SettingsPanelProps {
   settings: HandwritingSettings;
   onSettingsChange: (settings: HandwritingSettings) => void;
-  currentPageIndex: number;
-  totalPages: number;
 }
 
 export default function SettingsPanel({
   settings,
   onSettingsChange,
-  currentPageIndex,
-  totalPages,
 }: SettingsPanelProps) {
   const [customFontError, setCustomFontError] = useState<string | null>(null);
 
-  // Get effective settings for the current page
-  const getCurrentPageSettings = (): PageSettings => {
-    const pageOverrides = settings.perPageSettings[currentPageIndex] || {};
-    return {
-      paperColor: pageOverrides.paperColor ?? settings.paperColor,
-      customBackgroundImage: pageOverrides.customBackgroundImage !== undefined
-        ? pageOverrides.customBackgroundImage
-        : settings.customBackgroundImage,
-      customLineOffset: pageOverrides.customLineOffset ?? settings.customLineOffset,
-      customLineSpacing: pageOverrides.customLineSpacing !== undefined
-        ? pageOverrides.customLineSpacing
-        : settings.customLineSpacing,
-      inkColor: pageOverrides.inkColor ?? settings.inkColor,
-      lineColor: pageOverrides.lineColor ?? settings.lineColor,
-      paperStyle: pageOverrides.paperStyle ?? settings.paperStyle,
-    };
-  };
 
-  const currentPageSettings = getCurrentPageSettings();
 
   const updateSetting = <K extends keyof HandwritingSettings>(
     key: K,
@@ -66,22 +43,6 @@ export default function SettingsPanel({
 
   const updateSettings = (patch: Partial<HandwritingSettings>) => {
     onSettingsChange({ ...settings, ...patch });
-  };
-
-  // Update a per-page setting for the current page
-  const updatePageSetting = <K extends keyof PageSettings>(
-    key: K,
-    value: PageSettings[K]
-  ) => {
-    const newPerPageSettings = { ...settings.perPageSettings };
-    if (!newPerPageSettings[currentPageIndex]) {
-      newPerPageSettings[currentPageIndex] = {};
-    }
-    newPerPageSettings[currentPageIndex] = {
-      ...newPerPageSettings[currentPageIndex],
-      [key]: value,
-    };
-    onSettingsChange({ ...settings, perPageSettings: newPerPageSettings });
   };
 
   const updateRandomness = (
@@ -96,22 +57,6 @@ export default function SettingsPanel({
 
   return (
     <div className="p-6 space-y-8">
-      {/* Page Settings Header */}
-      <div className="bg-gradient-to-r from-[#E0A32A]/10 to-[#E0A32A]/5 rounded-lg p-4 border border-[#E0A32A]/20">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-[#E0A32A]" />
-            <span className="font-semibold text-gray-900">
-              Page {currentPageIndex + 1} of {totalPages}
-            </span>
-          </div>
-        </div>
-        <p className="text-xs text-gray-600 mb-3">
-          Settings below apply to the current page in preview. Use the navigation buttons in the toolbar to switch pages.
-        </p>
-      </div>
-
-      <Separator />
 
       <div>
         <div className="flex items-center gap-2 mb-5">
@@ -512,7 +457,6 @@ export default function SettingsPanel({
         <div className="flex items-center gap-2 mb-5">
           <Palette className="w-5 h-5 text-[#E0A32A]" />
           <h3 className="font-semibold text-lg">Colors</h3>
-          <span className="text-xs text-gray-500 ml-auto">(per page)</span>
         </div>
 
         <div className="space-y-5">
@@ -522,8 +466,8 @@ export default function SettingsPanel({
               {INK_COLORS.map((color) => (
                 <button
                   key={color.value}
-                  onClick={() => updatePageSetting('inkColor', color.value)}
-                  className={`w-8 h-8 rounded-full border-2 transition-all ${currentPageSettings.inkColor === color.value
+                  onClick={() => updateSetting('inkColor', color.value)}
+                  className={`w-8 h-8 rounded-full border-2 transition-all ${settings.inkColor === color.value
                     ? 'border-[#E0A32A] scale-110 shadow-md'
                     : 'border-transparent hover:scale-105'
                     }`}
@@ -540,8 +484,8 @@ export default function SettingsPanel({
               {PAPER_COLORS.map((color) => (
                 <button
                   key={color.value}
-                  onClick={() => updatePageSetting('paperColor', color.value)}
-                  className={`w-8 h-8 rounded-full border-2 transition-all ${currentPageSettings.paperColor === color.value
+                  onClick={() => updateSetting('paperColor', color.value)}
+                  className={`w-8 h-8 rounded-full border-2 transition-all ${settings.paperColor === color.value
                     ? 'border-primary scale-110 shadow-md'
                     : 'border-gray-300 hover:scale-105'
                     }`}
@@ -552,18 +496,18 @@ export default function SettingsPanel({
             </div>
           </div>
 
-          {currentPageSettings.paperStyle !== 'blank' && (
+          {settings.paperStyle !== 'blank' && (
             <div className="space-y-2">
               <Label>Line Color</Label>
               <div className="flex items-center gap-2">
                 <input
                   type="color"
-                  value={currentPageSettings.lineColor}
-                  onChange={(e) => updatePageSetting('lineColor', e.target.value)}
+                  value={settings.lineColor}
+                  onChange={(e) => updateSetting('lineColor', e.target.value)}
                   className="w-10 h-10 rounded cursor-pointer border border-input"
                 />
                 <span className="text-sm text-muted-foreground">
-                  {currentPageSettings.lineColor}
+                  {settings.lineColor}
                 </span>
               </div>
             </div>

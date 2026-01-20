@@ -312,8 +312,6 @@ export default function EditorPage() {
               <SettingsPanel
                 settings={settings}
                 onSettingsChange={setSettings}
-                currentPageIndex={currentPageIndex}
-                totalPages={totalPages}
               />
             ) : (
               <ExportPanel
