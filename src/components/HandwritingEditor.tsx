@@ -21,11 +21,23 @@ interface HandwritingEditorProps {
 const PAGE_WIDTH = 612;
 const PAGE_HEIGHT = 792;
 
-type WrappedLine = {
-  text: string;
-  globalStartIndex: number;
-  displayLineIndex: number;
-};
+ type LineData = {
+   text: string;
+   lineIndex: number;
+   hasNewline: boolean;
+ };
+
+ const FONT_VARIABLES: Record<string, string> = {
+   'caveat': '--font-caveat',
+   'dancing-script': '--font-dancing-script',
+   'indie-flower': '--font-indie-flower',
+   'shadows-into-light': '--font-shadows-into-light',
+   'kalam': '--font-kalam',
+   'patrick-hand': '--font-patrick-hand',
+   'architects-daughter': '--font-architects-daughter',
+   'satisfy': '--font-satisfy',
+   'homemade-apple': '--font-homemade-apple',
+ };
 
 function seededRandom(seed: number): number {
   const x = Math.sin(seed) * 10000;
@@ -49,6 +61,7 @@ export default function HandwritingEditor({
   const [isFocused, setIsFocused] = useState(false);
   const [cursorPosition, setCursorPosition] = useState(0);
   const [editorMode, setEditorMode] = useState<EditorMode>('write');
+  const [fontMetricsVersion, setFontMetricsVersion] = useState(0);
   const textFieldInputRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map());
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -67,6 +80,27 @@ export default function HandwritingEditor({
     settings.fontFamily === 'custom' && settings.customFont
       ? settings.customFont.family
       : null;
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const fonts = document.fonts;
+    if (!fonts) return;
+
+    let cancelled = false;
+    const bump = () => {
+      if (cancelled) return;
+      setFontMetricsVersion((v) => v + 1);
+    };
+
+    fonts.ready.then(bump).catch(() => { });
+    fonts.addEventListener('loadingdone', bump);
+    fonts.addEventListener('loadingerror', bump);
+    return () => {
+      cancelled = true;
+      fonts.removeEventListener('loadingdone', bump);
+      fonts.removeEventListener('loadingerror', bump);
+    };
+  }, [fontClass, customFontFamily, settings.fontSize]);
 
   // Helper to get effective settings for a specific page
   const getPageSettings = useCallback(
@@ -136,6 +170,32 @@ export default function HandwritingEditor({
     : baseLineHeightPx;
   const linesPerPage = Math.floor(contentHeight / lineHeightPx);
   const lineOffset = settings.customBackgroundImage ? settings.customLineOffset : 0;
+
+  const maxCharsPerLine = useMemo(() => {
+    const approxCharWidth = settings.fontSize * 0.6;
+    return Math.max(1, Math.floor(ruledTextWidth / approxCharWidth));
+  }, [ruledTextWidth, settings.fontSize]);
+
+  const measureTextWidth = useMemo(() => {
+    const fallback = (s: string) => s.length * settings.fontSize * 0.6;
+    if (typeof document === 'undefined' || typeof window === 'undefined') return fallback;
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return fallback;
+
+    const resolveFamily = () => {
+      if (customFontFamily) return `"${customFontFamily}", cursive`;
+      const varName = FONT_VARIABLES[settings.fontFamily];
+      if (!varName) return 'cursive';
+      const scope = document.body ?? document.documentElement;
+      const value = window.getComputedStyle(scope).getPropertyValue(varName).trim();
+      return value || 'cursive';
+    };
+
+    ctx.font = `400 ${settings.fontSize}px ${resolveFamily()}`;
+    return (s: string) => ctx.measureText(s).width;
+  }, [customFontFamily, settings.fontFamily, settings.fontSize, fontMetricsVersion]);
 
   const applyRandomness = useCallback(
     (charIndex: number, lineIndex: number) => {
@@ -412,57 +472,116 @@ export default function HandwritingEditor({
     [applyRandomness, isFocused, settings.inkColor, handleCharClick]
   );
 
-  const wrappedLines = useMemo((): WrappedLine[] => {
-    // Heuristic wrapping based on estimated average character width.
-    // This keeps layout stable across fonts without expensive measuring.
-    const avgCharWidth = Math.max(1, settings.fontSize * 0.6);
-    const maxCharsPerLine = Math.max(1, Math.floor(ruledTextWidth / avgCharWidth));
+  const linesData = useMemo((): LineData[] => {
+    const rawLines = text.split('\n');
+    const out: LineData[] = [];
+    const maxWidth = ruledTextWidth;
 
-    const out: WrappedLine[] = [];
-    let current = '';
-    let lineStartGlobal = 0;
-    let displayLineIndex = 0;
+    const findMaxFittingIndex = (s: string) => {
+      if (s.length === 0) return 0;
 
-    const pushCurrent = () => {
-      out.push({
-        text: current,
-        globalStartIndex: lineStartGlobal,
-        displayLineIndex,
-      });
-      displayLineIndex += 1;
-      lineStartGlobal += current.length;
-      current = '';
+      if (typeof document === 'undefined' || typeof window === 'undefined') {
+        return Math.max(1, Math.min(s.length, maxCharsPerLine));
+      }
+
+      let low = 1;
+      let high = s.length;
+      let best = 1;
+      while (low <= high) {
+        const mid = Math.floor((low + high) / 2);
+        const w = measureTextWidth(s.slice(0, mid));
+        if (w <= maxWidth) {
+          best = mid;
+          low = mid + 1;
+        } else {
+          high = mid - 1;
+        }
+      }
+      return Math.max(1, Math.min(best, s.length));
     };
 
-    for (let i = 0; i < text.length; i++) {
-      const ch = text[i];
+    for (let rawIdx = 0; rawIdx < rawLines.length; rawIdx++) {
+      let remaining = rawLines[rawIdx] ?? '';
+      const hasNewlineAtEnd = rawIdx < rawLines.length - 1;
 
-      if (ch === '\n') {
-        // Preserve explicit line breaks.
-        pushCurrent();
-        lineStartGlobal += 1; // account for the newline char in the source
+      if (remaining.length === 0) {
+        out.push({ text: '', lineIndex: rawIdx, hasNewline: hasNewlineAtEnd });
         continue;
       }
 
-      // If adding the next char would exceed the line, wrap.
-      if (current.length >= maxCharsPerLine) {
-        pushCurrent();
+      const tokens = remaining.match(/\S+|\s+/g) ?? [remaining];
+      const pieces: string[] = [];
+      let current = '';
+
+      const flush = () => {
+        pieces.push(current);
+        current = '';
+      };
+
+      for (const token of tokens) {
+        if (token === '') continue;
+
+        if (current !== '' && token.trim() === '') {
+          const candidate = current + token;
+          if (measureTextWidth(candidate) <= maxWidth) {
+            current = candidate;
+          } else {
+            current = candidate;
+            flush();
+          }
+          continue;
+        }
+
+        const candidate = current + token;
+        if (current !== '' && measureTextWidth(candidate) <= maxWidth) {
+          current = candidate;
+          continue;
+        }
+
+        if (current !== '' && measureTextWidth(candidate) > maxWidth) {
+          flush();
+        }
+
+        if (measureTextWidth(token) <= maxWidth) {
+          current += token;
+          continue;
+        }
+
+        let rest = token;
+        while (rest.length > 0 && measureTextWidth(rest) > maxWidth) {
+          const fit = findMaxFittingIndex(rest);
+          const chunk = rest.slice(0, fit);
+          if (chunk.length === 0) break;
+          pieces.push(chunk);
+          rest = rest.slice(fit);
+        }
+
+        if (rest.length > 0) {
+          current += rest;
+        }
       }
 
-      current += ch;
+      if (current !== '') {
+        flush();
+      }
+
+      for (let i = 0; i < pieces.length; i++) {
+        out.push({
+          text: pieces[i] ?? '',
+          lineIndex: rawIdx,
+          hasNewline: i === pieces.length - 1 ? hasNewlineAtEnd : false,
+        });
+      }
     }
 
-    // Always push the trailing line (including empty when text ends with '\n' or is empty)
-    pushCurrent();
-
     return out;
-  }, [text, ruledTextWidth, settings.fontSize]);
+  }, [text, ruledTextWidth, maxCharsPerLine, measureTextWidth]);
 
   const pages = useMemo(() => {
-    const pagesData: WrappedLine[][] = [];
-    let currentPage: WrappedLine[] = [];
+    const pagesData: LineData[][] = [];
+    let currentPage: LineData[] = [];
 
-    wrappedLines.forEach((line) => {
+    linesData.forEach((line) => {
       if (currentPage.length >= linesPerPage) {
         pagesData.push(currentPage);
         currentPage = [];
@@ -475,7 +594,13 @@ export default function HandwritingEditor({
     }
 
     return pagesData;
-  }, [wrappedLines, linesPerPage]);
+  }, [linesData, linesPerPage]);
+
+  useEffect(() => {
+    if (currentPageIndex > pages.length - 1) {
+      onCurrentPageChange(Math.max(0, pages.length - 1));
+    }
+  }, [currentPageIndex, onCurrentPageChange, pages.length]);
 
   const handleTextChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -483,6 +608,36 @@ export default function HandwritingEditor({
       setCursorPosition(e.target.selectionStart);
     },
     [onTextChange]
+  );
+
+  const handlePaste = useCallback(
+    (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+      const el = textareaRef.current;
+      if (!el) return;
+
+      const pastedRaw = e.clipboardData?.getData('text/plain');
+      if (!pastedRaw) return;
+
+      if (!pastedRaw.includes('\n') && !pastedRaw.includes('\r')) return;
+
+      e.preventDefault();
+
+      const normalized = pastedRaw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      const paragraphs = normalized.split('\n\n');
+      const reflowed = paragraphs.map((p) => p.replace(/\n/g, ' ')).join('\n\n');
+
+      const start = el.selectionStart ?? cursorPosition;
+      const end = el.selectionEnd ?? cursorPosition;
+      const nextText = text.slice(0, start) + reflowed + text.slice(end);
+      const nextCursor = start + reflowed.length;
+
+      onTextChange(nextText);
+      setCursorPosition(nextCursor);
+      requestAnimationFrame(() => {
+        el.setSelectionRange(nextCursor, nextCursor);
+      });
+    },
+    [cursorPosition, onTextChange, text]
   );
 
   const handleKeyUp = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -618,6 +773,15 @@ export default function HandwritingEditor({
     }
   }, []);
 
+  // Calculate the global character count offset for the current page
+  // (sum of all characters + newlines from previous pages)
+  let globalCharCount = 0;
+  for (let i = 0; i < currentPageIndex && i < pages.length; i++) {
+    for (const line of pages[i]) {
+      globalCharCount += line.text.length + (line.hasNewline ? 1 : 0);
+    }
+  }
+
   return (
     <div className="flex flex-col items-center gap-8 py-8">
       {/* Mode Toggle Toolbar */}
@@ -701,6 +865,7 @@ export default function HandwritingEditor({
         ref={textareaRef}
         value={text}
         onChange={handleTextChange}
+        onPaste={handlePaste}
         onKeyUp={handleKeyUp}
         onClick={handleClick}
         onFocus={() => setIsFocused(true)}
@@ -787,11 +952,11 @@ export default function HandwritingEditor({
                   </span>
                 ) : (
                   pageLines.map((line, lineIdx) => {
-                    const lineStartChar = line.globalStartIndex;
+                    const lineStartChar = globalCharCount;
                     const lineText = line.text;
 
                     return (
-                      <div key={lineIdx} style={{ minHeight: pageLineHeightPx }}>
+                      <div key={lineIdx} style={{ minHeight: pageLineHeightPx, whiteSpace: 'nowrap' }}>
                         {lineText === '' ? (
                           <>
                             {isFocused && cursorPosition === lineStartChar && (
@@ -805,23 +970,26 @@ export default function HandwritingEditor({
                                 }}
                               />
                             )}
+                            {(() => { globalCharCount += (line.hasNewline ? 1 : 0); return null; })()}
                           </>
                         ) : (
                           <>
                             {lineText.split('').map((char: string, charIdx: number) => {
-                              const currentGlobalChar = lineStartChar + charIdx;
+                              const currentGlobalChar = globalCharCount;
+                              globalCharCount += 1;
                               const showCursorAfter = cursorPosition === currentGlobalChar + 1;
                               const showCursorBefore = charIdx === 0 && cursorPosition === currentGlobalChar;
 
                               return renderCharacter(
                                 char,
                                 charIdx,
-                                line.displayLineIndex,
+                                line.lineIndex,
                                 currentGlobalChar,
                                 showCursorAfter,
                                 showCursorBefore
                               );
                             })}
+                            {(() => { globalCharCount += (line.hasNewline ? 1 : 0); return null; })()}
                           </>
                         )}
                       </div>

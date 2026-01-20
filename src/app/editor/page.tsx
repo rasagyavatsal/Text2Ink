@@ -6,7 +6,7 @@ import Link from 'next/link';
 import HandwritingEditor from '@/components/HandwritingEditor';
 import SettingsPanel from '@/components/SettingsPanel';
 import ExportPanel from '@/components/ExportPanel';
-import { HandwritingSettings, DEFAULT_SETTINGS, TextField } from '@/lib/types';
+import { HandwritingSettings, DEFAULT_SETTINGS, TextField, HANDWRITING_FONTS } from '@/lib/types';
 import { Settings, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function EditorPage() {
@@ -19,6 +19,7 @@ export default function EditorPage() {
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [previewScale, setPreviewScale] = useState(1);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [fontMetricsVersion, setFontMetricsVersion] = useState(0);
 
   const clampPreviewScale = (value: number) => Math.min(2, Math.max(0.5, value));
 
@@ -26,63 +27,180 @@ export default function EditorPage() {
   const totalPages = useMemo(() => {
     const PAGE_WIDTH = 612;
     const PAGE_HEIGHT = 792;
-
+    const contentHeight = PAGE_HEIGHT - settings.marginTop - settings.marginBottom;
     const ruledTextLeft =
       settings.paperStyle === 'ruled' && !settings.customBackgroundImage
         ? settings.marginLeft + settings.ruledMarginLineOffset + 10
         : settings.marginLeft;
     const ruledTextWidth = PAGE_WIDTH - ruledTextLeft - settings.marginRight;
-
-    const contentHeight = PAGE_HEIGHT - settings.marginTop - settings.marginBottom;
     const baseLineHeightPx = settings.fontSize * settings.lineHeight;
     const lineHeightPx = settings.customBackgroundImage && settings.customLineSpacing
       ? settings.customLineSpacing
       : baseLineHeightPx;
     const linesPerPage = Math.floor(contentHeight / lineHeightPx);
 
-    const avgCharWidth = Math.max(1, settings.fontSize * 0.6);
-    const maxCharsPerLine = Math.max(1, Math.floor(ruledTextWidth / avgCharWidth));
+    const approxCharWidth = settings.fontSize * 0.6;
+    const maxCharsPerLine = Math.max(1, Math.floor(ruledTextWidth / approxCharWidth));
 
-    let displayLines = 0;
-    let currentLen = 0;
+    const measureTextWidth = (() => {
+      const fallback = (s: string) => s.length * approxCharWidth;
+      if (typeof document === 'undefined' || typeof window === 'undefined') return fallback;
 
-    for (let i = 0; i < text.length; i++) {
-      const ch = text[i];
-      if (ch === '\n') {
-        displayLines += 1;
-        currentLen = 0;
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return fallback;
+
+      const fontClass = (() => {
+        if (settings.fontFamily === 'custom' && !settings.customFont) {
+          return HANDWRITING_FONTS[0].className;
+        }
+        const font = HANDWRITING_FONTS.find((f) => f.value === settings.fontFamily);
+        return font?.className || HANDWRITING_FONTS[0].className;
+      })();
+
+      const customFontFamily =
+        settings.fontFamily === 'custom' && settings.customFont
+          ? settings.customFont.family
+          : null;
+
+      let font = `400 ${settings.fontSize}px cursive`;
+      try {
+        const probe = document.createElement('span');
+        probe.className = fontClass;
+        probe.style.position = 'absolute';
+        probe.style.visibility = 'hidden';
+        probe.style.left = '-9999px';
+        probe.style.top = '-9999px';
+        probe.style.fontSize = `${settings.fontSize}px`;
+        if (customFontFamily) {
+          probe.style.fontFamily = `\"${customFontFamily}\", cursive`;
+        }
+        document.body.appendChild(probe);
+        const cs = window.getComputedStyle(probe);
+        font = cs.font || font;
+        probe.remove();
+      } catch { }
+
+      ctx.font = font;
+      return (s: string) => ctx.measureText(s).width;
+    })();
+
+    const rawLines = text.split('\n');
+    let wrappedLineCount = 0;
+
+    const maxWidth = ruledTextWidth;
+
+    const findMaxFittingIndex = (s: string) => {
+      if (s.length === 0) return 0;
+      if (typeof document === 'undefined' || typeof window === 'undefined') {
+        return Math.max(1, Math.min(s.length, maxCharsPerLine));
+      }
+
+      let low = 1;
+      let high = s.length;
+      let best = 1;
+      while (low <= high) {
+        const mid = Math.floor((low + high) / 2);
+        const w = measureTextWidth(s.slice(0, mid));
+        if (w <= maxWidth) {
+          best = mid;
+          low = mid + 1;
+        } else {
+          high = mid - 1;
+        }
+      }
+      return Math.max(1, Math.min(best, s.length));
+    };
+
+    for (const raw of rawLines) {
+      if (raw.length === 0) {
+        wrappedLineCount += 1;
         continue;
       }
 
-      if (currentLen >= maxCharsPerLine) {
-        displayLines += 1;
-        currentLen = 0;
+      const tokens = raw.match(/\S+|\s+/g) ?? [raw];
+      let current = '';
+
+      const flush = () => {
+        wrappedLineCount += 1;
+        current = '';
+      };
+
+      for (const token of tokens) {
+        if (token === '') continue;
+
+        const candidate = current + token;
+        if (current !== '' && measureTextWidth(candidate) <= maxWidth) {
+          current = candidate;
+          continue;
+        }
+
+        if (current !== '' && measureTextWidth(candidate) > maxWidth) {
+          flush();
+        }
+
+        if (measureTextWidth(token) <= maxWidth) {
+          current += token;
+          continue;
+        }
+
+        let rest = token;
+        while (rest.length > 0 && measureTextWidth(rest) > maxWidth) {
+          const fit = findMaxFittingIndex(rest);
+          const chunk = rest.slice(0, fit);
+          if (chunk.length === 0) break;
+          wrappedLineCount += 1;
+          rest = rest.slice(fit);
+        }
+
+        if (rest.length > 0) {
+          current += rest;
+        }
       }
 
-      currentLen += 1;
+      if (current !== '') {
+        flush();
+      }
     }
 
-    // Trailing line (including empty for empty text / text ending with '\n')
-    displayLines += 1;
-
-    return Math.max(1, Math.ceil(displayLines / Math.max(1, linesPerPage)));
+    return Math.max(1, Math.ceil(wrappedLineCount / Math.max(1, linesPerPage)));
   }, [
     text,
-    settings.paperStyle,
-    settings.customBackgroundImage,
-    settings.marginLeft,
-    settings.marginRight,
-    settings.ruledMarginLineOffset,
     settings.marginTop,
     settings.marginBottom,
+    settings.marginLeft,
+    settings.marginRight,
+    settings.fontFamily,
+    settings.customFont,
+    settings.paperStyle,
+    settings.customBackgroundImage,
+    settings.customLineSpacing,
     settings.fontSize,
     settings.lineHeight,
-    settings.customLineSpacing,
+    settings.ruledMarginLineOffset,
+    fontMetricsVersion,
   ]);
 
   useEffect(() => {
-    setCurrentPageIndex((prev) => Math.min(prev, totalPages - 1));
-  }, [totalPages]);
+    if (typeof document === 'undefined') return;
+    const fonts = document.fonts;
+    if (!fonts) return;
+
+    let cancelled = false;
+    const bump = () => {
+      if (cancelled) return;
+      setFontMetricsVersion((v) => v + 1);
+    };
+
+    fonts.ready.then(bump).catch(() => { });
+    fonts.addEventListener('loadingdone', bump);
+    fonts.addEventListener('loadingerror', bump);
+    return () => {
+      cancelled = true;
+      fonts.removeEventListener('loadingdone', bump);
+      fonts.removeEventListener('loadingerror', bump);
+    };
+  }, [settings.fontFamily, settings.customFont, settings.fontSize]);
 
   useEffect(() => {
     const isLikelyMobile = () => {
