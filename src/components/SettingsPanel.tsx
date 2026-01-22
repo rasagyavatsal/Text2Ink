@@ -235,21 +235,23 @@ export default function SettingsPanel({
             />
           </div>
 
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <Label>Line Height</Label>
-              <span className="text-sm text-muted-foreground">
-                {settings.lineHeight.toFixed(1)}
-              </span>
+          {!hasCustomBackground && (
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label>Line Height</Label>
+                <span className="text-sm text-muted-foreground">
+                  {settings.lineHeight.toFixed(1)}
+                </span>
+              </div>
+              <Slider
+                value={[settings.lineHeight]}
+                onValueChange={([value]) => updateSetting('lineHeight', value)}
+                min={1.2}
+                max={3}
+                step={0.1}
+              />
             </div>
-            <Slider
-              value={[settings.lineHeight]}
-              onValueChange={([value]) => updateSetting('lineHeight', value)}
-              min={1.2}
-              max={3}
-              step={0.1}
-            />
-          </div>
+          )}
 
           <div className="space-y-2">
             <div className="flex justify-between">
