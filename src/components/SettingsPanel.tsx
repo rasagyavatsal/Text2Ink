@@ -32,6 +32,16 @@ export default function SettingsPanel({
 }: SettingsPanelProps) {
   const [customFontError, setCustomFontError] = useState<string | null>(null);
 
+  const hasCustomBackground =
+    (settings.customBackgroundImages?.length ?? 0) > 0 || !!settings.customBackgroundImage;
+
+  const effectiveBackgroundImages =
+    (settings.customBackgroundImages?.length ?? 0) > 0
+      ? settings.customBackgroundImages
+      : settings.customBackgroundImage
+        ? [settings.customBackgroundImage]
+        : [];
+
 
 
   const updateSetting = <K extends keyof HandwritingSettings>(
@@ -358,50 +368,89 @@ export default function SettingsPanel({
           <div className="space-y-2">
             <Label>Custom Background Image</Label>
             <div className="space-y-2">
-              {settings.customBackgroundImage ? (
-                <div className="relative">
-                  <img
-                    src={settings.customBackgroundImage}
-                    alt="Custom background"
-                    className="w-full h-24 object-cover rounded border border-input"
-                  />
+              {effectiveBackgroundImages.length > 0 && (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-3 gap-2">
+                    {effectiveBackgroundImages.map((src, idx) => (
+                      <div key={`${idx}-${src.slice(0, 30)}`} className="relative">
+                        <img
+                          src={src}
+                          alt={`Custom background ${idx + 1}`}
+                          className="w-full h-16 object-cover rounded border border-input"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = effectiveBackgroundImages.filter((_, i) => i !== idx);
+                            updateSettings({
+                              customBackgroundImages: next,
+                              customBackgroundImage: next.length > 0 ? next[0] : null,
+                            });
+                          }}
+                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                          title="Remove background image"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
                   <button
-                    onClick={() => updateSetting('customBackgroundImage', null)}
-                    className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                    title="Remove background image"
+                    type="button"
+                    onClick={() =>
+                      updateSettings({
+                        customBackgroundImages: [],
+                        customBackgroundImage: null,
+                      })
+                    }
+                    className="text-xs text-red-600 hover:underline"
                   >
-                    <X className="w-3 h-3" />
+                    Remove all
                   </button>
                 </div>
-              ) : (
-                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#E0A32A] hover:bg-[#E0A32A]/5 transition-colors">
-                  <Upload className="w-6 h-6 text-gray-400 mb-1" />
-                  <span className="text-sm text-gray-500">Upload PNG or JPG</span>
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                          const result = event.target?.result as string;
-                          updateSetting('customBackgroundImage', result);
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                  />
-                </label>
               )}
+
+              <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#E0A32A] hover:bg-[#E0A32A]/5 transition-colors">
+                <Upload className="w-6 h-6 text-gray-400 mb-1" />
+                <span className="text-sm text-gray-500">Upload PNG or JPG</span>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/png,image/jpeg,image/jpg"
+                  className="hidden"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files ?? []);
+                    e.target.value = '';
+                    if (files.length === 0) return;
+
+                    const readAsDataURL = (file: File) =>
+                      new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onerror = () => reject(new Error('Failed to read image'));
+                        reader.onload = (event) => resolve(event.target?.result as string);
+                        reader.readAsDataURL(file);
+                      });
+
+                    Promise.all(files.map(readAsDataURL))
+                      .then((results) => {
+                        const next = [...effectiveBackgroundImages, ...results];
+                        updateSettings({
+                          customBackgroundImages: next,
+                          customBackgroundImage: next[0] ?? null,
+                        });
+                      })
+                      .catch(() => { });
+                  }}
+                />
+              </label>
               <p className="text-xs text-muted-foreground">
                 Image will be used as page background
               </p>
             </div>
           </div>
 
-          {settings.customBackgroundImage && (
+          {hasCustomBackground && (
             <>
               <div className="space-y-2">
                 <div className="flex justify-between">

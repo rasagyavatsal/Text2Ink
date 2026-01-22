@@ -27,14 +27,16 @@ export default function EditorPage() {
   const totalPages = useMemo(() => {
     const PAGE_WIDTH = 612;
     const PAGE_HEIGHT = 792;
+    const hasAnyCustomBackground =
+      (settings.customBackgroundImages?.length ?? 0) > 0 || !!settings.customBackgroundImage;
     const contentHeight = PAGE_HEIGHT - settings.marginTop - settings.marginBottom;
     const ruledTextLeft =
-      settings.paperStyle === 'ruled' && !settings.customBackgroundImage
+      settings.paperStyle === 'ruled' && !hasAnyCustomBackground
         ? settings.marginLeft + settings.ruledMarginLineOffset + 10
         : settings.marginLeft;
     const ruledTextWidth = PAGE_WIDTH - ruledTextLeft - settings.marginRight;
     const baseLineHeightPx = settings.fontSize * settings.lineHeight;
-    const lineHeightPx = settings.customBackgroundImage && settings.customLineSpacing
+    const lineHeightPx = hasAnyCustomBackground && settings.customLineSpacing
       ? settings.customLineSpacing
       : baseLineHeightPx;
     const linesPerPage = Math.floor(contentHeight / lineHeightPx);
@@ -174,6 +176,7 @@ export default function EditorPage() {
     settings.customFont,
     settings.paperStyle,
     settings.customBackgroundImage,
+    settings.customBackgroundImages,
     settings.customLineSpacing,
     settings.fontSize,
     settings.lineHeight,

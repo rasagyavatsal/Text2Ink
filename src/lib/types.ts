@@ -30,6 +30,7 @@ export interface HandwritingSettings {
   paperColor: string;
   lineColor: string;
   customBackgroundImage: string | null;
+  customBackgroundImages: string[];
   customLineOffset: number;
   customLineSpacing: number | null;
   randomness: {
@@ -75,6 +76,7 @@ export const DEFAULT_SETTINGS: HandwritingSettings = {
   paperColor: '#fffef5',
   lineColor: '#a8d4f0',
   customBackgroundImage: null,
+  customBackgroundImages: [],
   customLineOffset: 0,
   customLineSpacing: null,
   randomness: {

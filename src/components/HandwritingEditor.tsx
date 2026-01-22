@@ -138,19 +138,28 @@ export default function HandwritingEditor({
     };
   }, [settings.customFont]);
 
+  const getBackgroundForPage = useCallback(
+    (pageIndex: number) =>
+      settings.customBackgroundImages?.[pageIndex] ?? settings.customBackgroundImage,
+    [settings.customBackgroundImages, settings.customBackgroundImage]
+  );
+
+  const hasAnyCustomBackground =
+    (settings.customBackgroundImages?.length ?? 0) > 0 || !!settings.customBackgroundImage;
+
   const contentWidth = PAGE_WIDTH - settings.marginLeft - settings.marginRight;
   const contentHeight = PAGE_HEIGHT - settings.marginTop - settings.marginBottom;
   const ruledTextLeft =
-    settings.paperStyle === 'ruled' && !settings.customBackgroundImage
+    settings.paperStyle === 'ruled' && !hasAnyCustomBackground
       ? settings.marginLeft + settings.ruledMarginLineOffset + 10
       : settings.marginLeft;
   const ruledTextWidth = PAGE_WIDTH - ruledTextLeft - settings.marginRight;
   const baseLineHeightPx = settings.fontSize * settings.lineHeight;
-  const lineHeightPx = settings.customBackgroundImage && settings.customLineSpacing
+  const lineHeightPx = hasAnyCustomBackground && settings.customLineSpacing
     ? settings.customLineSpacing
     : baseLineHeightPx;
   const linesPerPage = Math.floor(contentHeight / lineHeightPx);
-  const lineOffset = settings.customBackgroundImage ? settings.customLineOffset : 0;
+  const lineOffset = hasAnyCustomBackground ? settings.customLineOffset : 0;
 
   const maxCharsPerLine = useMemo(() => {
     const approxCharWidth = settings.fontSize * 0.6;
@@ -203,7 +212,8 @@ export default function HandwritingEditor({
 
   const renderPaperLines = useCallback(
     (pageIndex: number) => {
-      if (settings.paperStyle === 'blank' || settings.customBackgroundImage) return null;
+      const pageHasBackground = !!getBackgroundForPage(pageIndex);
+      if (settings.paperStyle === 'blank' || pageHasBackground) return null;
 
       const lines = [];
       const startY = settings.marginTop;
@@ -858,8 +868,10 @@ export default function HandwritingEditor({
       {pages.length > 0 && (() => {
         const pageIndex = currentPageIndex;
         const pageLines = pages[pageIndex] || [];
-        const pageLineOffset = settings.customBackgroundImage ? settings.customLineOffset : 0;
-        const pageLineHeightPx = settings.customBackgroundImage && settings.customLineSpacing
+        const pageBackground = getBackgroundForPage(pageIndex);
+        const pageHasBackground = !!pageBackground;
+        const pageLineOffset = pageHasBackground ? settings.customLineOffset : 0;
+        const pageLineHeightPx = pageHasBackground && settings.customLineSpacing
           ? settings.customLineSpacing
           : baseLineHeightPx;
 
@@ -881,8 +893,8 @@ export default function HandwritingEditor({
                 width: PAGE_WIDTH,
                 height: PAGE_HEIGHT,
                 backgroundColor: settings.paperColor,
-                backgroundImage: settings.customBackgroundImage
-                  ? `url(${settings.customBackgroundImage})`
+                backgroundImage: pageBackground
+                  ? `url(${pageBackground})`
                   : undefined,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
@@ -902,7 +914,7 @@ export default function HandwritingEditor({
                   height: contentHeight,
                   fontFamily: customFontFamily ? `"${customFontFamily}", cursive` : undefined,
                   fontSize: settings.fontSize,
-                  lineHeight: settings.customBackgroundImage && settings.customLineSpacing
+                  lineHeight: pageHasBackground && settings.customLineSpacing
                     ? `${settings.customLineSpacing}px`
                     : settings.lineHeight,
                   color: settings.inkColor,
