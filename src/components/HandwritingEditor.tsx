@@ -1,7 +1,14 @@
 'use client';
 
-import React, { useRef, useCallback, useMemo, useEffect, useState } from 'react';
-import { HandwritingSettings, HANDWRITING_FONTS, TextField, EditorMode } from '@/lib/types';
+import React, { useRef, useCallback, useMemo, useEffect, useState, useDeferredValue } from 'react';
+import {
+  HandwritingSettings,
+  HANDWRITING_FONTS,
+  TextField,
+  EditorMode,
+  PageSettings,
+  defaultPageSettingsFromHandwritingSettings,
+} from '@/lib/types';
 import { Type, PenLine, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface HandwritingEditorProps {
@@ -9,6 +16,7 @@ interface HandwritingEditorProps {
   onTextChange: (text: string) => void;
   settings: HandwritingSettings;
   onSettingsChange?: (settings: HandwritingSettings) => void;
+  pageSettingsByPage: PageSettings[];
   pageRefs: React.MutableRefObject<(HTMLDivElement | null)[]>;
   previewScale: number;
   onPreviewScaleChange: (value: number) => void;
@@ -16,6 +24,7 @@ interface HandwritingEditorProps {
   onTextFieldsChange: (textFields: TextField[]) => void;
   currentPageIndex: number;
   onCurrentPageChange: (pageIndex: number) => void;
+  onTotalPagesChange?: (totalPages: number) => void;
 }
 
 const PAGE_WIDTH = 612;
@@ -49,6 +58,7 @@ export default function HandwritingEditor({
   onTextChange,
   settings,
   onSettingsChange,
+  pageSettingsByPage,
   pageRefs,
   previewScale,
   onPreviewScaleChange,
@@ -56,8 +66,11 @@ export default function HandwritingEditor({
   onTextFieldsChange,
   currentPageIndex,
   onCurrentPageChange,
+  onTotalPagesChange,
 }: HandwritingEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const measureCtxRef = useRef<CanvasRenderingContext2D | null>(null);
+  const measureFnCacheRef = useRef<Map<number, (s: string) => number>>(new Map());
   const [isFocused, setIsFocused] = useState(false);
   const [cursorPosition, setCursorPosition] = useState(0);
   const [editorMode, setEditorMode] = useState<EditorMode>('write');
@@ -80,6 +93,8 @@ export default function HandwritingEditor({
     settings.fontFamily === 'custom' && settings.customFont
       ? settings.customFont.family
       : null;
+
+  const deferredText = useDeferredValue(text);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -147,45 +162,170 @@ export default function HandwritingEditor({
   const hasAnyCustomBackground =
     (settings.customBackgroundImages?.length ?? 0) > 0 || !!settings.customBackgroundImage;
 
-  const contentWidth = PAGE_WIDTH - settings.marginLeft - settings.marginRight;
-  const contentHeight = PAGE_HEIGHT - settings.marginTop - settings.marginBottom;
-  const ruledTextLeft =
-    settings.paperStyle === 'ruled' && !hasAnyCustomBackground
-      ? settings.marginLeft + settings.ruledMarginLineOffset + 10
-      : settings.marginLeft;
-  const ruledTextWidth = PAGE_WIDTH - ruledTextLeft - settings.marginRight;
-  const baseLineHeightPx = settings.fontSize * settings.lineHeight;
-  const lineHeightPx = hasAnyCustomBackground && settings.customLineSpacing
-    ? settings.customLineSpacing
-    : baseLineHeightPx;
-  const linesPerPage = Math.floor(contentHeight / lineHeightPx);
-  const lineOffset = hasAnyCustomBackground ? settings.customLineOffset : 0;
+  const getPageSettings = useCallback(
+    (pageIndex: number): PageSettings =>
+      pageSettingsByPage[pageIndex] ?? defaultPageSettingsFromHandwritingSettings(settings),
+    [pageSettingsByPage, settings]
+  );
 
-  const maxCharsPerLine = useMemo(() => {
-    const approxCharWidth = settings.fontSize * 0.6;
-    return Math.max(1, Math.floor(ruledTextWidth / approxCharWidth));
-  }, [ruledTextWidth, settings.fontSize]);
+  useEffect(() => {
+    measureFnCacheRef.current.clear();
+  }, [customFontFamily, settings.fontFamily, fontMetricsVersion]);
 
-  const measureTextWidth = useMemo(() => {
-    const fallback = (s: string) => s.length * settings.fontSize * 0.6;
-    if (typeof document === 'undefined' || typeof window === 'undefined') return fallback;
+  const measureTextWidthForFontSize = useCallback(
+    (fontSize: number) => {
+      const cached = measureFnCacheRef.current.get(fontSize);
+      if (cached) return cached;
 
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return fallback;
+      const fallback = (s: string) => s.length * fontSize * 0.6;
+      if (typeof document === 'undefined' || typeof window === 'undefined') {
+        measureFnCacheRef.current.set(fontSize, fallback);
+        return fallback;
+      }
 
-    const resolveFamily = () => {
-      if (customFontFamily) return `"${customFontFamily}", cursive`;
-      const varName = FONT_VARIABLES[settings.fontFamily];
-      if (!varName) return 'cursive';
-      const scope = document.body ?? document.documentElement;
-      const value = window.getComputedStyle(scope).getPropertyValue(varName).trim();
-      return value || 'cursive';
+      if (!measureCtxRef.current) {
+        const canvas = document.createElement('canvas');
+        measureCtxRef.current = canvas.getContext('2d');
+      }
+
+      const ctx = measureCtxRef.current;
+      if (!ctx) {
+        measureFnCacheRef.current.set(fontSize, fallback);
+        return fallback;
+      }
+
+      const resolveFamily = () => {
+        if (customFontFamily) return `"${customFontFamily}", cursive`;
+        const varName = FONT_VARIABLES[settings.fontFamily];
+        if (!varName) return 'cursive';
+        const scope = document.body ?? document.documentElement;
+        const value = window.getComputedStyle(scope).getPropertyValue(varName).trim();
+        return value || 'cursive';
+      };
+
+      ctx.font = `400 ${fontSize}px ${resolveFamily()}`;
+
+      const fn = (s: string) => ctx.measureText(s).width;
+      measureFnCacheRef.current.set(fontSize, fn);
+      return fn;
+    },
+    [customFontFamily, settings.fontFamily, fontMetricsVersion]
+  );
+
+  const pages = useMemo(() => {
+    const out: LineData[][] = [];
+    const lineCounter = { value: 0 };
+    const textLen = deferredText.length;
+
+    const nextLineFrom = (fromIndex: number, maxWidth: number, measure: (s: string) => number) => {
+      if (fromIndex >= textLen) return null;
+
+      const nlIndex = deferredText.indexOf('\n', fromIndex);
+      const rawEnd = nlIndex === -1 ? textLen : nlIndex;
+      const segment = deferredText.slice(fromIndex, rawEnd);
+
+      if (segment.length === 0) {
+        if (nlIndex !== -1 && nlIndex === fromIndex) {
+          return { lineText: '', nextIndex: fromIndex + 1, hasNewline: true };
+        }
+        return { lineText: '', nextIndex: rawEnd, hasNewline: nlIndex !== -1 };
+      }
+
+      if (measure(segment) <= maxWidth) {
+        const nextIndex = nlIndex === -1 ? rawEnd : rawEnd + 1;
+        return { lineText: segment, nextIndex, hasNewline: nlIndex !== -1 };
+      }
+
+      const findMaxFittingIndex = (s: string) => {
+        let low = 1;
+        let high = s.length;
+        let best = 1;
+        while (low <= high) {
+          const mid = Math.floor((low + high) / 2);
+          const w = measure(s.slice(0, mid));
+          if (w <= maxWidth) {
+            best = mid;
+            low = mid + 1;
+          } else {
+            high = mid - 1;
+          }
+        }
+        return Math.max(1, Math.min(best, s.length));
+      };
+
+      const fit = findMaxFittingIndex(segment);
+      const candidate = segment.slice(0, fit);
+      const lastWhitespace = Math.max(candidate.lastIndexOf(' '), candidate.lastIndexOf('\t'));
+      const breakAt = lastWhitespace > 0 ? lastWhitespace + 1 : fit;
+
+      return {
+        lineText: segment.slice(0, breakAt),
+        nextIndex: fromIndex + breakAt,
+        hasNewline: false,
+      };
     };
 
-    ctx.font = `400 ${settings.fontSize}px ${resolveFamily()}`;
-    return (s: string) => ctx.measureText(s).width;
-  }, [customFontFamily, settings.fontFamily, settings.fontSize, fontMetricsVersion]);
+    let cursor = 0;
+    let pageIndex = 0;
+
+    if (textLen === 0) {
+      out.push([]);
+      return out;
+    }
+
+    while (cursor < textLen) {
+      const ps = getPageSettings(pageIndex);
+      const pageHasBackground = !!getBackgroundForPage(pageIndex);
+      const contentHeight = PAGE_HEIGHT - ps.marginTop - ps.marginBottom;
+
+      const ruledTextLeft =
+        settings.paperStyle === 'ruled' && !hasAnyCustomBackground
+          ? ps.marginLeft + settings.ruledMarginLineOffset + 10
+          : ps.marginLeft;
+      const ruledTextWidth = PAGE_WIDTH - ruledTextLeft - ps.marginRight;
+
+      const baseLineHeightPx = ps.fontSize * settings.lineHeight;
+      const lineHeightPx = pageHasBackground && ps.customLineSpacing ? ps.customLineSpacing : baseLineHeightPx;
+      const linesPerPage = Math.max(1, Math.floor(contentHeight / lineHeightPx));
+
+      const measure = measureTextWidthForFontSize(ps.fontSize);
+      const maxWidth = ruledTextWidth;
+
+      const pageLines: LineData[] = [];
+      for (let i = 0; i < linesPerPage && cursor < textLen; i++) {
+        const next = nextLineFrom(cursor, maxWidth, measure);
+        if (!next) break;
+        pageLines.push({
+          text: next.lineText,
+          lineIndex: lineCounter.value++,
+          hasNewline: next.hasNewline,
+        });
+        cursor = next.nextIndex;
+      }
+
+      out.push(pageLines);
+      pageIndex += 1;
+
+      if (pageLines.length === 0) {
+        break;
+      }
+    }
+
+    return out.length > 0 ? out : [[]];
+  }, [
+    getBackgroundForPage,
+    getPageSettings,
+    hasAnyCustomBackground,
+    measureTextWidthForFontSize,
+    settings.lineHeight,
+    settings.paperStyle,
+    settings.ruledMarginLineOffset,
+    deferredText,
+  ]);
+
+  useEffect(() => {
+    onTotalPagesChange?.(pages.length);
+  }, [onTotalPagesChange, pages.length]);
 
   const applyRandomness = useCallback(
     (charIndex: number, lineIndex: number) => {
@@ -215,20 +355,27 @@ export default function HandwritingEditor({
       const pageHasBackground = !!getBackgroundForPage(pageIndex);
       if (settings.paperStyle === 'blank' || pageHasBackground) return null;
 
+      const ps = getPageSettings(pageIndex);
+      const contentWidth = PAGE_WIDTH - ps.marginLeft - ps.marginRight;
+      const contentHeight = PAGE_HEIGHT - ps.marginTop - ps.marginBottom;
+      const baseLineHeightPx = ps.fontSize * settings.lineHeight;
+      const lineHeightPx = ps.customLineSpacing ? ps.customLineSpacing : baseLineHeightPx;
+      const linesPerPage = Math.max(1, Math.floor(contentHeight / lineHeightPx));
+
       const lines = [];
-      const startY = settings.marginTop;
+      const startY = ps.marginTop;
 
       if (settings.paperStyle === 'lined' || settings.paperStyle === 'ruled') {
         for (let i = 0; i <= linesPerPage; i++) {
           const y = startY + i * lineHeightPx;
-          if (y < PAGE_HEIGHT - settings.marginBottom + lineHeightPx) {
+          if (y < PAGE_HEIGHT - ps.marginBottom + lineHeightPx) {
             lines.push(
               <div
                 key={`line-${pageIndex}-${i}`}
                 className="absolute pointer-events-none"
                 style={{
                   top: y,
-                  left: settings.marginLeft,
+                  left: ps.marginLeft,
                   height: 1,
                   width: contentWidth,
                   backgroundColor: settings.lineColor,
@@ -245,8 +392,8 @@ export default function HandwritingEditor({
                 key={`margin-line-${pageIndex}`}
                 className="absolute pointer-events-none"
                 style={{
-                  left: settings.marginLeft + settings.ruledMarginLineOffset,
-                  top: settings.marginTop,
+                  left: ps.marginLeft + settings.ruledMarginLineOffset,
+                  top: ps.marginTop,
                   width: 2,
                   height: contentHeight,
                   backgroundColor: '#ffb3b3',
@@ -257,8 +404,8 @@ export default function HandwritingEditor({
                   key={`margin-line-handle-${pageIndex}`}
                   className="absolute"
                   style={{
-                    left: settings.marginLeft + settings.ruledMarginLineOffset - 6,
-                    top: settings.marginTop,
+                    left: ps.marginLeft + settings.ruledMarginLineOffset - 6,
+                    top: ps.marginTop,
                     width: 14,
                     height: contentHeight,
                     cursor: 'col-resize',
@@ -282,14 +429,14 @@ export default function HandwritingEditor({
         const gridSize = lineHeightPx;
         for (let i = 0; i <= linesPerPage; i++) {
           const y = startY + i * gridSize;
-          if (y < PAGE_HEIGHT - settings.marginBottom + gridSize) {
+          if (y < PAGE_HEIGHT - ps.marginBottom + gridSize) {
             lines.push(
               <div
                 key={`h-line-${pageIndex}-${i}`}
                 className="absolute pointer-events-none"
                 style={{
                   top: y,
-                  left: settings.marginLeft,
+                  left: ps.marginLeft,
                   height: 1,
                   width: contentWidth,
                   backgroundColor: settings.lineColor,
@@ -301,14 +448,14 @@ export default function HandwritingEditor({
         }
         const cols = Math.floor(contentWidth / gridSize);
         for (let j = 0; j <= cols; j++) {
-          const x = settings.marginLeft + j * gridSize;
+          const x = ps.marginLeft + j * gridSize;
           lines.push(
             <div
               key={`v-line-${pageIndex}-${j}`}
               className="absolute pointer-events-none"
               style={{
                 left: x,
-                top: settings.marginTop,
+                top: ps.marginTop,
                 width: 1,
                 height: contentHeight,
                 backgroundColor: settings.lineColor,
@@ -321,7 +468,7 @@ export default function HandwritingEditor({
 
       return lines;
     },
-    [settings, lineHeightPx, linesPerPage, contentWidth, contentHeight, onSettingsChange]
+    [getBackgroundForPage, getPageSettings, onSettingsChange, settings.lineColor, settings.lineHeight, settings.paperStyle, settings.ruledMarginLineOffset]
   );
 
   useEffect(() => {
@@ -335,15 +482,17 @@ export default function HandwritingEditor({
       const pageEl = pageRefs.current[pageIndex];
       if (!pageEl) return;
 
+      const ps = getPageSettings(pageIndex);
+
       const pageRect = pageEl.getBoundingClientRect();
       const x = (e.clientX - pageRect.left) / previewScale;
       const minLeft = 0;
       const maxLeft = PAGE_WIDTH;
       const clampedLeft = clamp(x, minLeft, maxLeft);
-      const newOffset = clampedLeft - settings.marginLeft;
+      const newOffset = clampedLeft - ps.marginLeft;
 
-      const minOffset = -settings.marginLeft;
-      const maxOffset = PAGE_WIDTH - settings.marginLeft;
+      const minOffset = -ps.marginLeft;
+      const maxOffset = PAGE_WIDTH - ps.marginLeft;
       const clampedOffset = clamp(newOffset, minOffset, maxOffset);
 
       if (clampedOffset === settings.ruledMarginLineOffset) return;
@@ -360,7 +509,7 @@ export default function HandwritingEditor({
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('mouseup', handleUp);
     };
-  }, [isDraggingMarginLine, onSettingsChange, pageRefs, previewScale, settings]);
+  }, [getPageSettings, isDraggingMarginLine, onSettingsChange, pageRefs, previewScale, settings]);
 
   const handleCharClick = useCallback(
     (e: React.MouseEvent, globalCharIndex: number, isLeftHalf: boolean) => {
@@ -376,7 +525,15 @@ export default function HandwritingEditor({
   );
 
   const renderCharacter = useCallback(
-    (char: string, charIndex: number, lineIndex: number, globalCharIndex: number, showCursor: boolean, showCursorBefore: boolean) => {
+    (
+      char: string,
+      charIndex: number,
+      lineIndex: number,
+      globalCharIndex: number,
+      showCursor: boolean,
+      showCursorBefore: boolean,
+      inkColor: string
+    ) => {
       if (char === ' ') {
         return (
           <span
@@ -396,7 +553,7 @@ export default function HandwritingEditor({
                   top: 0,
                   width: 2,
                   height: '1em',
-                  backgroundColor: settings.inkColor,
+                  backgroundColor: inkColor,
                 }}
               />
             )}
@@ -409,7 +566,7 @@ export default function HandwritingEditor({
                   top: 0,
                   width: 2,
                   height: '1em',
-                  backgroundColor: settings.inkColor,
+                  backgroundColor: inkColor,
                 }}
               />
             )}
@@ -438,7 +595,7 @@ export default function HandwritingEditor({
                 top: 0,
                 width: 2,
                 height: '1em',
-                backgroundColor: settings.inkColor,
+                backgroundColor: inkColor,
               }}
             />
           )}
@@ -451,139 +608,15 @@ export default function HandwritingEditor({
                 top: 0,
                 width: 2,
                 height: '1em',
-                backgroundColor: settings.inkColor,
+                backgroundColor: inkColor,
               }}
             />
           )}
         </span>
       );
     },
-    [applyRandomness, isFocused, settings.inkColor, handleCharClick]
+    [applyRandomness, isFocused, handleCharClick]
   );
-
-  const linesData = useMemo((): LineData[] => {
-    const rawLines = text.split('\n');
-    const out: LineData[] = [];
-    const maxWidth = ruledTextWidth;
-
-    const findMaxFittingIndex = (s: string) => {
-      if (s.length === 0) return 0;
-
-      if (typeof document === 'undefined' || typeof window === 'undefined') {
-        return Math.max(1, Math.min(s.length, maxCharsPerLine));
-      }
-
-      let low = 1;
-      let high = s.length;
-      let best = 1;
-      while (low <= high) {
-        const mid = Math.floor((low + high) / 2);
-        const w = measureTextWidth(s.slice(0, mid));
-        if (w <= maxWidth) {
-          best = mid;
-          low = mid + 1;
-        } else {
-          high = mid - 1;
-        }
-      }
-      return Math.max(1, Math.min(best, s.length));
-    };
-
-    for (let rawIdx = 0; rawIdx < rawLines.length; rawIdx++) {
-      let remaining = rawLines[rawIdx] ?? '';
-      const hasNewlineAtEnd = rawIdx < rawLines.length - 1;
-
-      if (remaining.length === 0) {
-        out.push({ text: '', lineIndex: rawIdx, hasNewline: hasNewlineAtEnd });
-        continue;
-      }
-
-      const tokens = remaining.match(/\S+|\s+/g) ?? [remaining];
-      const pieces: string[] = [];
-      let current = '';
-
-      const flush = () => {
-        pieces.push(current);
-        current = '';
-      };
-
-      for (const token of tokens) {
-        if (token === '') continue;
-
-        if (current !== '' && token.trim() === '') {
-          const candidate = current + token;
-          if (measureTextWidth(candidate) <= maxWidth) {
-            current = candidate;
-          } else {
-            current = candidate;
-            flush();
-          }
-          continue;
-        }
-
-        const candidate = current + token;
-        if (current !== '' && measureTextWidth(candidate) <= maxWidth) {
-          current = candidate;
-          continue;
-        }
-
-        if (current !== '' && measureTextWidth(candidate) > maxWidth) {
-          flush();
-        }
-
-        if (measureTextWidth(token) <= maxWidth) {
-          current += token;
-          continue;
-        }
-
-        let rest = token;
-        while (rest.length > 0 && measureTextWidth(rest) > maxWidth) {
-          const fit = findMaxFittingIndex(rest);
-          const chunk = rest.slice(0, fit);
-          if (chunk.length === 0) break;
-          pieces.push(chunk);
-          rest = rest.slice(fit);
-        }
-
-        if (rest.length > 0) {
-          current += rest;
-        }
-      }
-
-      if (current !== '') {
-        flush();
-      }
-
-      for (let i = 0; i < pieces.length; i++) {
-        out.push({
-          text: pieces[i] ?? '',
-          lineIndex: rawIdx,
-          hasNewline: i === pieces.length - 1 ? hasNewlineAtEnd : false,
-        });
-      }
-    }
-
-    return out;
-  }, [text, ruledTextWidth, maxCharsPerLine, measureTextWidth]);
-
-  const pages = useMemo(() => {
-    const pagesData: LineData[][] = [];
-    let currentPage: LineData[] = [];
-
-    linesData.forEach((line) => {
-      if (currentPage.length >= linesPerPage) {
-        pagesData.push(currentPage);
-        currentPage = [];
-      }
-      currentPage.push(line);
-    });
-
-    if (currentPage.length > 0 || pagesData.length === 0) {
-      pagesData.push(currentPage);
-    }
-
-    return pagesData;
-  }, [linesData, linesPerPage]);
 
   useEffect(() => {
     if (currentPageIndex > pages.length - 1) {
@@ -870,10 +903,18 @@ export default function HandwritingEditor({
         const pageLines = pages[pageIndex] || [];
         const pageBackground = getBackgroundForPage(pageIndex);
         const pageHasBackground = !!pageBackground;
-        const pageLineOffset = pageHasBackground ? settings.customLineOffset : 0;
-        const pageLineHeightPx = pageHasBackground && settings.customLineSpacing
-          ? settings.customLineSpacing
+        const ps = getPageSettings(pageIndex);
+        const pageLineOffset = pageHasBackground ? ps.customLineOffset : 0;
+        const baseLineHeightPx = ps.fontSize * settings.lineHeight;
+        const pageLineHeightPx = pageHasBackground && ps.customLineSpacing
+          ? ps.customLineSpacing
           : baseLineHeightPx;
+        const contentHeight = PAGE_HEIGHT - ps.marginTop - ps.marginBottom;
+        const ruledTextLeft =
+          settings.paperStyle === 'ruled' && !pageHasBackground
+            ? ps.marginLeft + settings.ruledMarginLineOffset + 10
+            : ps.marginLeft;
+        const ruledTextWidth = PAGE_WIDTH - ruledTextLeft - ps.marginRight;
 
         return (
           <div
@@ -892,7 +933,7 @@ export default function HandwritingEditor({
               style={{
                 width: PAGE_WIDTH,
                 height: PAGE_HEIGHT,
-                backgroundColor: settings.paperColor,
+                backgroundColor: ps.paperColor,
                 backgroundImage: pageBackground
                   ? `url(${pageBackground})`
                   : undefined,
@@ -908,17 +949,17 @@ export default function HandwritingEditor({
               <div
                 className={`absolute select-none ${fontClass}`}
                 style={{
-                  top: settings.marginTop + pageLineOffset,
+                  top: ps.marginTop + pageLineOffset,
                   left: ruledTextLeft,
                   width: ruledTextWidth,
                   height: contentHeight,
                   fontFamily: customFontFamily ? `"${customFontFamily}", cursive` : undefined,
-                  fontSize: settings.fontSize,
-                  lineHeight: pageHasBackground && settings.customLineSpacing
-                    ? `${settings.customLineSpacing}px`
+                  fontSize: ps.fontSize,
+                  lineHeight: pageHasBackground && ps.customLineSpacing
+                    ? `${ps.customLineSpacing}px`
                     : settings.lineHeight,
-                  color: settings.inkColor,
-                  transform: settings.lineTilt ? `rotate(${settings.lineTilt}deg)` : undefined,
+                  color: ps.inkColor,
+                  transform: ps.lineTilt ? `rotate(${ps.lineTilt}deg)` : undefined,
                   transformOrigin: 'left top',
                   overflowWrap: 'break-word',
                   wordBreak: 'break-word',
@@ -934,7 +975,7 @@ export default function HandwritingEditor({
                         style={{
                           width: 2,
                           height: '1em',
-                          backgroundColor: settings.inkColor,
+                          backgroundColor: ps.inkColor,
                           verticalAlign: 'text-bottom',
                         }}
                       />
@@ -955,12 +996,15 @@ export default function HandwritingEditor({
                                 style={{
                                   width: 2,
                                   height: '1em',
-                                  backgroundColor: settings.inkColor,
+                                  backgroundColor: ps.inkColor,
                                   verticalAlign: 'text-bottom',
                                 }}
                               />
                             )}
-                            {(() => { globalCharCount += (line.hasNewline ? 1 : 0); return null; })()}
+                            {(() => {
+                              globalCharCount += line.hasNewline ? 1 : 0;
+                              return null;
+                            })()}
                           </>
                         ) : (
                           <>
@@ -976,10 +1020,14 @@ export default function HandwritingEditor({
                                 line.lineIndex,
                                 currentGlobalChar,
                                 showCursorAfter,
-                                showCursorBefore
+                                showCursorBefore,
+                                ps.inkColor
                               );
                             })}
-                            {(() => { globalCharCount += (line.hasNewline ? 1 : 0); return null; })()}
+                            {(() => {
+                              globalCharCount += line.hasNewline ? 1 : 0;
+                              return null;
+                            })()}
                           </>
                         )}
                       </div>
@@ -1038,14 +1086,14 @@ export default function HandwritingEditor({
                       className={`bg-transparent border-none outline-none resize-none ${fontClass}`}
                       style={{
                         fontFamily: customFontFamily ? `"${customFontFamily}", cursive` : undefined,
-                        fontSize: settings.fontSize,
-                        color: settings.inkColor,
+                        fontSize: ps.fontSize,
+                        color: ps.inkColor,
                         lineHeight: settings.lineHeight,
                         minWidth: '20px',
-                        width: tf.text ? `${Math.max(20, tf.text.split('\n').reduce((max, line) => Math.max(max, line.length), 0) * settings.fontSize * 0.6)}px` : '20px',
-                        minHeight: `${settings.fontSize * settings.lineHeight}px`,
+                        width: tf.text ? `${Math.max(20, tf.text.split('\n').reduce((max, line) => Math.max(max, line.length), 0) * ps.fontSize * 0.6)}px` : '20px',
+                        minHeight: `${ps.fontSize * settings.lineHeight}px`,
                         height: 'auto',
-                        caretColor: settings.inkColor,
+                        caretColor: ps.inkColor,
                       }}
                       placeholder=""
                       autoComplete="off"

@@ -14,6 +14,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import {
   HandwritingSettings,
+  PageSettings,
   HANDWRITING_FONTS,
   PAPER_STYLES,
   INK_COLORS,
@@ -24,11 +25,17 @@ import { Type, Palette, FileText, Wand2, Upload, X } from 'lucide-react';
 interface SettingsPanelProps {
   settings: HandwritingSettings;
   onSettingsChange: (settings: HandwritingSettings) => void;
+  pageSettings: PageSettings;
+  onPageSettingsChange: (pageSettings: PageSettings) => void;
+  currentPageIndex: number;
 }
 
 export default function SettingsPanel({
   settings,
   onSettingsChange,
+  pageSettings,
+  onPageSettingsChange,
+  currentPageIndex,
 }: SettingsPanelProps) {
   const [customFontError, setCustomFontError] = useState<string | null>(null);
 
@@ -51,6 +58,13 @@ export default function SettingsPanel({
     onSettingsChange({ ...settings, [key]: value });
   };
 
+  const updatePageSetting = <K extends keyof PageSettings>(
+    key: K,
+    value: PageSettings[K]
+  ) => {
+    onPageSettingsChange({ ...pageSettings, [key]: value });
+  };
+
   const updateSettings = (patch: Partial<HandwritingSettings>) => {
     onSettingsChange({ ...settings, ...patch });
   };
@@ -67,6 +81,10 @@ export default function SettingsPanel({
 
   return (
     <div className="p-6 space-y-8">
+
+      <div className="text-xs text-muted-foreground">
+        Editing page {currentPageIndex + 1}
+      </div>
 
       <div>
         <div className="flex items-center gap-2 mb-5">
@@ -205,12 +223,12 @@ export default function SettingsPanel({
             <div className="flex justify-between">
               <Label>Font Size</Label>
               <span className="text-sm text-muted-foreground">
-                {settings.fontSize}px
+                {pageSettings.fontSize}px
               </span>
             </div>
             <Slider
-              value={[settings.fontSize]}
-              onValueChange={([value]) => updateSetting('fontSize', value)}
+              value={[pageSettings.fontSize]}
+              onValueChange={([value]) => updatePageSetting('fontSize', value)}
               min={14}
               max={48}
               step={1}
@@ -237,12 +255,12 @@ export default function SettingsPanel({
             <div className="flex justify-between">
               <Label>Line Tilt</Label>
               <span className="text-sm text-muted-foreground">
-                {settings.lineTilt}°
+                {pageSettings.lineTilt}°
               </span>
             </div>
             <Slider
-              value={[settings.lineTilt]}
-              onValueChange={([value]) => updateSetting('lineTilt', value)}
+              value={[pageSettings.lineTilt]}
+              onValueChange={([value]) => updatePageSetting('lineTilt', value)}
               min={-15}
               max={15}
               step={0.5}
@@ -286,12 +304,12 @@ export default function SettingsPanel({
               <div className="flex justify-between">
                 <Label>Top Margin</Label>
                 <span className="text-sm text-muted-foreground">
-                  {settings.marginTop}px
+                  {pageSettings.marginTop}px
                 </span>
               </div>
               <Slider
-                value={[settings.marginTop]}
-                onValueChange={([value]) => updateSetting('marginTop', value)}
+                value={[pageSettings.marginTop]}
+                onValueChange={([value]) => updatePageSetting('marginTop', value)}
                 min={20}
                 max={120}
                 step={5}
@@ -302,12 +320,12 @@ export default function SettingsPanel({
               <div className="flex justify-between">
                 <Label>Bottom Margin</Label>
                 <span className="text-sm text-muted-foreground">
-                  {settings.marginBottom}px
+                  {pageSettings.marginBottom}px
                 </span>
               </div>
               <Slider
-                value={[settings.marginBottom]}
-                onValueChange={([value]) => updateSetting('marginBottom', value)}
+                value={[pageSettings.marginBottom]}
+                onValueChange={([value]) => updatePageSetting('marginBottom', value)}
                 min={20}
                 max={120}
                 step={5}
@@ -318,12 +336,12 @@ export default function SettingsPanel({
               <div className="flex justify-between">
                 <Label>Left Margin</Label>
                 <span className="text-sm text-muted-foreground">
-                  {settings.marginLeft}px
+                  {pageSettings.marginLeft}px
                 </span>
               </div>
               <Slider
-                value={[settings.marginLeft]}
-                onValueChange={([value]) => updateSetting('marginLeft', value)}
+                value={[pageSettings.marginLeft]}
+                onValueChange={([value]) => updatePageSetting('marginLeft', value)}
                 min={20}
                 max={120}
                 step={5}
@@ -334,12 +352,12 @@ export default function SettingsPanel({
               <div className="flex justify-between">
                 <Label>Right Margin</Label>
                 <span className="text-sm text-muted-foreground">
-                  {settings.marginRight}px
+                  {pageSettings.marginRight}px
                 </span>
               </div>
               <Slider
-                value={[settings.marginRight]}
-                onValueChange={([value]) => updateSetting('marginRight', value)}
+                value={[pageSettings.marginRight]}
+                onValueChange={([value]) => updatePageSetting('marginRight', value)}
                 min={20}
                 max={120}
                 step={5}
@@ -456,12 +474,12 @@ export default function SettingsPanel({
                 <div className="flex justify-between">
                   <Label>Line Offset (Y Position)</Label>
                   <span className="text-sm text-muted-foreground">
-                    {settings.customLineOffset}px
+                    {pageSettings.customLineOffset}px
                   </span>
                 </div>
                 <Slider
-                  value={[settings.customLineOffset]}
-                  onValueChange={([value]) => updateSetting('customLineOffset', value)}
+                  value={[pageSettings.customLineOffset]}
+                  onValueChange={([value]) => updatePageSetting('customLineOffset', value)}
                   min={-50}
                   max={50}
                   step={1}
@@ -475,18 +493,18 @@ export default function SettingsPanel({
                 <div className="flex justify-between">
                   <Label>Custom Line Spacing</Label>
                   <span className="text-sm text-muted-foreground">
-                    {settings.customLineSpacing ?? 'Auto'}
+                    {pageSettings.customLineSpacing ?? 'Auto'}
                   </span>
                 </div>
                 <Slider
-                  value={[settings.customLineSpacing ?? Math.round(settings.fontSize * settings.lineHeight)]}
-                  onValueChange={([value]) => updateSetting('customLineSpacing', value)}
+                  value={[pageSettings.customLineSpacing ?? Math.round(pageSettings.fontSize * settings.lineHeight)]}
+                  onValueChange={([value]) => updatePageSetting('customLineSpacing', value)}
                   min={20}
                   max={80}
                   step={1}
                 />
                 <button
-                  onClick={() => updateSetting('customLineSpacing', null)}
+                  onClick={() => updatePageSetting('customLineSpacing', null)}
                   className="text-xs text-[#E0A32A] hover:underline"
                 >
                   Reset to auto

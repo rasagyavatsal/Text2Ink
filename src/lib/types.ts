@@ -1,5 +1,11 @@
 // Per-page settings that can be customized for each page
 export interface PageSettings {
+  fontSize: number;
+  lineTilt: number;
+  marginTop: number;
+  marginBottom: number;
+  marginLeft: number;
+  marginRight: number;
   paperColor: string;
   customBackgroundImage: string | null;
   customLineOffset: number;
@@ -86,6 +92,24 @@ export const DEFAULT_SETTINGS: HandwritingSettings = {
     rotation: 0.5,
   },
 };
+
+export const defaultPageSettingsFromHandwritingSettings = (
+  settings: HandwritingSettings
+): PageSettings => ({
+  fontSize: settings.fontSize,
+  lineTilt: settings.lineTilt,
+  marginTop: settings.marginTop,
+  marginBottom: settings.marginBottom,
+  marginLeft: settings.marginLeft,
+  marginRight: settings.marginRight,
+  paperColor: settings.paperColor,
+  customBackgroundImage: settings.customBackgroundImage,
+  customLineOffset: settings.customLineOffset,
+  customLineSpacing: settings.customLineSpacing,
+  inkColor: settings.inkColor,
+  lineColor: settings.lineColor,
+  paperStyle: settings.paperStyle,
+});
 
 export const PAPER_STYLES = [
   { name: 'Blank', value: 'blank' },

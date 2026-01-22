@@ -1,209 +1,48 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import HandwritingEditor from '@/components/HandwritingEditor';
 import SettingsPanel from '@/components/SettingsPanel';
 import ExportPanel from '@/components/ExportPanel';
-import { HandwritingSettings, DEFAULT_SETTINGS, TextField, HANDWRITING_FONTS } from '@/lib/types';
+import {
+  HandwritingSettings,
+  DEFAULT_SETTINGS,
+  TextField,
+  PageSettings,
+  defaultPageSettingsFromHandwritingSettings,
+} from '@/lib/types';
 import { Settings, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function EditorPage() {
   const [isMobileBlocked, setIsMobileBlocked] = useState(false);
   const [text, setText] = useState('');
   const [settings, setSettings] = useState<HandwritingSettings>(DEFAULT_SETTINGS);
+  const [pageSettingsByPage, setPageSettingsByPage] = useState<PageSettings[]>(() => [
+    defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
+  ]);
   const [activePanel, setActivePanel] = useState<'settings' | 'export'>('settings');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [textFields, setTextFields] = useState<TextField[]>([]);
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [previewScale, setPreviewScale] = useState(1);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
-  const [fontMetricsVersion, setFontMetricsVersion] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   const clampPreviewScale = (value: number) => Math.min(2, Math.max(0.5, value));
 
-  // Calculate total pages (same logic as HandwritingEditor)
-  const totalPages = useMemo(() => {
-    const PAGE_WIDTH = 612;
-    const PAGE_HEIGHT = 792;
-    const hasAnyCustomBackground =
-      (settings.customBackgroundImages?.length ?? 0) > 0 || !!settings.customBackgroundImage;
-    const contentHeight = PAGE_HEIGHT - settings.marginTop - settings.marginBottom;
-    const ruledTextLeft =
-      settings.paperStyle === 'ruled' && !hasAnyCustomBackground
-        ? settings.marginLeft + settings.ruledMarginLineOffset + 10
-        : settings.marginLeft;
-    const ruledTextWidth = PAGE_WIDTH - ruledTextLeft - settings.marginRight;
-    const baseLineHeightPx = settings.fontSize * settings.lineHeight;
-    const lineHeightPx = hasAnyCustomBackground && settings.customLineSpacing
-      ? settings.customLineSpacing
-      : baseLineHeightPx;
-    const linesPerPage = Math.floor(contentHeight / lineHeightPx);
-
-    const approxCharWidth = settings.fontSize * 0.6;
-    const maxCharsPerLine = Math.max(1, Math.floor(ruledTextWidth / approxCharWidth));
-
-    const measureTextWidth = (() => {
-      const fallback = (s: string) => s.length * approxCharWidth;
-      if (typeof document === 'undefined' || typeof window === 'undefined') return fallback;
-
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return fallback;
-
-      const fontClass = (() => {
-        if (settings.fontFamily === 'custom' && !settings.customFont) {
-          return HANDWRITING_FONTS[0].className;
-        }
-        const font = HANDWRITING_FONTS.find((f) => f.value === settings.fontFamily);
-        return font?.className || HANDWRITING_FONTS[0].className;
-      })();
-
-      const customFontFamily =
-        settings.fontFamily === 'custom' && settings.customFont
-          ? settings.customFont.family
-          : null;
-
-      let font = `400 ${settings.fontSize}px cursive`;
-      try {
-        const probe = document.createElement('span');
-        probe.className = fontClass;
-        probe.style.position = 'absolute';
-        probe.style.visibility = 'hidden';
-        probe.style.left = '-9999px';
-        probe.style.top = '-9999px';
-        probe.style.fontSize = `${settings.fontSize}px`;
-        if (customFontFamily) {
-          probe.style.fontFamily = `\"${customFontFamily}\", cursive`;
-        }
-        document.body.appendChild(probe);
-        const cs = window.getComputedStyle(probe);
-        font = cs.font || font;
-        probe.remove();
-      } catch { }
-
-      ctx.font = font;
-      return (s: string) => ctx.measureText(s).width;
-    })();
-
-    const rawLines = text.split('\n');
-    let wrappedLineCount = 0;
-
-    const maxWidth = ruledTextWidth;
-
-    const findMaxFittingIndex = (s: string) => {
-      if (s.length === 0) return 0;
-      if (typeof document === 'undefined' || typeof window === 'undefined') {
-        return Math.max(1, Math.min(s.length, maxCharsPerLine));
+  const ensurePageSettingsLength = (desiredLength: number) => {
+    setPageSettingsByPage((prev) => {
+      if (prev.length >= desiredLength) return prev;
+      const next = [...prev];
+      const fallback = next[next.length - 1] ?? defaultPageSettingsFromHandwritingSettings(settings);
+      while (next.length < desiredLength) {
+        next.push({ ...fallback });
       }
-
-      let low = 1;
-      let high = s.length;
-      let best = 1;
-      while (low <= high) {
-        const mid = Math.floor((low + high) / 2);
-        const w = measureTextWidth(s.slice(0, mid));
-        if (w <= maxWidth) {
-          best = mid;
-          low = mid + 1;
-        } else {
-          high = mid - 1;
-        }
-      }
-      return Math.max(1, Math.min(best, s.length));
-    };
-
-    for (const raw of rawLines) {
-      if (raw.length === 0) {
-        wrappedLineCount += 1;
-        continue;
-      }
-
-      const tokens = raw.match(/\S+|\s+/g) ?? [raw];
-      let current = '';
-
-      const flush = () => {
-        wrappedLineCount += 1;
-        current = '';
-      };
-
-      for (const token of tokens) {
-        if (token === '') continue;
-
-        const candidate = current + token;
-        if (current !== '' && measureTextWidth(candidate) <= maxWidth) {
-          current = candidate;
-          continue;
-        }
-
-        if (current !== '' && measureTextWidth(candidate) > maxWidth) {
-          flush();
-        }
-
-        if (measureTextWidth(token) <= maxWidth) {
-          current += token;
-          continue;
-        }
-
-        let rest = token;
-        while (rest.length > 0 && measureTextWidth(rest) > maxWidth) {
-          const fit = findMaxFittingIndex(rest);
-          const chunk = rest.slice(0, fit);
-          if (chunk.length === 0) break;
-          wrappedLineCount += 1;
-          rest = rest.slice(fit);
-        }
-
-        if (rest.length > 0) {
-          current += rest;
-        }
-      }
-
-      if (current !== '') {
-        flush();
-      }
-    }
-
-    return Math.max(1, Math.ceil(wrappedLineCount / Math.max(1, linesPerPage)));
-  }, [
-    text,
-    settings.marginTop,
-    settings.marginBottom,
-    settings.marginLeft,
-    settings.marginRight,
-    settings.fontFamily,
-    settings.customFont,
-    settings.paperStyle,
-    settings.customBackgroundImage,
-    settings.customBackgroundImages,
-    settings.customLineSpacing,
-    settings.fontSize,
-    settings.lineHeight,
-    settings.ruledMarginLineOffset,
-    fontMetricsVersion,
-  ]);
-
-  useEffect(() => {
-    if (typeof document === 'undefined') return;
-    const fonts = document.fonts;
-    if (!fonts) return;
-
-    let cancelled = false;
-    const bump = () => {
-      if (cancelled) return;
-      setFontMetricsVersion((v) => v + 1);
-    };
-
-    fonts.ready.then(bump).catch(() => { });
-    fonts.addEventListener('loadingdone', bump);
-    fonts.addEventListener('loadingerror', bump);
-    return () => {
-      cancelled = true;
-      fonts.removeEventListener('loadingdone', bump);
-      fonts.removeEventListener('loadingerror', bump);
-    };
-  }, [settings.fontFamily, settings.customFont, settings.fontSize]);
+      return next;
+    });
+  };
 
   useEffect(() => {
     const isLikelyMobile = () => {
@@ -315,6 +154,19 @@ export default function EditorPage() {
               <SettingsPanel
                 settings={settings}
                 onSettingsChange={setSettings}
+                pageSettings={pageSettingsByPage[currentPageIndex] ?? defaultPageSettingsFromHandwritingSettings(settings)}
+                onPageSettingsChange={(nextPageSettings: PageSettings) => {
+                  ensurePageSettingsLength(currentPageIndex + 1);
+                  setPageSettingsByPage((prev) => {
+                    const next = [...prev];
+                    while (next.length <= currentPageIndex) {
+                      next.push(defaultPageSettingsFromHandwritingSettings(settings));
+                    }
+                    next[currentPageIndex] = nextPageSettings;
+                    return next;
+                  });
+                }}
+                currentPageIndex={currentPageIndex}
               />
             ) : (
               <ExportPanel
@@ -348,13 +200,21 @@ export default function EditorPage() {
               onTextChange={setText}
               settings={settings}
               onSettingsChange={setSettings}
+              pageSettingsByPage={pageSettingsByPage}
               pageRefs={pageRefs}
               previewScale={previewScale}
               onPreviewScaleChange={(value: number) => setPreviewScale(clampPreviewScale(value))}
               textFields={textFields}
               onTextFieldsChange={setTextFields}
               currentPageIndex={currentPageIndex}
-              onCurrentPageChange={setCurrentPageIndex}
+              onCurrentPageChange={(nextIndex: number) => {
+                ensurePageSettingsLength(nextIndex + 1);
+                setCurrentPageIndex(nextIndex);
+              }}
+              onTotalPagesChange={(nextTotalPages: number) => {
+                setTotalPages(nextTotalPages);
+                ensurePageSettingsLength(nextTotalPages);
+              }}
             />
           </div>
         </div>
