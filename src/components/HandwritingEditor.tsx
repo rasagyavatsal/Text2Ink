@@ -9,7 +9,7 @@ import {
   PageSettings,
   defaultPageSettingsFromHandwritingSettings,
 } from '@/lib/types';
-import { Type, PenLine, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Type, PenLine, Plus, Minus, ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
 
 interface HandwritingEditorProps {
   text: string;
@@ -143,6 +143,7 @@ export default function HandwritingEditor({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const pageElsRef = useRef<(HTMLDivElement | null)[]>([]);
   const measureFnCache = useMemo(() => new Map<number, (s: string) => number>(), []);
+  const toolbarRef = useRef<HTMLDivElement>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [cursorPosition, setCursorPosition] = useState(0);
   const [editorMode, setEditorMode] = useState<EditorMode>('write');
@@ -152,6 +153,13 @@ export default function HandwritingEditor({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDraggingMarginLine, setIsDraggingMarginLine] = useState(false);
   const marginLineDragRef = useRef({ pageIndex: 0 });
+  const [toolbarPosition, setToolbarPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isToolbarDragging, setIsToolbarDragging] = useState(false);
+  const toolbarDragRef = useRef<{ active: boolean; offsetX: number; offsetY: number }>({
+    active: false,
+    offsetX: 0,
+    offsetY: 0,
+  });
 
   const fontClass = useMemo(() => {
     if (settings.fontFamily === 'custom' && !settings.customFont) {
@@ -863,6 +871,55 @@ export default function HandwritingEditor({
     }
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (toolbarPosition) return;
+    const el = toolbarRef.current;
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+    const x = Math.max(8, Math.round(window.innerWidth / 2 - rect.width / 2));
+    const y = 96;
+    setToolbarPosition({ x, y });
+  }, [toolbarPosition]);
+
+  useEffect(() => {
+    if (!isToolbarDragging) return;
+
+    const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+
+    const onMove = (e: MouseEvent) => {
+      const el = toolbarRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+
+      if (!toolbarDragRef.current.active) return;
+
+      const nextX = e.clientX - toolbarDragRef.current.offsetX;
+      const nextY = e.clientY - toolbarDragRef.current.offsetY;
+
+      const maxX = Math.max(8, window.innerWidth - rect.width - 8);
+      const maxY = Math.max(8, window.innerHeight - rect.height - 8);
+
+      setToolbarPosition({
+        x: clamp(nextX, 8, maxX),
+        y: clamp(nextY, 8, maxY),
+      });
+    };
+
+    const onUp = () => {
+      toolbarDragRef.current.active = false;
+      setIsToolbarDragging(false);
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [isToolbarDragging]);
+
   const pageStartOffsets = useMemo(() => {
     const offsets: number[] = [0];
     let total = 0;
@@ -918,7 +975,40 @@ export default function HandwritingEditor({
   return (
     <div className="flex flex-col items-center gap-8 py-8">
       {/* Mode Toggle Toolbar */}
-      <div className="fixed top-24 left-1/2 -translate-x-1/2 z-20 bg-white rounded-lg shadow-lg border border-gray-200 p-1 flex items-center gap-1">
+      <div
+        ref={toolbarRef}
+        className="fixed z-20 bg-white rounded-lg shadow-lg border border-gray-200 p-1 flex items-center gap-1"
+        style={
+          toolbarPosition
+            ? { left: toolbarPosition.x, top: toolbarPosition.y }
+            : { left: '50%', top: 96, transform: 'translateX(-50%)' }
+        }
+      >
+        <button
+          type="button"
+          className="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-move"
+          aria-label="Drag toolbar"
+          title="Drag toolbar"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const el = toolbarRef.current;
+            if (!el) return;
+            const rect = el.getBoundingClientRect();
+
+            toolbarDragRef.current.active = true;
+            toolbarDragRef.current.offsetX = e.clientX - rect.left;
+            toolbarDragRef.current.offsetY = e.clientY - rect.top;
+            setIsToolbarDragging(true);
+
+            if (!toolbarPosition) {
+              setToolbarPosition({ x: rect.left, y: rect.top });
+            }
+          }}
+        >
+          <GripVertical className="w-4 h-4" />
+        </button>
         <button
           onClick={() => {
             setEditorMode('write');
