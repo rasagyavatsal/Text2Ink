@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import HandwritingEditor from '@/components/HandwritingEditor';
@@ -14,6 +14,9 @@ import {
   defaultPageSettingsFromHandwritingSettings,
 } from '@/lib/types';
 import { Settings, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const MemoSettingsPanel = React.memo(SettingsPanel);
+const MemoExportPanel = React.memo(ExportPanel);
 
 export default function EditorPage() {
   const [isMobileBlocked, setIsMobileBlocked] = useState(false);
@@ -30,19 +33,67 @@ export default function EditorPage() {
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  const clampPreviewScale = (value: number) => Math.min(2, Math.max(0.5, value));
+  const registerPageRef = useCallback((pageIndex: number, el: HTMLDivElement | null) => {
+    pageRefs.current[pageIndex] = el;
+  }, []);
 
-  const ensurePageSettingsLength = (desiredLength: number) => {
-    setPageSettingsByPage((prev) => {
-      if (prev.length >= desiredLength) return prev;
-      const next = [...prev];
-      const fallback = next[next.length - 1] ?? defaultPageSettingsFromHandwritingSettings(settings);
-      while (next.length < desiredLength) {
-        next.push({ ...fallback });
-      }
-      return next;
-    });
-  };
+  const clampPreviewScale = useCallback((value: number) => Math.min(2, Math.max(0.5, value)), []);
+
+  const ensurePageSettingsLength = useCallback(
+    (desiredLength: number) => {
+      setPageSettingsByPage((prev) => {
+        if (prev.length >= desiredLength) return prev;
+        const next = [...prev];
+        const fallback = next[next.length - 1] ?? defaultPageSettingsFromHandwritingSettings(settings);
+        while (next.length < desiredLength) {
+          next.push({ ...fallback });
+        }
+        return next;
+      });
+    },
+    [settings]
+  );
+
+  const currentPageSettings = useMemo(
+    () => pageSettingsByPage[currentPageIndex] ?? defaultPageSettingsFromHandwritingSettings(settings),
+    [currentPageIndex, pageSettingsByPage, settings]
+  );
+
+  const handlePageSettingsChange = useCallback(
+    (nextPageSettings: PageSettings) => {
+      ensurePageSettingsLength(currentPageIndex + 1);
+      setPageSettingsByPage((prev) => {
+        const next = [...prev];
+        while (next.length <= currentPageIndex) {
+          next.push(defaultPageSettingsFromHandwritingSettings(settings));
+        }
+        next[currentPageIndex] = nextPageSettings;
+        return next;
+      });
+    },
+    [currentPageIndex, ensurePageSettingsLength, settings]
+  );
+
+  const handlePreviewScaleChange = useCallback(
+    (value: number) => setPreviewScale(clampPreviewScale(value)),
+    [clampPreviewScale]
+  );
+
+  const handleCurrentPageChange = useCallback(
+    (nextIndex: number) => {
+      ensurePageSettingsLength(nextIndex + 1);
+      setCurrentPageIndex(nextIndex);
+    },
+    [ensurePageSettingsLength]
+  );
+
+  const handleTotalPagesChange = useCallback(
+    (nextTotalPages: number) => {
+      setTotalPages(nextTotalPages);
+      ensurePageSettingsLength(nextTotalPages);
+    },
+    [ensurePageSettingsLength]
+  );
 
   useEffect(() => {
     const isLikelyMobile = () => {
@@ -151,25 +202,15 @@ export default function EditorPage() {
           {/* Panel Content */}
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
             {activePanel === 'settings' ? (
-              <SettingsPanel
+              <MemoSettingsPanel
                 settings={settings}
                 onSettingsChange={setSettings}
-                pageSettings={pageSettingsByPage[currentPageIndex] ?? defaultPageSettingsFromHandwritingSettings(settings)}
-                onPageSettingsChange={(nextPageSettings: PageSettings) => {
-                  ensurePageSettingsLength(currentPageIndex + 1);
-                  setPageSettingsByPage((prev) => {
-                    const next = [...prev];
-                    while (next.length <= currentPageIndex) {
-                      next.push(defaultPageSettingsFromHandwritingSettings(settings));
-                    }
-                    next[currentPageIndex] = nextPageSettings;
-                    return next;
-                  });
-                }}
+                pageSettings={currentPageSettings}
+                onPageSettingsChange={handlePageSettingsChange}
                 currentPageIndex={currentPageIndex}
               />
             ) : (
-              <ExportPanel
+              <MemoExportPanel
                 pageRefs={pageRefs}
                 hasContent={text.trim().length > 0}
                 settings={settings}
@@ -201,20 +242,14 @@ export default function EditorPage() {
               settings={settings}
               onSettingsChange={setSettings}
               pageSettingsByPage={pageSettingsByPage}
-              pageRefs={pageRefs}
+              onPageRef={registerPageRef}
               previewScale={previewScale}
-              onPreviewScaleChange={(value: number) => setPreviewScale(clampPreviewScale(value))}
+              onPreviewScaleChange={handlePreviewScaleChange}
               textFields={textFields}
               onTextFieldsChange={setTextFields}
               currentPageIndex={currentPageIndex}
-              onCurrentPageChange={(nextIndex: number) => {
-                ensurePageSettingsLength(nextIndex + 1);
-                setCurrentPageIndex(nextIndex);
-              }}
-              onTotalPagesChange={(nextTotalPages: number) => {
-                setTotalPages(nextTotalPages);
-                ensurePageSettingsLength(nextTotalPages);
-              }}
+              onCurrentPageChange={handleCurrentPageChange}
+              onTotalPagesChange={handleTotalPagesChange}
             />
           </div>
         </div>

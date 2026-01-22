@@ -17,7 +17,7 @@ interface HandwritingEditorProps {
   settings: HandwritingSettings;
   onSettingsChange?: (settings: HandwritingSettings) => void;
   pageSettingsByPage: PageSettings[];
-  pageRefs: React.MutableRefObject<(HTMLDivElement | null)[]>;
+  onPageRef?: (pageIndex: number, el: HTMLDivElement | null) => void;
   previewScale: number;
   onPreviewScaleChange: (value: number) => void;
   textFields: TextField[];
@@ -35,6 +35,78 @@ type LineData = {
   lineIndex: number;
   hasNewline: boolean;
 };
+
+type RenderCharacterFn = (
+  char: string,
+  charIndex: number,
+  lineIndex: number,
+  globalCharIndex: number,
+  showCursor: boolean,
+  showCursorBefore: boolean,
+  inkColor: string
+) => React.ReactNode;
+
+type LineViewProps = {
+  line: LineData;
+  lineStartChar: number;
+  cursorPosition: number | null;
+  pageLineHeightPx: number;
+  renderCharacter: RenderCharacterFn;
+  inkColor: string;
+};
+
+const LineView = React.memo(function LineView({
+  line,
+  lineStartChar,
+  cursorPosition,
+  pageLineHeightPx,
+  renderCharacter,
+  inkColor,
+}: LineViewProps) {
+  const lineText = line.text;
+
+  if (lineText === '') {
+    return (
+      <div style={{ minHeight: pageLineHeightPx, whiteSpace: 'nowrap' }}>
+        {cursorPosition === lineStartChar ? (
+          <span
+            className="inline-block animate-pulse"
+            style={{
+              width: 2,
+              height: '1em',
+              backgroundColor: inkColor,
+              verticalAlign: 'text-bottom',
+            }}
+          />
+        ) : null}
+      </div>
+    );
+  }
+
+  const chars: React.ReactNode[] = [];
+  let globalCharCount = lineStartChar;
+  for (let charIdx = 0; charIdx < lineText.length; charIdx++) {
+    const currentGlobalChar = globalCharCount;
+    globalCharCount += 1;
+    const showCursorAfter = cursorPosition === currentGlobalChar + 1;
+    const showCursorBefore = charIdx === 0 && cursorPosition === currentGlobalChar;
+    chars.push(
+      renderCharacter(
+        lineText[charIdx],
+        charIdx,
+        line.lineIndex,
+        currentGlobalChar,
+        showCursorAfter,
+        showCursorBefore,
+        inkColor
+      )
+    );
+  }
+
+  return (
+    <div style={{ minHeight: pageLineHeightPx, whiteSpace: 'nowrap' }}>{chars}</div>
+  );
+});
 
 const FONT_VARIABLES: Record<string, string> = {
   'caveat': '--font-caveat',
@@ -59,7 +131,7 @@ export default function HandwritingEditor({
   settings,
   onSettingsChange,
   pageSettingsByPage,
-  pageRefs,
+  onPageRef,
   previewScale,
   onPreviewScaleChange,
   textFields,
@@ -69,8 +141,8 @@ export default function HandwritingEditor({
   onTotalPagesChange,
 }: HandwritingEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const measureCtxRef = useRef<CanvasRenderingContext2D | null>(null);
-  const measureFnCacheRef = useRef<Map<number, (s: string) => number>>(new Map());
+  const pageElsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const measureFnCache = useMemo(() => new Map<number, (s: string) => number>(), []);
   const [isFocused, setIsFocused] = useState(false);
   const [cursorPosition, setCursorPosition] = useState(0);
   const [editorMode, setEditorMode] = useState<EditorMode>('write');
@@ -169,28 +241,24 @@ export default function HandwritingEditor({
   );
 
   useEffect(() => {
-    measureFnCacheRef.current.clear();
-  }, [customFontFamily, settings.fontFamily, fontMetricsVersion]);
+    measureFnCache.clear();
+  }, [measureFnCache, customFontFamily, settings.fontFamily, fontMetricsVersion]);
 
   const measureTextWidthForFontSize = useCallback(
     (fontSize: number) => {
-      const cached = measureFnCacheRef.current.get(fontSize);
+      const cached = measureFnCache.get(fontSize);
       if (cached) return cached;
 
       const fallback = (s: string) => s.length * fontSize * 0.6;
       if (typeof document === 'undefined' || typeof window === 'undefined') {
-        measureFnCacheRef.current.set(fontSize, fallback);
+        measureFnCache.set(fontSize, fallback);
         return fallback;
       }
 
-      if (!measureCtxRef.current) {
-        const canvas = document.createElement('canvas');
-        measureCtxRef.current = canvas.getContext('2d');
-      }
-
-      const ctx = measureCtxRef.current;
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
       if (!ctx) {
-        measureFnCacheRef.current.set(fontSize, fallback);
+        measureFnCache.set(fontSize, fallback);
         return fallback;
       }
 
@@ -206,10 +274,10 @@ export default function HandwritingEditor({
       ctx.font = `400 ${fontSize}px ${resolveFamily()}`;
 
       const fn = (s: string) => ctx.measureText(s).width;
-      measureFnCacheRef.current.set(fontSize, fn);
+      measureFnCache.set(fontSize, fn);
       return fn;
     },
-    [customFontFamily, settings.fontFamily, fontMetricsVersion]
+    [customFontFamily, measureFnCache, settings.fontFamily]
   );
 
   const pages = useMemo(() => {
@@ -479,7 +547,7 @@ export default function HandwritingEditor({
     const handleMove = (e: MouseEvent) => {
       if (!onSettingsChange) return;
       const { pageIndex } = marginLineDragRef.current;
-      const pageEl = pageRefs.current[pageIndex];
+      const pageEl = pageElsRef.current[pageIndex];
       if (!pageEl) return;
 
       const ps = getPageSettings(pageIndex);
@@ -509,7 +577,7 @@ export default function HandwritingEditor({
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('mouseup', handleUp);
     };
-  }, [getPageSettings, isDraggingMarginLine, onSettingsChange, pageRefs, previewScale, settings]);
+  }, [getPageSettings, isDraggingMarginLine, onSettingsChange, previewScale, settings]);
 
   const handleCharClick = useCallback(
     (e: React.MouseEvent, globalCharIndex: number, isLeftHalf: boolean) => {
@@ -752,7 +820,7 @@ export default function HandwritingEditor({
       const tf = textFields.find((t) => t.id === draggingId);
       if (!tf) return;
 
-      const pageEl = pageRefs.current[tf.pageIndex];
+      const pageEl = pageElsRef.current[tf.pageIndex];
       if (!pageEl) return;
 
       const pageRect = pageEl.getBoundingClientRect();
@@ -765,7 +833,7 @@ export default function HandwritingEditor({
         )
       );
     },
-    [draggingId, textFields, dragOffset, onTextFieldsChange, pageRefs, previewScale]
+    [draggingId, textFields, dragOffset, onTextFieldsChange, previewScale]
   );
 
   const handleDragEnd = useCallback(() => {
@@ -795,14 +863,57 @@ export default function HandwritingEditor({
     }
   }, []);
 
-  // Calculate the global character count offset for the current page
-  // (sum of all characters + newlines from previous pages)
-  let globalCharCount = 0;
-  for (let i = 0; i < currentPageIndex && i < pages.length; i++) {
-    for (const line of pages[i]) {
-      globalCharCount += line.text.length + (line.hasNewline ? 1 : 0);
+  const pageStartOffsets = useMemo(() => {
+    const offsets: number[] = [0];
+    let total = 0;
+    for (const page of pages) {
+      for (const line of page) {
+        total += line.text.length + (line.hasNewline ? 1 : 0);
+      }
+      offsets.push(total);
     }
-  }
+    return offsets;
+  }, [pages]);
+
+  const currentPageLines = useMemo(() => pages[currentPageIndex] ?? [], [currentPageIndex, pages]);
+
+  const currentPageStartOffset = pageStartOffsets[currentPageIndex] ?? 0;
+
+  const currentPageLineStarts = useMemo(() => {
+    const starts: number[] = [];
+    let offset = currentPageStartOffset;
+    for (const line of currentPageLines) {
+      starts.push(offset);
+      offset += line.text.length + (line.hasNewline ? 1 : 0);
+    }
+    return starts;
+  }, [currentPageLines, currentPageStartOffset]);
+
+  const effectiveCursorPosition = isFocused ? cursorPosition : null;
+
+  const pagePaperLines = useMemo(
+    () => renderPaperLines(currentPageIndex),
+    [currentPageIndex, renderPaperLines]
+  );
+
+  const pageTextFields = useMemo(
+    () => textFields.filter((tf) => tf.pageIndex === currentPageIndex),
+    [currentPageIndex, textFields]
+  );
+
+  const pageIndex = currentPageIndex;
+  const pageBackground = getBackgroundForPage(pageIndex);
+  const pageHasBackground = !!pageBackground;
+  const ps = getPageSettings(pageIndex);
+  const pageLineOffset = pageHasBackground ? ps.customLineOffset : 0;
+  const baseLineHeightPx = ps.fontSize * settings.lineHeight;
+  const pageLineHeightPx = pageHasBackground && ps.customLineSpacing ? ps.customLineSpacing : baseLineHeightPx;
+  const contentHeight = PAGE_HEIGHT - ps.marginTop - ps.marginBottom;
+  const ruledTextLeft =
+    settings.paperStyle === 'ruled' && !pageHasBackground
+      ? ps.marginLeft + settings.ruledMarginLineOffset + 10
+      : ps.marginLeft;
+  const ruledTextWidth = PAGE_WIDTH - ruledTextLeft - ps.marginRight;
 
   return (
     <div className="flex flex-col items-center gap-8 py-8">
@@ -898,212 +1009,163 @@ export default function HandwritingEditor({
       />
 
       {/* Only render the current page - no scrolling, use prev/next buttons to navigate */}
-      {pages.length > 0 && (() => {
-        const pageIndex = currentPageIndex;
-        const pageLines = pages[pageIndex] || [];
-        const pageBackground = getBackgroundForPage(pageIndex);
-        const pageHasBackground = !!pageBackground;
-        const ps = getPageSettings(pageIndex);
-        const pageLineOffset = pageHasBackground ? ps.customLineOffset : 0;
-        const baseLineHeightPx = ps.fontSize * settings.lineHeight;
-        const pageLineHeightPx = pageHasBackground && ps.customLineSpacing
-          ? ps.customLineSpacing
-          : baseLineHeightPx;
-        const contentHeight = PAGE_HEIGHT - ps.marginTop - ps.marginBottom;
-        const ruledTextLeft =
-          settings.paperStyle === 'ruled' && !pageHasBackground
-            ? ps.marginLeft + settings.ruledMarginLineOffset + 10
-            : ps.marginLeft;
-        const ruledTextWidth = PAGE_WIDTH - ruledTextLeft - ps.marginRight;
-
-        return (
+      {pages.length > 0 && (
+        <div
+          key={pageIndex}
+          className="relative"
+          style={{
+            width: PAGE_WIDTH * previewScale,
+            height: PAGE_HEIGHT * previewScale,
+          }}
+        >
           <div
-            key={pageIndex}
-            className="relative"
-            style={{
-              width: PAGE_WIDTH * previewScale,
-              height: PAGE_HEIGHT * previewScale,
+            ref={(el) => {
+              pageElsRef.current[pageIndex] = el;
+              onPageRef?.(pageIndex, el);
             }}
+            className="relative shadow-2xl cursor-text"
+            style={{
+              width: PAGE_WIDTH,
+              height: PAGE_HEIGHT,
+              backgroundColor: ps.paperColor,
+              backgroundImage: pageBackground ? `url(${pageBackground})` : undefined,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              transform: `scale(${previewScale})`,
+              transformOrigin: 'top left',
+            }}
+            onClick={(e) => handlePageClick(e, pageIndex)}
           >
+            {pagePaperLines}
+
             <div
-              ref={(el) => {
-                pageRefs.current[pageIndex] = el;
-              }}
-              className="relative shadow-2xl cursor-text"
+              className={`absolute select-none ${fontClass}`}
               style={{
-                width: PAGE_WIDTH,
-                height: PAGE_HEIGHT,
-                backgroundColor: ps.paperColor,
-                backgroundImage: pageBackground
-                  ? `url(${pageBackground})`
-                  : undefined,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                transform: `scale(${previewScale})`,
-                transformOrigin: 'top left',
+                top: ps.marginTop + pageLineOffset,
+                left: ruledTextLeft,
+                width: ruledTextWidth,
+                height: contentHeight,
+                fontFamily: customFontFamily ? `"${customFontFamily}", cursive` : undefined,
+                fontSize: ps.fontSize,
+                lineHeight:
+                  pageHasBackground && ps.customLineSpacing ? `${ps.customLineSpacing}px` : settings.lineHeight,
+                color: ps.inkColor,
+                transform: ps.lineTilt ? `rotate(${ps.lineTilt}deg)` : undefined,
+                transformOrigin: 'left top',
+                overflowWrap: 'break-word',
+                wordBreak: 'break-word',
+                whiteSpace: 'pre-wrap',
               }}
-              onClick={(e) => handlePageClick(e, pageIndex)}
             >
-              {renderPaperLines(pageIndex)}
-
-              <div
-                className={`absolute select-none ${fontClass}`}
-                style={{
-                  top: ps.marginTop + pageLineOffset,
-                  left: ruledTextLeft,
-                  width: ruledTextWidth,
-                  height: contentHeight,
-                  fontFamily: customFontFamily ? `"${customFontFamily}", cursive` : undefined,
-                  fontSize: ps.fontSize,
-                  lineHeight: pageHasBackground && ps.customLineSpacing
-                    ? `${ps.customLineSpacing}px`
-                    : settings.lineHeight,
-                  color: ps.inkColor,
-                  transform: ps.lineTilt ? `rotate(${ps.lineTilt}deg)` : undefined,
-                  transformOrigin: 'left top',
-                  overflowWrap: 'break-word',
-                  wordBreak: 'break-word',
-                  whiteSpace: 'pre-wrap',
-                }}
-              >
-                {pageLines.length === 0 || (pageLines.length === 1 && pageLines[0].text === '') ? (
-                  <span className="text-gray-400 pointer-events-none">
-                    Click here to start typing...
-                    {isFocused && cursorPosition === 0 && (
-                      <span
-                        className="inline-block animate-pulse ml-0"
-                        style={{
-                          width: 2,
-                          height: '1em',
-                          backgroundColor: ps.inkColor,
-                          verticalAlign: 'text-bottom',
-                        }}
-                      />
-                    )}
-                  </span>
-                ) : (
-                  pageLines.map((line, lineIdx) => {
-                    const lineStartChar = globalCharCount;
-                    const lineText = line.text;
-
-                    return (
-                      <div key={lineIdx} style={{ minHeight: pageLineHeightPx, whiteSpace: 'nowrap' }}>
-                        {lineText === '' ? (
-                          <>
-                            {isFocused && cursorPosition === lineStartChar && (
-                              <span
-                                className="inline-block animate-pulse"
-                                style={{
-                                  width: 2,
-                                  height: '1em',
-                                  backgroundColor: ps.inkColor,
-                                  verticalAlign: 'text-bottom',
-                                }}
-                              />
-                            )}
-                            {(() => {
-                              globalCharCount += line.hasNewline ? 1 : 0;
-                              return null;
-                            })()}
-                          </>
-                        ) : (
-                          <>
-                            {lineText.split('').map((char: string, charIdx: number) => {
-                              const currentGlobalChar = globalCharCount;
-                              globalCharCount += 1;
-                              const showCursorAfter = cursorPosition === currentGlobalChar + 1;
-                              const showCursorBefore = charIdx === 0 && cursorPosition === currentGlobalChar;
-
-                              return renderCharacter(
-                                char,
-                                charIdx,
-                                line.lineIndex,
-                                currentGlobalChar,
-                                showCursorAfter,
-                                showCursorBefore,
-                                ps.inkColor
-                              );
-                            })}
-                            {(() => {
-                              globalCharCount += line.hasNewline ? 1 : 0;
-                              return null;
-                            })()}
-                          </>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
-              {/* Text Fields for this page */}
-              {textFields
-                .filter((tf) => tf.pageIndex === pageIndex)
-                .map((tf) => (
-                  <div
-                    key={tf.id}
-                    className="absolute text-field-container group"
-                    style={{
-                      left: tf.x,
-                      top: tf.y,
-                      transform: 'translate(-4px, -12px)',
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {/* Drag handle */}
-                    <div
-                      className="absolute -left-6 top-0 w-5 h-5 bg-gray-400 hover:bg-gray-600 rounded cursor-move flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                      onMouseDown={(e) => handleDragStart(e, tf)}
-                      title="Drag to move"
-                    >
-                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" />
-                      </svg>
-                    </div>
-                    {/* Delete button */}
-                    <div
-                      className="absolute -top-6 -right-6 w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center cursor-pointer text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleTextFieldDelete(tf.id);
-                      }}
-                      title="Delete text field"
-                    >
-                      ×
-                    </div>
-                    <textarea
-                      ref={(el) => {
-                        if (el) {
-                          textFieldInputRefs.current.set(tf.id, el);
-                        } else {
-                          textFieldInputRefs.current.delete(tf.id);
-                        }
-                      }}
-                      value={tf.text}
-                      onChange={(e) => handleTextFieldChange(tf.id, e.target.value)}
-                      onKeyDown={(e) => handleTextFieldKeyDown(e, tf.id)}
-                      className={`bg-transparent border-none outline-none resize-none ${fontClass}`}
+              {currentPageLines.length === 0 ||
+              (currentPageLines.length === 1 && currentPageLines[0].text === '') ? (
+                <span className="text-gray-400 pointer-events-none">
+                  Click here to start typing...
+                  {isFocused && cursorPosition === 0 && (
+                    <span
+                      className="inline-block animate-pulse ml-0"
                       style={{
-                        fontFamily: customFontFamily ? `"${customFontFamily}", cursive` : undefined,
-                        fontSize: ps.fontSize,
-                        color: ps.inkColor,
-                        lineHeight: settings.lineHeight,
-                        minWidth: '20px',
-                        width: tf.text ? `${Math.max(20, tf.text.split('\n').reduce((max, line) => Math.max(max, line.length), 0) * ps.fontSize * 0.6)}px` : '20px',
-                        minHeight: `${ps.fontSize * settings.lineHeight}px`,
-                        height: 'auto',
-                        caretColor: ps.inkColor,
+                        width: 2,
+                        height: '1em',
+                        backgroundColor: ps.inkColor,
+                        verticalAlign: 'text-bottom',
                       }}
-                      placeholder=""
-                      autoComplete="off"
                     />
-                  </div>
-                ))}
+                  )}
+                </span>
+              ) : (
+                currentPageLines.map((line, lineIdx) => {
+                  const lineStartChar = currentPageLineStarts[lineIdx] ?? 0;
+                  const lineEndCaret = lineStartChar + line.text.length;
+                  const cursorForLine =
+                    effectiveCursorPosition !== null &&
+                    effectiveCursorPosition >= lineStartChar &&
+                    effectiveCursorPosition <= lineEndCaret
+                      ? effectiveCursorPosition
+                      : null;
+
+                  return (
+                    <LineView
+                      key={lineIdx}
+                      line={line}
+                      lineStartChar={lineStartChar}
+                      cursorPosition={cursorForLine}
+                      pageLineHeightPx={pageLineHeightPx}
+                      renderCharacter={renderCharacter}
+                      inkColor={ps.inkColor}
+                    />
+                  );
+                })
+              )}
             </div>
+
+            {/* Text Fields for this page */}
+            {pageTextFields.map((tf) => (
+              <div
+                key={tf.id}
+                className="absolute text-field-container group"
+                style={{
+                  left: tf.x,
+                  top: tf.y,
+                  transform: 'translate(-4px, -12px)',
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Drag handle */}
+                <div
+                  className="absolute -left-6 top-0 w-5 h-5 bg-gray-400 hover:bg-gray-600 rounded cursor-move flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  onMouseDown={(e) => handleDragStart(e, tf)}
+                  title="Drag to move"
+                >
+                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" />
+                  </svg>
+                </div>
+                {/* Delete button */}
+                <div
+                  className="absolute -top-6 -right-6 w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center cursor-pointer text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleTextFieldDelete(tf.id);
+                  }}
+                  title="Delete text field"
+                >
+                  ×
+                </div>
+                <textarea
+                  ref={(el) => {
+                    if (el) {
+                      textFieldInputRefs.current.set(tf.id, el);
+                    } else {
+                      textFieldInputRefs.current.delete(tf.id);
+                    }
+                  }}
+                  value={tf.text}
+                  onChange={(e) => handleTextFieldChange(tf.id, e.target.value)}
+                  onKeyDown={(e) => handleTextFieldKeyDown(e, tf.id)}
+                  className={`bg-transparent border-none outline-none resize-none ${fontClass}`}
+                  style={{
+                    fontFamily: customFontFamily ? `"${customFontFamily}", cursive` : undefined,
+                    fontSize: ps.fontSize,
+                    color: ps.inkColor,
+                    lineHeight: settings.lineHeight,
+                    minWidth: '20px',
+                    width: tf.text
+                      ? `${Math.max(20, tf.text.split('\n').reduce((max, line) => Math.max(max, line.length), 0) * ps.fontSize * 0.6)}px`
+                      : '20px',
+                    minHeight: `${ps.fontSize * settings.lineHeight}px`,
+                    height: 'auto',
+                    caretColor: ps.inkColor,
+                  }}
+                  placeholder=""
+                  autoComplete="off"
+                />
+              </div>
+            ))}
           </div>
-        );
-      })()}
+        </div>
+      )}
     </div>
   );
 }
