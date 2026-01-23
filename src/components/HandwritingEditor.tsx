@@ -18,6 +18,7 @@ interface HandwritingEditorProps {
   onSettingsChange?: (settings: HandwritingSettings) => void;
   pageSettingsByPage: PageSettings[];
   onPageRef?: (pageIndex: number, el: HTMLDivElement | null) => void;
+  renderAllPagesForExport?: boolean;
   previewScale: number;
   onPreviewScaleChange: (value: number) => void;
   textFields: TextField[];
@@ -132,6 +133,7 @@ export default function HandwritingEditor({
   onSettingsChange,
   pageSettingsByPage,
   onPageRef,
+  renderAllPagesForExport = false,
   previewScale,
   onPreviewScaleChange,
   textFields,
@@ -174,6 +176,7 @@ export default function HandwritingEditor({
       : null;
 
   const deferredText = useDeferredValue(text);
+  const paginationText = renderAllPagesForExport ? text : deferredText;
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -247,21 +250,36 @@ export default function HandwritingEditor({
     [pageSettingsByPage, settings]
   );
 
-  const pages = useMemo(() => {
+  const { pages, isPaginationComplete } = useMemo(() => {
     const out: LineData[][] = [];
     const lineCounter = { value: 0 };
-    const textLen = deferredText.length;
+    const textLen = paginationText.length;
+    const pageLimit = renderAllPagesForExport ? Number.POSITIVE_INFINITY : Math.max(1, currentPageIndex + 2);
 
     const measureFnCache = new Map<string, (s: string) => number>();
+    const canvasContextCache = new Map<string, CanvasRenderingContext2D | null>();
+    const fontFamilyCache = new Map<string, string>();
 
     const resolveFamily = () => {
       if (customFontFamily) return `"${customFontFamily}", cursive`;
       const varName = FONT_VARIABLES[settings.fontFamily];
       if (!varName) return 'cursive';
-      if (typeof document === 'undefined' || typeof window === 'undefined') return 'cursive';
+      
+      const cacheKey = `font-${settings.fontFamily}`;
+      if (fontFamilyCache.has(cacheKey)) {
+        return fontFamilyCache.get(cacheKey)!;
+      }
+      
+      if (typeof document === 'undefined' || typeof window === 'undefined') {
+        fontFamilyCache.set(cacheKey, 'cursive');
+        return 'cursive';
+      }
+      
       const scope = document.body ?? document.documentElement;
       const value = window.getComputedStyle(scope).getPropertyValue(varName).trim();
-      return value || 'cursive';
+      const resolved = value || 'cursive';
+      fontFamilyCache.set(cacheKey, resolved);
+      return resolved;
     };
 
     const measureTextWidthForFontSize = (fontSize: number) => {
@@ -275,11 +293,16 @@ export default function HandwritingEditor({
         return fallback;
       }
 
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      // Reuse canvas context from cache
+      let ctx = canvasContextCache.get(cacheKey);
       if (!ctx) {
-        measureFnCache.set(cacheKey, fallback);
-        return fallback;
+        const canvas = document.createElement('canvas');
+        ctx = canvas.getContext('2d');
+        if (!ctx) {
+          measureFnCache.set(cacheKey, fallback);
+          return fallback;
+        }
+        canvasContextCache.set(cacheKey, ctx);
       }
 
       ctx.font = `400 ${fontSize}px ${resolveFamily()}`;
@@ -292,9 +315,9 @@ export default function HandwritingEditor({
     const nextLineFrom = (fromIndex: number, maxWidth: number, measure: (s: string) => number) => {
       if (fromIndex >= textLen) return null;
 
-      const nlIndex = deferredText.indexOf('\n', fromIndex);
+      const nlIndex = paginationText.indexOf('\n', fromIndex);
       const rawEnd = nlIndex === -1 ? textLen : nlIndex;
-      const segment = deferredText.slice(fromIndex, rawEnd);
+      const segment = paginationText.slice(fromIndex, rawEnd);
 
       if (segment.length === 0) {
         if (nlIndex !== -1 && nlIndex === fromIndex) {
@@ -312,9 +335,11 @@ export default function HandwritingEditor({
         let low = 1;
         let high = s.length;
         let best = 1;
+        // Cache the original string to avoid repeated slice operations
+        const originalString = s;
         while (low <= high) {
           const mid = Math.floor((low + high) / 2);
-          const w = measure(s.slice(0, mid));
+          const w = measure(originalString.slice(0, mid));
           if (w <= maxWidth) {
             best = mid;
             low = mid + 1;
@@ -322,7 +347,7 @@ export default function HandwritingEditor({
             high = mid - 1;
           }
         }
-        return Math.max(1, Math.min(best, s.length));
+        return Math.max(1, Math.min(best, originalString.length));
       };
 
       const fit = findMaxFittingIndex(segment);
@@ -342,10 +367,10 @@ export default function HandwritingEditor({
 
     if (textLen === 0) {
       out.push([]);
-      return out;
+      return { pages: out, isPaginationComplete: true };
     }
 
-    while (cursor < textLen) {
+    while (cursor < textLen && pageIndex < pageLimit) {
       const ps = getPageSettings(pageIndex);
       const pageHasBackground = !!getBackgroundForPage(pageIndex);
       const contentHeight = PAGE_HEIGHT - ps.marginTop - ps.marginBottom;
@@ -383,7 +408,9 @@ export default function HandwritingEditor({
       }
     }
 
-    return out.length > 0 ? out : [[]];
+    const computedPages = out.length > 0 ? out : [[]];
+    const isComplete = cursor >= textLen;
+    return { pages: computedPages, isPaginationComplete: isComplete };
   }, [
     customFontFamily,
     getBackgroundForPage,
@@ -394,12 +421,16 @@ export default function HandwritingEditor({
     settings.lineHeight,
     settings.paperStyle,
     settings.ruledMarginLineOffset,
-    deferredText,
+    paginationText,
+    currentPageIndex,
+    renderAllPagesForExport,
   ]);
 
   useEffect(() => {
     onTotalPagesChange?.(pages.length);
   }, [onTotalPagesChange, pages.length]);
+
+  const totalPagesLabel = isPaginationComplete ? String(pages.length) : `${pages.length}+`;
 
   const applyRandomness = useCallback(
     (charIndex: number, lineIndex: number) => {
@@ -944,8 +975,6 @@ export default function HandwritingEditor({
     return starts;
   }, [currentPageLines, currentPageStartOffset]);
 
-  const effectiveCursorPosition = isFocused ? cursorPosition : null;
-
   const pagePaperLines = useMemo(
     () => renderPaperLines(currentPageIndex),
     [currentPageIndex, renderPaperLines]
@@ -1009,7 +1038,9 @@ export default function HandwritingEditor({
         >
           <div
             ref={(el) => {
-              pageElsRef.current[pageIndex] = el;
+              if (isVisiblePreview) {
+                pageElsRef.current[pageIndex] = el;
+              }
               onPageRef?.(pageIndex, el);
             }}
             className="relative shadow-2xl cursor-text"
@@ -1176,7 +1207,6 @@ export default function HandwritingEditor({
       getBackgroundForPage,
       getPageLineStarts,
       getPageSettings,
-      handleCharClick,
       handleDragStart,
       handleTextFieldChange,
       handleTextFieldDelete,
@@ -1185,7 +1215,6 @@ export default function HandwritingEditor({
       isFocused,
       onPageRef,
       pagePaperLines,
-      pageStartOffsets,
       pages,
       currentPageIndex,
       currentPageLineStarts,
@@ -1297,11 +1326,17 @@ export default function HandwritingEditor({
           <ChevronLeft className="w-4 h-4" />
         </button>
         <div className="px-2 min-w-16 text-center text-sm font-medium text-gray-700 select-none">
-          Page {currentPageIndex + 1} / {pages.length}
+          Page {currentPageIndex + 1} / {totalPagesLabel}
         </div>
         <button
-          onClick={() => onCurrentPageChange(Math.min(pages.length - 1, currentPageIndex + 1))}
-          disabled={currentPageIndex >= pages.length - 1}
+          onClick={() =>
+            onCurrentPageChange(
+              isPaginationComplete
+                ? Math.min(pages.length - 1, currentPageIndex + 1)
+                : currentPageIndex + 1
+            )
+          }
+          disabled={isPaginationComplete && currentPageIndex >= pages.length - 1}
           className="p-2 rounded-md text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           aria-label="Next page"
           title="Next page"
@@ -1329,21 +1364,21 @@ export default function HandwritingEditor({
       {pages.length > 0 && (
         <>
           {renderPage(currentPageIndex, previewScale, true)}
-          <div
-            aria-hidden
-            style={{
-              position: 'absolute',
-              left: -100000,
-              top: 0,
-              width: 1,
-              height: 1,
-              overflow: 'hidden',
-            }}
-          >
-            {pages.map((_, idx) =>
-              idx === currentPageIndex ? null : renderPage(idx, 1, false)
-            )}
-          </div>
+          {renderAllPagesForExport ? (
+            <div
+              aria-hidden
+              style={{
+                position: 'absolute',
+                left: -100000,
+                top: 0,
+                width: 1,
+                height: 1,
+                overflow: 'hidden',
+              }}
+            >
+              {pages.map((_, idx) => renderPage(idx, 1, false))}
+            </div>
+          ) : null}
         </>
       )}
     </div>

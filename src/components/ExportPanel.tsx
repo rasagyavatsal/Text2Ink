@@ -19,11 +19,12 @@ interface ExportPanelProps {
   pageRefs: React.MutableRefObject<(HTMLDivElement | null)[]>;
   hasContent: boolean;
   settings: HandwritingSettings;
+  onExportingChange?: (isExporting: boolean) => void;
 }
 
 type ExportFormat = 'pdf' | 'png' | 'jpg';
 
-export default function ExportPanel({ pageRefs, hasContent, settings }: ExportPanelProps) {
+export default function ExportPanel({ pageRefs, hasContent, settings, onExportingChange }: ExportPanelProps) {
   const [format, setFormat] = useState<ExportFormat>('pdf');
   const [isExporting, setIsExporting] = useState(false);
   const [quality, setQuality] = useState<'standard' | 'high'>('high');
@@ -281,6 +282,9 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
 
   const exportPages = async () => {
     setIsExporting(true);
+    onExportingChange?.(true);
+
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
     const cleanup = applyExportSafeDocument();
 
@@ -397,6 +401,7 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
     } finally {
       cleanup();
       setIsExporting(false);
+      onExportingChange?.(false);
     }
   };
 

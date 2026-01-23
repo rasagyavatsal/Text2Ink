@@ -31,6 +31,7 @@ export default function EditorPage() {
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [previewScale, setPreviewScale] = useState(1);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [renderAllPagesForExport, setRenderAllPagesForExport] = useState(false);
 
   const registerPageRef = useCallback((pageIndex: number, el: HTMLDivElement | null) => {
     pageRefs.current[pageIndex] = el;
@@ -212,6 +213,7 @@ export default function EditorPage() {
                 pageRefs={pageRefs}
                 hasContent={text.trim().length > 0}
                 settings={settings}
+                onExportingChange={setRenderAllPagesForExport}
               />
             )}
           </div>
@@ -241,6 +243,7 @@ export default function EditorPage() {
               onSettingsChange={setSettings}
               pageSettingsByPage={pageSettingsByPage}
               onPageRef={registerPageRef}
+              renderAllPagesForExport={renderAllPagesForExport}
               previewScale={previewScale}
               onPreviewScaleChange={handlePreviewScaleChange}
               textFields={textFields}
