@@ -40,7 +40,7 @@ export default function ContactPage() {
               Get in Touch
             </h1>
             <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
-              Have questions, feedback, or suggestions? I'd love to hear from you!
+              Have questions, feedback, or suggestions? I&apos;d love to hear from you!
             </p>
           </div>
 
@@ -49,20 +49,20 @@ export default function ContactPage() {
               <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#E0A32A] rounded-full flex items-center justify-center mb-6">
                 <Mail className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
               </div>
-              
+
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
                 Email Me
               </h2>
-              
+
               <a
                 href="mailto:rasagyavatsal@outlook.com"
                 className="text-lg sm:text-xl text-[#E0A32A] hover:text-[#c99225] font-medium transition-colors mb-6"
               >
                 rasagyavatsal@outlook.com
               </a>
-              
+
               <p className="text-gray-600 text-sm sm:text-base max-w-md">
-                Whether you've found a bug, have a feature request, or just want to say hello, 
+                Whether you&apos;ve found a bug, have a feature request, or just want to say hello,
                 feel free to reach out. I typically respond within 24-48 hours.
               </p>
             </div>
@@ -78,7 +78,7 @@ export default function ContactPage() {
             <div className="p-6 bg-white border border-gray-200 rounded-xl">
               <h3 className="font-semibold text-gray-900 mb-2">Feature Requests</h3>
               <p className="text-sm text-gray-600">
-                Have an idea? I'm always looking to improve Text2Ink.
+                Have an idea? I&apos;m always looking to improve Text2Ink.
               </p>
             </div>
             <div className="p-6 bg-white border border-gray-200 rounded-xl">

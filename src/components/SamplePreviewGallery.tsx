@@ -41,7 +41,10 @@ export default function SamplePreviewGallery() {
     if (activeIndex === null) return;
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setActiveIndex(null);
+      if (e.key === 'Escape') {
+        setActiveIndex(null);
+        setZoom(1);
+      }
     };
 
     document.addEventListener('keydown', onKeyDown);
@@ -53,11 +56,6 @@ export default function SamplePreviewGallery() {
     };
   }, [activeIndex]);
 
-  useEffect(() => {
-    if (activeIndex === null) return;
-    setZoom(1);
-  }, [activeIndex]);
-
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 justify-items-center">
@@ -67,7 +65,10 @@ export default function SamplePreviewGallery() {
             type="button"
             className="bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl overflow-hidden w-full max-w-sm md:max-w-none focus:outline-none focus:ring-2 focus:ring-[#E0A32A] focus:ring-offset-2"
             style={{ aspectRatio: '210/297', maxHeight: '500px' }}
-            onClick={() => setActiveIndex(idx)}
+            onClick={() => {
+              setZoom(1);
+              setActiveIndex(idx);
+            }}
             aria-label={`Open ${img.alt} full size`}
           >
             <NextImage
@@ -91,7 +92,10 @@ export default function SamplePreviewGallery() {
         >
           <div
             className="absolute inset-0 bg-black/70"
-            onClick={() => setActiveIndex(null)}
+            onClick={() => {
+              setActiveIndex(null);
+              setZoom(1);
+            }}
           />
 
           <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-6">
@@ -122,7 +126,10 @@ export default function SamplePreviewGallery() {
                 <button
                   type="button"
                   className="p-2 bg-white/90 backdrop-blur rounded-lg border border-gray-200 shadow-sm hover:bg-gray-100"
-                  onClick={() => setActiveIndex(null)}
+                  onClick={() => {
+                    setActiveIndex(null);
+                    setZoom(1);
+                  }}
                   aria-label="Close"
                 >
                   <X className="w-4 h-4" />
@@ -139,9 +146,11 @@ export default function SamplePreviewGallery() {
                 }}
               >
                 <div className="min-w-full min-h-full flex items-center justify-center p-4">
-                  <img
+                  <NextImage
                     src={activeImage.src}
                     alt={activeImage.alt}
+                    width={activeImage.width}
+                    height={activeImage.height}
                     className="max-w-none"
                     style={{
                       transform: `scale(${zoom})`,

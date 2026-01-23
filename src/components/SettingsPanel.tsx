@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import NextImage from 'next/image';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
@@ -393,10 +394,13 @@ export default function SettingsPanel({
                   <div className="grid grid-cols-3 gap-2">
                     {effectiveBackgroundImages.map((src, idx) => (
                       <div key={`${idx}-${src.slice(0, 30)}`} className="relative">
-                        <img
+                        <NextImage
                           src={src}
                           alt={`Custom background ${idx + 1}`}
+                          width={256}
+                          height={128}
                           className="w-full h-16 object-cover rounded border border-input"
+                          unoptimized
                         />
                         <button
                           type="button"

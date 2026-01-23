@@ -31,7 +31,6 @@ export default function EditorPage() {
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [previewScale, setPreviewScale] = useState(1);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
 
   const registerPageRef = useCallback((pageIndex: number, el: HTMLDivElement | null) => {
     pageRefs.current[pageIndex] = el;
@@ -89,7 +88,6 @@ export default function EditorPage() {
 
   const handleTotalPagesChange = useCallback(
     (nextTotalPages: number) => {
-      setTotalPages(nextTotalPages);
       ensurePageSettingsLength(nextTotalPages);
     },
     [ensurePageSettingsLength]

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import NextImage from 'next/image';
-import { PenLine, Image as ImageIcon, Wand2, ArrowRight } from 'lucide-react';
+import { Image as ImageIcon, Wand2, ArrowRight } from 'lucide-react';
 import SamplePreviewGallery from '@/components/SamplePreviewGallery';
 
 export default function LandingPage() {
