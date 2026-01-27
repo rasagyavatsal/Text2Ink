@@ -1102,9 +1102,25 @@ export default function HandwritingEditor({
               transform: `scale(${scale})`,
               transformOrigin: 'top left',
             }}
+            role="button"
+            tabIndex={isVisiblePreview ? 0 : -1}
+            aria-label={`Page ${pageIndex + 1}`}
             onClick={(e) => {
               if (!isVisiblePreview) return;
               handlePageClick(e, pageIndex);
+            }}
+            onKeyDown={(e) => {
+              if (!isVisiblePreview) return;
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                // Create a synthetic mouse event for keyboard interaction
+                const syntheticEvent = {
+                  currentTarget: e.currentTarget,
+                  clientX: 0,
+                  clientY: 0,
+                } as React.MouseEvent<HTMLDivElement>;
+                handlePageClick(syntheticEvent, pageIndex);
+              }
             }}
           >
             {paperLines}
