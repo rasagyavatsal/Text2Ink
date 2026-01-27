@@ -83,10 +83,6 @@ export default function SettingsPanel({
   return (
     <div className="p-6 space-y-8">
 
-      <div className="text-xs text-muted-foreground">
-        Editing page {currentPageIndex + 1}
-      </div>
-
       <div>
         <div className="flex items-center gap-2 mb-5">
           <Type className="w-5 h-5 text-[#E0A32A]" />
