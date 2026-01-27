@@ -505,9 +505,10 @@ export default function HandwritingEditor({
                 }}
               />
               {onSettingsChange && (
-                <div
+                <button
                   key={`margin-line-handle-${pageIndex}`}
-                  className="absolute"
+                  type="button"
+                  className="absolute border-0 bg-transparent p-0"
                   style={{
                     left: ps.marginLeft + settings.ruledMarginLineOffset - 6,
                     top: ps.marginTop,
@@ -524,7 +525,23 @@ export default function HandwritingEditor({
                       pageIndex,
                     };
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setIsDraggingMarginLine(true);
+                      marginLineDragRef.current = {
+                        pageIndex,
+                      };
+                    }
+                  }}
                   title="Drag to reposition margin line"
+                  aria-label="Drag to reposition margin line"
+                  role="slider"
+                  aria-valuemin={0}
+                  aria-valuemax={PAGE_WIDTH - (ps.marginLeft + ps.marginRight)}
+                  aria-valuenow={settings.ruledMarginLineOffset}
+                  aria-orientation="vertical"
+                  tabIndex={0}
                 />
               )}
             </div>
