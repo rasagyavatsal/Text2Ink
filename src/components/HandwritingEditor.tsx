@@ -1196,9 +1196,16 @@ export default function HandwritingEditor({
                 }}
                 role="group"
                 aria-label={`Text field ${tf.id}`}
+                tabIndex={0}
                 onClick={(e) => {
                   if (!isVisiblePreview) return;
                   e.stopPropagation();
+                }}
+                onKeyDown={(e) => {
+                  if (!isVisiblePreview) return;
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.stopPropagation();
+                  }
                 }}
               >
                 <button
