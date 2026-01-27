@@ -646,6 +646,19 @@ export default function HandwritingEditor({
     []
   );
 
+  const handleCharKeyDown = useCallback(
+    (e: React.KeyboardEvent, globalCharIndex: number, isLeftHalf: boolean = true) => {
+      e.stopPropagation();
+      const newPosition = isLeftHalf ? globalCharIndex : globalCharIndex + 1;
+      setCursorPosition(newPosition);
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(newPosition, newPosition);
+      }
+    },
+    []
+  );
+
   const renderCharacter = useCallback(
     (
       char: string,
@@ -661,11 +674,20 @@ export default function HandwritingEditor({
           <span
             key={globalCharIndex}
             className="relative cursor-text"
+            role="button"
+            tabIndex={0}
             onClick={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
               const isLeftHalf = e.clientX < rect.left + rect.width / 2;
               handleCharClick(e, globalCharIndex, isLeftHalf);
             }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleCharKeyDown(e, globalCharIndex, true);
+              }
+            }}
+            aria-label={`Character position ${globalCharIndex}`}
           >
             {showCursorBefore && isFocused && (
               <span
@@ -703,11 +725,20 @@ export default function HandwritingEditor({
           key={globalCharIndex}
           className="inline-block relative cursor-text"
           style={randomStyle}
+          role="button"
+          tabIndex={0}
           onClick={(e) => {
             const rect = e.currentTarget.getBoundingClientRect();
             const isLeftHalf = e.clientX < rect.left + rect.width / 2;
             handleCharClick(e, globalCharIndex, isLeftHalf);
           }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleCharKeyDown(e, globalCharIndex, true);
+            }
+          }}
+          aria-label={`Character ${char} at position ${globalCharIndex}`}
         >
           {showCursorBefore && isFocused && (
             <span
@@ -737,7 +768,7 @@ export default function HandwritingEditor({
         </span>
       );
     },
-    [applyRandomness, isFocused, handleCharClick]
+    [applyRandomness, isFocused, handleCharClick, handleCharKeyDown]
   );
 
   useEffect(() => {
