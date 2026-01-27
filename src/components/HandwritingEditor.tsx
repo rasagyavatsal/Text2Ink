@@ -1178,35 +1178,74 @@ export default function HandwritingEditor({
                   top: tf.y,
                   transform: 'translate(-4px, -12px)',
                 }}
+                role="group"
+                aria-label={`Text field ${tf.id}`}
+                tabIndex={isVisiblePreview ? 0 : -1}
                 onClick={(e) => {
                   if (!isVisiblePreview) return;
                   e.stopPropagation();
                 }}
+                onKeyDown={(e) => {
+                  if (!isVisiblePreview) return;
+                  if (e.key === 'Delete' || e.key === 'Backspace') {
+                    e.preventDefault();
+                    handleTextFieldDelete(tf.id);
+                  } else if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    const input = textFieldInputRefs.current.get(tf.id);
+                    input?.focus();
+                  }
+                }}
               >
-                <div
-                  className="absolute -left-6 top-0 w-5 h-5 bg-gray-400 hover:bg-gray-600 rounded cursor-move flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                <button
+                  className="absolute -left-6 top-0 w-5 h-5 bg-gray-400 hover:bg-gray-600 rounded cursor-move flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border-0"
                   onMouseDown={(e) => {
                     if (!isVisiblePreview) return;
                     handleDragStart(e, tf);
                   }}
+                  onKeyDown={(e) => {
+                    if (!isVisiblePreview) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      // Create a synthetic mouse event for drag start
+                      const syntheticEvent = new MouseEvent('mousedown', {
+                        clientX: 0,
+                        clientY: 0,
+                        bubbles: true,
+                        cancelable: true,
+                      });
+                      handleDragStart(syntheticEvent as any, tf);
+                    }
+                  }}
                   title="Drag to move"
+                  aria-label="Drag to move text field"
+                  tabIndex={isVisiblePreview ? 0 : -1}
                 >
                   <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" />
                   </svg>
-                </div>
-                <div
-                  className="absolute -top-6 -right-6 w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center cursor-pointer text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity"
+                </button>
+                <button
+                  className="absolute -top-6 -right-6 w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center cursor-pointer text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity border-0"
                   onMouseDown={(e) => {
                     if (!isVisiblePreview) return;
                     e.preventDefault();
                     e.stopPropagation();
                     handleTextFieldDelete(tf.id);
                   }}
+                  onKeyDown={(e) => {
+                    if (!isVisiblePreview) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleTextFieldDelete(tf.id);
+                    }
+                  }}
                   title="Delete text field"
+                  aria-label="Delete text field"
+                  tabIndex={isVisiblePreview ? 0 : -1}
                 >
                   ×
-                </div>
+                </button>
                 <textarea
                   ref={(el) => {
                     if (!isVisiblePreview) return;
