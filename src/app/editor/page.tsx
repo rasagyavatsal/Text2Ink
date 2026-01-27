@@ -114,6 +114,18 @@ export default function EditorPage() {
     return () => window.removeEventListener('resize', update);
   }, []);
 
+  // Sync global color settings to all page settings
+  useEffect(() => {
+    setPageSettingsByPage((prev) => {
+      return prev.map((pageSettings) => ({
+        ...pageSettings,
+        inkColor: settings.inkColor,
+        paperColor: settings.paperColor,
+        lineColor: settings.lineColor,
+      }));
+    });
+  }, [settings.inkColor, settings.paperColor, settings.lineColor]);
+
   if (isMobileBlocked) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center px-6">
