@@ -1196,21 +1196,9 @@ export default function HandwritingEditor({
                 }}
                 role="group"
                 aria-label={`Text field ${tf.id}`}
-                tabIndex={isVisiblePreview ? 0 : -1}
                 onClick={(e) => {
                   if (!isVisiblePreview) return;
                   e.stopPropagation();
-                }}
-                onKeyDown={(e) => {
-                  if (!isVisiblePreview) return;
-                  if (e.key === 'Delete' || e.key === 'Backspace') {
-                    e.preventDefault();
-                    handleTextFieldDelete(tf.id);
-                  } else if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    const input = textFieldInputRefs.current.get(tf.id);
-                    input?.focus();
-                  }
                 }}
               >
                 <button
