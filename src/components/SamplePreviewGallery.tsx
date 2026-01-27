@@ -92,9 +92,19 @@ export default function SamplePreviewGallery() {
         >
           <div
             className="absolute inset-0 bg-black/70"
+            role="button"
+            tabIndex={0}
+            aria-label="Close preview"
             onClick={() => {
               setActiveIndex(null);
               setZoom(1);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setActiveIndex(null);
+                setZoom(1);
+              }
             }}
           />
 
