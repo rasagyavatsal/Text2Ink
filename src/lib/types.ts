@@ -142,6 +142,7 @@ export interface TextField {
   x: number;
   y: number;
   text: string;
+  inkColor?: string;
   pageIndex: number;
 }
 

@@ -9,7 +9,7 @@ import {
   PageSettings,
   defaultPageSettingsFromHandwritingSettings,
 } from '@/lib/types';
-import { Type, PenLine, Plus, Minus, ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
+import { Type, PenLine, Plus, Minus, ChevronLeft, ChevronRight, GripVertical, Palette } from 'lucide-react';
 
 interface HandwritingEditorProps {
   text: string;
@@ -150,6 +150,7 @@ export default function HandwritingEditor({
   const [editorMode, setEditorMode] = useState<EditorMode>('write');
   const [fontMetricsVersion, setFontMetricsVersion] = useState(0);
   const textFieldInputRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map());
+  const textFieldColorInputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDraggingMarginLine, setIsDraggingMarginLine] = useState(false);
@@ -830,11 +831,14 @@ export default function HandwritingEditor({
         const x = (e.clientX - rect.left) / previewScale;
         const y = (e.clientY - rect.top) / previewScale;
 
+        const ps = getPageSettings(pageIndex);
+
         const newTextField: TextField = {
           id: `tf-${Date.now()}`,
           x,
           y,
           text: '',
+          inkColor: ps.inkColor,
           pageIndex,
         };
 
@@ -848,7 +852,7 @@ export default function HandwritingEditor({
         textareaRef.current?.focus();
       }
     },
-    [editorMode, textFields, onTextFieldsChange, previewScale]
+    [editorMode, getPageSettings, textFields, onTextFieldsChange, previewScale]
   );
 
   const handleTextFieldChange = useCallback(
@@ -865,6 +869,13 @@ export default function HandwritingEditor({
       onTextFieldsChange(textFields.filter((tf) => tf.id !== id));
     },
     [textFields, onTextFieldsChange]
+  );
+
+  const handleTextFieldColorChange = useCallback(
+    (id: string, inkColor: string) => {
+      onTextFieldsChange(textFields.map((tf) => (tf.id === id ? { ...tf, inkColor } : tf)));
+    },
+    [onTextFieldsChange, textFields]
   );
 
   const handleTextFieldKeyDown = useCallback(
@@ -1257,6 +1268,48 @@ export default function HandwritingEditor({
                 >
                   ×
                 </button>
+                <button
+                  type="button"
+                  className="absolute -top-6 right-0 w-5 h-5 bg-white hover:bg-gray-50 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-gray-300 p-0"
+                  onMouseDown={(e) => {
+                    if (!isVisiblePreview) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    textFieldColorInputRefs.current.get(tf.id)?.click();
+                  }}
+                  onKeyDown={(e) => {
+                    if (!isVisiblePreview) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      textFieldColorInputRefs.current.get(tf.id)?.click();
+                    }
+                  }}
+                  aria-label="Change text field color"
+                  title="Change color"
+                  tabIndex={isVisiblePreview ? 0 : -1}
+                >
+                  <Palette className="w-3 h-3 text-gray-700" />
+                </button>
+                <input
+                  ref={(el) => {
+                    if (!isVisiblePreview) return;
+                    if (el) {
+                      textFieldColorInputRefs.current.set(tf.id, el);
+                    } else {
+                      textFieldColorInputRefs.current.delete(tf.id);
+                    }
+                  }}
+                  type="color"
+                  value={tf.inkColor ?? ps.inkColor}
+                  className="sr-only"
+                  onChange={(e) => {
+                    if (!isVisiblePreview) return;
+                    handleTextFieldColorChange(tf.id, e.target.value);
+                  }}
+                  aria-label="Text field color"
+                  tabIndex={-1}
+                />
                 <textarea
                   ref={(el) => {
                     if (!isVisiblePreview) return;
@@ -1279,7 +1332,7 @@ export default function HandwritingEditor({
                   style={{
                     fontFamily: customFontFamily ? `"${customFontFamily}", cursive` : undefined,
                     fontSize: ps.fontSize,
-                    color: ps.inkColor,
+                    color: tf.inkColor ?? ps.inkColor,
                     lineHeight: settings.lineHeight,
                     minWidth: '20px',
                     width: tf.text
@@ -1287,7 +1340,7 @@ export default function HandwritingEditor({
                       : '20px',
                     minHeight: `${ps.fontSize * settings.lineHeight}px`,
                     height: 'auto',
-                    caretColor: ps.inkColor,
+                    caretColor: tf.inkColor ?? ps.inkColor,
                   }}
                   placeholder=""
                   autoComplete="off"
@@ -1307,6 +1360,7 @@ export default function HandwritingEditor({
       getPageSettings,
       handleDragStart,
       handleTextFieldChange,
+      handleTextFieldColorChange,
       handleTextFieldDelete,
       handleTextFieldKeyDown,
       handlePageClick,
