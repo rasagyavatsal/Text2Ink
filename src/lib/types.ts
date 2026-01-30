@@ -118,16 +118,6 @@ export const PAPER_STYLES = [
   { name: 'Grid', value: 'grid' },
 ] as const;
 
-export const INK_COLORS = [
-  { name: 'Blue Black', value: '#1a365d' },
-  { name: 'Black', value: '#1a1a1a' },
-  { name: 'Blue', value: '#2563eb' },
-  { name: 'Dark Blue', value: '#1e3a5f' },
-  { name: 'Green', value: '#166534' },
-  { name: 'Red', value: '#991b1b' },
-  { name: 'Purple', value: '#581c87' },
-];
-
 export const PAPER_COLORS = [
   { name: 'Cream', value: '#fffef5' },
   { name: 'White', value: '#ffffff' },

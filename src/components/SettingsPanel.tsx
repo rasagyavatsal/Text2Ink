@@ -18,7 +18,6 @@ import {
   PageSettings,
   HANDWRITING_FONTS,
   PAPER_STYLES,
-  INK_COLORS,
   PAPER_COLORS,
 } from '@/lib/types';
 import { Type, Palette, FileText, Wand2, Upload, X } from 'lucide-react';
@@ -531,19 +530,16 @@ export default function SettingsPanel({
         <div className="space-y-5">
           <div className="space-y-2">
             <Label>Ink Color</Label>
-            <div className="flex flex-wrap gap-2">
-              {INK_COLORS.map((color) => (
-                <button
-                  key={color.value}
-                  onClick={() => updateSetting('inkColor', color.value)}
-                  className={`w-8 h-8 rounded-full border-2 transition-all ${settings.inkColor === color.value
-                    ? 'border-[#E0A32A] scale-110 shadow-md'
-                    : 'border-transparent hover:scale-105'
-                    }`}
-                  style={{ backgroundColor: color.value }}
-                  title={color.name}
-                />
-              ))}
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={settings.inkColor}
+                onChange={(e) => updateSetting('inkColor', e.target.value)}
+                className="w-10 h-10 rounded cursor-pointer border border-input"
+              />
+              <span className="text-sm text-muted-foreground">
+                {settings.inkColor}
+              </span>
             </div>
           </div>
 
