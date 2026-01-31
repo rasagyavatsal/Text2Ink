@@ -13,6 +13,7 @@ import {
   PageSettings,
   defaultPageSettingsFromHandwritingSettings,
 } from '@/lib/types';
+import { loadEditorStateV1, saveEditorStateV1 } from '@/lib/editorPersistence';
 import { Settings, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const MemoSettingsPanel = React.memo(SettingsPanel);
@@ -33,9 +34,101 @@ export default function EditorPage() {
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [renderAllPagesForExport, setRenderAllPagesForExport] = useState(false);
 
+  const hasLoadedFromStorageRef = useRef(false);
+
   const registerPageRef = useCallback((pageIndex: number, el: HTMLDivElement | null) => {
     pageRefs.current[pageIndex] = el;
   }, []);
+
+  useEffect(() => {
+    if (hasLoadedFromStorageRef.current) return;
+
+    const persisted = loadEditorStateV1<HandwritingSettings, PageSettings, TextField>();
+    if (!persisted) {
+      hasLoadedFromStorageRef.current = true;
+      return;
+    }
+
+    setText(persisted.text);
+    setSettings(persisted.settings);
+    setPageSettingsByPage(
+      persisted.pageSettingsByPage.length > 0
+        ? persisted.pageSettingsByPage
+        : [defaultPageSettingsFromHandwritingSettings(persisted.settings)]
+    );
+    setTextFields(persisted.textFields);
+
+    setActivePanel(persisted.ui.activePanel);
+    setSidebarOpen(persisted.ui.sidebarOpen);
+    setPreviewScale(persisted.ui.previewScale);
+    setCurrentPageIndex(persisted.ui.currentPageIndex);
+
+    hasLoadedFromStorageRef.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedFromStorageRef.current) return;
+    if (typeof window === 'undefined') return;
+
+    const save = () => {
+      saveEditorStateV1<HandwritingSettings, PageSettings, TextField>({
+        text,
+        settings,
+        pageSettingsByPage,
+        textFields,
+        ui: {
+          activePanel,
+          sidebarOpen,
+          previewScale,
+          currentPageIndex,
+        },
+      });
+    };
+
+    const timeout = window.setTimeout(save, 400);
+    return () => window.clearTimeout(timeout);
+  }, [
+    activePanel,
+    currentPageIndex,
+    pageSettingsByPage,
+    previewScale,
+    settings,
+    sidebarOpen,
+    text,
+    textFields,
+  ]);
+
+  useEffect(() => {
+    if (!hasLoadedFromStorageRef.current) return;
+    if (typeof window === 'undefined') return;
+
+    const handleUnload = () => {
+      saveEditorStateV1<HandwritingSettings, PageSettings, TextField>({
+        text,
+        settings,
+        pageSettingsByPage,
+        textFields,
+        ui: {
+          activePanel,
+          sidebarOpen,
+          previewScale,
+          currentPageIndex,
+        },
+      });
+    };
+
+    window.addEventListener('beforeunload', handleUnload);
+    return () => window.removeEventListener('beforeunload', handleUnload);
+  }, [
+    activePanel,
+    currentPageIndex,
+    pageSettingsByPage,
+    previewScale,
+    settings,
+    sidebarOpen,
+    text,
+    textFields,
+  ]);
 
   const clampPreviewScale = useCallback((value: number) => Math.min(2, Math.max(0.5, value)), []);
 
