@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useCallback, useMemo, useEffect, useState, useDeferredValue } from 'react';
+import React, { useRef, useCallback, useMemo, useEffect, useState } from 'react';
 import {
   HandwritingSettings,
   HANDWRITING_FONTS,
@@ -10,6 +10,7 @@ import {
   defaultPageSettingsFromHandwritingSettings,
 } from '@/lib/types';
 import { Type, PenLine, Plus, Minus, ChevronLeft, ChevronRight, GripVertical, Palette } from 'lucide-react';
+import type { PaginationResponse } from '@/workers/paginationWorker';
 
 interface HandwritingEditorProps {
   text: string;
@@ -121,6 +122,35 @@ const FONT_VARIABLES: Record<string, string> = {
   'homemade-apple': '--font-homemade-apple',
 };
 
+function useDebouncedCallback<T extends (...args: any[]) => void>(cb: T, delayMs: number) {
+  const cbRef = useRef(cb);
+  const timeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    cbRef.current = cb;
+  }, [cb]);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current !== null) {
+        window.clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  return useCallback(
+    (...args: Parameters<T>) => {
+      if (timeoutRef.current !== null) {
+        window.clearTimeout(timeoutRef.current);
+      }
+      timeoutRef.current = window.setTimeout(() => {
+        cbRef.current(...args);
+      }, delayMs);
+    },
+    [delayMs]
+  );
+}
+
 function seededRandom(seed: number): number {
   const x = Math.sin(seed) * 10000;
   return x - Math.floor(x);
@@ -149,6 +179,12 @@ export default function HandwritingEditor({
   const [cursorPosition, setCursorPosition] = useState(0);
   const [editorMode, setEditorMode] = useState<EditorMode>('write');
   const [fontMetricsVersion, setFontMetricsVersion] = useState(0);
+  const [localText, setLocalText] = useState(text);
+  const [pages, setPages] = useState<LineData[][]>([[]]);
+  const [isPaginationComplete, setIsPaginationComplete] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
+  const latestPaginationRequestIdRef = useRef(0);
+  const workerRef = useRef<Worker | null>(null);
   const textFieldInputRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map());
   const textFieldColorInputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -176,8 +212,16 @@ export default function HandwritingEditor({
       ? settings.customFont.family
       : null;
 
-  const deferredText = useDeferredValue(text);
-  const paginationText = renderAllPagesForExport ? text : deferredText;
+  useEffect(() => {
+    setLocalText(text);
+  }, [text]);
+
+  const debouncedPropagateText = useDebouncedCallback(
+    (nextText: string) => {
+      onTextChange(nextText);
+    },
+    150
+  );
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -251,187 +295,123 @@ export default function HandwritingEditor({
     [pageSettingsByPage, settings]
   );
 
-  const { pages, isPaginationComplete } = useMemo(() => {
-    const out: LineData[][] = [];
-    const lineCounter = { value: 0 };
-    const textLen = paginationText.length;
-    const pageLimit = renderAllPagesForExport ? Number.POSITIVE_INFINITY : Math.max(1, currentPageIndex + 2);
+  const resolvedFontFamily = useMemo(() => {
+    if (customFontFamily) return `"${customFontFamily}", cursive`;
+    const varName = FONT_VARIABLES[settings.fontFamily];
+    if (!varName) return 'cursive';
+    if (typeof document === 'undefined' || typeof window === 'undefined') return 'cursive';
+    const scope = document.body ?? document.documentElement;
+    const value = window.getComputedStyle(scope).getPropertyValue(varName).trim();
+    return value || 'cursive';
+  }, [customFontFamily, fontMetricsVersion, settings.fontFamily]);
 
-    const measureFnCache = new Map<string, (s: string) => number>();
-    const canvasContextCache = new Map<string, CanvasRenderingContext2D | null>();
-    const fontFamilyCache = new Map<string, string>();
+  const desiredPageSettings = useMemo(() => {
+    const desiredLength = Math.max(pageSettingsByPage.length, currentPageIndex + 2);
+    const out: Array<{
+      marginTop: number;
+      marginRight: number;
+      marginBottom: number;
+      marginLeft: number;
+      fontSize: number;
+      customLineSpacing?: number;
+    }> = [];
 
-    const resolveFamily = () => {
-      if (customFontFamily) return `"${customFontFamily}", cursive`;
-      const varName = FONT_VARIABLES[settings.fontFamily];
-      if (!varName) return 'cursive';
-      
-      const cacheKey = `font-${settings.fontFamily}`;
-      if (fontFamilyCache.has(cacheKey)) {
-        return fontFamilyCache.get(cacheKey)!;
-      }
-      
-      if (typeof document === 'undefined' || typeof window === 'undefined') {
-        fontFamilyCache.set(cacheKey, 'cursive');
-        return 'cursive';
-      }
-      
-      const scope = document.body ?? document.documentElement;
-      const value = window.getComputedStyle(scope).getPropertyValue(varName).trim();
-      const resolved = value || 'cursive';
-      fontFamilyCache.set(cacheKey, resolved);
-      return resolved;
-    };
-
-    const measureTextWidthForFontSize = (fontSize: number) => {
-      const cacheKey = `${fontMetricsVersion}:${fontSize}`;
-      const cached = measureFnCache.get(cacheKey);
-      if (cached) return cached;
-
-      const fallback = (s: string) => s.length * fontSize * 0.6;
-      if (typeof document === 'undefined' || typeof window === 'undefined') {
-        measureFnCache.set(cacheKey, fallback);
-        return fallback;
-      }
-
-      // Reuse canvas context from cache
-      let ctx = canvasContextCache.get(cacheKey);
-      if (!ctx) {
-        const canvas = document.createElement('canvas');
-        ctx = canvas.getContext('2d');
-        if (!ctx) {
-          measureFnCache.set(cacheKey, fallback);
-          return fallback;
-        }
-        canvasContextCache.set(cacheKey, ctx);
-      }
-
-      ctx.font = `400 ${fontSize}px ${resolveFamily()}`;
-
-      const fn = (s: string) => ctx.measureText(s).width;
-      measureFnCache.set(cacheKey, fn);
-      return fn;
-    };
-
-    const nextLineFrom = (fromIndex: number, maxWidth: number, measure: (s: string) => number) => {
-      if (fromIndex >= textLen) return null;
-
-      const nlIndex = paginationText.indexOf('\n', fromIndex);
-      const rawEnd = nlIndex === -1 ? textLen : nlIndex;
-      const segment = paginationText.slice(fromIndex, rawEnd);
-
-      if (segment.length === 0) {
-        if (nlIndex !== -1 && nlIndex === fromIndex) {
-          return { lineText: '', nextIndex: fromIndex + 1, hasNewline: true };
-        }
-        return { lineText: '', nextIndex: rawEnd, hasNewline: nlIndex !== -1 };
-      }
-
-      if (measure(segment) <= maxWidth) {
-        const nextIndex = nlIndex === -1 ? rawEnd : rawEnd + 1;
-        return { lineText: segment, nextIndex, hasNewline: nlIndex !== -1 };
-      }
-
-      const findMaxFittingIndex = (s: string) => {
-        let low = 1;
-        let high = s.length;
-        let best = 1;
-        // Cache the original string to avoid repeated slice operations
-        const originalString = s;
-        while (low <= high) {
-          const mid = Math.floor((low + high) / 2);
-          const w = measure(originalString.slice(0, mid));
-          if (w <= maxWidth) {
-            best = mid;
-            low = mid + 1;
-          } else {
-            high = mid - 1;
-          }
-        }
-        return Math.max(1, Math.min(best, originalString.length));
-      };
-
-      const fit = findMaxFittingIndex(segment);
-      const candidate = segment.slice(0, fit);
-      const lastWhitespace = Math.max(candidate.lastIndexOf(' '), candidate.lastIndexOf('\t'));
-      const breakAt = lastWhitespace > 0 ? lastWhitespace + 1 : fit;
-
-      return {
-        lineText: segment.slice(0, breakAt),
-        nextIndex: fromIndex + breakAt,
-        hasNewline: false,
-      };
-    };
-
-    let cursor = 0;
-    let pageIndex = 0;
-
-    if (textLen === 0) {
-      out.push([]);
-      return { pages: out, isPaginationComplete: true };
+    for (let i = 0; i < desiredLength; i++) {
+      const ps = getPageSettings(i);
+      out.push({
+        marginTop: ps.marginTop,
+        marginRight: ps.marginRight,
+        marginBottom: ps.marginBottom,
+        marginLeft: ps.marginLeft,
+        fontSize: ps.fontSize,
+        customLineSpacing: ps.customLineSpacing ?? undefined,
+      });
     }
 
-    while (cursor < textLen && pageIndex < pageLimit) {
-      const ps = getPageSettings(pageIndex);
-      const pageHasBackground = !!getBackgroundForPage(pageIndex);
-      const contentHeight = PAGE_HEIGHT - ps.marginTop - ps.marginBottom;
+    return out;
+  }, [currentPageIndex, getPageSettings, pageSettingsByPage.length]);
 
-      const ruledTextLeft =
-        settings.paperStyle === 'ruled' && !hasAnyCustomBackground
-          ? ps.marginLeft + settings.ruledMarginLineOffset + 10
-          : ps.marginLeft;
-      const ruledTextWidth = PAGE_WIDTH - ruledTextLeft - ps.marginRight;
-
-      const baseLineHeightPx = ps.fontSize * settings.lineHeight;
-      const lineHeightPx = pageHasBackground && ps.customLineSpacing ? ps.customLineSpacing : baseLineHeightPx;
-      const linesPerPage = Math.max(1, Math.floor(contentHeight / lineHeightPx));
-
-      const measure = measureTextWidthForFontSize(ps.fontSize);
-      const maxWidth = ruledTextWidth;
-
-      const pageLines: LineData[] = [];
-      for (let i = 0; i < linesPerPage && cursor < textLen; i++) {
-        const next = nextLineFrom(cursor, maxWidth, measure);
-        if (!next) break;
-        pageLines.push({
-          text: next.lineText,
-          lineIndex: lineCounter.value++,
-          hasNewline: next.hasNewline,
-        });
-        cursor = next.nextIndex;
-      }
-
-      out.push(pageLines);
-      pageIndex += 1;
-
-      if (pageLines.length === 0) {
-        break;
-      }
+  const desiredPageHasBackground = useMemo(() => {
+    const desiredLength = Math.max(pageSettingsByPage.length, currentPageIndex + 2);
+    const out: boolean[] = [];
+    for (let i = 0; i < desiredLength; i++) {
+      out.push(!!getBackgroundForPage(i));
     }
+    return out;
+  }, [currentPageIndex, getBackgroundForPage, pageSettingsByPage.length]);
 
-    const computedPages = out.length > 0 ? out : [[]];
-    const isComplete = cursor >= textLen;
-    return { pages: computedPages, isPaginationComplete: isComplete };
+  const debouncedRequestPagination = useDebouncedCallback(() => {
+    const worker = workerRef.current;
+    if (!worker) return;
+
+    latestPaginationRequestIdRef.current += 1;
+    const requestId = latestPaginationRequestIdRef.current;
+
+    worker.postMessage({
+      type: 'paginate',
+      requestId,
+      text: localText,
+      currentPageIndex,
+      renderAllPagesForExport,
+      pageWidth: PAGE_WIDTH,
+      pageHeight: PAGE_HEIGHT,
+      hasAnyCustomBackground,
+      settings: {
+        lineHeight: settings.lineHeight,
+        paperStyle: settings.paperStyle,
+        ruledMarginLineOffset: settings.ruledMarginLineOffset,
+      },
+      pages: desiredPageSettings,
+      pageHasBackground: desiredPageHasBackground,
+      fontFamily: resolvedFontFamily,
+    });
+  }, 40);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (workerRef.current) return;
+
+    const worker = new Worker(new URL('../workers/paginationWorker.ts', import.meta.url), {
+      type: 'module',
+    });
+    workerRef.current = worker;
+
+    const onMessage = (ev: MessageEvent<PaginationResponse>) => {
+      const msg = ev.data;
+      if (!msg || msg.type !== 'pagination-result') return;
+      if (msg.requestId !== latestPaginationRequestIdRef.current) return;
+      setPages(msg.pages as LineData[][]);
+      setIsPaginationComplete(msg.isPaginationComplete);
+      setTotalPages(msg.totalPages);
+    };
+
+    worker.addEventListener('message', onMessage as any);
+    return () => {
+      worker.removeEventListener('message', onMessage as any);
+      worker.terminate();
+      workerRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    debouncedRequestPagination();
   }, [
-    customFontFamily,
-    getBackgroundForPage,
-    getPageSettings,
+    currentPageIndex,
+    debouncedRequestPagination,
+    desiredPageHasBackground,
+    desiredPageSettings,
     hasAnyCustomBackground,
-    fontMetricsVersion,
-    settings.fontFamily,
+    localText,
+    renderAllPagesForExport,
+    resolvedFontFamily,
     settings.lineHeight,
     settings.paperStyle,
     settings.ruledMarginLineOffset,
-    paginationText,
-    currentPageIndex,
-    renderAllPagesForExport,
   ]);
 
   useEffect(() => {
-    onTotalPagesChange?.(pages.length);
-  }, [onTotalPagesChange, pages.length]);
-
-  const totalPagesLabel = isPaginationComplete ? String(pages.length) : `${pages.length}+`;
+    onTotalPagesChange?.(totalPages);
+  }, [onTotalPagesChange, totalPages]);
 
   const applyRandomness = useCallback(
     (charIndex: number, lineIndex: number) => {
@@ -780,10 +760,12 @@ export default function HandwritingEditor({
 
   const handleTextChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      onTextChange(e.target.value);
+      const next = e.target.value;
+      setLocalText(next);
+      debouncedPropagateText(next);
       setCursorPosition(e.target.selectionStart);
     },
-    [onTextChange]
+    [debouncedPropagateText]
   );
 
   const handlePaste = useCallback(
@@ -807,13 +789,14 @@ export default function HandwritingEditor({
       const nextText = text.slice(0, start) + reflowed + text.slice(end);
       const nextCursor = start + reflowed.length;
 
-      onTextChange(nextText);
+      setLocalText(nextText);
+      debouncedPropagateText(nextText);
       setCursorPosition(nextCursor);
       requestAnimationFrame(() => {
         el.setSelectionRange(nextCursor, nextCursor);
       });
     },
-    [cursorPosition, onTextChange, text]
+    [cursorPosition, debouncedPropagateText, text]
   );
 
   const handleKeyUp = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -1478,7 +1461,7 @@ export default function HandwritingEditor({
           <ChevronLeft className="w-4 h-4" />
         </button>
         <div className="px-2 min-w-16 text-center text-sm font-medium text-gray-700 select-none">
-          Page {currentPageIndex + 1} / {totalPagesLabel}
+          Page {currentPageIndex + 1} / {String(totalPages)}
         </div>
         <button
           onClick={() =>
@@ -1500,7 +1483,7 @@ export default function HandwritingEditor({
       {/* Hidden textarea for input */}
       <textarea
         ref={textareaRef}
-        value={text}
+        value={localText}
         onChange={handleTextChange}
         onPaste={handlePaste}
         onKeyUp={handleKeyUp}
