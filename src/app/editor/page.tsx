@@ -32,7 +32,7 @@ export default function EditorPage() {
   const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [previewScale, setPreviewScale] = useState(1);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
-  const [renderAllPagesForExport, setRenderAllPagesForExport] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
 
   const hasLoadedFromStorageRef = useRef(false);
 
@@ -182,6 +182,7 @@ export default function EditorPage() {
 
   const handleTotalPagesChange = useCallback(
     (nextTotalPages: number) => {
+      setTotalPages(nextTotalPages);
       ensurePageSettingsLength(nextTotalPages);
     },
     [ensurePageSettingsLength]
@@ -318,7 +319,9 @@ export default function EditorPage() {
                 pageRefs={pageRefs}
                 hasContent={text.trim().length > 0}
                 settings={settings}
-                onExportingChange={setRenderAllPagesForExport}
+                totalPages={totalPages}
+                currentPageIndex={currentPageIndex}
+                onCurrentPageChange={handleCurrentPageChange}
               />
             )}
           </div>
@@ -348,7 +351,7 @@ export default function EditorPage() {
               onSettingsChange={setSettings}
               pageSettingsByPage={pageSettingsByPage}
               onPageRef={registerPageRef}
-              renderAllPagesForExport={renderAllPagesForExport}
+              renderAllPagesForExport={false}
               previewScale={previewScale}
               onPreviewScaleChange={handlePreviewScaleChange}
               textFields={textFields}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -11,23 +11,86 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Download, FileImage, FileText, Loader2 } from 'lucide-react';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 import { HandwritingSettings } from '@/lib/types';
 
 interface ExportPanelProps {
   pageRefs: React.MutableRefObject<(HTMLDivElement | null)[]>;
   hasContent: boolean;
   settings: HandwritingSettings;
+  totalPages: number;
+  currentPageIndex: number;
+  onCurrentPageChange: (pageIndex: number) => void;
   onExportingChange?: (isExporting: boolean) => void;
 }
 
 type ExportFormat = 'pdf' | 'png' | 'jpg';
 
-export default function ExportPanel({ pageRefs, hasContent, settings, onExportingChange }: ExportPanelProps) {
+export default function ExportPanel({
+  pageRefs,
+  hasContent,
+  settings,
+  totalPages,
+  currentPageIndex,
+  onCurrentPageChange,
+  onExportingChange,
+}: ExportPanelProps) {
   const [format, setFormat] = useState<ExportFormat>('pdf');
   const [isExporting, setIsExporting] = useState(false);
   const [quality, setQuality] = useState<'standard' | 'high'>('high');
+  const [exportProgress, setExportProgress] = useState<{ current: number; total: number } | null>(null);
+  const originalPageIndexRef = useRef<number>(0);
+  const currentPageIndexRef = useRef<number>(currentPageIndex);
+  const cancelExportRef = useRef(false);
+
+  useEffect(() => {
+    currentPageIndexRef.current = currentPageIndex;
+  }, [currentPageIndex]);
+
+  useEffect(() => {
+    return () => {
+      cancelExportRef.current = true;
+    };
+  }, []);
+
+  const waitForPages = async (minPages: number, timeoutMs: number) => {
+    const start = Date.now();
+    let lastCount = -1;
+    let stableTicks = 0;
+
+    while (Date.now() - start < timeoutMs) {
+      const count = pageRefs.current.filter((ref) => ref !== null).length;
+      if (count >= minPages) {
+        if (count === lastCount) {
+          stableTicks += 1;
+        } else {
+          stableTicks = 0;
+        }
+        lastCount = count;
+
+        if (stableTicks >= 2) return;
+      }
+
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    }
+  };
+
+  const waitForPageRef = async (pageIndex: number, timeoutMs: number) => {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const el = pageRefs.current[pageIndex];
+      if (el) return el;
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    }
+    return pageRefs.current[pageIndex] ?? null;
+  };
+
+  const waitForPageIndex = async (targetIndex: number, timeoutMs: number) => {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      if (currentPageIndexRef.current === targetIndex) return;
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    }
+  };
 
   const shouldNormalizeColor = (value: string) =>
     /(?:oklch|oklab|lab|lch|color-mix|color)\(/i.test(value);
@@ -283,8 +346,10 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
   const exportPages = async () => {
     setIsExporting(true);
     onExportingChange?.(true);
+    cancelExportRef.current = false;
+    originalPageIndexRef.current = currentPageIndex;
 
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await waitForPages(1, 1500);
 
     const cleanup = applyExportSafeDocument();
 
@@ -296,15 +361,16 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
       }
     }
 
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    await waitForPages(1, 1500);
 
     try {
-      const pages = pageRefs.current.filter((ref) => ref !== null);
-      if (pages.length === 0) {
-        alert('No pages to export');
-        return;
-      }
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ]);
+
+      const exportTotal = Math.max(1, totalPages);
+      setExportProgress({ current: 0, total: exportTotal });
 
       const scale = quality === 'high' ? 2 : 1;
 
@@ -315,9 +381,20 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
           format: 'letter',
         });
 
-        for (let i = 0; i < pages.length; i++) {
-          const page = pages[i];
-          if (!page) continue;
+        for (let i = 0; i < exportTotal; i++) {
+          if (cancelExportRef.current) break;
+
+          setExportProgress({ current: i, total: exportTotal });
+          onCurrentPageChange(i);
+          await waitForPageIndex(i, 2000);
+
+          const page = await waitForPageRef(i, 2000);
+          if (!page) {
+            throw new Error(`Failed to render page ${i + 1} before export capture.`);
+          }
+
+          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
           const computedBg = window.getComputedStyle(page).backgroundColor;
           const exportBg =
@@ -351,13 +428,29 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
           }
 
           pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+
+          setExportProgress({ current: i + 1, total: exportTotal });
         }
 
-        pdf.save('handwritten-document.pdf');
+        if (!cancelExportRef.current) {
+          pdf.save('handwritten-document.pdf');
+        }
       } else {
-        for (let i = 0; i < pages.length; i++) {
-          const page = pages[i];
-          if (!page) continue;
+
+        for (let i = 0; i < exportTotal; i++) {
+          if (cancelExportRef.current) break;
+
+          setExportProgress({ current: i, total: exportTotal });
+          onCurrentPageChange(i);
+          await waitForPageIndex(i, 2000);
+
+          const page = await waitForPageRef(i, 2000);
+          if (!page) {
+            throw new Error(`Failed to render page ${i + 1} before export capture.`);
+          }
+
+          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
           const computedBg = window.getComputedStyle(page).backgroundColor;
           const exportBg =
@@ -390,7 +483,9 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
           );
           link.click();
 
-          if (pages.length > 1 && i < pages.length - 1) {
+          setExportProgress({ current: i + 1, total: exportTotal });
+
+          if (exportTotal > 1 && i < exportTotal - 1) {
             await new Promise((resolve) => setTimeout(resolve, 500));
           }
         }
@@ -400,7 +495,9 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
       alert('Export failed. Please try again.');
     } finally {
       cleanup();
+      onCurrentPageChange(originalPageIndexRef.current);
       setIsExporting(false);
+      setExportProgress(null);
       onExportingChange?.(false);
     }
   };
@@ -482,6 +579,35 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
               </>
             )}
           </Button>
+
+          {isExporting && exportProgress && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs text-gray-600">
+                <span>
+                  Exporting page {Math.min(exportProgress.total, exportProgress.current + 1)} of {exportProgress.total}
+                </span>
+                <span>{Math.round((exportProgress.current / exportProgress.total) * 100)}%</span>
+              </div>
+              <div className="h-2 w-full rounded bg-gray-200 overflow-hidden">
+                <div
+                  className="h-full bg-[#E0A32A] transition-all"
+                  style={{
+                    width: `${Math.round((exportProgress.current / exportProgress.total) * 100)}%`,
+                  }}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  cancelExportRef.current = true;
+                }}
+              >
+                Cancel Export
+              </Button>
+            </div>
+          )}
 
           {!hasContent && (
             <p className="text-xs text-amber-600 text-center">
