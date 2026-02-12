@@ -28,6 +28,7 @@ interface SettingsPanelProps {
   pageSettings: PageSettings;
   onPageSettingsChange: (pageSettings: PageSettings) => void;
   currentPageIndex: number;
+  onApplyToAllPages?: () => void;
 }
 
 export default function SettingsPanel({
@@ -36,6 +37,7 @@ export default function SettingsPanel({
   pageSettings,
   onPageSettingsChange,
   currentPageIndex,
+  onApplyToAllPages,
 }: SettingsPanelProps) {
   const [customFontError, setCustomFontError] = useState<string | null>(null);
 

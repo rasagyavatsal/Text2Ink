@@ -152,6 +152,21 @@ export default function EditorPage() {
     [currentPageIndex, pageSettingsByPage, settings]
   );
 
+  const applyCurrentPageSettingsToAll = useCallback(() => {
+    ensurePageSettingsLength(totalPages);
+    setPageSettingsByPage((prev) => {
+      const desiredLength = Math.max(totalPages, 1);
+      const next = [...prev];
+
+      while (next.length < desiredLength) {
+        next.push(defaultPageSettingsFromHandwritingSettings(settings));
+      }
+
+      const source = next[currentPageIndex] ?? defaultPageSettingsFromHandwritingSettings(settings);
+      return next.slice(0, desiredLength).map(() => ({ ...source }));
+    });
+  }, [currentPageIndex, ensurePageSettingsLength, settings, totalPages]);
+
   const handlePageSettingsChange = useCallback(
     (nextPageSettings: PageSettings) => {
       ensurePageSettingsLength(currentPageIndex + 1);
@@ -359,6 +374,7 @@ export default function EditorPage() {
               currentPageIndex={currentPageIndex}
               onCurrentPageChange={handleCurrentPageChange}
               onTotalPagesChange={handleTotalPagesChange}
+              onApplyToAllPages={applyCurrentPageSettingsToAll}
             />
           </div>
         </div>
