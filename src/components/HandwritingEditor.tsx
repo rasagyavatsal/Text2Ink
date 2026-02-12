@@ -27,6 +27,7 @@ interface HandwritingEditorProps {
   currentPageIndex: number;
   onCurrentPageChange: (pageIndex: number) => void;
   onTotalPagesChange?: (totalPages: number) => void;
+  onApplyToAllPages?: () => void;
 }
 
 const PAGE_WIDTH = 612;
@@ -171,6 +172,7 @@ export default function HandwritingEditor({
   currentPageIndex,
   onCurrentPageChange,
   onTotalPagesChange,
+  onApplyToAllPages,
 }: HandwritingEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const pageElsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -1477,6 +1479,18 @@ export default function HandwritingEditor({
           title="Next page"
         >
           <ChevronRight className="w-4 h-4" />
+        </button>
+
+        <div className="w-px h-7 bg-gray-200 mx-1" />
+
+        <button
+          type="button"
+          onClick={onApplyToAllPages}
+          disabled={!onApplyToAllPages}
+          className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          title="Apply settings to all pages"
+        >
+          Apply settings to all pages
         </button>
       </div>
 
