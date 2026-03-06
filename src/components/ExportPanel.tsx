@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { Download, FileImage, FileText, Loader2 } from 'lucide-react';
 import { HandwritingSettings } from '@/lib/types';
+import FeedbackDialog from './FeedbackDialog';
 
 interface ExportPanelProps {
   pageRefs: React.MutableRefObject<(HTMLDivElement | null)[]>;
@@ -38,6 +39,7 @@ export default function ExportPanel({
   const [isExporting, setIsExporting] = useState(false);
   const [quality, setQuality] = useState<'standard' | 'high'>('high');
   const [exportProgress, setExportProgress] = useState<{ current: number; total: number } | null>(null);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const originalPageIndexRef = useRef<number>(0);
   const currentPageIndexRef = useRef<number>(currentPageIndex);
   const cancelExportRef = useRef(false);
@@ -363,6 +365,7 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
 
     await waitForPages(1, 1500);
 
+    let success = false;
     try {
       const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
         import('html2canvas'),
@@ -434,6 +437,7 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
 
         if (!cancelExportRef.current) {
           pdf.save('handwritten-document.pdf');
+          success = true;
         }
       } else {
 
@@ -489,6 +493,9 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
             await new Promise((resolve) => setTimeout(resolve, 500));
           }
         }
+        if (!cancelExportRef.current) {
+          success = true;
+        }
       }
     } catch (error) {
       console.error('Export failed:', error);
@@ -499,6 +506,9 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
       setIsExporting(false);
       setExportProgress(null);
       onExportingChange?.(false);
+      if (success) {
+        setIsFeedbackOpen(true);
+      }
     }
   };
 
@@ -622,6 +632,10 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
           </p>
         </div>
       </div>
+      <FeedbackDialog 
+        isOpen={isFeedbackOpen} 
+        onClose={() => setIsFeedbackOpen(false)} 
+      />
     </div>
   );
 }
