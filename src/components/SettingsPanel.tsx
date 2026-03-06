@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import NextImage from 'next/image';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
@@ -20,6 +20,8 @@ import {
   PAPER_STYLES,
   PAPER_COLORS,
 } from '@/lib/types';
+import { detectBackgroundLines } from '@/lib/lineDetection';
+import { PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/pageConstants';
 import { Type, Palette, FileText, Wand2, Upload, X } from 'lucide-react';
 
 interface SettingsPanelProps {
@@ -40,6 +42,9 @@ export default function SettingsPanel({
   onApplyToAllPages,
 }: SettingsPanelProps) {
   const [customFontError, setCustomFontError] = useState<string | null>(null);
+  const [lineDetecting, setLineDetecting] = useState(false);
+  const [lineDetectError, setLineDetectError] = useState<string | null>(null);
+  const [lineDetectInfo, setLineDetectInfo] = useState<{ offset: number; spacing: number } | null>(null);
 
   const hasCustomBackground =
     (settings.customBackgroundImages?.length ?? 0) > 0 || !!settings.customBackgroundImage;
@@ -50,6 +55,16 @@ export default function SettingsPanel({
       : settings.customBackgroundImage
         ? [settings.customBackgroundImage]
         : [];
+
+  const currentBackground = useMemo(
+    () => settings.customBackgroundImages?.[currentPageIndex] ?? settings.customBackgroundImage,
+    [currentPageIndex, settings.customBackgroundImages, settings.customBackgroundImage]
+  );
+
+  useEffect(() => {
+    setLineDetectError(null);
+    setLineDetectInfo(null);
+  }, [currentPageIndex, currentBackground]);
 
 
 
@@ -69,6 +84,48 @@ export default function SettingsPanel({
 
   const updateSettings = (patch: Partial<HandwritingSettings>) => {
     onSettingsChange({ ...settings, ...patch });
+  };
+
+  const handleDetectLines = async () => {
+    if (!currentBackground || lineDetecting) return;
+    setLineDetectError(null);
+    setLineDetectInfo(null);
+    setLineDetecting(true);
+
+    try {
+      const expectedLineHeight = pageSettings.customLineSpacing ?? pageSettings.fontSize * settings.lineHeight;
+      const result = await detectBackgroundLines(currentBackground, {
+        targetWidth: PAGE_WIDTH,
+        targetHeight: PAGE_HEIGHT,
+        marginTop: pageSettings.marginTop,
+        marginBottom: pageSettings.marginBottom,
+        marginLeft: pageSettings.marginLeft,
+        marginRight: pageSettings.marginRight,
+        expectedLineHeight,
+      });
+
+      if (!result) {
+        setLineDetectError('Could not detect consistent horizontal lines in this background.');
+        return;
+      }
+
+      const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+      const detectedOffset = Math.round(result.lineOffset);
+      const detectedSpacing = Math.round(result.lineSpacing);
+      const clampedOffset = clamp(detectedOffset, -50, 50);
+      const clampedSpacing = clamp(detectedSpacing, 20, 120);
+
+      onPageSettingsChange({
+        ...pageSettings,
+        customLineOffset: clampedOffset,
+        customLineSpacing: clampedSpacing,
+      });
+      setLineDetectInfo({ offset: clampedOffset, spacing: clampedSpacing });
+    } catch (err) {
+      setLineDetectError('Failed to analyze background. Please try another image.');
+    } finally {
+      setLineDetecting(false);
+    }
   };
 
   const updateRandomness = (
@@ -474,6 +531,31 @@ export default function SettingsPanel({
           {hasCustomBackground && (
             <>
               <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Auto-Detect Lines</Label>
+                  <button
+                    type="button"
+                    onClick={handleDetectLines}
+                    disabled={!currentBackground || lineDetecting}
+                    className="text-xs px-3 py-1 rounded border border-gray-300 hover:border-[#E0A32A] hover:text-[#E0A32A] disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {lineDetecting ? 'Detecting...' : 'Detect Lines'}
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Analyze the current background and align text to its lines.
+                </p>
+                {lineDetectInfo && (
+                  <p className="text-xs text-green-700">
+                    Applied offset {lineDetectInfo.offset}px and spacing {lineDetectInfo.spacing}px.
+                  </p>
+                )}
+                {lineDetectError && (
+                  <p className="text-xs text-red-600">{lineDetectError}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
                 <div className="flex justify-between">
                   <Label>Line Offset (Y Position)</Label>
                   <span className="text-sm text-muted-foreground">
@@ -503,7 +585,7 @@ export default function SettingsPanel({
                   value={[pageSettings.customLineSpacing ?? Math.round(pageSettings.fontSize * settings.lineHeight)]}
                   onValueChange={([value]) => updatePageSetting('customLineSpacing', value)}
                   min={20}
-                  max={80}
+                  max={120}
                   step={1}
                 />
                 <button
