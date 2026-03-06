@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Caveat, Dancing_Script, Indie_Flower, Shadows_Into_Light, Kalam, Patrick_Hand, Architects_Daughter, Satisfy, Homemade_Apple } from "next/font/google";
+import { Inter, Caveat } from "next/font/google";
 import "./globals.css";
 import FirebaseAnalytics from "./firebase-analytics";
 
@@ -28,60 +28,14 @@ const siteKeywords = [
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+  display: 'swap',
 });
 
 const caveat = Caveat({
   variable: "--font-caveat",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-});
-
-const dancingScript = Dancing_Script({
-  variable: "--font-dancing-script",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
-const indieFlower = Indie_Flower({
-  variable: "--font-indie-flower",
-  subsets: ["latin"],
-  weight: "400",
-});
-
-const shadowsIntoLight = Shadows_Into_Light({
-  variable: "--font-shadows-into-light",
-  subsets: ["latin"],
-  weight: "400",
-});
-
-const kalam = Kalam({
-  variable: "--font-kalam",
-  subsets: ["latin"],
-  weight: ["300", "400", "700"],
-});
-
-const patrickHand = Patrick_Hand({
-  variable: "--font-patrick-hand",
-  subsets: ["latin"],
-  weight: "400",
-});
-
-const architectsDaughter = Architects_Daughter({
-  variable: "--font-architects-daughter",
-  subsets: ["latin"],
-  weight: "400",
-});
-
-const satisfy = Satisfy({
-  variable: "--font-satisfy",
-  subsets: ["latin"],
-  weight: "400",
-});
-
-const homemadeApple = Homemade_Apple({
-  variable: "--font-homemade-apple",
-  subsets: ["latin"],
-  weight: "400",
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -107,8 +61,8 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: "/logo-without-background.png",
-    apple: "/logo-without-background.png",
+    icon: "/logo-192.png",
+    apple: "/logo-192.png",
   },
   manifest: "/manifest.json",
   openGraph: {
@@ -120,7 +74,7 @@ export const metadata: Metadata = {
     description: siteDescription,
     images: [
       {
-        url: "/Sample-handwriting-preview1.png",
+        url: "/Sample-handwriting-preview1.avif",
         width: 840,
         height: 1188,
         alt: "Text2Ink - Convert text to realistic handwriting",
@@ -131,7 +85,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Text2Ink - Free Text to Handwriting Converter Online",
     description: siteDescription,
-    images: ["/Sample-handwriting-preview1.png"],
+    images: ["/Sample-handwriting-preview1.avif"],
     creator: "@text2ink",
   },
   alternates: {
@@ -168,7 +122,7 @@ const jsonLd = {
     "Export to PDF and images",
     "Adjustable margins and spacing",
   ],
-  screenshot: `${siteUrl}/Sample-handwriting-preview1.png`,
+  screenshot: `${siteUrl}/Sample-handwriting-preview1.avif`,
   aggregateRating: {
     "@type": "AggregateRating",
     ratingValue: "4.8",
@@ -184,13 +138,30 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
+        <link rel="preconnect" href="https://www.google-analytics.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="preload"
+          as="image"
+          href="/Sample-handwriting-preview1-mobile.avif"
+          media="(max-width: 640px)"
+          type="image/avif"
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/Sample-handwriting-preview1.avif"
+          media="(min-width: 641px)"
+          type="image/avif"
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
       <body
-        className={`${inter.variable} ${caveat.variable} ${dancingScript.variable} ${indieFlower.variable} ${shadowsIntoLight.variable} ${kalam.variable} ${patrickHand.variable} ${architectsDaughter.variable} ${satisfy.variable} ${homemadeApple.variable} antialiased font-sans`}
+        className={`${inter.variable} ${caveat.variable} antialiased font-sans`}
       >
         <FirebaseAnalytics />
         {children}

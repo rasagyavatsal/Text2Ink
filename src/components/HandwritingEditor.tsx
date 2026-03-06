@@ -190,9 +190,9 @@ export default function HandwritingEditor({
   const textFieldInputRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map());
   const textFieldColorInputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
   const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0, pageRect: null as DOMRect | null });
   const [isDraggingMarginLine, setIsDraggingMarginLine] = useState(false);
-  const marginLineDragRef = useRef({ pageIndex: 0 });
+  const marginLineDragRef = useRef({ pageIndex: 0, pageRect: null as DOMRect | null });
   const [toolbarPosition, setToolbarPosition] = useState<{ x: number; y: number } | null>(null);
   const [isToolbarDragging, setIsToolbarDragging] = useState(false);
   const toolbarDragRef = useRef<{ active: boolean; offsetX: number; offsetY: number }>({
@@ -504,16 +504,29 @@ export default function HandwritingEditor({
                     e.preventDefault();
                     e.stopPropagation();
                     setIsDraggingMarginLine(true);
+                    const pageEl = pageElsRef.current[pageIndex];
                     marginLineDragRef.current = {
                       pageIndex,
+                      pageRect: pageEl ? pageEl.getBoundingClientRect() : null,
+                    };
+                  }}
+                  onTouchStart={(e) => {
+                    e.stopPropagation();
+                    setIsDraggingMarginLine(true);
+                    const pageEl = pageElsRef.current[pageIndex];
+                    marginLineDragRef.current = {
+                      pageIndex,
+                      pageRect: pageEl ? pageEl.getBoundingClientRect() : null,
                     };
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
                       setIsDraggingMarginLine(true);
+                      const pageEl = pageElsRef.current[pageIndex];
                       marginLineDragRef.current = {
                         pageIndex,
+                        pageRect: pageEl ? pageEl.getBoundingClientRect() : null,
                       };
                     }
                   }}
@@ -581,16 +594,14 @@ export default function HandwritingEditor({
 
     const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
-    const handleMove = (e: MouseEvent) => {
+    const handleMove = (e: MouseEvent | TouchEvent) => {
       if (!onSettingsChange) return;
-      const { pageIndex } = marginLineDragRef.current;
-      const pageEl = pageElsRef.current[pageIndex];
-      if (!pageEl) return;
+      const { pageIndex, pageRect } = marginLineDragRef.current;
+      if (!pageRect) return;
 
       const ps = getPageSettings(pageIndex);
-
-      const pageRect = pageEl.getBoundingClientRect();
-      const x = (e.clientX - pageRect.left) / previewScale;
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const x = (clientX - pageRect.left) / previewScale;
       const minLeft = 0;
       const maxLeft = PAGE_WIDTH;
       const clampedLeft = clamp(x, minLeft, maxLeft);
@@ -610,9 +621,15 @@ export default function HandwritingEditor({
 
     window.addEventListener('mousemove', handleMove);
     window.addEventListener('mouseup', handleUp);
+    window.addEventListener('touchmove', handleMove, { passive: false });
+    window.addEventListener('touchend', handleUp);
+    window.addEventListener('touchcancel', handleUp);
     return () => {
       window.removeEventListener('mousemove', handleMove);
       window.removeEventListener('mouseup', handleUp);
+      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchend', handleUp);
+      window.removeEventListener('touchcancel', handleUp);
     };
   }, [getPageSettings, isDraggingMarginLine, onSettingsChange, previewScale, settings]);
 
@@ -660,8 +677,7 @@ export default function HandwritingEditor({
             role="button"
             tabIndex={0}
             onClick={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              const isLeftHalf = e.clientX < rect.left + rect.width / 2;
+              const isLeftHalf = e.nativeEvent.offsetX < (e.currentTarget as HTMLElement).offsetWidth / 2;
               handleCharClick(e, globalCharIndex, isLeftHalf);
             }}
             onKeyDown={(e) => {
@@ -711,8 +727,7 @@ export default function HandwritingEditor({
           role="button"
           tabIndex={0}
           onClick={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            const isLeftHalf = e.clientX < rect.left + rect.width / 2;
+            const isLeftHalf = e.nativeEvent.offsetX < (e.currentTarget as HTMLElement).offsetWidth / 2;
             handleCharClick(e, globalCharIndex, isLeftHalf);
           }}
           onKeyDown={(e) => {
@@ -884,10 +899,13 @@ export default function HandwritingEditor({
       e.stopPropagation();
       setDraggingId(tf.id);
       const rect = (e.target as HTMLElement).closest('.text-field-container')?.getBoundingClientRect();
+      const pageEl = pageElsRef.current[tf.pageIndex];
+      const pageRect = pageEl ? pageEl.getBoundingClientRect() : null;
       if (rect) {
         setDragOffset({
           x: (e.clientX - rect.left) / previewScale,
           y: (e.clientY - rect.top) / previewScale,
+          pageRect,
         });
       }
     },
@@ -895,18 +913,20 @@ export default function HandwritingEditor({
   );
 
   const handleDragMove = useCallback(
-    (e: MouseEvent) => {
+    (e: MouseEvent | TouchEvent) => {
       if (!draggingId) return;
 
       const tf = textFields.find((t) => t.id === draggingId);
       if (!tf) return;
 
-      const pageEl = pageElsRef.current[tf.pageIndex];
-      if (!pageEl) return;
+      const pageRect = dragOffset.pageRect;
+      if (!pageRect) return;
 
-      const pageRect = pageEl.getBoundingClientRect();
-      const newX = (e.clientX - pageRect.left) / previewScale - dragOffset.x + 4;
-      const newY = (e.clientY - pageRect.top) / previewScale - dragOffset.y + 12;
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+      const newX = (clientX - pageRect.left) / previewScale - dragOffset.x + 4;
+      const newY = (clientY - pageRect.top) / previewScale - dragOffset.y + 12;
 
       onTextFieldsChange(
         textFields.map((t) =>
@@ -925,9 +945,15 @@ export default function HandwritingEditor({
     if (draggingId) {
       window.addEventListener('mousemove', handleDragMove);
       window.addEventListener('mouseup', handleDragEnd);
+      window.addEventListener('touchmove', handleDragMove, { passive: false });
+      window.addEventListener('touchend', handleDragEnd);
+      window.addEventListener('touchcancel', handleDragEnd);
       return () => {
         window.removeEventListener('mousemove', handleDragMove);
         window.removeEventListener('mouseup', handleDragEnd);
+        window.removeEventListener('touchmove', handleDragMove);
+        window.removeEventListener('touchend', handleDragEnd);
+        window.removeEventListener('touchcancel', handleDragEnd);
       };
     }
   }, [draggingId, handleDragMove, handleDragEnd]);
@@ -1210,7 +1236,20 @@ export default function HandwritingEditor({
                     if (!isVisiblePreview) return;
                     handleDragStart(e, tf);
                   }}
-                  onKeyDown={(e) => {
+                  onTouchStart={(e) => {
+                    if (!isVisiblePreview) return;
+                    e.stopPropagation();
+                    // Create a synthetic mouse-like event for handleDragStart
+                    const touch = e.touches[0];
+                    const syntheticEvent = {
+                      preventDefault: () => { },
+                      stopPropagation: () => { },
+                      clientX: touch.clientX,
+                      clientY: touch.clientY,
+                      target: e.target,
+                    } as any;
+                    handleDragStart(syntheticEvent, tf);
+                  }}                  onKeyDown={(e) => {
                     if (!isVisiblePreview) return;
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();

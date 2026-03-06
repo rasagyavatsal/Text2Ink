@@ -1,6 +1,15 @@
 import Link from 'next/link';
 import NextImage from 'next/image';
 import { Mail, ArrowLeft } from 'lucide-react';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Contact Us',
+  description: 'Have questions or feedback about Text2Ink? Reach out to us. We would love to hear from you!',
+  alternates: {
+    canonical: 'https://text2ink.com/contact',
+  },
+};
 
 export default function ContactPage() {
   return (
@@ -96,7 +105,7 @@ export default function ContactPage() {
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <NextImage
-              src="/logo-without-background.png"
+              src="/logo-192.png"
               alt="Text2Ink logo"
               width={64}
               height={64}

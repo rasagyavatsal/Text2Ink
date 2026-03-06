@@ -3,9 +3,68 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Dancing_Script, Indie_Flower, Shadows_Into_Light, Kalam, Patrick_Hand, Architects_Daughter, Satisfy, Homemade_Apple } from "next/font/google";
 import HandwritingEditor from '@/components/HandwritingEditor';
 import SettingsPanel from '@/components/SettingsPanel';
 import ExportPanel from '@/components/ExportPanel';
+import './editor.css';
+
+const dancingScript = Dancing_Script({
+  variable: "--font-dancing-script",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: 'swap',
+});
+
+const indieFlower = Indie_Flower({
+  variable: "--font-indie-flower",
+  subsets: ["latin"],
+  weight: "400",
+  display: 'swap',
+});
+
+const shadowsIntoLight = Shadows_Into_Light({
+  variable: "--font-shadows-into-light",
+  subsets: ["latin"],
+  weight: "400",
+  display: 'swap',
+});
+
+const kalam = Kalam({
+  variable: "--font-kalam",
+  subsets: ["latin"],
+  weight: ["300", "400", "700"],
+  display: 'swap',
+});
+
+const patrickHand = Patrick_Hand({
+  variable: "--font-patrick-hand",
+  subsets: ["latin"],
+  weight: "400",
+  display: 'swap',
+});
+
+const architectsDaughter = Architects_Daughter({
+  variable: "--font-architects-daughter",
+  subsets: ["latin"],
+  weight: "400",
+  display: 'swap',
+});
+
+const satisfy = Satisfy({
+  variable: "--font-satisfy",
+  subsets: ["latin"],
+  weight: "400",
+  display: 'swap',
+});
+
+const homemadeApple = Homemade_Apple({
+  variable: "--font-homemade-apple",
+  subsets: ["latin"],
+  weight: "400",
+  display: 'swap',
+});
+
 import {
   HandwritingSettings,
   DEFAULT_SETTINGS,
@@ -241,7 +300,7 @@ export default function EditorPage() {
         <div className="max-w-md w-full text-center">
           <div className="flex items-center justify-center gap-2 mb-6">
             <Image
-              src="/logo-without-background.png"
+              src="/logo-192.png"
               alt="Text2Ink logo"
               width={48}
               height={48}
@@ -268,7 +327,7 @@ export default function EditorPage() {
   }
 
   return (
-    <div className="h-screen bg-white flex flex-col overflow-hidden">
+    <div className={`${dancingScript.variable} ${indieFlower.variable} ${shadowsIntoLight.variable} ${kalam.variable} ${patrickHand.variable} ${architectsDaughter.variable} ${satisfy.variable} ${homemadeApple.variable} h-screen bg-white flex flex-col overflow-hidden`}>
       {/* Header */}
       <header className="border-b border-gray-200 shrink-0">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">

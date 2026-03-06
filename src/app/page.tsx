@@ -92,6 +92,7 @@ export default function LandingPage() {
                   height={720}
                   className="w-full h-full object-cover"
                   unoptimized
+                  loading="lazy"
                 />
               </div>
             </div>
@@ -106,6 +107,7 @@ export default function LandingPage() {
                   height={720}
                   className="w-full h-full object-cover"
                   unoptimized
+                  loading="lazy"
                 />
               </div>
               <div className="order-1 md:order-2">
@@ -131,7 +133,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <NextImage
-              src="/logo-without-background.png"
+              src="/logo-192.png"
               alt="Text2Ink logo"
               width={64}
               height={64}
