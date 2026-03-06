@@ -6,6 +6,7 @@ import { Minus, Plus, X } from 'lucide-react';
 
 type SampleImage = {
   src: string;
+  mobileSrc?: string;
   alt: string;
   width: number;
   height: number;
@@ -17,13 +18,15 @@ export default function SamplePreviewGallery() {
   const images = useMemo<SampleImage[]>(
     () => [
       {
-        src: '/Sample-handwriting-preview1.png',
+        src: '/Sample-handwriting-preview1.avif',
+        mobileSrc: '/Sample-handwriting-preview1-mobile.avif',
         alt: 'Sample handwriting preview 1',
         width: 840,
         height: 1188,
       },
       {
-        src: '/Sample-handwriting-preview2.png',
+        src: '/Sample-handwriting-preview2.avif',
+        mobileSrc: '/Sample-handwriting-preview2-mobile.avif',
         alt: 'Sample handwriting preview 2',
         width: 840,
         height: 1188,
@@ -71,13 +74,17 @@ export default function SamplePreviewGallery() {
             }}
             aria-label={`Open ${img.alt} full size`}
           >
-            <NextImage
+            <img
               src={img.src}
               alt={img.alt}
               width={img.width}
               height={img.height}
               className="w-full h-full object-cover"
-              priority={idx === 0}
+              // @ts-ignore
+              fetchPriority={idx === 0 ? "high" : undefined}
+              loading={idx === 0 ? "eager" : "lazy"}
+              srcSet={img.mobileSrc ? `${img.mobileSrc} 400w, ${img.src} 840w` : undefined}
+              sizes="(max-width: 640px) 400px, 840px"
             />
           </button>
         ))}
@@ -156,7 +163,7 @@ export default function SamplePreviewGallery() {
                 }}
               >
                 <div className="min-w-full min-h-full flex items-center justify-center p-4">
-                  <NextImage
+                  <img
                     src={activeImage.src}
                     alt={activeImage.alt}
                     width={activeImage.width}
@@ -167,6 +174,8 @@ export default function SamplePreviewGallery() {
                       transformOrigin: 'center center',
                     }}
                     draggable={false}
+                    srcSet={activeImage.mobileSrc ? `${activeImage.mobileSrc} 400w, ${activeImage.src} 840w` : undefined}
+                    sizes="(max-width: 640px) 400px, 840px"
                   />
                 </div>
               </div>

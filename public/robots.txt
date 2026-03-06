@@ -10,7 +10,6 @@ Sitemap: https://text2ink.com/sitemap.xml
 # Crawl-delay for polite crawling
 Crawl-delay: 1
 
-# Block common bot paths (if any)
-Disallow: /api/
-Disallow: /_next/
-Disallow: /static/
+# Allow common bot paths to ensure proper rendering
+Allow: /_next/
+Allow: /static/
