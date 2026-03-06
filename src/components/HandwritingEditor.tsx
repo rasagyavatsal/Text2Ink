@@ -11,6 +11,7 @@ import {
 } from '@/lib/types';
 import { Type, PenLine, Plus, Minus, ChevronLeft, ChevronRight, GripVertical, Palette } from 'lucide-react';
 import type { PaginationResponse } from '@/workers/paginationWorker';
+import { PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/pageConstants';
 
 interface HandwritingEditorProps {
   text: string;
@@ -29,9 +30,6 @@ interface HandwritingEditorProps {
   onTotalPagesChange?: (totalPages: number) => void;
   onApplyToAllPages?: () => void;
 }
-
-const PAGE_WIDTH = 612;
-const PAGE_HEIGHT = 792;
 
 type LineData = {
   text: string;
