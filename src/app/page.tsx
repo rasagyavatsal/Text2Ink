@@ -85,14 +85,13 @@ export default function LandingPage() {
                 </p>
               </div>
               <div className="bg-gray-100 border-2 border-gray-200 rounded-xl sm:rounded-2xl aspect-video overflow-hidden">
-                <NextImage
-                  src="/Custom-Background-Images.gif"
-                  alt="Custom background images feature preview"
-                  width={1280}
-                  height={720}
+                <video
+                  src="/Custom-Background-Images.mp4"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
                   className="w-full h-full object-cover"
-                  unoptimized
-                  loading="lazy"
                 />
               </div>
             </div>
@@ -100,14 +99,13 @@ export default function LandingPage() {
             {/* Feature 2: Realism Effects */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
               <div className="order-2 md:order-1 bg-gray-100 border-2 border-gray-200 rounded-xl sm:rounded-2xl aspect-video overflow-hidden">
-                <NextImage
-                  src="/realistic-ink-effects.gif"
-                  alt="Realistic ink effects feature preview"
-                  width={1280}
-                  height={720}
+                <video
+                  src="/realistic-ink-effects.mp4"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
                   className="w-full h-full object-cover"
-                  unoptimized
-                  loading="lazy"
                 />
               </div>
               <div className="order-1 md:order-2">
