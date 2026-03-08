@@ -16,10 +16,19 @@ export async function POST(req: Request) {
       },
     })
 
+    const fromEmail = process.env.EMAIL_USER || "rasagyavatsal16@gmail.com"
+    const fromName = "Text2Ink Feedback"
+
     const mailOptions = {
-      from: process.env.EMAIL_USER || "rasagyavatsal16@gmail.com",
+      from: `"${fromName}" <${fromEmail}>`,
       to: "rasagyavatsal16@gmail.com",
+      replyTo: `"${fromName}" <${fromEmail}>`,
       subject: `New Feedback from Text2Ink - ${rating} Stars`,
+      headers: {
+        "X-Priority": "1 (Highest)",
+        "X-MSMail-Priority": "High",
+        Importance: "high",
+      },
       text: `
 Rating: ${rating} / 5
 What needs to be improved:

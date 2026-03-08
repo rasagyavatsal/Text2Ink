@@ -35,10 +35,17 @@ export const feedback = onRequest(async (req, res) => {
       },
     })
 
+    const fromName = "Text2Ink Feedback"
     const mailOptions = {
-      from: emailUser,
+      from: `"${fromName}" <${emailUser}>`,
       to: emailUser,
+      replyTo: `"${fromName}" <${emailUser}>`,
       subject: `New Feedback from Text2Ink - ${rating} Stars`,
+      headers: {
+        "X-Priority": "1 (Highest)",
+        "X-MSMail-Priority": "High",
+        "Importance": "high",
+      },
       text: `\nRating: ${rating} / 5\nWhat needs to be improved:\n${improvement || "No comments provided."}\n`,
       html: `\n<div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 600px;">\n  <h2 style="color: #333;">New Feedback Received!</h2>\n  <div style="margin-bottom: 20px;">\n    <strong>Rating:</strong> \n    <span style="font-size: 24px; color: #f59e0b;">${"★".repeat(rating)}${"☆".repeat(5 - rating)}</span>\n    <span style="color: #666; margin-left: 10px;">(${rating} / 5)</span>\n  </div>\n  <div style="margin-bottom: 20px;">\n    <strong>What needs to be improved:</strong>\n    <p style="background: #f9fafb; padding: 15px; border-radius: 5px; color: #4b5563; line-height: 1.5;">\n      ${improvement ? improvement.replace(/\n/g, "<br>") : "No comments provided."}\n    </p>\n  </div>\n</div>\n      `,
     }
