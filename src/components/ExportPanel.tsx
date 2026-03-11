@@ -12,6 +12,13 @@ import {
 } from '@/components/ui/select';
 import { Download, FileImage, FileText, Loader2 } from 'lucide-react';
 import { HandwritingSettings } from '@/lib/types';
+import {
+  shouldNormalizeColor,
+  normalizeCanvasColor,
+  waitForPages,
+  waitForPageRef,
+  waitForPageIndex,
+} from '@/lib/exportHelpers';
 import FeedbackDialog from './FeedbackDialog';
 
 interface ExportPanelProps {
@@ -53,68 +60,6 @@ export default function ExportPanel({
       cancelExportRef.current = true;
     };
   }, []);
-
-  const waitForPages = async (minPages: number, timeoutMs: number) => {
-    const start = Date.now();
-    let lastCount = -1;
-    let stableTicks = 0;
-
-    while (Date.now() - start < timeoutMs) {
-      const count = pageRefs.current.filter((ref) => ref !== null).length;
-      if (count >= minPages) {
-        if (count === lastCount) {
-          stableTicks += 1;
-        } else {
-          stableTicks = 0;
-        }
-        lastCount = count;
-
-        if (stableTicks >= 2) return;
-      }
-
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    }
-  };
-
-  const waitForPageRef = async (pageIndex: number, timeoutMs: number) => {
-    const start = Date.now();
-    while (Date.now() - start < timeoutMs) {
-      const el = pageRefs.current[pageIndex];
-      if (el) return el;
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    }
-    return pageRefs.current[pageIndex] ?? null;
-  };
-
-  const waitForPageIndex = async (targetIndex: number, timeoutMs: number) => {
-    const start = Date.now();
-    while (Date.now() - start < timeoutMs) {
-      if (currentPageIndexRef.current === targetIndex) return;
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-    }
-  };
-
-  const shouldNormalizeColor = (value: string) =>
-    /(?:oklch|oklab|lab|lch|color-mix|color)\(/i.test(value);
-
-  const normalizeCanvasColor = (doc: Document, value: string) => {
-    const canvas = doc.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
-
-    const sentinel = 'rgb(1, 2, 3)';
-    ctx.fillStyle = sentinel;
-    try {
-      ctx.fillStyle = value;
-    } catch {
-      return null;
-    }
-
-    const normalized = ctx.fillStyle;
-    if (!normalized || normalized === sentinel) return null;
-    if (shouldNormalizeColor(normalized)) return null;
-    return normalized;
-  };
 
   const sanitizeCloneColors = (documentClone: Document, elementClone: HTMLElement) => {
     const win = documentClone.defaultView;
@@ -351,7 +296,7 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
     cancelExportRef.current = false;
     originalPageIndexRef.current = currentPageIndex;
 
-    await waitForPages(1, 1500);
+    await waitForPages(pageRefs, 1, 1500);
 
     const cleanup = applyExportSafeDocument();
 
@@ -363,7 +308,7 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
       }
     }
 
-    await waitForPages(1, 1500);
+    await waitForPages(pageRefs, 1, 1500);
 
     let success = false;
     try {
@@ -389,9 +334,9 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
 
           setExportProgress({ current: i, total: exportTotal });
           onCurrentPageChange(i);
-          await waitForPageIndex(i, 2000);
+          await waitForPageIndex(currentPageIndexRef, i, 2000);
 
-          const page = await waitForPageRef(i, 2000);
+          const page = await waitForPageRef(pageRefs, i, 2000);
           if (!page) {
             throw new Error(`Failed to render page ${i + 1} before export capture.`);
           }
@@ -446,9 +391,9 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
 
           setExportProgress({ current: i, total: exportTotal });
           onCurrentPageChange(i);
-          await waitForPageIndex(i, 2000);
+          await waitForPageIndex(currentPageIndexRef, i, 2000);
 
-          const page = await waitForPageRef(i, 2000);
+          const page = await waitForPageRef(pageRefs, i, 2000);
           if (!page) {
             throw new Error(`Failed to render page ${i + 1} before export capture.`);
           }

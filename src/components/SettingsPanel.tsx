@@ -24,6 +24,13 @@ import { detectBackgroundLines } from '@/lib/lineDetection';
 import { PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/pageConstants';
 import { Type, Palette, FileText, Wand2, Upload, X } from 'lucide-react';
 
+import {
+  validateFontFile,
+  generateFontFamilyName,
+  processLineDetectionResult,
+  readFilesAsDataURL,
+} from '@/lib/settingsHelpers';
+
 interface SettingsPanelProps {
   settings: HandwritingSettings;
   onSettingsChange: (settings: HandwritingSettings) => void;
@@ -109,18 +116,14 @@ export default function SettingsPanel({
         return;
       }
 
-      const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-      const detectedOffset = Math.round(result.lineOffset);
-      const detectedSpacing = Math.round(result.lineSpacing);
-      const clampedOffset = clamp(detectedOffset, -50, 50);
-      const clampedSpacing = clamp(detectedSpacing, 20, 120);
+      const { offset, spacing } = processLineDetectionResult(result, pageSettings, settings);
 
       onPageSettingsChange({
         ...pageSettings,
-        customLineOffset: clampedOffset,
-        customLineSpacing: clampedSpacing,
+        customLineOffset: offset,
+        customLineSpacing: spacing,
       });
-      setLineDetectInfo({ offset: clampedOffset, spacing: clampedSpacing });
+      setLineDetectInfo({ offset, spacing });
     } catch (err) {
       setLineDetectError('Failed to analyze background. Please try another image.');
     } finally {
@@ -220,15 +223,10 @@ export default function SettingsPanel({
 
                       setCustomFontError(null);
 
-                      const lowerName = file.name.toLowerCase();
-                      const format = lowerName.endsWith('.ttf')
-                        ? ('truetype' as const)
-                        : lowerName.endsWith('.otf')
-                          ? ('opentype' as const)
-                          : null;
+                      const { format, error } = validateFontFile(file);
 
-                      if (!format) {
-                        setCustomFontError('Please upload a .ttf or .otf font file.');
+                      if (error || !format) {
+                        setCustomFontError(error);
                         return;
                       }
 
@@ -243,11 +241,7 @@ export default function SettingsPanel({
                           return;
                         }
 
-                        const safeBase = file.name
-                          .replace(/\.(ttf|otf)$/i, '')
-                          .replace(/[^a-z0-9_-]/gi, '')
-                          .slice(0, 30);
-                        const family = `Text2InkCustom-${safeBase || 'Font'}-${Date.now()}`;
+                        const family = generateFontFamilyName(file.name);
 
                         updateSettings({
                           fontFamily: 'custom',
@@ -502,15 +496,7 @@ export default function SettingsPanel({
                     e.target.value = '';
                     if (files.length === 0) return;
 
-                    const readAsDataURL = (file: File) =>
-                      new Promise<string>((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onerror = () => reject(new Error('Failed to read image'));
-                        reader.onload = (event) => resolve(event.target?.result as string);
-                        reader.readAsDataURL(file);
-                      });
-
-                    Promise.all(files.map(readAsDataURL))
+                    readFilesAsDataURL(files)
                       .then((results) => {
                         const next = [...effectiveBackgroundImages, ...results];
                         updateSettings({

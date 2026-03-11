@@ -11,6 +11,9 @@
     "serve": "firebase emulators:start --only functions",
     "deploy": "firebase deploy --only functions",
     "lint": "eslint --ext .js,.ts src",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "predeploy": "npm run build"
   },
   "dependencies": {
@@ -18,7 +21,10 @@
     "nodemailer": "^7.0.11"
   },
   "devDependencies": {
-    "@types/node": "^20.11.30",
-    "typescript": "^5.5.4"
+    "@types/node": "^20.19.37",
+    "@vitest/coverage-v8": "^4.0.18",
+    "node-mocks-http": "^1.17.2",
+    "typescript": "^5.5.4",
+    "vitest": "^4.0.18"
   }
 }

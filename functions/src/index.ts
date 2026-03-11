@@ -2,10 +2,10 @@ import { onRequest } from "firebase-functions/v2/https"
 import { logger } from "firebase-functions"
 import nodemailer from "nodemailer"
 
-const emailUser = process.env.EMAIL_USER || "rasagyavatsal16@gmail.com"
-const emailPass = process.env.EMAIL_PASS
-
 export const feedback = onRequest(async (req, res) => {
+  const emailUser = process.env.EMAIL_USER || "rasagyavatsal16@gmail.com"
+  const emailPass = process.env.EMAIL_PASS
+
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method Not Allowed" })
     return
