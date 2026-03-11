@@ -13,6 +13,12 @@ import { Type, PenLine, Plus, Minus, ChevronLeft, ChevronRight, GripVertical, Pa
 import type { PaginationResponse } from '@/workers/paginationWorker';
 import { PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/pageConstants';
 
+import { 
+  calculateRandomStyle, 
+  calculatePageStartOffsets, 
+  calculateLineStarts,
+  type LineData 
+} from '@/lib/editorHelpers';
 interface HandwritingEditorProps {
   text: string;
   onTextChange: (text: string) => void;
@@ -30,12 +36,6 @@ interface HandwritingEditorProps {
   onTotalPagesChange?: (totalPages: number) => void;
   onApplyToAllPages?: () => void;
 }
-
-type LineData = {
-  text: string;
-  lineIndex: number;
-  hasNewline: boolean;
-};
 
 type RenderCharacterFn = (
   char: string,
@@ -148,11 +148,6 @@ function useDebouncedCallback<T extends (...args: any[]) => void>(cb: T, delayMs
     },
     [delayMs]
   );
-}
-
-function seededRandom(seed: number): number {
-  const x = Math.sin(seed) * 10000;
-  return x - Math.floor(x);
 }
 
 export default function HandwritingEditor({
@@ -415,23 +410,7 @@ export default function HandwritingEditor({
 
   const applyRandomness = useCallback(
     (charIndex: number, lineIndex: number) => {
-      if (!settings.randomness.enabled) {
-        return { transform: 'none', marginLeft: '0px' };
-      }
-
-      const seed = charIndex * 1000 + lineIndex;
-      const spacingOffset =
-        (seededRandom(seed) - 0.5) * settings.randomness.spacing * 2;
-      const baselineOffset =
-        (seededRandom(seed + 1) - 0.5) * settings.randomness.baseline * 2;
-      const rotationOffset =
-        (seededRandom(seed + 2) - 0.5) * settings.randomness.rotation * 2;
-
-      return {
-        transform: `translateY(${baselineOffset}px) rotate(${rotationOffset}deg)`,
-        transformOrigin: 'left bottom',
-        marginLeft: `${spacingOffset}px`,
-      };
+      return calculateRandomStyle(charIndex, lineIndex, settings.randomness);
     },
     [settings.randomness]
   );
@@ -1017,31 +996,16 @@ export default function HandwritingEditor({
     };
   }, [isToolbarDragging]);
 
-  const pageStartOffsets = useMemo(() => {
-    const offsets: number[] = [0];
-    let total = 0;
-    for (const page of pages) {
-      for (const line of page) {
-        total += line.text.length + (line.hasNewline ? 1 : 0);
-      }
-      offsets.push(total);
-    }
-    return offsets;
-  }, [pages]);
+  const pageStartOffsets = useMemo(() => calculatePageStartOffsets(pages), [pages]);
 
   const currentPageLines = useMemo(() => pages[currentPageIndex] ?? [], [currentPageIndex, pages]);
 
   const currentPageStartOffset = pageStartOffsets[currentPageIndex] ?? 0;
 
-  const currentPageLineStarts = useMemo(() => {
-    const starts: number[] = [];
-    let offset = currentPageStartOffset;
-    for (const line of currentPageLines) {
-      starts.push(offset);
-      offset += line.text.length + (line.hasNewline ? 1 : 0);
-    }
-    return starts;
-  }, [currentPageLines, currentPageStartOffset]);
+  const currentPageLineStarts = useMemo(
+    () => calculateLineStarts(currentPageLines, currentPageStartOffset),
+    [currentPageLines, currentPageStartOffset]
+  );
 
   const pagePaperLines = useMemo(
     () => renderPaperLines(currentPageIndex),
@@ -1057,13 +1021,7 @@ export default function HandwritingEditor({
     (pageIndex: number) => {
       const pageLines = pages[pageIndex] ?? [];
       const pageStartOffset = pageStartOffsets[pageIndex] ?? 0;
-      const starts: number[] = [];
-      let offset = pageStartOffset;
-      for (const line of pageLines) {
-        starts.push(offset);
-        offset += line.text.length + (line.hasNewline ? 1 : 0);
-      }
-      return starts;
+      return calculateLineStarts(pageLines, pageStartOffset);
     },
     [pageStartOffsets, pages]
   );
