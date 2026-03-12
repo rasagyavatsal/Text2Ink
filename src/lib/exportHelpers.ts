@@ -72,3 +72,37 @@ export async function waitForPageIndex(
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
   }
 }
+
+export async function getInlinedFontCSS(): Promise<string> {
+  let css = '';
+  for (const sheet of Array.from(document.styleSheets)) {
+    try {
+      for (const rule of Array.from(sheet.cssRules)) {
+        if (rule instanceof CSSFontFaceRule) {
+          const src = rule.style.getPropertyValue('src');
+          const urlMatch = src.match(/url\("?(.*?)"?\)/);
+          if (urlMatch && urlMatch[1] && !urlMatch[1].startsWith('data:')) {
+            try {
+              const response = await fetch(urlMatch[1]);
+              const blob = await response.blob();
+              const reader = new FileReader();
+              const dataUrl = await new Promise<string>((resolve) => {
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.readAsDataURL(blob);
+              });
+              css += rule.cssText.replace(urlMatch[1], dataUrl) + '\n';
+            } catch (e) {
+              console.warn('Failed to inline font:', urlMatch[1], e);
+              css += rule.cssText + '\n';
+            }
+          } else {
+            css += rule.cssText + '\n';
+          }
+        }
+      }
+    } catch (e) {
+      // Cross-origin stylesheet
+    }
+  }
+  return css;
+}
