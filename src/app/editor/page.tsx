@@ -73,7 +73,7 @@ import {
   defaultPageSettingsFromHandwritingSettings,
 } from '@/lib/types';
 import { loadEditorStateV1, saveEditorStateV1 } from '@/lib/editorPersistence';
-import { Settings, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Settings, Download, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 
 const MemoSettingsPanel = React.memo(SettingsPanel);
 const MemoExportPanel = React.memo(ExportPanel);
@@ -240,6 +240,14 @@ export default function EditorPage() {
     },
     [currentPageIndex, ensurePageSettingsLength, settings]
   );
+
+  const handleClearAll = useCallback(() => {
+    if (window.confirm('Are you sure you want to remove all text from all pages? This action cannot be undone.')) {
+      setText('');
+      setTextFields([]);
+      setCurrentPageIndex(0);
+    }
+  }, [setText, setTextFields, setCurrentPageIndex]);
 
   const handlePreviewScaleChange = useCallback(
     (value: number) => setPreviewScale(clampPreviewScale(value)),
@@ -438,6 +446,16 @@ export default function EditorPage() {
           </div>
         </div>
       </div>
+
+      {/* Clear All Button */}
+      <button
+        onClick={handleClearAll}
+        className="fixed bottom-6 right-6 z-20 bg-white border border-gray-200 rounded-full p-4 shadow-lg hover:shadow-xl hover:bg-red-50 transition-all duration-300 group text-red-500 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+        title="Clear all text and text fields"
+        aria-label="Clear all text and text fields"
+      >
+        <Trash2 className="w-6 h-6" />
+      </button>
 
     </div>
   );
