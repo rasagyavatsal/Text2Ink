@@ -18,6 +18,7 @@ import {
   waitForPages,
   waitForPageRef,
   waitForPageIndex,
+  getInlinedFontCSS,
 } from '@/lib/exportHelpers';
 import FeedbackDialog from './FeedbackDialog';
 
@@ -44,7 +45,6 @@ export default function ExportPanel({
 }: ExportPanelProps) {
   const [format, setFormat] = useState<ExportFormat>('pdf');
   const [isExporting, setIsExporting] = useState(false);
-  const [quality, setQuality] = useState<'standard' | 'high'>('high');
   const [exportProgress, setExportProgress] = useState<{ current: number; total: number } | null>(null);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const originalPageIndexRef = useRef<number>(0);
@@ -84,6 +84,15 @@ export default function ExportPanel({
 
       setSafeColor('background-color', cs.backgroundColor, 'rgba(0, 0, 0, 0)');
       setSafeColor('color', cs.color, 'rgb(0, 0, 0)');
+
+      // Preserve text-shadow and filter for ink effects if safe
+      if (cs.textShadow && !shouldNormalizeColor(cs.textShadow)) {
+        el.style.textShadow = cs.textShadow;
+      }
+      if (cs.filter && !shouldNormalizeColor(cs.filter)) {
+        el.style.filter = cs.filter;
+      }
+
       setSafeColor('border-top-color', cs.borderTopColor, 'rgba(0, 0, 0, 0)');
       setSafeColor('border-right-color', cs.borderRightColor, 'rgba(0, 0, 0, 0)');
       setSafeColor('border-bottom-color', cs.borderBottomColor, 'rgba(0, 0, 0, 0)');
@@ -138,8 +147,14 @@ export default function ExportPanel({
     }
   };
 
-  const applyExportSafeClone = (documentClone: Document, exportBg: string) => {
+  const applyExportSafeClone = (documentClone: Document, exportBg: string, inlinedCSS: string) => {
     documentClone.documentElement.classList.remove('dark');
+
+    if (inlinedCSS) {
+      const style = documentClone.createElement('style');
+      style.textContent = inlinedCSS;
+      documentClone.head.appendChild(style);
+    }
 
     if (settings.fontFamily === 'custom' && settings.customFont) {
       const customFontStyle = documentClone.createElement('style');
@@ -194,7 +209,7 @@ export default function ExportPanel({
   };
 
   const applyExportSafeDocument = () => {
-    const cls = '__exporting_html2canvas_safe_theme';
+    const cls = '__exporting_modern_screenshot_safe_theme';
     document.body.classList.add(cls);
 
     let style = document.getElementById(cls) as HTMLStyleElement | null;
@@ -244,52 +259,6 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
     };
   };
 
-  const preSanitizeElement = (element: HTMLElement) => {
-    const inlineBackups = new Map<HTMLElement, string>();
-    const elements = [element, ...Array.from(element.querySelectorAll('*'))];
-
-    for (const el of elements) {
-      if (!(el instanceof HTMLElement)) continue;
-      inlineBackups.set(el, el.getAttribute('style') || '');
-
-      const cs = window.getComputedStyle(el);
-
-      const setSafeColor = (prop: string, value: string, fallback: string) => {
-        if (!value || !shouldNormalizeColor(value)) return;
-        const normalized = normalizeCanvasColor(document, value);
-        el.style.setProperty(prop, normalized ?? fallback, 'important');
-      };
-
-      setSafeColor('background-color', cs.backgroundColor, 'transparent');
-      setSafeColor('color', cs.color, '#000000');
-      setSafeColor('border-color', cs.borderColor, 'transparent');
-      setSafeColor('border-top-color', cs.borderTopColor, 'transparent');
-      setSafeColor('border-right-color', cs.borderRightColor, 'transparent');
-      setSafeColor('border-bottom-color', cs.borderBottomColor, 'transparent');
-      setSafeColor('border-left-color', cs.borderLeftColor, 'transparent');
-      setSafeColor('outline-color', cs.outlineColor, 'transparent');
-      setSafeColor('text-decoration-color', cs.textDecorationColor, 'transparent');
-      setSafeColor('caret-color', cs.caretColor, '#000000');
-
-      if (shouldNormalizeColor(cs.boxShadow)) {
-        el.style.setProperty('box-shadow', 'none', 'important');
-      }
-      if (shouldNormalizeColor(cs.textShadow)) {
-        el.style.setProperty('text-shadow', 'none', 'important');
-      }
-    }
-
-    return () => {
-      for (const [el, backup] of inlineBackups) {
-        if (backup) {
-          el.setAttribute('style', backup);
-        } else {
-          el.removeAttribute('style');
-        }
-      }
-    };
-  };
-
   const exportPages = async () => {
     setIsExporting(true);
     onExportingChange?.(true);
@@ -299,6 +268,7 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
     await waitForPages(pageRefs, 1, 1500);
 
     const cleanup = applyExportSafeDocument();
+    const inlinedFontCSS = await getInlinedFontCSS();
 
     if (settings.fontFamily === 'custom' && settings.customFont) {
       try {
@@ -312,17 +282,19 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
 
     let success = false;
     try {
-      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
-        import('html2canvas'),
+      const [{ domToPng }, { default: jsPDF }] = await Promise.all([
+        import('modern-screenshot'),
         import('jspdf'),
       ]);
 
       const exportTotal = Math.max(1, totalPages);
       setExportProgress({ current: 0, total: exportTotal });
 
-      const scale = quality === 'high' ? 2 : 1;
+      // 300 DPI calculation (2550 / 612 = 4.166...)
+      const dpiScale = 4.1666666667;
 
       if (format === 'pdf') {
+
         const pdf = new jsPDF({
           orientation: 'portrait',
           unit: 'pt',
@@ -348,26 +320,21 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
           const exportBg =
             computedBg && computedBg !== 'rgba(0, 0, 0, 0)' ? computedBg : '#ffffff';
 
-          const restoreElement = preSanitizeElement(page);
-          let canvas: HTMLCanvasElement;
-          try {
-            canvas = await html2canvas(page, {
-              scale,
-              useCORS: true,
-              backgroundColor: exportBg,
-              onclone: (documentClone, elementClone) => {
-                applyExportSafeClone(documentClone, exportBg);
-                (elementClone as HTMLElement).style.transform = 'none';
-                (elementClone as HTMLElement).style.transformOrigin = 'top left';
+          const imgData = await domToPng(page, {
+            scale: dpiScale,
+            backgroundColor: exportBg,
+            onCloneNode: (clonedNode) => {
+              const elementClone = clonedNode as HTMLElement;
+              const documentClone = elementClone.ownerDocument;
+              if (elementClone && documentClone) {
+                applyExportSafeClone(documentClone, exportBg, inlinedFontCSS);
+                elementClone.style.transform = 'none';
+                elementClone.style.transformOrigin = 'top left';
                 sanitizeCloneColors(documentClone, elementClone);
-              },
-              logging: false,
-            });
-          } finally {
-            restoreElement();
-          }
+              }
+            },
+          });
 
-          const imgData = canvas.toDataURL('image/jpeg', 0.95);
           const pdfWidth = pdf.internal.pageSize.getWidth();
           const pdfHeight = pdf.internal.pageSize.getHeight();
 
@@ -375,7 +342,7 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
             pdf.addPage();
           }
 
-          pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
 
           setExportProgress({ current: i + 1, total: exportTotal });
         }
@@ -405,31 +372,24 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
           const exportBg =
             computedBg && computedBg !== 'rgba(0, 0, 0, 0)' ? computedBg : '#ffffff';
 
-          const restoreElement = preSanitizeElement(page);
-          let canvas: HTMLCanvasElement;
-          try {
-            canvas = await html2canvas(page, {
-              scale,
-              useCORS: true,
-              backgroundColor: exportBg,
-              onclone: (documentClone, elementClone) => {
-                applyExportSafeClone(documentClone, exportBg);
-                (elementClone as HTMLElement).style.transform = 'none';
-                (elementClone as HTMLElement).style.transformOrigin = 'top left';
+          const imgData = await domToPng(page, {
+            scale: dpiScale,
+            backgroundColor: exportBg,
+            onCloneNode: (clonedNode) => {
+              const elementClone = clonedNode as HTMLElement;
+              const documentClone = elementClone.ownerDocument;
+              if (elementClone && documentClone) {
+                applyExportSafeClone(documentClone, exportBg, inlinedFontCSS);
+                elementClone.style.transform = 'none';
+                elementClone.style.transformOrigin = 'top left';
                 sanitizeCloneColors(documentClone, elementClone);
-              },
-              logging: false,
-            });
-          } finally {
-            restoreElement();
-          }
+              }
+            },
+          });
 
           const link = document.createElement('a');
           link.download = `handwritten-page-${i + 1}.${format}`;
-          link.href = canvas.toDataURL(
-            format === 'png' ? 'image/png' : 'image/jpeg',
-            0.95
-          );
+          link.href = imgData;
           link.click();
 
           setExportProgress({ current: i + 1, total: exportTotal });
@@ -494,24 +454,6 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
                     JPG Image
                   </div>
                 </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="export-quality">Quality</Label>
-            <Select
-              value={quality}
-              onValueChange={(value) =>
-                setQuality(value as 'standard' | 'high')
-              }
-            >
-              <SelectTrigger id="export-quality">
-                <SelectValue placeholder="Select quality" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="standard">Standard (1x)</SelectItem>
-                <SelectItem value="high">High (2x)</SelectItem>
               </SelectContent>
             </Select>
           </div>
