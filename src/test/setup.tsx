@@ -108,8 +108,8 @@ if (typeof window !== 'undefined' && !window.OffscreenCanvas) {
 }
 
 // Mock requestAnimationFrame
-window.requestAnimationFrame = vi.fn(callback => setTimeout(callback, 0));
-window.cancelAnimationFrame = vi.fn(id => clearTimeout(id));
+window.requestAnimationFrame = vi.fn(callback => setTimeout(callback, 0) as unknown as number);
+window.cancelAnimationFrame = vi.fn(id => clearTimeout(id as unknown as NodeJS.Timeout));
 
 // Mock Image
 // @ts-ignore
