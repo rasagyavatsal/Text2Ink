@@ -1,5 +1,6 @@
 import React from 'react';
 import { HandwritingSettings } from './types';
+import { createMeasure, nextLineFrom } from './pagination';
 
 export function seededRandom(seed: number): number {
   const x = Math.sin(seed) * 10000;
@@ -33,6 +34,36 @@ export type LineData = {
   hasNewline: boolean;
 };
 
+export type PaginatedTextFieldSegment = {
+  pageIndex: number;
+  startOffset: number;
+  x: number;
+  y: number;
+  width: number;
+  lineHeightPx: number;
+  lines: LineData[];
+};
+
+type PaginateTextFieldParams = {
+  text: string;
+  startPageIndex: number;
+  x: number;
+  y: number;
+  pageWidth: number;
+  pageHeight: number;
+  lineHeight: number;
+  fontFamily: string;
+  pages: Array<{
+    marginTop: number;
+    marginRight: number;
+    marginBottom: number;
+    fontSize: number;
+    customLineSpacing?: number | null;
+    customLineOffset?: number;
+  }>;
+  pageHasBackground: boolean[];
+};
+
 export function calculatePageStartOffsets(pages: LineData[][]): number[] {
   const offsets: number[] = [0];
   let total = 0;
@@ -56,4 +87,66 @@ export function calculateLineStarts(
     offset += line.text.length + (line.hasNewline ? 1 : 0);
   }
   return starts;
+}
+
+export function paginateTextFieldSegments({
+  text,
+  startPageIndex,
+  x,
+  y,
+  pageWidth,
+  pageHeight,
+  lineHeight,
+  fontFamily,
+  pages,
+  pageHasBackground,
+}: PaginateTextFieldParams): PaginatedTextFieldSegment[] {
+  const segments: PaginatedTextFieldSegment[] = [];
+  const safeText = text ?? '';
+  let cursor = 0;
+  let lineIndex = 0;
+  let pageIndex = startPageIndex;
+
+  while (cursor < safeText.length || segments.length === 0) {
+    const ps = pages[pageIndex] ?? pages[pages.length - 1];
+    if (!ps) break;
+
+    const hasBackground = !!pageHasBackground[pageIndex];
+    const lineHeightPx =
+      hasBackground && ps.customLineSpacing ? ps.customLineSpacing : ps.fontSize * lineHeight;
+    const segmentY =
+      pageIndex === startPageIndex ? y : ps.marginTop + (ps.customLineOffset ?? 0);
+    const availableWidth = Math.max(20, pageWidth - x - ps.marginRight);
+    const availableHeight = Math.max(0, pageHeight - segmentY - ps.marginBottom);
+    const linesPerPage = Math.max(1, Math.floor(availableHeight / lineHeightPx));
+    const measure = createMeasure(fontFamily, ps.fontSize);
+    const lines: LineData[] = [];
+    const startOffset = cursor;
+
+    for (let i = 0; i < linesPerPage && cursor < safeText.length; i++) {
+      const next = nextLineFrom(safeText, cursor, availableWidth, measure);
+      if (!next) break;
+      lines.push({
+        text: next.lineText,
+        lineIndex: lineIndex++,
+        hasNewline: next.hasNewline,
+      });
+      cursor = next.nextIndex;
+    }
+
+    segments.push({
+      pageIndex,
+      startOffset,
+      x,
+      y: segmentY,
+      width: availableWidth,
+      lineHeightPx,
+      lines,
+    });
+
+    if (cursor >= safeText.length) break;
+    pageIndex += 1;
+  }
+
+  return segments;
 }

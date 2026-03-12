@@ -10,13 +10,15 @@ import {
   defaultPageSettingsFromHandwritingSettings,
 } from '@/lib/types';
 import { Type, PenLine, Plus, Minus, ChevronLeft, ChevronRight, GripVertical, Palette } from 'lucide-react';
-import type { PaginationResponse } from '@/workers/paginationWorker';
 import { PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/pageConstants';
+import type { PaginationResponse } from '@/lib/pagination';
 
 import { 
   calculateRandomStyle, 
   calculatePageStartOffsets, 
   calculateLineStarts,
+  paginateTextFieldSegments,
+  type PaginatedTextFieldSegment,
   type LineData 
 } from '@/lib/editorHelpers';
 interface HandwritingEditorProps {
@@ -44,6 +46,7 @@ type RenderCharacterFn = (
   globalCharIndex: number,
   showCursor: boolean,
   showCursorBefore: boolean,
+  isSelected: boolean,
   inkColor: string
 ) => React.ReactNode;
 
@@ -51,6 +54,8 @@ type LineViewProps = {
   line: LineData;
   lineStartChar: number;
   cursorPosition: number | null;
+  selectionStart: number;
+  selectionEnd: number;
   pageLineHeightPx: number;
   renderCharacter: RenderCharacterFn;
   inkColor: string;
@@ -60,6 +65,8 @@ const LineView = React.memo(function LineView({
   line,
   lineStartChar,
   cursorPosition,
+  selectionStart,
+  selectionEnd,
   pageLineHeightPx,
   renderCharacter,
   inkColor,
@@ -91,6 +98,8 @@ const LineView = React.memo(function LineView({
     globalCharCount += 1;
     const showCursorAfter = cursorPosition === currentGlobalChar + 1;
     const showCursorBefore = charIdx === 0 && cursorPosition === currentGlobalChar;
+    const isSelected =
+      currentGlobalChar >= selectionStart && currentGlobalChar < selectionEnd;
     chars.push(
       renderCharacter(
         lineText[charIdx],
@@ -99,6 +108,7 @@ const LineView = React.memo(function LineView({
         currentGlobalChar,
         showCursorAfter,
         showCursorBefore,
+        isSelected,
         inkColor
       )
     );
@@ -150,6 +160,12 @@ function useDebouncedCallback<T extends (...args: any[]) => void>(cb: T, delayMs
   );
 }
 
+type RenderedTextFieldSegment = PaginatedTextFieldSegment & {
+  id: string;
+  inkColor: string;
+  isAnchor: boolean;
+};
+
 export default function HandwritingEditor({
   text,
   onTextChange,
@@ -172,7 +188,11 @@ export default function HandwritingEditor({
   const toolbarRef = useRef<HTMLDivElement>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [cursorPosition, setCursorPosition] = useState(0);
+  const [selectionRange, setSelectionRange] = useState({ start: 0, end: 0 });
   const [editorMode, setEditorMode] = useState<EditorMode>('write');
+  const [activeTextFieldId, setActiveTextFieldId] = useState<string | null>(null);
+  const [focusedTextFieldId, setFocusedTextFieldId] = useState<string | null>(null);
+  const [textFieldSelectionRange, setTextFieldSelectionRange] = useState({ start: 0, end: 0 });
   const [fontMetricsVersion, setFontMetricsVersion] = useState(0);
   const [localText, setLocalText] = useState(text);
   const [pages, setPages] = useState<LineData[][]>([[]]);
@@ -192,6 +212,12 @@ export default function HandwritingEditor({
     active: false,
     offsetX: 0,
     offsetY: 0,
+  });
+  const selectionDragRef = useRef<{ active: boolean; anchor: number; target: 'write' | 'textfield'; textFieldId: string | null }>({
+    active: false,
+    anchor: 0,
+    target: 'write',
+    textFieldId: null,
   });
 
   const fontClass = useMemo(() => {
@@ -615,6 +641,7 @@ export default function HandwritingEditor({
       e.stopPropagation();
       const newPosition = isLeftHalf ? globalCharIndex : globalCharIndex + 1;
       setCursorPosition(newPosition);
+      setSelectionRange({ start: newPosition, end: newPosition });
       if (textareaRef.current) {
         textareaRef.current.focus();
         textareaRef.current.setSelectionRange(newPosition, newPosition);
@@ -628,6 +655,7 @@ export default function HandwritingEditor({
       e.stopPropagation();
       const newPosition = isLeftHalf ? globalCharIndex : globalCharIndex + 1;
       setCursorPosition(newPosition);
+      setSelectionRange({ start: newPosition, end: newPosition });
       if (textareaRef.current) {
         textareaRef.current.focus();
         textareaRef.current.setSelectionRange(newPosition, newPosition);
@@ -635,6 +663,112 @@ export default function HandwritingEditor({
     },
     []
   );
+
+  const syncSelectionFromTextarea = useCallback((el: HTMLTextAreaElement) => {
+    const start = el.selectionStart ?? 0;
+    const end = el.selectionEnd ?? start;
+    setActiveTextFieldId(null);
+    setFocusedTextFieldId(null);
+    setCursorPosition(end);
+    setSelectionRange({ start, end });
+  }, []);
+
+  const syncSelectionFromTextFieldTextarea = useCallback(
+    (id: string, el: HTMLTextAreaElement) => {
+      const start = el.selectionStart ?? 0;
+      const end = el.selectionEnd ?? start;
+      setActiveTextFieldId(id);
+      setFocusedTextFieldId(id);
+      setTextFieldSelectionRange({ start, end });
+    },
+    []
+  );
+
+  const updateVisibleSelection = useCallback((anchor: number, focus: number) => {
+    const start = Math.min(anchor, focus);
+    const end = Math.max(anchor, focus);
+    setCursorPosition(focus);
+    setSelectionRange({ start, end });
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+      textareaRef.current.setSelectionRange(anchor, focus);
+    }
+  }, []);
+
+  const handleCharMouseDown = useCallback(
+    (e: React.MouseEvent, globalCharIndex: number, isLeftHalf: boolean) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const newPosition = isLeftHalf ? globalCharIndex : globalCharIndex + 1;
+      selectionDragRef.current = {
+        active: true,
+        anchor: newPosition,
+        target: 'write',
+        textFieldId: null,
+      };
+      updateVisibleSelection(newPosition, newPosition);
+    },
+    [updateVisibleSelection]
+  );
+
+  const handleCharMouseMove = useCallback(
+    (e: React.MouseEvent, globalCharIndex: number, isLeftHalf: boolean) => {
+      if (!selectionDragRef.current.active) return;
+      if (selectionDragRef.current.target !== 'write') return;
+      e.preventDefault();
+      e.stopPropagation();
+      const nextPosition = isLeftHalf ? globalCharIndex : globalCharIndex + 1;
+      updateVisibleSelection(selectionDragRef.current.anchor, nextPosition);
+    },
+    [updateVisibleSelection]
+  );
+
+  const updateTextFieldVisibleSelection = useCallback((id: string, anchor: number, focus: number) => {
+    const start = Math.min(anchor, focus);
+    const end = Math.max(anchor, focus);
+    setActiveTextFieldId(id);
+    setFocusedTextFieldId(id);
+    setTextFieldSelectionRange({ start, end });
+    const textarea = textFieldInputRefs.current.get(id);
+    if (textarea) {
+      textarea.focus();
+      textarea.setSelectionRange(anchor, focus);
+    }
+  }, []);
+
+  const handleTextFieldCharMouseDown = useCallback(
+    (e: React.MouseEvent, id: string, globalCharIndex: number, isLeftHalf: boolean) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const newPosition = isLeftHalf ? globalCharIndex : globalCharIndex + 1;
+      selectionDragRef.current = {
+        active: true,
+        anchor: newPosition,
+        target: 'textfield',
+        textFieldId: id,
+      };
+      updateTextFieldVisibleSelection(id, newPosition, newPosition);
+    },
+    [updateTextFieldVisibleSelection]
+  );
+
+  const handleTextFieldCharMouseMove = useCallback(
+    (e: React.MouseEvent, id: string, globalCharIndex: number, isLeftHalf: boolean) => {
+      if (!selectionDragRef.current.active) return;
+      if (selectionDragRef.current.target !== 'textfield') return;
+      if (selectionDragRef.current.textFieldId !== id) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const nextPosition = isLeftHalf ? globalCharIndex : globalCharIndex + 1;
+      updateTextFieldVisibleSelection(id, selectionDragRef.current.anchor, nextPosition);
+    },
+    [updateTextFieldVisibleSelection]
+  );
+
+  const handleSelectionEnd = useCallback(() => {
+    selectionDragRef.current.active = false;
+    selectionDragRef.current.textFieldId = null;
+  }, []);
 
   const renderCharacter = useCallback(
     (
@@ -644,15 +778,32 @@ export default function HandwritingEditor({
       globalCharIndex: number,
       showCursor: boolean,
       showCursorBefore: boolean,
+      isSelected: boolean,
       inkColor: string
     ) => {
+      const selectionStyle = isSelected
+        ? ({
+            backgroundColor: `${inkColor}33`,
+            borderRadius: 2,
+          } as const)
+        : undefined;
+
       if (char === ' ') {
         return (
           <span
             key={globalCharIndex}
             className="relative cursor-text"
+            style={selectionStyle}
             role="button"
             tabIndex={0}
+            onMouseDown={(e) => {
+              const isLeftHalf = e.nativeEvent.offsetX < (e.currentTarget as HTMLElement).offsetWidth / 2;
+              handleCharMouseDown(e, globalCharIndex, isLeftHalf);
+            }}
+            onMouseMove={(e) => {
+              const isLeftHalf = e.nativeEvent.offsetX < (e.currentTarget as HTMLElement).offsetWidth / 2;
+              handleCharMouseMove(e, globalCharIndex, isLeftHalf);
+            }}
             onClick={(e) => {
               const isLeftHalf = e.nativeEvent.offsetX < (e.currentTarget as HTMLElement).offsetWidth / 2;
               handleCharClick(e, globalCharIndex, isLeftHalf);
@@ -700,9 +851,17 @@ export default function HandwritingEditor({
         <span
           key={globalCharIndex}
           className="inline-block relative cursor-text"
-          style={randomStyle}
+          style={{ ...randomStyle, ...selectionStyle }}
           role="button"
           tabIndex={0}
+          onMouseDown={(e) => {
+            const isLeftHalf = e.nativeEvent.offsetX < (e.currentTarget as HTMLElement).offsetWidth / 2;
+            handleCharMouseDown(e, globalCharIndex, isLeftHalf);
+          }}
+          onMouseMove={(e) => {
+            const isLeftHalf = e.nativeEvent.offsetX < (e.currentTarget as HTMLElement).offsetWidth / 2;
+            handleCharMouseMove(e, globalCharIndex, isLeftHalf);
+          }}
           onClick={(e) => {
             const isLeftHalf = e.nativeEvent.offsetX < (e.currentTarget as HTMLElement).offsetWidth / 2;
             handleCharClick(e, globalCharIndex, isLeftHalf);
@@ -743,8 +902,160 @@ export default function HandwritingEditor({
         </span>
       );
     },
-    [applyRandomness, isFocused, handleCharClick, handleCharKeyDown]
+    [applyRandomness, isFocused, handleCharClick, handleCharKeyDown, handleCharMouseDown, handleCharMouseMove]
   );
+
+  const renderTextFieldCharacter = useCallback(
+    (
+      textFieldId: string,
+      isTextFieldFocused: boolean,
+      inkColor: string
+    ): RenderCharacterFn =>
+      (
+        char: string,
+        charIndex: number,
+        lineIndex: number,
+        globalCharIndex: number,
+        showCursor: boolean,
+        showCursorBefore: boolean,
+        isSelected: boolean
+      ) => {
+        const selectionStyle = isSelected
+          ? ({
+              backgroundColor: `${inkColor}33`,
+              borderRadius: 2,
+            } as const)
+          : undefined;
+
+        const handlePosition = (e: React.MouseEvent<HTMLElement>) => {
+          const isLeftHalf = e.nativeEvent.offsetX < e.currentTarget.offsetWidth / 2;
+          return isLeftHalf;
+        };
+
+        if (char === ' ') {
+          return (
+            <span
+              key={`${textFieldId}-${globalCharIndex}`}
+              className="relative cursor-text"
+              style={selectionStyle}
+              role="button"
+              tabIndex={0}
+              onMouseDown={(e) => {
+                handleTextFieldCharMouseDown(e, textFieldId, globalCharIndex, handlePosition(e));
+              }}
+              onMouseMove={(e) => {
+                handleTextFieldCharMouseMove(e, textFieldId, globalCharIndex, handlePosition(e));
+              }}
+              onClick={(e) => {
+                handleTextFieldCharMouseDown(e, textFieldId, globalCharIndex, handlePosition(e));
+                handleSelectionEnd();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  updateTextFieldVisibleSelection(textFieldId, globalCharIndex, globalCharIndex);
+                }
+              }}
+              aria-label={`Text field character position ${globalCharIndex}`}
+            >
+              {showCursorBefore && isTextFieldFocused && (
+                <span
+                  className="absolute animate-pulse"
+                  style={{
+                    left: 0,
+                    top: 0,
+                    width: 2,
+                    height: '1em',
+                    backgroundColor: inkColor,
+                  }}
+                />
+              )}
+              <span style={{ whiteSpace: 'pre' }}>{' '}</span>
+              {showCursor && isTextFieldFocused && (
+                <span
+                  className="absolute animate-pulse"
+                  style={{
+                    right: 0,
+                    top: 0,
+                    width: 2,
+                    height: '1em',
+                    backgroundColor: inkColor,
+                  }}
+                />
+              )}
+            </span>
+          );
+        }
+
+        const randomStyle = applyRandomness(charIndex, lineIndex);
+        return (
+          <span
+            key={`${textFieldId}-${globalCharIndex}`}
+            className="inline-block relative cursor-text"
+            style={{ ...randomStyle, ...selectionStyle }}
+            role="button"
+            tabIndex={0}
+            onMouseDown={(e) => {
+              handleTextFieldCharMouseDown(e, textFieldId, globalCharIndex, handlePosition(e));
+            }}
+            onMouseMove={(e) => {
+              handleTextFieldCharMouseMove(e, textFieldId, globalCharIndex, handlePosition(e));
+            }}
+            onClick={(e) => {
+              handleTextFieldCharMouseDown(e, textFieldId, globalCharIndex, handlePosition(e));
+              handleSelectionEnd();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                updateTextFieldVisibleSelection(textFieldId, globalCharIndex, globalCharIndex + 1);
+              }
+            }}
+            aria-label={`Text field character ${char} at position ${globalCharIndex}`}
+          >
+            {showCursorBefore && isTextFieldFocused && (
+              <span
+                className="absolute animate-pulse"
+                style={{
+                  left: -1,
+                  top: 0,
+                  width: 2,
+                  height: '1em',
+                  backgroundColor: inkColor,
+                }}
+              />
+            )}
+            {char}
+            {showCursor && isTextFieldFocused && (
+              <span
+                className="absolute animate-pulse"
+                style={{
+                  right: -1,
+                  top: 0,
+                  width: 2,
+                  height: '1em',
+                  backgroundColor: inkColor,
+                }}
+              />
+            )}
+          </span>
+        );
+      },
+    [
+      applyRandomness,
+      handleSelectionEnd,
+      handleTextFieldCharMouseDown,
+      handleTextFieldCharMouseMove,
+      updateTextFieldVisibleSelection,
+    ]
+  );
+
+  useEffect(() => {
+    window.addEventListener('mouseup', handleSelectionEnd);
+    return () => {
+      window.removeEventListener('mouseup', handleSelectionEnd);
+    };
+  }, [handleSelectionEnd]);
 
   useEffect(() => {
     if (currentPageIndex > pages.length - 1) {
@@ -757,9 +1068,9 @@ export default function HandwritingEditor({
       const next = e.target.value;
       setLocalText(next);
       debouncedPropagateText(next);
-      setCursorPosition(e.target.selectionStart);
+      syncSelectionFromTextarea(e.target);
     },
-    [debouncedPropagateText]
+    [debouncedPropagateText, syncSelectionFromTextarea]
   );
 
   const handlePaste = useCallback(
@@ -786,6 +1097,7 @@ export default function HandwritingEditor({
       setLocalText(nextText);
       debouncedPropagateText(nextText);
       setCursorPosition(nextCursor);
+      setSelectionRange({ start: nextCursor, end: nextCursor });
       requestAnimationFrame(() => {
         el.setSelectionRange(nextCursor, nextCursor);
       });
@@ -794,12 +1106,16 @@ export default function HandwritingEditor({
   );
 
   const handleKeyUp = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    setCursorPosition((e.target as HTMLTextAreaElement).selectionStart);
-  }, []);
+    syncSelectionFromTextarea(e.target as HTMLTextAreaElement);
+  }, [syncSelectionFromTextarea]);
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLTextAreaElement>) => {
-    setCursorPosition((e.target as HTMLTextAreaElement).selectionStart);
-  }, []);
+    syncSelectionFromTextarea(e.target as HTMLTextAreaElement);
+  }, [syncSelectionFromTextarea]);
+
+  const handleSelect = useCallback((e: React.SyntheticEvent<HTMLTextAreaElement>) => {
+    syncSelectionFromTextarea(e.currentTarget);
+  }, [syncSelectionFromTextarea]);
 
   const handlePageClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>, pageIndex: number) => {
@@ -826,10 +1142,14 @@ export default function HandwritingEditor({
           input?.focus();
         }, 0);
       } else {
-        textareaRef.current?.focus();
+        const textarea = textareaRef.current;
+        textarea?.focus();
+        if (textarea) {
+          syncSelectionFromTextarea(textarea);
+        }
       }
     },
-    [editorMode, getPageSettings, textFields, onTextFieldsChange, previewScale]
+    [editorMode, getPageSettings, textFields, onTextFieldsChange, previewScale, syncSelectionFromTextarea]
   );
 
   const handleTextFieldChange = useCallback(
@@ -1012,9 +1332,43 @@ export default function HandwritingEditor({
     [currentPageIndex, renderPaperLines]
   );
 
-  const pageTextFields = useMemo(
-    () => textFields.filter((tf) => tf.pageIndex === currentPageIndex),
-    [currentPageIndex, textFields]
+  const paginatedTextFieldSegments = useMemo(() => {
+    return textFields.flatMap((tf) => {
+      const segments = paginateTextFieldSegments({
+        text: tf.text,
+        startPageIndex: tf.pageIndex,
+        x: tf.x,
+        y: tf.y,
+        pageWidth: PAGE_WIDTH,
+        pageHeight: PAGE_HEIGHT,
+        lineHeight: settings.lineHeight,
+        fontFamily: resolvedFontFamily,
+        pages: desiredPageSettings.map((page, idx) => ({
+          ...page,
+          customLineOffset: getPageSettings(idx).customLineOffset,
+        })),
+        pageHasBackground: desiredPageHasBackground,
+      });
+
+      return segments.map((segment, index) => ({
+        ...segment,
+        id: tf.id,
+        inkColor: tf.inkColor ?? getPageSettings(segment.pageIndex).inkColor,
+        isAnchor: index === 0,
+      }));
+    });
+  }, [
+    desiredPageHasBackground,
+    desiredPageSettings,
+    getPageSettings,
+    resolvedFontFamily,
+    settings.lineHeight,
+    textFields,
+  ]);
+
+  const currentPageTextFieldSegments = useMemo(
+    () => paginatedTextFieldSegments.filter((segment) => segment.pageIndex === currentPageIndex),
+    [currentPageIndex, paginatedTextFieldSegments]
   );
 
   const getPageLineStarts = useCallback(
@@ -1031,7 +1385,9 @@ export default function HandwritingEditor({
       const pageLines = pages[pageIndex] ?? [];
       const pageLineStarts = pageIndex === currentPageIndex ? currentPageLineStarts : getPageLineStarts(pageIndex);
       const pageTextFieldsForPage =
-        pageIndex === currentPageIndex ? pageTextFields : textFields.filter((tf) => tf.pageIndex === pageIndex);
+        pageIndex === currentPageIndex
+          ? currentPageTextFieldSegments
+          : paginatedTextFieldSegments.filter((segment) => segment.pageIndex === pageIndex);
 
       const pageBackground = getBackgroundForPage(pageIndex);
       const pageHasBackground = !!pageBackground;
@@ -1154,6 +1510,8 @@ export default function HandwritingEditor({
                       line={line}
                       lineStartChar={lineStartChar}
                       cursorPosition={cursorForLine}
+                      selectionStart={selectionRange.start}
+                      selectionEnd={selectionRange.end}
                       pageLineHeightPx={pageLineHeightPx}
                       renderCharacter={renderCharacter}
                       inkColor={ps.inkColor}
@@ -1163,170 +1521,236 @@ export default function HandwritingEditor({
               )}
             </div>
 
-            {pageTextFieldsForPage.map((tf) => (
-              <div
-                key={tf.id}
-                className="absolute text-field-container group"
-                style={{
-                  left: tf.x,
-                  top: tf.y,
-                  transform: 'translate(-4px, -12px)',
-                }}
-                role="group"
-                aria-label={`Text field ${tf.id}`}
-                tabIndex={0}
-                onClick={(e) => {
-                  if (!isVisiblePreview) return;
-                  e.stopPropagation();
-                }}
-                onKeyDown={(e) => {
-                  if (!isVisiblePreview) return;
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.stopPropagation();
-                  }
-                }}
-              >
-                <button
-                  className="absolute -left-6 top-0 w-5 h-5 bg-gray-400 hover:bg-gray-600 rounded cursor-move flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border-0"
-                  onMouseDown={(e) => {
-                    if (!isVisiblePreview) return;
-                    handleDragStart(e, tf);
-                  }}
-                  onTouchStart={(e) => {
-                    if (!isVisiblePreview) return;
-                    e.stopPropagation();
-                    // Create a synthetic mouse-like event for handleDragStart
-                    const touch = e.touches[0];
-                    const syntheticEvent = {
-                      preventDefault: () => { },
-                      stopPropagation: () => { },
-                      clientX: touch.clientX,
-                      clientY: touch.clientY,
-                      target: e.target,
-                    } as any;
-                    handleDragStart(syntheticEvent, tf);
-                  }}                  onKeyDown={(e) => {
-                    if (!isVisiblePreview) return;
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      // Create a synthetic mouse event for drag start
-                      const syntheticEvent = new MouseEvent('mousedown', {
-                        clientX: 0,
-                        clientY: 0,
-                        bubbles: true,
-                        cancelable: true,
-                      });
-                      handleDragStart(syntheticEvent as any, tf);
-                    }
-                  }}
-                  title="Drag to move"
-                  aria-label="Drag to move text field"
-                  tabIndex={isVisiblePreview ? 0 : -1}
-                >
-                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" />
-                  </svg>
-                </button>
-                <button
-                  className="absolute -top-6 -right-6 w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center cursor-pointer text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity border-0"
-                  onMouseDown={(e) => {
-                    if (!isVisiblePreview) return;
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleTextFieldDelete(tf.id);
-                  }}
-                  onKeyDown={(e) => {
-                    if (!isVisiblePreview) return;
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      handleTextFieldDelete(tf.id);
-                    }
-                  }}
-                  title="Delete text field"
-                  aria-label="Delete text field"
-                  tabIndex={isVisiblePreview ? 0 : -1}
-                >
-                  ×
-                </button>
-                <button
-                  type="button"
-                  className="absolute -top-6 right-0 w-5 h-5 bg-white hover:bg-gray-50 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-gray-300 p-0"
-                  onMouseDown={(e) => {
-                    if (!isVisiblePreview) return;
-                    e.preventDefault();
-                    e.stopPropagation();
-                    textFieldColorInputRefs.current.get(tf.id)?.click();
-                  }}
-                  onKeyDown={(e) => {
-                    if (!isVisiblePreview) return;
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      textFieldColorInputRefs.current.get(tf.id)?.click();
-                    }
-                  }}
-                  aria-label="Change text field color"
-                  title="Change color"
-                  tabIndex={isVisiblePreview ? 0 : -1}
-                >
-                  <Palette className="w-3 h-3 text-gray-700" />
-                </button>
-                <input
-                  ref={(el) => {
-                    if (!isVisiblePreview) return;
-                    if (el) {
-                      textFieldColorInputRefs.current.set(tf.id, el);
-                    } else {
-                      textFieldColorInputRefs.current.delete(tf.id);
-                    }
-                  }}
-                  type="color"
-                  value={tf.inkColor ?? ps.inkColor}
-                  className="sr-only"
-                  onChange={(e) => {
-                    if (!isVisiblePreview) return;
-                    handleTextFieldColorChange(tf.id, e.target.value);
-                  }}
-                  aria-label="Text field color"
-                  tabIndex={-1}
-                />
-                <textarea
-                  ref={(el) => {
-                    if (!isVisiblePreview) return;
-                    if (el) {
-                      textFieldInputRefs.current.set(tf.id, el);
-                    } else {
-                      textFieldInputRefs.current.delete(tf.id);
-                    }
-                  }}
-                  value={tf.text}
-                  onChange={(e) => {
-                    if (!isVisiblePreview) return;
-                    handleTextFieldChange(tf.id, e.target.value);
-                  }}
-                  onKeyDown={(e) => {
-                    if (!isVisiblePreview) return;
-                    handleTextFieldKeyDown(e, tf.id);
-                  }}
-                  className={`bg-transparent border-none outline-none resize-none ${fontClass}`}
+            {pageTextFieldsForPage.map((segment) => {
+              const sourceTextField = textFields.find((tf) => tf.id === segment.id);
+              if (!sourceTextField) return null;
+
+              const segmentLineStarts = calculateLineStarts(segment.lines, segment.startOffset);
+              const isTextFieldFocused = focusedTextFieldId === segment.id;
+              const renderSegmentCharacter = renderTextFieldCharacter(
+                segment.id,
+                isTextFieldFocused,
+                segment.inkColor
+              );
+              const visibleHeight = Math.max(
+                segment.lineHeightPx,
+                segment.lines.length * segment.lineHeightPx
+              );
+              const controlsTop = -28;
+
+              return (
+                <div
+                  key={`${segment.id}-${segment.pageIndex}-${segment.startOffset}`}
+                  className="absolute text-field-container group"
                   style={{
-                    fontFamily: customFontFamily ? `"${customFontFamily}", cursive` : undefined,
-                    fontSize: ps.fontSize,
-                    color: tf.inkColor ?? ps.inkColor,
-                    lineHeight: settings.lineHeight,
-                    minWidth: '20px',
-                    width: tf.text
-                      ? `${Math.max(20, tf.text.split('\n').reduce((max, line) => Math.max(max, line.length), 0) * ps.fontSize * 0.6)}px`
-                      : '20px',
-                    minHeight: `${ps.fontSize * settings.lineHeight}px`,
-                    height: 'auto',
-                    caretColor: tf.inkColor ?? ps.inkColor,
+                    left: segment.x,
+                    top: segment.y,
+                    transform: 'translate(-4px, -12px)',
+                    width: segment.width,
+                    minHeight: visibleHeight,
                   }}
-                  placeholder=""
-                  autoComplete="off"
-                />
-              </div>
-            ))}
+                  role="group"
+                  aria-label={`Text field ${segment.id}`}
+                  tabIndex={0}
+                  onClick={(e) => {
+                    if (!isVisiblePreview) return;
+                    e.stopPropagation();
+                    const input = textFieldInputRefs.current.get(segment.id);
+                    input?.focus();
+                    if (input) {
+                      syncSelectionFromTextFieldTextarea(segment.id, input);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (!isVisiblePreview) return;
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation();
+                    }
+                  }}
+                >
+                  {segment.isAnchor ? (
+                    <>
+                      <button
+                        className="absolute left-0 w-5 h-5 bg-gray-400 hover:bg-gray-600 rounded cursor-move flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border-0"
+                        style={{ top: controlsTop }}
+                        onMouseDown={(e) => {
+                          if (!isVisiblePreview) return;
+                          handleDragStart(e, sourceTextField);
+                        }}
+                        title="Drag to move"
+                        aria-label="Drag to move text field"
+                        tabIndex={isVisiblePreview ? 0 : -1}
+                      >
+                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM8 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM14 18a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" />
+                        </svg>
+                      </button>
+                      <button
+                        className="absolute w-5 h-5 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center cursor-pointer text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity border-0"
+                        style={{ top: controlsTop, left: 48 }}
+                        onMouseDown={(e) => {
+                          if (!isVisiblePreview) return;
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleTextFieldDelete(segment.id);
+                        }}
+                        title="Delete text field"
+                        aria-label="Delete text field"
+                        tabIndex={isVisiblePreview ? 0 : -1}
+                      >
+                        ×
+                      </button>
+                      <button
+                        type="button"
+                        className="absolute w-5 h-5 bg-white hover:bg-gray-50 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border border-gray-300 p-0"
+                        style={{ top: controlsTop, left: 24 }}
+                        onMouseDown={(e) => {
+                          if (!isVisiblePreview) return;
+                          e.preventDefault();
+                          e.stopPropagation();
+                          textFieldColorInputRefs.current.get(segment.id)?.click();
+                        }}
+                        aria-label="Change text field color"
+                        title="Change color"
+                        tabIndex={isVisiblePreview ? 0 : -1}
+                      >
+                        <Palette className="w-3 h-3 text-gray-700" />
+                      </button>
+                      <input
+                        ref={(el) => {
+                          if (!isVisiblePreview) return;
+                          if (el) {
+                            textFieldColorInputRefs.current.set(segment.id, el);
+                          } else {
+                            textFieldColorInputRefs.current.delete(segment.id);
+                          }
+                        }}
+                        type="color"
+                        value={segment.inkColor}
+                        className="sr-only"
+                        onChange={(e) => {
+                          if (!isVisiblePreview) return;
+                          handleTextFieldColorChange(segment.id, e.target.value);
+                        }}
+                        aria-label="Text field color"
+                        tabIndex={-1}
+                      />
+                    </>
+                  ) : null}
+
+                  <textarea
+                    ref={(el) => {
+                      if (!isVisiblePreview) return;
+                      if (el) {
+                        textFieldInputRefs.current.set(segment.id, el);
+                      } else {
+                        textFieldInputRefs.current.delete(segment.id);
+                      }
+                    }}
+                    value={sourceTextField.text}
+                    onChange={(e) => {
+                      if (!isVisiblePreview) return;
+                      handleTextFieldChange(segment.id, e.target.value);
+                      syncSelectionFromTextFieldTextarea(segment.id, e.target);
+                    }}
+                    onKeyDown={(e) => {
+                      if (!isVisiblePreview) return;
+                      handleTextFieldKeyDown(e, segment.id);
+                    }}
+                    onKeyUp={(e) => {
+                      if (!isVisiblePreview) return;
+                      syncSelectionFromTextFieldTextarea(segment.id, e.currentTarget);
+                    }}
+                    onClick={(e) => {
+                      if (!isVisiblePreview) return;
+                      e.stopPropagation();
+                      syncSelectionFromTextFieldTextarea(segment.id, e.currentTarget);
+                    }}
+                    onSelect={(e) => {
+                      if (!isVisiblePreview) return;
+                      syncSelectionFromTextFieldTextarea(segment.id, e.currentTarget);
+                    }}
+                    onFocus={(e) => {
+                      if (!isVisiblePreview) return;
+                      setIsFocused(false);
+                      syncSelectionFromTextFieldTextarea(segment.id, e.currentTarget);
+                    }}
+                    onBlur={() => {
+                      setFocusedTextFieldId((prev) => (prev === segment.id ? null : prev));
+                    }}
+                    className="absolute inset-0 resize-none border-none bg-transparent text-transparent outline-none pointer-events-none selection:bg-transparent selection:text-transparent"
+                    style={{
+                      width: segment.width,
+                      height: visibleHeight,
+                      caretColor: 'transparent',
+                    }}
+                    spellCheck={false}
+                    autoComplete="off"
+                  />
+
+                  <div
+                    className={`select-none ${fontClass}`}
+                    style={{
+                      fontFamily: customFontFamily ? `"${customFontFamily}", cursive` : undefined,
+                      fontSize: getPageSettings(segment.pageIndex).fontSize,
+                      color: segment.inkColor,
+                      lineHeight: `${segment.lineHeightPx}px`,
+                      transform: getPageSettings(segment.pageIndex).lineTilt
+                        ? `rotate(${getPageSettings(segment.pageIndex).lineTilt}deg)`
+                        : undefined,
+                      transformOrigin: 'left top',
+                      whiteSpace: 'pre-wrap',
+                      userSelect: 'none',
+                      WebkitUserSelect: 'none',
+                      minHeight: visibleHeight,
+                    }}
+                  >
+                    {segment.lines.length === 0 ? (
+                      focusedTextFieldId === segment.id ? (
+                        <span
+                          className="inline-block animate-pulse"
+                          style={{
+                            width: 2,
+                            height: '1em',
+                            backgroundColor: segment.inkColor,
+                            verticalAlign: 'text-bottom',
+                          }}
+                        />
+                      ) : null
+                    ) : (
+                      segment.lines.map((line, lineIdx) => {
+                        const lineStartChar = segmentLineStarts[lineIdx] ?? segment.startOffset;
+                        const lineEndCaret = lineStartChar + line.text.length;
+                        const cursorForLine =
+                          focusedTextFieldId === segment.id &&
+                          textFieldSelectionRange.end >= lineStartChar &&
+                          textFieldSelectionRange.end <= lineEndCaret
+                            ? textFieldSelectionRange.end
+                            : null;
+
+                        return (
+                          <LineView
+                            key={`${segment.id}-${lineIdx}`}
+                            line={line}
+                            lineStartChar={lineStartChar}
+                            cursorPosition={cursorForLine}
+                            selectionStart={
+                              activeTextFieldId === segment.id ? textFieldSelectionRange.start : 0
+                            }
+                            selectionEnd={
+                              activeTextFieldId === segment.id ? textFieldSelectionRange.end : 0
+                            }
+                            pageLineHeightPx={segment.lineHeightPx}
+                            renderCharacter={renderSegmentCharacter}
+                            inkColor={segment.inkColor}
+                          />
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       );
@@ -1350,12 +1774,20 @@ export default function HandwritingEditor({
       pages,
       currentPageIndex,
       currentPageLineStarts,
-      pageTextFields,
+      currentPageTextFieldSegments,
+      focusedTextFieldId,
       renderCharacter,
+      renderTextFieldCharacter,
       renderPaperLines,
+      activeTextFieldId,
+      selectionRange.end,
+      selectionRange.start,
       settings.lineHeight,
       settings.paperStyle,
       settings.ruledMarginLineOffset,
+      syncSelectionFromTextFieldTextarea,
+      textFieldSelectionRange.end,
+      textFieldSelectionRange.start,
       textFields,
     ]
   );
@@ -1497,7 +1929,11 @@ export default function HandwritingEditor({
         onPaste={handlePaste}
         onKeyUp={handleKeyUp}
         onClick={handleClick}
-        onFocus={() => setIsFocused(true)}
+        onSelect={handleSelect}
+        onFocus={(e) => {
+          setIsFocused(true);
+          syncSelectionFromTextarea(e.currentTarget);
+        }}
         onBlur={() => setIsFocused(false)}
         className="sr-only"
         aria-label="Handwriting text input"

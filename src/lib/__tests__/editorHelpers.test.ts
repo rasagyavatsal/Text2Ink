@@ -3,7 +3,8 @@ import {
   seededRandom, 
   calculateRandomStyle, 
   calculatePageStartOffsets, 
-  calculateLineStarts 
+  calculateLineStarts,
+  paginateTextFieldSegments,
 } from '../editorHelpers';
 
 describe('editorHelpers', () => {
@@ -65,6 +66,67 @@ describe('editorHelpers', () => {
     it('calculateLineStarts returns correct starts', () => {
       const starts = calculateLineStarts(pages[0], 0);
       expect(starts).toEqual([0, 4]); // "abc\n" (4 chars) then "def"
+    });
+  });
+
+  describe('paginateTextFieldSegments', () => {
+    const pages = [
+      {
+        marginTop: 60,
+        marginRight: 60,
+        marginBottom: 60,
+        fontSize: 20,
+        customLineSpacing: null,
+        customLineOffset: 0,
+      },
+      {
+        marginTop: 60,
+        marginRight: 60,
+        marginBottom: 60,
+        fontSize: 20,
+        customLineSpacing: null,
+        customLineOffset: 0,
+      },
+    ];
+
+    it('keeps an empty text field on its anchor page', () => {
+      const segments = paginateTextFieldSegments({
+        text: '',
+        startPageIndex: 0,
+        x: 100,
+        y: 120,
+        pageWidth: 800,
+        pageHeight: 1000,
+        lineHeight: 1.5,
+        fontFamily: 'cursive',
+        pages,
+        pageHasBackground: [false, false],
+      });
+
+      expect(segments).toHaveLength(1);
+      expect(segments[0].pageIndex).toBe(0);
+      expect(segments[0].lines).toEqual([]);
+    });
+
+    it('spills overflowing text onto following pages', () => {
+      const text = Array.from({ length: 60 }, (_, i) => `word${i}`).join(' ');
+      const segments = paginateTextFieldSegments({
+        text,
+        startPageIndex: 0,
+        x: 100,
+        y: 880,
+        pageWidth: 800,
+        pageHeight: 1000,
+        lineHeight: 1.5,
+        fontFamily: 'cursive',
+        pages,
+        pageHasBackground: [false, false],
+      });
+
+      expect(segments.length).toBeGreaterThan(1);
+      expect(segments[0].pageIndex).toBe(0);
+      expect(segments[1].pageIndex).toBe(1);
+      expect(segments[1].startOffset).toBeGreaterThan(segments[0].startOffset);
     });
   });
 });
