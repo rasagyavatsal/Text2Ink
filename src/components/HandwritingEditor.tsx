@@ -7,6 +7,7 @@ import {
   TextField,
   EditorMode,
   PageSettings,
+  LineData,
   defaultPageSettingsFromHandwritingSettings,
 } from '@/lib/types';
 import { Type, PenLine, Plus, Minus, ChevronLeft, ChevronRight, GripVertical, Palette } from 'lucide-react';
@@ -19,7 +20,6 @@ import {
   calculateLineStarts,
   paginateTextFieldSegments,
   type PaginatedTextFieldSegment,
-  type LineData 
 } from '@/lib/editorHelpers';
 interface HandwritingEditorProps {
   text: string;
@@ -27,7 +27,6 @@ interface HandwritingEditorProps {
   settings: HandwritingSettings;
   onSettingsChange?: (settings: HandwritingSettings) => void;
   pageSettingsByPage: PageSettings[];
-  onPageRef?: (pageIndex: number, el: HTMLDivElement | null) => void;
   exportingPageIndex?: number | null;
   previewScale: number;
   onPreviewScaleChange: (value: number) => void;
@@ -36,6 +35,8 @@ interface HandwritingEditorProps {
   currentPageIndex: number;
   onCurrentPageChange: (pageIndex: number) => void;
   onTotalPagesChange?: (totalPages: number) => void;
+  onPagesChange?: (pages: LineData[][]) => void;
+  onPaginationCompleteChange?: (isComplete: boolean) => void;
   onApplyToAllPages?: () => void;
 }
 
@@ -172,7 +173,6 @@ export default function HandwritingEditor({
   settings,
   onSettingsChange,
   pageSettingsByPage,
-  onPageRef,
   exportingPageIndex = null,
   previewScale,
   onPreviewScaleChange,
@@ -181,6 +181,8 @@ export default function HandwritingEditor({
   currentPageIndex,
   onCurrentPageChange,
   onTotalPagesChange,
+  onPagesChange,
+  onPaginationCompleteChange,
   onApplyToAllPages,
 }: HandwritingEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -401,8 +403,11 @@ export default function HandwritingEditor({
       const msg = ev.data;
       if (!msg || msg.type !== 'pagination-result') return;
       if (msg.requestId !== latestPaginationRequestIdRef.current) return;
-      setPages(msg.pages as LineData[][]);
+      const nextPages = msg.pages as LineData[][];
+      setPages(nextPages);
+      onPagesChange?.(nextPages);
       setIsPaginationComplete(msg.isPaginationComplete);
+      onPaginationCompleteChange?.(msg.isPaginationComplete);
       setTotalPages(msg.totalPages);
     };
 
@@ -1423,7 +1428,6 @@ export default function HandwritingEditor({
               if (isVisiblePreview) {
                 pageElsRef.current[pageIndex] = el;
               }
-              onPageRef?.(pageIndex, el);
             }}
             className="relative shadow-2xl cursor-text"
             style={{
@@ -1769,7 +1773,6 @@ export default function HandwritingEditor({
       handleTextFieldKeyDown,
       handlePageClick,
       isFocused,
-      onPageRef,
       pagePaperLines,
       pages,
       currentPageIndex,
@@ -1941,26 +1944,7 @@ export default function HandwritingEditor({
       />
 
       {/* Only render the current page - no scrolling, use prev/next buttons to navigate */}
-      {pages.length > 0 && (
-        <>
-          {renderPage(currentPageIndex, previewScale, true)}
-          {exportingPageIndex !== null && exportingPageIndex < pages.length ? (
-            <div
-              aria-hidden
-              style={{
-                position: 'absolute',
-                left: -100000,
-                top: 0,
-                width: 1,
-                height: 1,
-                overflow: 'hidden',
-              }}
-            >
-              {renderPage(exportingPageIndex, 1, false)}
-            </div>
-          ) : null}
-        </>
-      )}
+      {pages.length > 0 && renderPage(currentPageIndex, previewScale, true)}
     </div>
   );
 }
