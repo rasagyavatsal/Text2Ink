@@ -136,4 +136,10 @@ export interface TextField {
   pageIndex: number;
 }
 
+export type LineData = {
+  text: string;
+  lineIndex: number;
+  hasNewline: boolean;
+};
+
 export type EditorMode = 'write' | 'textfield';

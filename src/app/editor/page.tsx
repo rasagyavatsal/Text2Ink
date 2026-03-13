@@ -71,6 +71,7 @@ import {
   TextField,
   PageSettings,
   defaultPageSettingsFromHandwritingSettings,
+  LineData,
 } from '@/lib/types';
 import { loadEditorStateV1, saveEditorStateV1 } from '@/lib/editorPersistence';
 import { Settings, Download, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
@@ -88,17 +89,14 @@ export default function EditorPage() {
   const [activePanel, setActivePanel] = useState<'settings' | 'export'>('settings');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [textFields, setTextFields] = useState<TextField[]>([]);
-  const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [previewScale, setPreviewScale] = useState(1);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [pages, setPages] = useState<LineData[][]>([]);
+  const [isPaginationComplete, setIsPaginationComplete] = useState(true);
   const [exportPageIndex, setExportPageIndex] = useState<number | null>(null);
 
   const hasLoadedFromStorageRef = useRef(false);
-
-  const registerPageRef = useCallback((pageIndex: number, el: HTMLDivElement | null) => {
-    pageRefs.current[pageIndex] = el;
-  }, []);
 
   useEffect(() => {
     if (hasLoadedFromStorageRef.current) return;
@@ -399,9 +397,12 @@ export default function EditorPage() {
               />
             ) : (
               <MemoExportPanel
-                pageRefs={pageRefs}
                 hasContent={text.trim().length > 0}
                 settings={settings}
+                pages={pages}
+                isPaginationComplete={isPaginationComplete}
+                textFields={textFields}
+                pageSettingsByPage={pageSettingsByPage}
                 totalPages={totalPages}
                 currentPageIndex={currentPageIndex}
                 onCurrentPageChange={handleCurrentPageChange}
@@ -437,7 +438,6 @@ export default function EditorPage() {
               settings={settings}
               onSettingsChange={setSettings}
               pageSettingsByPage={pageSettingsByPage}
-              onPageRef={registerPageRef}
               exportingPageIndex={exportPageIndex}
               previewScale={previewScale}
               onPreviewScaleChange={handlePreviewScaleChange}
@@ -446,6 +446,8 @@ export default function EditorPage() {
               currentPageIndex={currentPageIndex}
               onCurrentPageChange={handleCurrentPageChange}
               onTotalPagesChange={handleTotalPagesChange}
+              onPagesChange={setPages}
+              onPaginationCompleteChange={setIsPaginationComplete}
               onApplyToAllPages={applyCurrentPageSettingsToAll}
             />
           </div>
