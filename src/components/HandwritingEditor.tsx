@@ -28,7 +28,7 @@ interface HandwritingEditorProps {
   onSettingsChange?: (settings: HandwritingSettings) => void;
   pageSettingsByPage: PageSettings[];
   onPageRef?: (pageIndex: number, el: HTMLDivElement | null) => void;
-  renderAllPagesForExport?: boolean;
+  exportingPageIndex?: number | null;
   previewScale: number;
   onPreviewScaleChange: (value: number) => void;
   textFields: TextField[];
@@ -173,7 +173,7 @@ export default function HandwritingEditor({
   onSettingsChange,
   pageSettingsByPage,
   onPageRef,
-  renderAllPagesForExport = false,
+  exportingPageIndex = null,
   previewScale,
   onPreviewScaleChange,
   textFields,
@@ -373,7 +373,7 @@ export default function HandwritingEditor({
       requestId,
       text: localText,
       currentPageIndex,
-      renderAllPagesForExport,
+      renderAllPagesForExport: exportingPageIndex !== null,
       pageWidth: PAGE_WIDTH,
       pageHeight: PAGE_HEIGHT,
       hasAnyCustomBackground,
@@ -423,7 +423,7 @@ export default function HandwritingEditor({
     desiredPageSettings,
     hasAnyCustomBackground,
     localText,
-    renderAllPagesForExport,
+    exportingPageIndex,
     resolvedFontFamily,
     settings.lineHeight,
     settings.paperStyle,
@@ -1944,7 +1944,7 @@ export default function HandwritingEditor({
       {pages.length > 0 && (
         <>
           {renderPage(currentPageIndex, previewScale, true)}
-          {renderAllPagesForExport ? (
+          {exportingPageIndex !== null && exportingPageIndex < pages.length ? (
             <div
               aria-hidden
               style={{
@@ -1956,7 +1956,7 @@ export default function HandwritingEditor({
                 overflow: 'hidden',
               }}
             >
-              {pages.map((_, idx) => renderPage(idx, 1, false))}
+              {renderPage(exportingPageIndex, 1, false)}
             </div>
           ) : null}
         </>
