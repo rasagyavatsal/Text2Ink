@@ -30,6 +30,7 @@ interface ExportPanelProps {
   currentPageIndex: number;
   onCurrentPageChange: (pageIndex: number) => void;
   onExportingChange?: (isExporting: boolean) => void;
+  onExportPageIndexChange?: (pageIndex: number | null) => void;
 }
 
 type ExportFormat = 'pdf' | 'png' | 'jpg';
@@ -42,6 +43,7 @@ export default function ExportPanel({
   currentPageIndex,
   onCurrentPageChange,
   onExportingChange,
+  onExportPageIndexChange,
 }: ExportPanelProps) {
   const [format, setFormat] = useState<ExportFormat>('pdf');
   const [isExporting, setIsExporting] = useState(false);
@@ -265,7 +267,11 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
     cancelExportRef.current = false;
     originalPageIndexRef.current = currentPageIndex;
 
-    await waitForPages(pageRefs, 1, 1500);
+    const exportTotal = Math.max(1, totalPages);
+    
+    // Set the first page for initial font/setup
+    onExportPageIndexChange?.(0);
+    await waitForPageRef(pageRefs, 0, 5000);
 
     const cleanup = applyExportSafeDocument();
     const inlinedFontCSS = await getInlinedFontCSS();
@@ -278,43 +284,58 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
       }
     }
 
-    await waitForPages(pageRefs, 1, 1500);
-
     let success = false;
     try {
-      const [{ domToPng }, { default: jsPDF }] = await Promise.all([
-        import('modern-screenshot'),
-        import('jspdf'),
-      ]);
+      const { domToPng } = await import('modern-screenshot');
 
-      const exportTotal = Math.max(1, totalPages);
       setExportProgress({ current: 0, total: exportTotal });
 
       // 300 DPI calculation (2550 / 612 = 4.166...)
       const dpiScale = 4.1666666667;
 
       if (format === 'pdf') {
-
-        const pdf = new jsPDF({
-          orientation: 'portrait',
-          unit: 'pt',
-          format: 'letter',
+        const worker = new Worker(new URL('../workers/pdfWorker.ts', import.meta.url), {
+          type: 'module',
         });
+
+        // Helper to wait for specific message types from the worker
+        const waitMessage = (type: string) => 
+          new Promise<any>((resolve, reject) => {
+            const handler = (ev: MessageEvent) => {
+              if (ev.data.type === type) {
+                worker.removeEventListener('message', handler);
+                resolve(ev.data.payload);
+              } else if (ev.data.type === 'error') {
+                worker.removeEventListener('message', handler);
+                reject(new Error(ev.data.payload));
+              }
+            };
+            worker.addEventListener('message', handler);
+          });
+
+        worker.postMessage({
+          type: 'init',
+          payload: { orientation: 'portrait', unit: 'pt', format: 'letter' }
+        });
+        await waitMessage('initialized');
+
+        // US Letter size in points (72 DPI)
+        const pdfWidth = 612;
+        const pdfHeight = 792;
 
         for (let i = 0; i < exportTotal; i++) {
           if (cancelExportRef.current) break;
 
           setExportProgress({ current: i, total: exportTotal });
-          onCurrentPageChange(i);
-          await waitForPageIndex(currentPageIndexRef, i, 2000);
-
-          const page = await waitForPageRef(pageRefs, i, 2000);
+          onExportPageIndexChange?.(i);
+          
+          const page = await waitForPageRef(pageRefs, i, 5000);
           if (!page) {
             throw new Error(`Failed to render page ${i + 1} before export capture.`);
           }
 
-          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+          // Small yield for responsiveness
+          await new Promise(resolve => setTimeout(resolve, 0));
 
           const computedBg = window.getComputedStyle(page).backgroundColor;
           const exportBg =
@@ -335,38 +356,57 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
             },
           });
 
-          const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = pdf.internal.pageSize.getHeight();
+          // Convert data URL to ArrayBuffer for faster transfer to worker
+          const res = await fetch(imgData);
+          const arrayBuffer = await res.arrayBuffer();
 
-          if (i > 0) {
-            pdf.addPage();
-          }
-
-          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+          worker.postMessage({
+            type: 'addPage',
+            payload: {
+              imgData: arrayBuffer,
+              width: pdfWidth,
+              height: pdfHeight,
+              isFirstPage: i === 0
+            }
+          }, [arrayBuffer]);
 
           setExportProgress({ current: i + 1, total: exportTotal });
+          
+          // Yield again after heavy operation
+          await new Promise(resolve => setTimeout(resolve, 0));
         }
 
         if (!cancelExportRef.current) {
-          pdf.save('handwritten-document.pdf');
+          worker.postMessage({ type: 'generate' });
+          const pdfBuffer = await waitMessage('generated');
+          
+          const blob = new Blob([pdfBuffer], { type: 'application/pdf' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'handwritten-document.pdf';
+          link.click();
+          URL.revokeObjectURL(url);
+          
           success = true;
         }
-      } else {
 
+        worker.postMessage({ type: 'cleanup' });
+        worker.terminate();
+      } else {
         for (let i = 0; i < exportTotal; i++) {
           if (cancelExportRef.current) break;
 
           setExportProgress({ current: i, total: exportTotal });
-          onCurrentPageChange(i);
-          await waitForPageIndex(currentPageIndexRef, i, 2000);
-
-          const page = await waitForPageRef(pageRefs, i, 2000);
+          onExportPageIndexChange?.(i);
+          
+          const page = await waitForPageRef(pageRefs, i, 5000);
           if (!page) {
             throw new Error(`Failed to render page ${i + 1} before export capture.`);
           }
 
-          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+          // Small yield
+          await new Promise(resolve => setTimeout(resolve, 0));
 
           const computedBg = window.getComputedStyle(page).backgroundColor;
           const exportBg =
@@ -394,9 +434,8 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
 
           setExportProgress({ current: i + 1, total: exportTotal });
 
-          if (exportTotal > 1 && i < exportTotal - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 500));
-          }
+          // Yield again
+          await new Promise(resolve => setTimeout(resolve, 0));
         }
         if (!cancelExportRef.current) {
           success = true;
@@ -407,7 +446,7 @@ body.${cls} *::before,body.${cls} *::after{content:none !important;}`;
       alert('Export failed. Please try again.');
     } finally {
       cleanup();
-      onCurrentPageChange(originalPageIndexRef.current);
+      onExportPageIndexChange?.(null);
       setIsExporting(false);
       setExportProgress(null);
       onExportingChange?.(false);
