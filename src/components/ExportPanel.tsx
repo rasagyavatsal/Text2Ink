@@ -277,19 +277,19 @@ export default function ExportPanel({
   return (
     <div className="p-6 space-y-8">
       <div>
-        <h3 className="font-semibold text-lg mb-5 flex items-center gap-2">
+        <div className="flex items-center gap-2 mb-5">
           <Download className="w-5 h-5 text-[#E0A32A]" />
-          Export Options
-        </h3>
+          <h3 className="font-semibold text-lg">Export Options</h3>
+        </div>
 
-        <div className="space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="export-format">Format</Label>
+        <div className="space-y-6">
+          <div className="flex flex-col gap-2">
+            <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest" htmlFor="export-format">Format</Label>
             <Select
               value={format}
               onValueChange={(value) => setFormat(value as ExportFormat)}
             >
-              <SelectTrigger id="export-format">
+              <SelectTrigger id="export-format" className="bg-gray-100 border-none h-9 text-sm">
                 <SelectValue placeholder="Select format" />
               </SelectTrigger>
               <SelectContent>
@@ -318,8 +318,9 @@ export default function ExportPanel({
           <Button
             onClick={exportPages}
             disabled={isExporting || !hasContent}
-            className="w-full"
-            size="lg"
+            className={`w-full font-bold transition-all active:scale-95 h-11 ${
+              !hasContent ? 'bg-gray-100 text-gray-400 hover:bg-gray-100' : 'bg-[#E0A32A] hover:bg-[#c99225] text-white shadow-sm'
+            }`}
           >
             {isExporting ? (
               <>
@@ -335,16 +336,18 @@ export default function ExportPanel({
           </Button>
 
           {isExporting && exportProgress && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs text-gray-600">
-                <span>
-                  Exporting page {Math.min(exportProgress.total, exportProgress.current + 1)} of {exportProgress.total}
+            <div className="space-y-4 p-3 bg-gray-100 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                  Page {Math.min(exportProgress.total, exportProgress.current + 1)} / {exportProgress.total}
                 </span>
-                <span>{Math.round((exportProgress.current / exportProgress.total) * 100)}%</span>
+                <span className="text-[10px] font-bold text-gray-700 bg-white px-1.5 py-0.5 rounded shadow-sm">
+                  {Math.round((exportProgress.current / exportProgress.total) * 100)}%
+                </span>
               </div>
-              <div className="h-2 w-full rounded bg-gray-200 overflow-hidden">
+              <div className="h-1.5 w-full rounded-full bg-gray-200 overflow-hidden">
                 <div
-                  className="h-full bg-[#E0A32A] transition-all"
+                  className="h-full bg-[#E0A32A] transition-all duration-300"
                   style={{
                     width: `${Math.round((exportProgress.current / exportProgress.total) * 100)}%`,
                   }}
@@ -352,8 +355,8 @@ export default function ExportPanel({
               </div>
               <Button
                 type="button"
-                variant="outline"
-                className="w-full"
+                variant="ghost"
+                className="w-full h-8 text-[10px] font-bold text-red-500 hover:text-red-600 hover:bg-white/50 uppercase tracking-widest"
                 onClick={() => {
                   cancelExportRef.current = true;
                 }}
@@ -364,12 +367,12 @@ export default function ExportPanel({
           )}
 
           {!hasContent && (
-            <p className="text-xs text-amber-600 text-center">
+            <p className="text-[10px] font-bold text-amber-600/60 text-center uppercase tracking-wider">
               Start typing to enable export
             </p>
           )}
 
-          <p className="text-xs text-muted-foreground text-center">
+          <p className="text-[10px] text-gray-400 text-center leading-relaxed italic">
             {format === 'pdf'
               ? 'All pages will be combined into a single PDF'
               : 'Each page will be downloaded as a separate image'}

@@ -19,10 +19,26 @@ import {
   HANDWRITING_FONTS,
   PAPER_STYLES,
   PAPER_COLORS,
+  EditorMode,
+  LineData,
 } from '@/lib/types';
 import { detectBackgroundLines } from '@/lib/lineDetection';
 import { PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/pageConstants';
-import { Type, Palette, FileText, Wand2, Upload, X } from 'lucide-react';
+import { 
+  Type, 
+  Palette, 
+  FileText, 
+  Wand2, 
+  Upload, 
+  X, 
+  PenLine, 
+  Minus, 
+  Plus, 
+  ChevronLeft, 
+  ChevronRight, 
+  Trash2,
+  Settings2
+} from 'lucide-react';
 
 import {
   validateFontFile,
@@ -38,6 +54,16 @@ interface SettingsPanelProps {
   onPageSettingsChange: (pageSettings: PageSettings) => void;
   currentPageIndex: number;
   onApplyToAllPages?: () => void;
+  // New props for sidebar integration
+  editorMode: EditorMode;
+  onEditorModeChange: (mode: EditorMode) => void;
+  previewScale: number;
+  onPreviewScaleChange: (value: number) => void;
+  onCurrentPageChange: (index: number) => void;
+  totalPages: number;
+  isPaginationComplete: boolean;
+  pages: LineData[][];
+  onClearAll: () => void;
 }
 
 export default function SettingsPanel({
@@ -47,6 +73,15 @@ export default function SettingsPanel({
   onPageSettingsChange,
   currentPageIndex,
   onApplyToAllPages,
+  editorMode,
+  onEditorModeChange,
+  previewScale,
+  onPreviewScaleChange,
+  onCurrentPageChange,
+  totalPages,
+  isPaginationComplete,
+  pages,
+  onClearAll,
 }: SettingsPanelProps) {
   const [customFontError, setCustomFontError] = useState<string | null>(null);
   const [lineDetecting, setLineDetecting] = useState(false);
@@ -143,6 +178,103 @@ export default function SettingsPanel({
 
   return (
     <div className="p-6 space-y-8">
+      {/* General Controls Section */}
+      <div>
+        <div className="flex items-center gap-2 mb-5">
+          <Settings2 className="w-5 h-5 text-[#E0A32A]" />
+          <h3 className="font-semibold text-lg">General</h3>
+        </div>
+
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
+              <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Editor Mode</Label>
+              <div className="flex p-1 bg-gray-100 rounded-lg">
+                <button
+                  onClick={() => onEditorModeChange('write')}
+                  className={`flex-1 flex items-center justify-center p-2 rounded-md transition-all ${editorMode === 'write'
+                    ? 'bg-white text-[#E0A32A] shadow-sm'
+                    : 'text-gray-500 hover:text-gray-900'
+                    }`}
+                  title="Write Mode"
+                >
+                  <PenLine className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => onEditorModeChange('textfield')}
+                  className={`flex-1 flex items-center justify-center p-2 rounded-md transition-all ${editorMode === 'textfield'
+                    ? 'bg-white text-[#E0A32A] shadow-sm'
+                    : 'text-gray-500 hover:text-gray-900'
+                    }`}
+                  title="Text Field Mode"
+                >
+                  <Type className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Zoom</Label>
+              <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+                <button
+                  onClick={() => onPreviewScaleChange(Number((previewScale - 0.1).toFixed(2)))}
+                  className="p-2 rounded-md text-gray-500 hover:text-[#E0A32A] hover:bg-white hover:shadow-sm transition-all"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <div className="flex-1 text-center text-xs font-bold text-gray-700">
+                  {Math.round(previewScale * 100)}%
+                </div>
+                <button
+                  onClick={() => onPreviewScaleChange(Number((previewScale + 0.1).toFixed(2)))}
+                  className="p-2 rounded-md text-gray-500 hover:text-[#E0A32A] hover:bg-white hover:shadow-sm transition-all"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Page Navigation</Label>
+            <div className="flex items-center justify-between bg-gray-100 p-1 rounded-lg">
+              <button
+                onClick={() => onCurrentPageChange(Math.max(0, currentPageIndex - 1))}
+                disabled={currentPageIndex === 0}
+                className="p-2 rounded-md text-gray-500 hover:text-[#E0A32A] hover:bg-white hover:shadow-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <div className="text-xs font-bold text-gray-700">
+                Page {currentPageIndex + 1} of {totalPages}
+              </div>
+              <button
+                onClick={() =>
+                  onCurrentPageChange(
+                    isPaginationComplete
+                      ? Math.min(pages.length - 1, currentPageIndex + 1)
+                      : currentPageIndex + 1
+                  )
+                }
+                disabled={isPaginationComplete && currentPageIndex >= pages.length - 1}
+                className="p-2 rounded-md text-gray-500 hover:text-[#E0A32A] hover:bg-white hover:shadow-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <button
+            onClick={onApplyToAllPages}
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-[#E0A32A]/5 border border-[#E0A32A]/20 rounded-xl text-xs font-bold text-[#E0A32A] hover:bg-[#E0A32A]/10 transition-all active:scale-95"
+          >
+            <Wand2 className="w-3.5 h-3.5" />
+            Apply settings to all pages
+          </button>
+        </div>
+      </div>
+
+      <Separator />
 
       <div>
         <div className="flex items-center gap-2 mb-5">
@@ -150,9 +282,9 @@ export default function SettingsPanel({
           <h3 className="font-semibold text-lg">Typography</h3>
         </div>
 
-        <div className="space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="font">Handwriting Style</Label>
+        <div className="space-y-6">
+          <div className="flex flex-col gap-2">
+            <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest" htmlFor="font">Handwriting Style</Label>
             <Select
               value={settings.fontFamily}
               onValueChange={(value) => {
@@ -160,7 +292,7 @@ export default function SettingsPanel({
                 updateSetting('fontFamily', value);
               }}
             >
-              <SelectTrigger id="font">
+              <SelectTrigger id="font" className="bg-gray-100 border-none h-9 text-sm">
                 <SelectValue placeholder="Select font" />
               </SelectTrigger>
               <SelectContent>
@@ -177,16 +309,16 @@ export default function SettingsPanel({
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label>Custom Font</Label>
+          <div className="flex flex-col gap-2">
+            <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Custom Font</Label>
             <div className="space-y-2">
               {settings.customFont ? (
                 <div className="relative">
-                  <div className="rounded-lg border border-input px-3 py-2">
+                  <div className="rounded-lg bg-gray-100 px-3 py-2">
                     <div className="text-sm font-medium truncate">
                       {settings.customFont.name}
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-[10px] font-bold text-gray-400 uppercase">
                       {settings.customFont.format.toUpperCase()}
                     </div>
                   </div>
@@ -209,9 +341,9 @@ export default function SettingsPanel({
                   </button>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#E0A32A] hover:bg-[#E0A32A]/5 transition-colors">
-                  <Upload className="w-6 h-6 text-gray-400 mb-1" />
-                  <span className="text-sm text-gray-500">Upload TTF or OTF</span>
+                <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:border-[#E0A32A] hover:bg-gray-100/50 transition-colors">
+                  <Upload className="w-5 h-5 text-gray-400 mb-1" />
+                  <span className="text-[10px] font-bold text-gray-500 uppercase">Upload TTF or OTF</span>
                   <input
                     type="file"
                     accept=".ttf,.otf,font/ttf,font/otf,application/x-font-ttf,application/x-font-opentype"
@@ -260,20 +392,20 @@ export default function SettingsPanel({
               )}
 
               {customFontError && (
-                <p className="text-xs text-red-600">{customFontError}</p>
+                <p className="text-[10px] font-bold text-red-500 uppercase">{customFontError}</p>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Upload a custom handwriting font (.ttf or .otf). It will be available in the Handwriting Style dropdown.
+            <p className="text-[10px] text-gray-400 leading-relaxed italic">
+              Upload a custom handwriting font (.ttf or .otf).
             </p>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <Label>Font Size</Label>
-              <span className="text-sm text-muted-foreground">
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Font Size</Label>
+              <div className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
                 {pageSettings.fontSize}px
-              </span>
+              </div>
             </div>
             <Slider
               value={[pageSettings.fontSize]}
@@ -285,12 +417,12 @@ export default function SettingsPanel({
           </div>
 
           {!hasCustomBackground && (
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label>Line Height</Label>
-                <span className="text-sm text-muted-foreground">
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Line Height</Label>
+                <div className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
                   {settings.lineHeight.toFixed(1)}
-                </span>
+                </div>
               </div>
               <Slider
                 value={[settings.lineHeight]}
@@ -302,12 +434,12 @@ export default function SettingsPanel({
             </div>
           )}
 
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <Label>Line Tilt</Label>
-              <span className="text-sm text-muted-foreground">
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Line Tilt</Label>
+              <div className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
                 {pageSettings.lineTilt}°
-              </span>
+              </div>
             </div>
             <Slider
               value={[pageSettings.lineTilt]}
@@ -328,16 +460,16 @@ export default function SettingsPanel({
           <h3 className="font-semibold text-lg">Page Layout</h3>
         </div>
 
-        <div className="space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="paper-style">Paper Style</Label>
+        <div className="space-y-6">
+          <div className="flex flex-col gap-2">
+            <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest" htmlFor="paper-style">Paper Style</Label>
             <Select
               value={settings.paperStyle}
               onValueChange={(value) =>
                 updateSetting('paperStyle', value as HandwritingSettings['paperStyle'])
               }
             >
-              <SelectTrigger id="paper-style">
+              <SelectTrigger id="paper-style" className="bg-gray-100 border-none h-9 text-sm">
                 <SelectValue placeholder="Select paper style" />
               </SelectTrigger>
               <SelectContent>
@@ -350,11 +482,11 @@ export default function SettingsPanel({
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label>Top Margin</Label>
-                <span className="text-sm text-muted-foreground">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-6">
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Top Margin</Label>
+                <span className="text-[10px] font-bold text-gray-500">
                   {pageSettings.marginTop}px
                 </span>
               </div>
@@ -367,10 +499,10 @@ export default function SettingsPanel({
               />
             </div>
 
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label>Bottom Margin</Label>
-                <span className="text-sm text-muted-foreground">
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Bottom Margin</Label>
+                <span className="text-[10px] font-bold text-gray-500">
                   {pageSettings.marginBottom}px
                 </span>
               </div>
@@ -383,10 +515,10 @@ export default function SettingsPanel({
               />
             </div>
 
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label>Left Margin</Label>
-                <span className="text-sm text-muted-foreground">
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Left Margin</Label>
+                <span className="text-[10px] font-bold text-gray-500">
                   {pageSettings.marginLeft}px
                 </span>
               </div>
@@ -399,10 +531,10 @@ export default function SettingsPanel({
               />
             </div>
 
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label>Right Margin</Label>
-                <span className="text-sm text-muted-foreground">
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Right Margin</Label>
+                <span className="text-[10px] font-bold text-gray-500">
                   {pageSettings.marginRight}px
                 </span>
               </div>
@@ -417,12 +549,12 @@ export default function SettingsPanel({
           </div>
 
           {settings.paperStyle === 'ruled' && (
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label>Margin Line Offset</Label>
-                <span className="text-sm text-muted-foreground">
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Margin Line Offset</Label>
+                <div className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
                   {settings.ruledMarginLineOffset}px
-                </span>
+                </div>
               </div>
               <Slider
                 value={[settings.ruledMarginLineOffset]}
@@ -434,20 +566,20 @@ export default function SettingsPanel({
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label>Custom Background Image</Label>
-            <div className="space-y-2">
+          <div className="flex flex-col gap-2">
+            <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Custom Background Image</Label>
+            <div className="space-y-3">
               {effectiveBackgroundImages.length > 0 && (
                 <div className="space-y-2">
                   <div className="grid grid-cols-3 gap-2">
                     {effectiveBackgroundImages.map((src, idx) => (
-                      <div key={`${idx}-${src.slice(0, 30)}`} className="relative">
+                      <div key={`${idx}-${src.slice(0, 30)}`} className="relative group">
                         <NextImage
                           src={src}
                           alt={`Custom background ${idx + 1}`}
                           width={256}
                           height={128}
-                          className="w-full h-16 object-cover rounded border border-input"
+                          className="w-full h-16 object-cover rounded-lg border border-gray-100"
                           unoptimized
                         />
                         <button
@@ -459,7 +591,7 @@ export default function SettingsPanel({
                               customBackgroundImage: next.length > 0 ? next[0] : null,
                             });
                           }}
-                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                          className="absolute -top-1 -right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
                           title="Remove background image"
                         >
                           <X className="w-3 h-3" />
@@ -476,16 +608,16 @@ export default function SettingsPanel({
                         customBackgroundImage: null,
                       })
                     }
-                    className="text-xs text-red-600 hover:underline"
+                    className="text-[10px] font-bold text-red-500 uppercase tracking-wider hover:underline"
                   >
                     Remove all
                   </button>
                 </div>
               )}
 
-              <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#E0A32A] hover:bg-[#E0A32A]/5 transition-colors">
-                <Upload className="w-6 h-6 text-gray-400 mb-1" />
-                <span className="text-sm text-gray-500">Upload PNG or JPG</span>
+              <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:border-[#E0A32A] hover:bg-gray-100/50 transition-colors">
+                <Upload className="w-5 h-5 text-gray-400 mb-1" />
+                <span className="text-[10px] font-bold text-gray-500 uppercase">Upload PNG or JPG</span>
                 <input
                   type="file"
                   multiple
@@ -508,45 +640,42 @@ export default function SettingsPanel({
                   }}
                 />
               </label>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[10px] text-gray-400 text-center italic">
                 Image will be used as page background
               </p>
             </div>
           </div>
 
           {hasCustomBackground && (
-            <>
-              <div className="space-y-2">
+            <div className="space-y-6 pt-2">
+              <div className="flex flex-col gap-2 p-3 bg-gray-100 rounded-lg">
                 <div className="flex items-center justify-between">
-                  <Label>Auto-Detect Lines</Label>
+                  <Label className="text-[10px] font-bold text-[#E0A32A] uppercase tracking-widest">Auto-Detect Lines</Label>
                   <button
                     type="button"
                     onClick={handleDetectLines}
                     disabled={!currentBackground || lineDetecting}
-                    className="text-xs px-3 py-1 rounded border border-gray-300 hover:border-[#E0A32A] hover:text-[#E0A32A] disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="text-[10px] font-bold bg-[#E0A32A] text-white px-3 py-1.5 rounded-md hover:bg-[#c99225] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                   >
                     {lineDetecting ? 'Detecting...' : 'Detect Lines'}
                   </button>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Analyze the current background and align text to its lines.
-                </p>
                 {lineDetectInfo && (
-                  <p className="text-xs text-green-700">
-                    Applied offset {lineDetectInfo.offset}px and spacing {lineDetectInfo.spacing}px.
+                  <p className="text-[10px] font-bold text-green-600 bg-white/50 px-2 py-1 rounded">
+                    ✓ Applied offset {lineDetectInfo.offset}px and spacing {lineDetectInfo.spacing}px.
                   </p>
                 )}
                 {lineDetectError && (
-                  <p className="text-xs text-red-600">{lineDetectError}</p>
+                  <p className="text-[10px] font-bold text-red-500 bg-white/50 px-2 py-1 rounded">{lineDetectError}</p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <Label>Line Offset (Y Position)</Label>
-                  <span className="text-sm text-muted-foreground">
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-center">
+                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Line Offset (Y Position)</Label>
+                  <div className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
                     {pageSettings.customLineOffset}px
-                  </span>
+                  </div>
                 </div>
                 <Slider
                   value={[pageSettings.customLineOffset]}
@@ -555,17 +684,24 @@ export default function SettingsPanel({
                   max={50}
                   step={1}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Adjust vertical position of text to match background lines
-                </p>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <Label>Custom Line Spacing</Label>
-                  <span className="text-sm text-muted-foreground">
-                    {pageSettings.customLineSpacing ?? 'Auto'}
-                  </span>
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-center">
+                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Custom Line Spacing</Label>
+                  <div className="flex items-center gap-2">
+                    {pageSettings.customLineSpacing !== null && (
+                      <button
+                        onClick={() => updatePageSetting('customLineSpacing', null)}
+                        className="text-[10px] font-bold text-[#E0A32A] uppercase tracking-wider hover:underline"
+                      >
+                        Reset
+                      </button>
+                    )}
+                    <div className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
+                      {pageSettings.customLineSpacing ?? 'Auto'}
+                    </div>
+                  </div>
                 </div>
                 <Slider
                   value={[pageSettings.customLineSpacing ?? Math.round(pageSettings.fontSize * settings.lineHeight)]}
@@ -574,17 +710,8 @@ export default function SettingsPanel({
                   max={120}
                   step={1}
                 />
-                <button
-                  onClick={() => updatePageSetting('customLineSpacing', null)}
-                  className="text-xs text-[#E0A32A] hover:underline"
-                >
-                  Reset to auto
-                </button>
-                <p className="text-xs text-muted-foreground">
-                  Match spacing between lines in your background image
-                </p>
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -597,32 +724,32 @@ export default function SettingsPanel({
           <h3 className="font-semibold text-lg">Colors</h3>
         </div>
 
-        <div className="space-y-5">
-          <div className="space-y-2">
-            <Label>Ink Color</Label>
-            <div className="flex items-center gap-2">
+        <div className="space-y-6">
+          <div className="flex flex-col gap-2">
+            <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ink Color</Label>
+            <div className="flex items-center gap-3 p-1.5 bg-gray-100 rounded-lg">
               <input
                 type="color"
                 value={settings.inkColor}
                 onChange={(e) => updateSetting('inkColor', e.target.value)}
-                className="w-10 h-10 rounded cursor-pointer border border-input"
+                className="w-8 h-8 rounded-md cursor-pointer border-0 p-0 bg-transparent"
               />
-              <span className="text-sm text-muted-foreground">
+              <span className="text-xs font-bold text-gray-700 uppercase tracking-tight">
                 {settings.inkColor}
               </span>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Paper Color</Label>
-            <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col gap-2">
+            <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Paper Color</Label>
+            <div className="flex flex-wrap gap-2 p-1.5 bg-gray-100 rounded-lg">
               {PAPER_COLORS.map((color) => (
                 <button
                   key={color.value}
                   onClick={() => updateSetting('paperColor', color.value)}
-                  className={`w-8 h-8 rounded-full border-2 transition-all ${settings.paperColor === color.value
-                    ? 'border-primary scale-110 shadow-md'
-                    : 'border-gray-300 hover:scale-105'
+                  className={`w-7 h-7 rounded-md border-2 transition-all ${settings.paperColor === color.value
+                    ? 'border-[#E0A32A] scale-110'
+                    : 'border-white hover:border-gray-200'
                     }`}
                   style={{ backgroundColor: color.value }}
                   title={color.name}
@@ -632,16 +759,16 @@ export default function SettingsPanel({
           </div>
 
           {settings.paperStyle !== 'blank' && (
-            <div className="space-y-2">
-              <Label>Line Color</Label>
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-2">
+              <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Line Color</Label>
+              <div className="flex items-center gap-3 p-1.5 bg-gray-100 rounded-lg">
                 <input
                   type="color"
                   value={settings.lineColor}
                   onChange={(e) => updateSetting('lineColor', e.target.value)}
-                  className="w-10 h-10 rounded cursor-pointer border border-input"
+                  className="w-8 h-8 rounded-md cursor-pointer border-0 p-0 bg-transparent"
                 />
-                <span className="text-sm text-muted-foreground">
+                <span className="text-xs font-bold text-gray-700 uppercase tracking-tight">
                   {settings.lineColor}
                 </span>
               </div>
@@ -658,9 +785,9 @@ export default function SettingsPanel({
           <h3 className="font-semibold text-lg">Realism Effects</h3>
         </div>
 
-        <div className="space-y-5">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="randomness-toggle">Enable Randomness</Label>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between p-2 bg-gray-100 rounded-lg">
+            <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest" htmlFor="randomness-toggle">Enable Randomness</Label>
             <Switch
               id="randomness-toggle"
               checked={settings.randomness.enabled}
@@ -669,13 +796,13 @@ export default function SettingsPanel({
           </div>
 
           {settings.randomness.enabled && (
-            <>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <Label>Letter Spacing Variation</Label>
-                  <span className="text-sm text-muted-foreground">
+            <div className="space-y-6 pt-2">
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-center">
+                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Letter Spacing Variation</Label>
+                  <div className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
                     {settings.randomness.spacing.toFixed(1)}
-                  </span>
+                  </div>
                 </div>
                 <Slider
                   value={[settings.randomness.spacing]}
@@ -686,12 +813,12 @@ export default function SettingsPanel({
                 />
               </div>
 
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <Label>Baseline Variation</Label>
-                  <span className="text-sm text-muted-foreground">
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-center">
+                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Baseline Variation</Label>
+                  <div className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
                     {settings.randomness.baseline.toFixed(1)}
-                  </span>
+                  </div>
                 </div>
                 <Slider
                   value={[settings.randomness.baseline]}
@@ -702,12 +829,12 @@ export default function SettingsPanel({
                 />
               </div>
 
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <Label>Rotation Variation</Label>
-                  <span className="text-sm text-muted-foreground">
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-center">
+                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Rotation Variation</Label>
+                  <div className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
                     {settings.randomness.rotation.toFixed(1)}°
-                  </span>
+                  </div>
                 </div>
                 <Slider
                   value={[settings.randomness.rotation]}
@@ -717,9 +844,21 @@ export default function SettingsPanel({
                   step={0.1}
                 />
               </div>
-            </>
+            </div>
           )}
         </div>
+      </div>
+
+      <Separator />
+
+      <div className="pt-2">
+        <button
+          onClick={onClearAll}
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-bold text-red-500 hover:bg-red-50 hover:text-red-600 transition-all active:scale-95 border border-red-100"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+          Clear Everything
+        </button>
       </div>
     </div>
   );
