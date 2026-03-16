@@ -72,9 +72,10 @@ import {
   PageSettings,
   defaultPageSettingsFromHandwritingSettings,
   LineData,
+  EditorMode,
 } from '@/lib/types';
 import { loadEditorStateV1, saveEditorStateV1 } from '@/lib/editorPersistence';
-import { Settings, Download, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { Settings, Download, ChevronLeft, ChevronRight, Trash2, PenLine, Type, Minus, Plus, Wand2 } from 'lucide-react';
 
 const MemoSettingsPanel = React.memo(SettingsPanel);
 const MemoExportPanel = React.memo(ExportPanel);
@@ -90,6 +91,7 @@ export default function EditorPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [textFields, setTextFields] = useState<TextField[]>([]);
   const [previewScale, setPreviewScale] = useState(1);
+  const [editorMode, setEditorMode] = useState<EditorMode>('write');
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [pages, setPages] = useState<LineData[][]>([]);
@@ -120,6 +122,7 @@ export default function EditorPage() {
     setSidebarOpen(persisted.ui.sidebarOpen);
     setPreviewScale(persisted.ui.previewScale);
     setCurrentPageIndex(persisted.ui.currentPageIndex);
+    setEditorMode(persisted.ui.editorMode);
 
     hasLoadedFromStorageRef.current = true;
   }, []);
@@ -139,6 +142,7 @@ export default function EditorPage() {
           sidebarOpen,
           previewScale,
           currentPageIndex,
+          editorMode,
         },
       });
     };
@@ -154,6 +158,7 @@ export default function EditorPage() {
     sidebarOpen,
     text,
     textFields,
+    editorMode,
   ]);
 
   useEffect(() => {
@@ -171,6 +176,7 @@ export default function EditorPage() {
           sidebarOpen,
           previewScale,
           currentPageIndex,
+          editorMode,
         },
       });
     };
@@ -186,6 +192,7 @@ export default function EditorPage() {
     sidebarOpen,
     text,
     textFields,
+    editorMode,
   ]);
 
   const clampPreviewScale = useCallback((value: number) => Math.min(2, Math.max(0.5, value)), []);
@@ -336,10 +343,10 @@ export default function EditorPage() {
   return (
     <div className={`${dancingScript.variable} ${indieFlower.variable} ${shadowsIntoLight.variable} ${kalam.variable} ${patrickHand.variable} ${architectsDaughter.variable} ${satisfy.variable} ${homemadeApple.variable} h-screen bg-white flex flex-col overflow-hidden`}>
       {/* Header */}
-      <header className="border-b border-gray-200 shrink-0">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <header className="border-b border-gray-200 shrink-0 bg-white">
+        <div className="max-w-full mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Link href="/" className="font-bold text-3xl font-dancing-script hover:text-[#E0A32A] transition-colors">
+            <Link href="/" className="font-bold text-3xl font-dancing-script hover:opacity-80 transition-opacity">
               <span className="text-[#E0A32A]">Text</span>
               <span className="text-black">2</span>
               <span className="text-[#E0A32A]">Ink</span>
@@ -361,13 +368,13 @@ export default function EditorPage() {
           className={`bg-white border-r border-gray-200 flex flex-col min-h-0 transition-all duration-300 ${sidebarOpen ? 'w-96' : 'w-0'
             } overflow-hidden`}
         >
-          {/* Panel Tabs */}
-          <div className="flex border-b border-gray-200">
+          {/* Panel Tabs at the Top */}
+          <div className="flex border-b border-gray-200 shrink-0">
             <button
               onClick={() => setActivePanel('settings')}
-              className={`flex-1 py-3 px-4 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${activePanel === 'settings'
-                ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/10'
-                : 'text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
+              className={`flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${activePanel === 'settings'
+                ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/5'
+                : 'text-gray-500 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
                 }`}
             >
               <Settings className="w-4 h-4" />
@@ -375,9 +382,9 @@ export default function EditorPage() {
             </button>
             <button
               onClick={() => setActivePanel('export')}
-              className={`flex-1 py-3 px-4 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${activePanel === 'export'
-                ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/10'
-                : 'text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
+              className={`flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${activePanel === 'export'
+                ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/5'
+                : 'text-gray-500 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
                 }`}
             >
               <Download className="w-4 h-4" />
@@ -385,8 +392,8 @@ export default function EditorPage() {
             </button>
           </div>
 
-          {/* Panel Content */}
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+          {/* Panel Content - Scrollable */}
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-white">
             {activePanel === 'settings' ? (
               <MemoSettingsPanel
                 settings={settings}
@@ -394,6 +401,16 @@ export default function EditorPage() {
                 pageSettings={currentPageSettings}
                 onPageSettingsChange={handlePageSettingsChange}
                 currentPageIndex={currentPageIndex}
+                onApplyToAllPages={applyCurrentPageSettingsToAll}
+                editorMode={editorMode}
+                onEditorModeChange={setEditorMode}
+                previewScale={previewScale}
+                onPreviewScaleChange={handlePreviewScaleChange}
+                onCurrentPageChange={handleCurrentPageChange}
+                totalPages={totalPages}
+                isPaginationComplete={isPaginationComplete}
+                pages={pages}
+                onClearAll={handleClearAll}
               />
             ) : (
               <MemoExportPanel
@@ -418,20 +435,20 @@ export default function EditorPage() {
         {/* Toggle Sidebar Button */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className={`fixed top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-r-lg p-2.5 shadow-lg hover:shadow-xl transition-all duration-300 group ${sidebarOpen ? 'left-[384px]' : 'left-0'
+          className={`fixed top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-r-xl p-3 shadow-xl hover:shadow-2xl transition-all duration-300 group ${sidebarOpen ? 'left-[384px]' : 'left-0'
             }`}
           aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
         >
           {sidebarOpen ? (
-            <ChevronLeft className="w-5 h-5 text-gray-600 group-hover:text-[#E0A32A] transition-colors" />
+            <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:text-[#E0A32A] transition-colors" />
           ) : (
-            <ChevronRight className="w-5 h-5 text-gray-600 group-hover:text-[#E0A32A] transition-colors" />
+            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[#E0A32A] transition-colors" />
           )}
         </button>
 
         {/* Main Content - Editor */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-gray-200">
-          <div className="min-h-full flex justify-center">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-gray-100">
+          <div className="min-h-full flex justify-center py-12 px-6">
             <HandwritingEditor
               text={text}
               onTextChange={setText}
@@ -441,6 +458,8 @@ export default function EditorPage() {
               exportingPageIndex={exportPageIndex}
               previewScale={previewScale}
               onPreviewScaleChange={handlePreviewScaleChange}
+              editorMode={editorMode}
+              onEditorModeChange={setEditorMode}
               textFields={textFields}
               onTextFieldsChange={setTextFields}
               currentPageIndex={currentPageIndex}
@@ -453,17 +472,6 @@ export default function EditorPage() {
           </div>
         </div>
       </div>
-
-      {/* Clear All Button */}
-      <button
-        onClick={handleClearAll}
-        className="fixed bottom-6 right-6 z-20 bg-white border border-gray-200 rounded-full p-4 shadow-lg hover:shadow-xl hover:bg-red-50 transition-all duration-300 group text-red-500 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-        title="Clear all text and text fields"
-        aria-label="Clear all text and text fields"
-      >
-        <Trash2 className="w-6 h-6" />
-      </button>
-
     </div>
   );
 }

@@ -3,6 +3,7 @@ export type EditorUiState = {
   sidebarOpen: boolean;
   previewScale: number;
   currentPageIndex: number;
+  editorMode: 'write' | 'textfield';
 };
 
 export type PersistedEditorStateV1<TSettings, TPageSettings, TTextField> = {
@@ -49,13 +50,21 @@ export const loadEditorStateV1 = <TSettings, TPageSettings, TTextField>():
   const sidebarOpen = ui.sidebarOpen;
   const previewScale = ui.previewScale;
   const currentPageIndex = ui.currentPageIndex;
+  const editorMode = ui.editorMode ?? 'write';
 
   if (activePanel !== 'settings' && activePanel !== 'export') return null;
   if (typeof sidebarOpen !== 'boolean') return null;
   if (typeof previewScale !== 'number') return null;
   if (typeof currentPageIndex !== 'number') return null;
+  if (editorMode !== 'write' && editorMode !== 'textfield') return null;
 
-  return parsed as PersistedEditorStateV1<TSettings, TPageSettings, TTextField>;
+  return {
+    ...anyParsed,
+    ui: {
+      ...ui,
+      editorMode,
+    },
+  } as PersistedEditorStateV1<TSettings, TPageSettings, TTextField>;
 };
 
 export const saveEditorStateV1 = <TSettings, TPageSettings, TTextField>(

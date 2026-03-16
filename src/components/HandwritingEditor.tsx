@@ -10,7 +10,7 @@ import {
   LineData,
   defaultPageSettingsFromHandwritingSettings,
 } from '@/lib/types';
-import { Type, PenLine, Plus, Minus, ChevronLeft, ChevronRight, GripVertical, Palette } from 'lucide-react';
+import { Palette } from 'lucide-react';
 import { PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/pageConstants';
 import type { PaginationResponse } from '@/lib/pagination';
 
@@ -30,6 +30,8 @@ interface HandwritingEditorProps {
   exportingPageIndex?: number | null;
   previewScale: number;
   onPreviewScaleChange: (value: number) => void;
+  editorMode: EditorMode;
+  onEditorModeChange: (mode: EditorMode) => void;
   textFields: TextField[];
   onTextFieldsChange: (textFields: TextField[]) => void;
   currentPageIndex: number;
@@ -176,6 +178,8 @@ export default function HandwritingEditor({
   exportingPageIndex = null,
   previewScale,
   onPreviewScaleChange,
+  editorMode,
+  onEditorModeChange,
   textFields,
   onTextFieldsChange,
   currentPageIndex,
@@ -187,11 +191,9 @@ export default function HandwritingEditor({
 }: HandwritingEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const pageElsRef = useRef<(HTMLDivElement | null)[]>([]);
-  const toolbarRef = useRef<HTMLDivElement>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [cursorPosition, setCursorPosition] = useState(0);
   const [selectionRange, setSelectionRange] = useState({ start: 0, end: 0 });
-  const [editorMode, setEditorMode] = useState<EditorMode>('write');
   const [activeTextFieldId, setActiveTextFieldId] = useState<string | null>(null);
   const [focusedTextFieldId, setFocusedTextFieldId] = useState<string | null>(null);
   const [textFieldSelectionRange, setTextFieldSelectionRange] = useState({ start: 0, end: 0 });
@@ -208,13 +210,6 @@ export default function HandwritingEditor({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0, pageRect: null as DOMRect | null });
   const [isDraggingMarginLine, setIsDraggingMarginLine] = useState(false);
   const marginLineDragRef = useRef({ pageIndex: 0, pageRect: null as DOMRect | null });
-  const [toolbarPosition, setToolbarPosition] = useState<{ x: number; y: number } | null>(null);
-  const [isToolbarDragging, setIsToolbarDragging] = useState(false);
-  const toolbarDragRef = useRef<{ active: boolean; offsetX: number; offsetY: number }>({
-    active: false,
-    offsetX: 0,
-    offsetY: 0,
-  });
   const selectionDragRef = useRef<{ active: boolean; anchor: number; target: 'write' | 'textfield'; textFieldId: string | null }>({
     active: false,
     anchor: 0,
@@ -1272,55 +1267,6 @@ export default function HandwritingEditor({
     }
   }, []);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (toolbarPosition) return;
-    const el = toolbarRef.current;
-    if (!el) return;
-
-    const rect = el.getBoundingClientRect();
-    const x = Math.max(8, Math.round(window.innerWidth / 2 - rect.width / 2));
-    const y = 96;
-    setToolbarPosition({ x, y });
-  }, [toolbarPosition]);
-
-  useEffect(() => {
-    if (!isToolbarDragging) return;
-
-    const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
-
-    const onMove = (e: MouseEvent) => {
-      const el = toolbarRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-
-      if (!toolbarDragRef.current.active) return;
-
-      const nextX = e.clientX - toolbarDragRef.current.offsetX;
-      const nextY = e.clientY - toolbarDragRef.current.offsetY;
-
-      const maxX = Math.max(8, window.innerWidth - rect.width - 8);
-      const maxY = Math.max(8, window.innerHeight - rect.height - 8);
-
-      setToolbarPosition({
-        x: clamp(nextX, 8, maxX),
-        y: clamp(nextY, 8, maxY),
-      });
-    };
-
-    const onUp = () => {
-      toolbarDragRef.current.active = false;
-      setIsToolbarDragging(false);
-    };
-
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-    return () => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-    };
-  }, [isToolbarDragging]);
-
   const pageStartOffsets = useMemo(() => calculatePageStartOffsets(pages), [pages]);
 
   const currentPageLines = useMemo(() => pages[currentPageIndex] ?? [], [currentPageIndex, pages]);
@@ -1797,133 +1743,6 @@ export default function HandwritingEditor({
 
   return (
     <div className="flex flex-col items-center gap-8 py-8">
-      {/* Mode Toggle Toolbar */}
-      <div
-        ref={toolbarRef}
-        className="fixed z-20 bg-white rounded-lg shadow-lg border border-gray-200 p-1 flex items-center gap-1"
-        style={
-          toolbarPosition
-            ? { left: toolbarPosition.x, top: toolbarPosition.y }
-            : { left: '50%', top: 96, transform: 'translateX(-50%)' }
-        }
-      >
-        <button
-          type="button"
-          className="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-move"
-          aria-label="Drag toolbar"
-          title="Drag toolbar"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-
-            const el = toolbarRef.current;
-            if (!el) return;
-            const rect = el.getBoundingClientRect();
-
-            toolbarDragRef.current.active = true;
-            toolbarDragRef.current.offsetX = e.clientX - rect.left;
-            toolbarDragRef.current.offsetY = e.clientY - rect.top;
-            setIsToolbarDragging(true);
-
-            if (!toolbarPosition) {
-              setToolbarPosition({ x: rect.left, y: rect.top });
-            }
-          }}
-        >
-          <GripVertical className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => {
-            setEditorMode('write');
-            setTimeout(() => textareaRef.current?.focus(), 0);
-          }}
-          className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${editorMode === 'write'
-            ? 'bg-[#E0A32A]/10 text-[#E0A32A]'
-            : 'text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
-            }`}
-          title="Write mode - Type text that flows on lines"
-        >
-          <PenLine className="w-4 h-4" />
-          Write
-        </button>
-        <button
-          onClick={() => setEditorMode('textfield')}
-          className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${editorMode === 'textfield'
-            ? 'bg-[#E0A32A]/10 text-[#E0A32A]'
-            : 'text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
-            }`}
-          title="Text Field mode - Click anywhere to add text"
-        >
-          <Type className="w-4 h-4" />
-          Text Field
-        </button>
-
-        <div className="w-px h-7 bg-gray-200 mx-1" />
-
-        <button
-          onClick={() => onPreviewScaleChange(Number((previewScale - 0.1).toFixed(2)))}
-          className="p-2 rounded-md text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5 transition-colors"
-          aria-label="Zoom out preview"
-          title="Zoom out"
-        >
-          <Minus className="w-4 h-4" />
-        </button>
-        <div className="px-2 min-w-14 text-center text-sm font-medium text-gray-700 select-none">
-          {Math.round(previewScale * 100)}%
-        </div>
-        <button
-          onClick={() => onPreviewScaleChange(Number((previewScale + 0.1).toFixed(2)))}
-          className="p-2 rounded-md text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5 transition-colors"
-          aria-label="Zoom in preview"
-          title="Zoom in"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
-
-        <div className="w-px h-7 bg-gray-200 mx-1" />
-
-        {/* Page Navigation */}
-        <button
-          onClick={() => onCurrentPageChange(Math.max(0, currentPageIndex - 1))}
-          disabled={currentPageIndex === 0}
-          className="p-2 rounded-md text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          aria-label="Previous page"
-          title="Previous page"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <div className="px-2 min-w-16 text-center text-sm font-medium text-gray-700 select-none">
-          Page {currentPageIndex + 1} / {String(totalPages)}
-        </div>
-        <button
-          onClick={() =>
-            onCurrentPageChange(
-              isPaginationComplete
-                ? Math.min(pages.length - 1, currentPageIndex + 1)
-                : currentPageIndex + 1
-            )
-          }
-          disabled={isPaginationComplete && currentPageIndex >= pages.length - 1}
-          className="p-2 rounded-md text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          aria-label="Next page"
-          title="Next page"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
-
-        <div className="w-px h-7 bg-gray-200 mx-1" />
-
-        <button
-          type="button"
-          onClick={onApplyToAllPages}
-          disabled={!onApplyToAllPages}
-          className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          title="Apply settings to all pages"
-        >
-          Apply settings to all pages
-        </button>
-      </div>
-
       {/* Hidden textarea for input */}
       <textarea
         ref={textareaRef}
@@ -1943,7 +1762,7 @@ export default function HandwritingEditor({
         autoFocus
       />
 
-      {/* Only render the current page - no scrolling, use prev/next buttons to navigate */}
+      {/* Only render the current page - no scrolling, use prev/next buttons to navigate in sidebar */}
       {pages.length > 0 && renderPage(currentPageIndex, previewScale, true)}
     </div>
   );
