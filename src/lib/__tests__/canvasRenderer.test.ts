@@ -173,9 +173,11 @@ describe('canvasRenderer', () => {
       fontFamily: 'Caveat',
     });
 
-    // Should only render "Field 1"
-    expect(mockCtx.fillText).toHaveBeenCalledWith('Field 1', 100, expect.any(Number));
-    expect(mockCtx.fillText).not.toHaveBeenCalledWith('Field 2', 200, expect.any(Number));
+    // Should only render characters from "Field 1"
+    const fillTextCalls = mockCtx.fillText.mock.calls.map((call: any[]) => call[0]);
+    expect(fillTextCalls).toContain('F');
+    expect(fillTextCalls).toContain('1');
+    expect(fillTextCalls).not.toContain('2');
   });
 
   it('skips background fill if custom background is provided', async () => {

@@ -7,13 +7,25 @@ export function seededRandom(seed: number): number {
   return x - Math.floor(x);
 }
 
+export type RandomStyle = {
+  style: React.CSSProperties;
+  baseline: number;
+  rotation: number;
+  spacing: number;
+};
+
 export function calculateRandomStyle(
   charIndex: number,
   lineIndex: number,
   randomness: HandwritingSettings['randomness']
-): React.CSSProperties {
+): RandomStyle {
   if (!randomness.enabled) {
-    return { transform: 'none', marginLeft: '0px' };
+    return {
+      style: { transform: 'none', marginLeft: '0px' },
+      baseline: 0,
+      rotation: 0,
+      spacing: 0,
+    };
   }
 
   const seed = charIndex * 1000 + lineIndex;
@@ -22,9 +34,14 @@ export function calculateRandomStyle(
   const rotationOffset = (seededRandom(seed + 2) - 0.5) * randomness.rotation * 2;
 
   return {
-    transform: `translateY(${baselineOffset}px) rotate(${rotationOffset}deg)`,
-    transformOrigin: 'left bottom',
-    marginLeft: `${spacingOffset}px`,
+    style: {
+      transform: `translateY(${baselineOffset}px) rotate(${rotationOffset}deg)`,
+      transformOrigin: 'left bottom',
+      marginLeft: `${spacingOffset}px`,
+    },
+    baseline: baselineOffset,
+    rotation: rotationOffset,
+    spacing: spacingOffset,
   };
 }
 

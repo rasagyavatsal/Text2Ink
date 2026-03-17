@@ -845,13 +845,13 @@ export default function HandwritingEditor({
         );
       }
 
-      const randomStyle = applyRandomness(charIndex, lineIndex);
+      const randomData = applyRandomness(charIndex, lineIndex);
 
       return (
         <span
           key={globalCharIndex}
           className="inline-block relative cursor-text"
-          style={{ ...randomStyle, ...selectionStyle }}
+          style={{ ...randomData.style, ...selectionStyle }}
           role="button"
           tabIndex={0}
           onMouseDown={(e) => {
@@ -987,12 +987,12 @@ export default function HandwritingEditor({
           );
         }
 
-        const randomStyle = applyRandomness(charIndex, lineIndex);
+        const randomData = applyRandomness(charIndex, lineIndex);
         return (
           <span
             key={`${textFieldId}-${globalCharIndex}`}
             className="inline-block relative cursor-text"
-            style={{ ...randomStyle, ...selectionStyle }}
+            style={{ ...randomData.style, ...selectionStyle }}
             role="button"
             tabIndex={0}
             onMouseDown={(e) => {

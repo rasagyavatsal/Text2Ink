@@ -59,61 +59,49 @@ export async function renderPageToCanvas({
 
   ctx.font = `${pageSettings.fontSize}px ${fontFamily}`;
   ctx.fillStyle = pageSettings.inkColor;
-  // Use top baseline to better match CSS line-height behavior
   ctx.textBaseline = 'top';
 
-  let currentLineY = pageSettings.marginTop + pageLineOffset;
-
-  // In CSS, line-height centers the text vertically within the line box.
-  // We calculate the exact vertical offset needed to push the 'top' baseline 
-  // down so it sits in the middle of our calculated line height.
-  const measure = ctx.measureText('Ajpqy'); // Measure tall and descending characters
+  // Measure text once for vertical centering
+  const measure = ctx.measureText('Ajpqy');
   const textHeight = measure.actualBoundingBoxAscent + measure.actualBoundingBoxDescent;
-  
-  // The extra space in the line box, divided by 2 to center it
   const verticalCenteringOffset = Math.max(0, (pageLineHeightPx - textHeight) / 2);
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const lineIndex = line.lineIndex;
-    
-    // y is the top of the line box + the centering offset
-    const y = currentLineY + verticalCenteringOffset;
-    
-    let currentX = ruledTextLeft;
+  const drawTextLine = (lineText: string, lineIndex: number, startX: number, startY: number, currentLineHeight: number) => {
+    let currentX = startX;
+    // Apply line-level tilt if any
+    const tilt = pageSettings.lineTilt || 0;
 
-    for (let charIdx = 0; charIdx < line.text.length; charIdx++) {
-      const char = line.text[charIdx];
-      const randomStyle = calculateRandomStyle(charIdx, lineIndex, settings.randomness);
+    for (let charIdx = 0; charIdx < lineText.length; charIdx++) {
+      const char = lineText[charIdx];
+      const randomData = calculateRandomStyle(charIdx, lineIndex, settings.randomness);
       
-      const spacingOffset = parseFloat(randomStyle.marginLeft as string || '0');
-      const transform = randomStyle.transform as string;
-      
-      let translateY = 0;
-      let rotateDeg = 0;
-      
-      if (transform && transform !== 'none') {
-        const translateMatch = transform.match(/translateY\((.*?)px\)/);
-        const rotateMatch = transform.match(/rotate\((.*?)deg\)/);
-        if (translateMatch) translateY = parseFloat(translateMatch[1]);
-        if (rotateMatch) rotateDeg = parseFloat(rotateMatch[1]);
-      }
-
-      currentX += spacingOffset;
+      currentX += randomData.spacing;
 
       if (char !== ' ') {
         ctx.save();
-        ctx.translate(currentX, y + translateY);
-        if (rotateDeg !== 0) {
-          ctx.rotate((rotateDeg * Math.PI) / 180);
+        // Translate to the character position
+        // We add verticalCenteringOffset to push the 'top' baseline down
+        ctx.translate(currentX, startY + verticalCenteringOffset + randomData.baseline);
+        
+        // Apply line tilt and then per-character rotation
+        if (tilt !== 0) {
+          ctx.rotate((tilt * Math.PI) / 180);
         }
+        if (randomData.rotation !== 0) {
+          ctx.rotate((randomData.rotation * Math.PI) / 180);
+        }
+        
         ctx.fillText(char, 0, 0);
         ctx.restore();
       }
       
       currentX += ctx.measureText(char).width;
     }
-    
+  };
+
+  let currentLineY = pageSettings.marginTop + pageLineOffset;
+  for (let i = 0; i < lines.length; i++) {
+    drawTextLine(lines[i].text, lines[i].lineIndex, ruledTextLeft, currentLineY, pageLineHeightPx);
     currentLineY += pageLineHeightPx;
   }
 
@@ -123,13 +111,12 @@ export async function renderPageToCanvas({
     
     ctx.font = `${pageSettings.fontSize}px ${fontFamily}`;
     ctx.fillStyle = tf.inkColor || pageSettings.inkColor;
-    ctx.textBaseline = 'top';
     
-    // Simplified text field rendering (single line for now, or split by \n)
     const tfLines = tf.text.split('\n');
     let tfY = tf.y;
-    for (const tfLine of tfLines) {
-      ctx.fillText(tfLine, tf.x, tfY + verticalCenteringOffset);
+    for (let i = 0; i < tfLines.length; i++) {
+      // Use a negative index or high offset for text fields to keep seeds unique
+      drawTextLine(tfLines[i], 10000 + i, tf.x, tfY, pageLineHeightPx);
       tfY += pageLineHeightPx;
     }
   }

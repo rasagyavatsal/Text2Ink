@@ -138,7 +138,8 @@ export default function ExportPanel({
 
     let success = false;
     try {
-      setExportProgress({ current: 0, total: exportTotal });
+      const progressTotal = format === 'pdf' ? exportTotal + 1 : exportTotal;
+      setExportProgress({ current: 0, total: progressTotal });
 
       // 300 DPI calculation (2550 / 612 = 4.166...)
       const dpiScale = 4.1666666667;
@@ -174,7 +175,7 @@ export default function ExportPanel({
         for (let i = 0; i < exportTotal; i++) {
           if (cancelExportRef.current) break;
 
-          setExportProgress({ current: i, total: exportTotal });
+          setExportProgress({ current: i, total: progressTotal });
           onExportPageIndexChange?.(i);
           
           const pageLines = currentPages[i] || [];
@@ -191,9 +192,10 @@ export default function ExportPanel({
             fontFamily: resolvedFontFamily,
           });
 
-          const imgData = canvas.toDataURL('image/png');
-          const res = await fetch(imgData);
-          const arrayBuffer = await res.arrayBuffer();
+          // Optimization: Use toBlob instead of toDataURL to avoid Base64 overhead
+          const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+          if (!blob) throw new Error('Failed to create page image');
+          const arrayBuffer = await blob.arrayBuffer();
 
           worker.postMessage({
             type: 'addPage',
@@ -205,11 +207,12 @@ export default function ExportPanel({
             }
           }, [arrayBuffer]);
 
-          setExportProgress({ current: i + 1, total: exportTotal });
           await new Promise(resolve => setTimeout(resolve, 0));
         }
 
         if (!cancelExportRef.current) {
+          // Final progress step: PDF Generation
+          setExportProgress({ current: exportTotal, total: progressTotal });
           worker.postMessage({ type: 'generate' });
           const pdfBuffer = await waitMessage('generated');
           
@@ -230,7 +233,7 @@ export default function ExportPanel({
         for (let i = 0; i < exportTotal; i++) {
           if (cancelExportRef.current) break;
 
-          setExportProgress({ current: i, total: exportTotal });
+          setExportProgress({ current: i, total: progressTotal });
           onExportPageIndexChange?.(i);
           
           const pageLines = currentPages[i] || [];
@@ -253,7 +256,7 @@ export default function ExportPanel({
           link.href = imgData;
           link.click();
 
-          setExportProgress({ current: i + 1, total: exportTotal });
+          setExportProgress({ current: i + 1, total: progressTotal });
           await new Promise(resolve => setTimeout(resolve, 0));
         }
         if (!cancelExportRef.current) {
@@ -339,7 +342,9 @@ export default function ExportPanel({
             <div className="space-y-4 p-3 bg-gray-100 rounded-lg">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                  Page {Math.min(exportProgress.total, exportProgress.current + 1)} / {exportProgress.total}
+                  {format === 'pdf' && exportProgress.current >= exportProgress.total - 1
+                    ? 'Finalizing PDF...'
+                    : `Page ${Math.min(exportProgress.total, exportProgress.current + 1)} / ${exportProgress.total}`}
                 </span>
                 <span className="text-[10px] font-bold text-gray-700 bg-white px-1.5 py-0.5 rounded shadow-sm">
                   {Math.round((exportProgress.current / exportProgress.total) * 100)}%
