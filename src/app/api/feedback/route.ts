@@ -8,7 +8,9 @@ export async function POST(req: Request) {
     // Create a transporter
     // Note: You should set these environment variables in your deployment platform
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
       auth: {
         user: process.env.EMAIL_USER || "rasagyavatsal16@gmail.com",
         // Use an App Password for Gmail, not your actual password
