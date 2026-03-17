@@ -32,16 +32,16 @@ describe('editorHelpers', () => {
     };
 
     it('returns none when disabled', () => {
-      const style = calculateRandomStyle(0, 0, { ...randomness, enabled: false });
-      expect(style.transform).toBe('none');
-      expect(style.marginLeft).toBe('0px');
+      const result = calculateRandomStyle(0, 0, { ...randomness, enabled: false });
+      expect(result.style.transform).toBe('none');
+      expect(result.style.marginLeft).toBe('0px');
     });
 
     it('returns variation when enabled', () => {
-      const style = calculateRandomStyle(0, 0, randomness);
-      expect(style.transform).toContain('translateY');
-      expect(style.transform).toContain('rotate');
-      expect(style.marginLeft).not.toBe('0px');
+      const result = calculateRandomStyle(0, 0, randomness);
+      expect(result.style.transform).toContain('translateY');
+      expect(result.style.transform).toContain('rotate');
+      expect(result.style.marginLeft).not.toBe('0px');
     });
   });
 
