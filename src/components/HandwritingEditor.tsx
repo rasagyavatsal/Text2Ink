@@ -1491,11 +1491,11 @@ export default function HandwritingEditor({
               return (
                 <div
                   key={`${segment.id}-${segment.pageIndex}-${segment.startOffset}`}
-                  className="absolute text-field-container group"
+                  className="absolute text-field-container group border border-dashed border-black/20 hover:border-blue-500/50 focus-within:border-blue-600/70 rounded-sm transition-colors p-1"
                   style={{
                     left: segment.x,
                     top: segment.y,
-                    transform: 'translate(-4px, -12px)',
+                    transform: 'translate(-8px, -16px)',
                     width: segment.width,
                     minHeight: visibleHeight,
                   }}
