@@ -37,6 +37,9 @@ describe('FeedbackDialog', () => {
     const textarea = screen.getByPlaceholderText(/what we can do better/i);
     fireEvent.change(textarea, { target: { value: 'Great app!' } });
 
+    const featureTextarea = screen.getByPlaceholderText(/share your ideas/i);
+    fireEvent.change(featureTextarea, { target: { value: 'Add more fonts' } });
+
     const submitButton = screen.getByRole('button', { name: /submit feedback/i });
     
     // We need to wrap the async action that triggers state changes
@@ -46,7 +49,7 @@ describe('FeedbackDialog', () => {
 
     expect(mockFetch).toHaveBeenCalledWith('/api/feedback', expect.objectContaining({
       method: 'POST',
-      body: JSON.stringify({ rating: 5, improvement: 'Great app!' }),
+      body: JSON.stringify({ rating: 5, improvement: 'Great app!', featureRequest: 'Add more fonts' }),
     }));
 
     // Wait for the submitted state using real timers first if needed, 

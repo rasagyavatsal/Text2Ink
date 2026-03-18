@@ -84,7 +84,7 @@ describe('feedback function', () => {
   it('returns 200 on mail transport success', async () => {
     const req = httpMocks.createRequest({
       method: 'POST',
-      body: { rating: 5, improvement: 'test' },
+      body: { rating: 5, improvement: 'test', featureRequest: 'more fonts' },
     });
     const res = httpMocks.createResponse();
     mockSendMail.mockResolvedValueOnce({});
@@ -93,6 +93,10 @@ describe('feedback function', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res._getJSONData().message).toBe('Feedback sent successfully');
+    expect(mockSendMail).toHaveBeenCalledWith(expect.objectContaining({
+      text: expect.stringContaining('Feature Request:\nmore fonts'),
+      html: expect.stringContaining('more fonts'),
+    }));
   });
 
   it('returns 500 on mail transport failure', async () => {

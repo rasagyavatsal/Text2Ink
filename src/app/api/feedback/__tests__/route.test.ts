@@ -21,7 +21,7 @@ describe('feedback api route', () => {
   it('returns 200 on mail transport success', async () => {
     const req = new Request('http://localhost/api/feedback', {
       method: 'POST',
-      body: JSON.stringify({ rating: 5, improvement: 'test' }),
+      body: JSON.stringify({ rating: 5, improvement: 'test', featureRequest: 'more fonts' }),
     });
     mockSendMail.mockResolvedValueOnce({});
 
@@ -30,7 +30,10 @@ describe('feedback api route', () => {
 
     expect(res.status).toBe(200);
     expect(data.message).toBe('Feedback sent successfully');
-    expect(mockSendMail).toHaveBeenCalled();
+    expect(mockSendMail).toHaveBeenCalledWith(expect.objectContaining({
+      text: expect.stringContaining('Feature Request:\nmore fonts'),
+      html: expect.stringContaining('more fonts'),
+    }));
   });
 
   it('returns 200 with fallback message if EMAIL_PASS is missing', async () => {
