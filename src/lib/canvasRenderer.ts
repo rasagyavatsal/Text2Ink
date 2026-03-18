@@ -59,12 +59,19 @@ export async function renderPageToCanvas({
 
   ctx.font = `${pageSettings.fontSize}px ${fontFamily}`;
   ctx.fillStyle = pageSettings.inkColor;
-  ctx.textBaseline = 'top';
+  ctx.textBaseline = 'alphabetic';
 
-  // Measure text once for vertical centering
-  const measure = ctx.measureText('Ajpqy');
-  const textHeight = measure.actualBoundingBoxAscent + measure.actualBoundingBoxDescent;
-  const verticalCenteringOffset = Math.max(0, (pageLineHeightPx - textHeight) / 2);
+  // CSS centers the em-box (fontSize) within the lineHeight.
+  // Half-leading is the space above and below the em-box.
+  const halfLeading = (pageLineHeightPx - pageSettings.fontSize) / 2;
+  
+  // We need to find the baseline position relative to the top of the em-box.
+  // We use a sample string to get font metrics if available, otherwise approximate.
+  const sampleMetrics = ctx.measureText('Ajpqy');
+  const fontAscent = sampleMetrics.fontBoundingBoxAscent ?? sampleMetrics.actualBoundingBoxAscent ?? (pageSettings.fontSize * 0.85);
+  
+  // The baseline is positioned at: top of line box + half-leading + font ascent.
+  const verticalCenteringOffset = halfLeading + fontAscent;
 
   const drawTextLine = (lineText: string, lineIndex: number, startX: number, startY: number, currentLineHeight: number) => {
     let currentX = startX;
@@ -79,8 +86,7 @@ export async function renderPageToCanvas({
 
       if (char !== ' ') {
         ctx.save();
-        // Translate to the character position
-        // We add verticalCenteringOffset to push the 'top' baseline down
+        // Translate to the baseline position for rotation to match CSS 'left bottom' (roughly)
         ctx.translate(currentX, startY + verticalCenteringOffset + randomData.baseline);
         
         // Apply line tilt and then per-character rotation
