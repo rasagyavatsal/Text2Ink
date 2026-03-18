@@ -3,7 +3,7 @@ import nodemailer from "nodemailer"
 
 export async function POST(req: Request) {
   try {
-    const { rating, improvement } = await req.json()
+    const { rating, improvement, featureRequest } = await req.json()
 
     // Create a transporter
     // Note: You should set these environment variables in your deployment platform
@@ -35,6 +35,9 @@ export async function POST(req: Request) {
 Rating: ${rating} / 5
 What needs to be improved:
 ${improvement || "No comments provided."}
+
+Feature Request:
+${featureRequest || "No feature requests provided."}
       `,
       html: `
 <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 600px;">
@@ -48,6 +51,12 @@ ${improvement || "No comments provided."}
     <strong>What needs to be improved:</strong>
     <p style="background: #f9fafb; padding: 15px; border-radius: 5px; color: #4b5563; line-height: 1.5;">
       ${improvement ? improvement.replace(/\n/g, "<br>") : "No comments provided."}
+    </p>
+  </div>
+  <div style="margin-bottom: 20px;">
+    <strong>Feature Request:</strong>
+    <p style="background: #f0f9ff; padding: 15px; border-radius: 5px; color: #0369a1; line-height: 1.5;">
+      ${featureRequest ? featureRequest.replace(/\n/g, "<br>") : "No feature requests provided."}
     </p>
   </div>
 </div>

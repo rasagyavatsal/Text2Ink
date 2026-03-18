@@ -15,6 +15,7 @@ export const feedback = onRequest(async (req, res) => {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body
     const rating = Number(body?.rating)
     const improvement = String(body?.improvement || "")
+    const featureRequest = String(body?.featureRequest || "")
 
     if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
       res.status(400).json({ error: "Invalid rating" })
@@ -48,8 +49,8 @@ export const feedback = onRequest(async (req, res) => {
         "X-MSMail-Priority": "High",
         "Importance": "high",
       },
-      text: `\nRating: ${rating} / 5\nWhat needs to be improved:\n${improvement || "No comments provided."}\n`,
-      html: `\n<div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 600px;">\n  <h2 style="color: #333;">New Feedback Received!</h2>\n  <div style="margin-bottom: 20px;">\n    <strong>Rating:</strong> \n    <span style="font-size: 24px; color: #f59e0b;">${"★".repeat(rating)}${"☆".repeat(5 - rating)}</span>\n    <span style="color: #666; margin-left: 10px;">(${rating} / 5)</span>\n  </div>\n  <div style="margin-bottom: 20px;">\n    <strong>What needs to be improved:</strong>\n    <p style="background: #f9fafb; padding: 15px; border-radius: 5px; color: #4b5563; line-height: 1.5;">\n      ${improvement ? improvement.replace(/\n/g, "<br>") : "No comments provided."}\n    </p>\n  </div>\n</div>\n      `,
+      text: `\nRating: ${rating} / 5\nWhat needs to be improved:\n${improvement || "No comments provided."}\n\nFeature Request:\n${featureRequest || "No feature requests provided."}\n`,
+      html: `\n<div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 600px;">\n  <h2 style="color: #333;">New Feedback Received!</h2>\n  <div style="margin-bottom: 20px;">\n    <strong>Rating:</strong> \n    <span style="font-size: 24px; color: #f59e0b;">${"★".repeat(rating)}${"☆".repeat(5 - rating)}</span>\n    <span style="color: #666; margin-left: 10px;">(${rating} / 5)</span>\n  </div>\n  <div style="margin-bottom: 20px;">\n    <strong>What needs to be improved:</strong>\n    <p style="background: #f9fafb; padding: 15px; border-radius: 5px; color: #4b5563; line-height: 1.5;">\n      ${improvement ? improvement.replace(/\n/g, "<br>") : "No comments provided."}\n    </p>\n  </div>\n  <div style="margin-bottom: 20px;">\n    <strong>Feature Request:</strong>\n    <p style="background: #f0f9ff; padding: 15px; border-radius: 5px; color: #0369a1; line-height: 1.5;">\n      ${featureRequest ? featureRequest.replace(/\n/g, "<br>") : "No feature requests provided."}\n    </p>\n  </div>\n</div>\n      `,
     }
 
     await transporter.sendMail(mailOptions)

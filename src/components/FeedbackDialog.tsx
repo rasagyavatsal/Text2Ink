@@ -23,6 +23,7 @@ export default function FeedbackDialog({ isOpen, onClose }: FeedbackDialogProps)
   const [rating, setRating] = React.useState<number>(0)
   const [hoveredRating, setHoveredRating] = React.useState<number>(0)
   const [improvement, setImprovement] = React.useState("")
+  const [featureRequest, setFeatureRequest] = React.useState("")
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [isSubmitted, setIsSubmitted] = React.useState(false)
 
@@ -39,6 +40,7 @@ export default function FeedbackDialog({ isOpen, onClose }: FeedbackDialogProps)
         body: JSON.stringify({
           rating,
           improvement,
+          featureRequest,
         }),
       })
 
@@ -49,6 +51,7 @@ export default function FeedbackDialog({ isOpen, onClose }: FeedbackDialogProps)
           // Reset after closing
           setRating(0)
           setImprovement("")
+          setFeatureRequest("")
           setIsSubmitted(false)
         }, 2000)
       } else {
@@ -132,6 +135,18 @@ export default function FeedbackDialog({ isOpen, onClose }: FeedbackDialogProps)
                   placeholder="Tell us what we can do better..."
                   value={improvement}
                   onChange={(e) => setImprovement(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="feature-request" className="text-sm font-medium">
+                  Any features you&apos;d like to see?
+                </Label>
+                <textarea
+                  id="feature-request"
+                  className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  placeholder="Share your ideas with us..."
+                  value={featureRequest}
+                  onChange={(e) => setFeatureRequest(e.target.value)}
                 />
               </div>
             </div>
