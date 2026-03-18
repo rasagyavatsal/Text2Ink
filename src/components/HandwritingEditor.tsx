@@ -1628,7 +1628,7 @@ export default function HandwritingEditor({
                     onBlur={() => {
                       setFocusedTextFieldId((prev) => (prev === segment.id ? null : prev));
                     }}
-                    className="absolute inset-0 resize-none border-none bg-transparent text-transparent outline-none pointer-events-none selection:bg-transparent selection:text-transparent"
+                    className="text-field-input-overlay absolute inset-0 resize-none border-none bg-transparent text-transparent outline-none pointer-events-none selection:bg-transparent selection:text-transparent"
                     style={{
                       width: segment.width,
                       height: visibleHeight,
