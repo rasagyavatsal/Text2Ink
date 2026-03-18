@@ -140,9 +140,13 @@ export function paginateTextFieldSegments({
     const lines: LineData[] = [];
     const startOffset = cursor;
 
+    let maxLineWidth = 0;
     for (let i = 0; i < linesPerPage && cursor < safeText.length; i++) {
       const next = nextLineFrom(safeText, cursor, availableWidth, measure);
       if (!next) break;
+      const lineWidth = measure(next.lineText);
+      if (lineWidth > maxLineWidth) maxLineWidth = lineWidth;
+      
       lines.push({
         text: next.lineText,
         lineIndex: lineIndex++,
@@ -156,7 +160,7 @@ export function paginateTextFieldSegments({
       startOffset,
       x,
       y: segmentY,
-      width: availableWidth,
+      width: Math.min(availableWidth, maxLineWidth + 10),
       lineHeightPx,
       lines,
     });
