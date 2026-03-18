@@ -12,6 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import {
   HandwritingSettings,
@@ -21,7 +28,9 @@ import {
   PAPER_COLORS,
   EditorMode,
   LineData,
+  FontOption,
 } from '@/lib/types';
+import { cn } from '@/lib/utils';
 import { detectBackgroundLines } from '@/lib/lineDetection';
 import { PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/pageConstants';
 import { 
@@ -37,7 +46,8 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Trash2,
-  Settings2
+  Settings2,
+  Grid
 } from 'lucide-react';
 
 import {
@@ -46,6 +56,47 @@ import {
   processLineDetectionResult,
   readFilesAsDataURL,
 } from '@/lib/settingsHelpers';
+
+const FontCard = ({ 
+  font, 
+  isSelected, 
+  onClick,
+  customStyle
+}: { 
+  font: FontOption, 
+  isSelected: boolean, 
+  onClick: () => void,
+  customStyle?: React.CSSProperties
+}) => {
+  return (
+    <div
+      onClick={onClick}
+      className={cn(
+        "cursor-pointer rounded-xl p-2.5 flex flex-col items-center gap-2 transition-all border-2 w-full",
+        isSelected 
+          ? "bg-[#E0A32A] border-[#E0A32A] text-white shadow-md shadow-[#E0A32A]/20" 
+          : "bg-gray-100 border-transparent hover:bg-gray-200 text-gray-700"
+      )}
+    >
+      <div 
+        className={cn(
+          "w-full aspect-[1.6/1] rounded-lg flex items-center justify-center text-2xl overflow-hidden transition-colors",
+          isSelected ? "bg-white/20" : "bg-white",
+          !customStyle && font.className
+        )}
+        style={customStyle}
+      >
+        AaBb
+      </div>
+      <span className={cn(
+        "text-[10px] font-bold truncate w-full text-center px-1 uppercase tracking-tight",
+        isSelected ? "text-white" : "text-gray-500"
+      )}>
+        {font.name}
+      </span>
+    </div>
+  );
+};
 
 interface SettingsPanelProps {
   settings: HandwritingSettings;
@@ -102,6 +153,24 @@ export default function SettingsPanel({
     () => settings.customBackgroundImages?.[currentPageIndex] ?? settings.customBackgroundImage,
     [currentPageIndex, settings.customBackgroundImages, settings.customBackgroundImage]
   );
+
+  const [fontPageIndex, setFontPageIndex] = useState(0);
+  const availableFonts = useMemo(() => HANDWRITING_FONTS.filter(f => f.value !== 'custom'), []);
+  const fontsPerPage = 4;
+  const totalFontPages = Math.ceil(availableFonts.length / fontsPerPage);
+
+  const visibleFonts = useMemo(() => {
+    const start = fontPageIndex * fontsPerPage;
+    return availableFonts.slice(start, start + fontsPerPage);
+  }, [fontPageIndex, availableFonts]);
+
+  const handleNextFonts = () => {
+    setFontPageIndex((prev) => (prev + 1) % totalFontPages);
+  };
+
+  const handlePrevFonts = () => {
+    setFontPageIndex((prev) => (prev - 1 + totalFontPages) % totalFontPages);
+  };
 
   useEffect(() => {
     setLineDetectError(null);
@@ -283,45 +352,95 @@ export default function SettingsPanel({
         </div>
 
         <div className="space-y-6">
-          <div className="flex flex-col gap-2">
-            <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest" htmlFor="font">Handwriting Style</Label>
-            <Select
-              value={settings.fontFamily}
-              onValueChange={(value) => {
-                setCustomFontError(null);
-                updateSetting('fontFamily', value);
-              }}
-            >
-              <SelectTrigger id="font" className="bg-gray-100 border-none h-9 text-sm">
-                <SelectValue placeholder="Select font" />
-              </SelectTrigger>
-              <SelectContent>
-                {HANDWRITING_FONTS.map((font) => (
-                  <SelectItem
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Fonts</Label>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button className="text-[10px] font-bold text-[#E0A32A] hover:underline transition-colors">See all</button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl bg-white border-gray-200 text-gray-900 p-0 overflow-hidden sm:rounded-2xl shadow-xl">
+                  <DialogHeader className="p-6 border-b border-gray-100">
+                    <DialogTitle className="text-lg font-bold">All Handwriting Fonts</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-6 max-h-[70vh] overflow-y-auto bg-gray-50">
+                    {HANDWRITING_FONTS.filter(f => f.value !== 'custom').map((font) => (
+                      <FontCard
+                        key={font.value}
+                        font={font}
+                        isSelected={settings.fontFamily === font.value}
+                        onClick={() => {
+                          setCustomFontError(null);
+                          updateSetting('fontFamily', font.value);
+                        }}
+                      />
+                    ))}
+                    {settings.customFont && (
+                      <FontCard
+                        font={{ name: settings.customFont.name, value: 'custom', className: '' }}
+                        isSelected={settings.fontFamily === 'custom'}
+                        onClick={() => {
+                          setCustomFontError(null);
+                          updateSetting('fontFamily', 'custom');
+                        }}
+                        customStyle={{ fontFamily: settings.customFont.family }}
+                      />
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+            
+            <div className="relative group/grid">
+              <div className="grid grid-cols-2 gap-3">
+                {visibleFonts.map((font) => (
+                  <FontCard
                     key={font.value}
-                    value={font.value}
-                    className={font.className}
-                  >
-                    {font.name}
-                  </SelectItem>
+                    font={font}
+                    isSelected={settings.fontFamily === font.value}
+                    onClick={() => {
+                      setCustomFontError(null);
+                      updateSetting('fontFamily', font.value);
+                    }}
+                  />
                 ))}
-              </SelectContent>
-            </Select>
+              </div>
+
+              {totalFontPages > 1 && (
+                <>
+                  <button
+                    onClick={handlePrevFonts}
+                    className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm text-gray-400 hover:text-[#E0A32A] hover:border-[#E0A32A] transition-all opacity-0 group-hover/grid:opacity-100 -translate-x-2 group-hover/grid:translate-x-0"
+                    aria-label="Previous fonts"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={handleNextFonts}
+                    className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm text-gray-400 hover:text-[#E0A32A] hover:border-[#E0A32A] transition-all opacity-0 group-hover/grid:opacity-100 translate-x-2 group-hover/grid:translate-x-0"
+                    aria-label="Next fonts"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-col gap-2">
             <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Custom Font</Label>
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
               {settings.customFont ? (
-                <div className="relative">
-                  <div className="rounded-lg bg-gray-100 px-3 py-2">
-                    <div className="text-sm font-medium truncate">
-                      {settings.customFont.name}
-                    </div>
-                    <div className="text-[10px] font-bold text-gray-400 uppercase">
-                      {settings.customFont.format.toUpperCase()}
-                    </div>
-                  </div>
+                <div className="relative group">
+                  <FontCard
+                    font={{ name: settings.customFont.name, value: 'custom', className: '' }}
+                    isSelected={settings.fontFamily === 'custom'}
+                    onClick={() => {
+                      setCustomFontError(null);
+                      updateSetting('fontFamily', 'custom');
+                    }}
+                    customStyle={{ fontFamily: settings.customFont.family }}
+                  />
                   <button
                     onClick={() => {
                       setCustomFontError(null);
@@ -333,7 +452,7 @@ export default function SettingsPanel({
                         customFont: null,
                       });
                     }}
-                    className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                    className="absolute -top-1.5 -right-1.5 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100 shadow-sm z-10"
                     title="Remove custom font"
                     type="button"
                   >
@@ -341,9 +460,11 @@ export default function SettingsPanel({
                   </button>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:border-[#E0A32A] hover:bg-gray-100/50 transition-colors">
-                  <Upload className="w-5 h-5 text-gray-400 mb-1" />
-                  <span className="text-[10px] font-bold text-gray-500 uppercase">Upload TTF or OTF</span>
+                <label className="flex flex-col items-center justify-center w-full aspect-[1/0.95] border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-[#E0A32A] hover:bg-[#E0A32A]/5 transition-all group">
+                  <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center mb-2 group-hover:bg-[#E0A32A]/10 transition-colors">
+                    <Upload className="w-4 h-4 text-gray-400 group-hover:text-[#E0A32A] transition-colors" />
+                  </div>
+                  <span className="text-[9px] font-bold text-gray-500 uppercase tracking-tight group-hover:text-[#E0A32A] transition-colors text-center px-2">Upload Font</span>
                   <input
                     type="file"
                     accept=".ttf,.otf,font/ttf,font/otf,application/x-font-ttf,application/x-font-opentype"
