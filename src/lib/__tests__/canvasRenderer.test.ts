@@ -111,9 +111,13 @@ describe('canvasRenderer', () => {
   });
 
   it('applies correct vertical centering offset', async () => {
-    // Mock metrics: height = 15 (ascent) + 5 (descent) = 20px
+    // Mock metrics: 
+    // ascent = 15, descent = 5
+    // fontSize = 24
     // Line height: 24 (fontSize) * 1.5 (lineHeight) = 36px
-    // Offset: (36 - 20) / 2 = 8px
+    // halfLeading: (36 - 24) / 2 = 6px
+    // fontAscent: 15 (from mock actualBoundingBoxAscent)
+    // Offset (baseline): 6 (halfLeading) + 15 (fontAscent) = 21px
     
     const settingsNoRandom = { 
       ...mockSettings, 
@@ -131,12 +135,12 @@ describe('canvasRenderer', () => {
       fontFamily: 'Caveat',
     });
 
-    expect(mockCtx.textBaseline).toBe('top');
+    expect(mockCtx.textBaseline).toBe('alphabetic');
     
-    // The first line starts at marginTop (50) + offset (8) = 58
+    // The first line starts at marginTop (50) + offset (21) = 71
     const translateCalls = mockCtx.translate.mock.calls;
     const yValue = translateCalls[0][1];
-    expect(yValue).toBe(58);
+    expect(yValue).toBe(71);
   });
 
   it('draws paper lines when style is lined', async () => {

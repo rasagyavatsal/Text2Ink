@@ -123,17 +123,16 @@ export default function ExportPanel({
     const currentPages = pagesRef.current;
     const exportTotal = Math.max(1, currentPages.length);
     
+    const resolvedFontFamily = getResolvedFontFamily();
+
     // Ensure fonts are loaded
-    if (settings.fontFamily === 'custom' && settings.customFont) {
-      try {
-        await document.fonts.load(`16px "${settings.customFont.family}"`);
-        await document.fonts.ready;
-      } catch (e) {
-        console.warn('Failed to load custom font for export:', e);
-      }
+    try {
+      await document.fonts.ready;
+      await document.fonts.load(`${settings.fontSize}px ${resolvedFontFamily}`);
+    } catch (e) {
+      console.warn('Failed to verify font loading for export:', e);
     }
 
-    const resolvedFontFamily = getResolvedFontFamily();
     const canvas = document.createElement('canvas');
 
     let success = false;
