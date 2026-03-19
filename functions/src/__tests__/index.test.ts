@@ -55,7 +55,7 @@ describe('feedback function', () => {
   it('handles string body JSON parsing', async () => {
     const req = httpMocks.createRequest({
       method: 'POST',
-      body: JSON.stringify({ rating: 5, improvement: 'test' }),
+      body: JSON.stringify({ rating: 5, improvement: 'test' }) as any,
     });
     const res = httpMocks.createResponse();
     mockSendMail.mockResolvedValueOnce({});
