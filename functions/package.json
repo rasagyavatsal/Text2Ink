@@ -21,7 +21,14 @@
     "nodemailer": "^7.0.11"
   },
   "devDependencies": {
+    "@types/body-parser": "^1.19.6",
+    "@types/caseless": "^0.12.5",
+    "@types/http-errors": "^2.0.5",
+    "@types/ms": "^2.1.0",
     "@types/node": "^20.19.37",
+    "@types/qs": "^6.15.0",
+    "@types/range-parser": "^1.2.7",
+    "@types/tough-cookie": "^4.0.5",
     "@vitest/coverage-v8": "^4.0.18",
     "node-mocks-http": "^1.17.2",
     "typescript": "^5.5.4",
