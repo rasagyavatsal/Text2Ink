@@ -1490,7 +1490,7 @@ export default function HandwritingEditor({
               const visibleHeight = Math.max(
                 segment.lineHeightPx,
                 segment.lines.length * segment.lineHeightPx
-              );
+              ) + 20;
               const controlsTop = -28;
 
               return (
@@ -1500,7 +1500,7 @@ export default function HandwritingEditor({
                   style={{
                     left: segment.x * scale,
                     top: segment.y * scale,
-                    transform: `scale(${scale}) translate(-8px, -16px)`,
+                    transform: `scale(${scale}) translate(-10px, -14px)`,
                     transformOrigin: 'top left',
                     width: segment.width,
                     minHeight: visibleHeight,

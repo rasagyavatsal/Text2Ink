@@ -160,7 +160,7 @@ export function paginateTextFieldSegments({
       startOffset,
       x,
       y: segmentY,
-      width: Math.min(availableWidth, maxLineWidth + 10),
+      width: Math.min(availableWidth, Math.max(80, maxLineWidth + 20)),
       lineHeightPx,
       lines,
     });
