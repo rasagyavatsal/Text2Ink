@@ -21,6 +21,7 @@ import {
   paginateTextFieldSegments,
   type PaginatedTextFieldSegment,
 } from '@/lib/editorHelpers';
+import CanvasPreview from './CanvasPreview';
 interface HandwritingEditorProps {
   text: string;
   onTextChange: (text: string) => void;
@@ -1331,157 +1332,161 @@ export default function HandwritingEditor({
     [pageStartOffsets, pages]
   );
 
+  const handleCanvasCharClick = useCallback(
+    (globalCharIndex: number, _isLeftHalf: boolean) => {
+      setCursorPosition(globalCharIndex);
+      setSelectionRange({ start: globalCharIndex, end: globalCharIndex });
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(globalCharIndex, globalCharIndex);
+      }
+    },
+    []
+  );
+
+  const handleCanvasCharMouseDown = useCallback(
+    (globalCharIndex: number, _isLeftHalf: boolean) => {
+      selectionDragRef.current = {
+        active: true,
+        anchor: globalCharIndex,
+        target: 'write',
+        textFieldId: null,
+      };
+      updateVisibleSelection(globalCharIndex, globalCharIndex);
+    },
+    [updateVisibleSelection]
+  );
+
+  const handleCanvasCharMouseMove = useCallback(
+    (globalCharIndex: number, _isLeftHalf: boolean) => {
+      if (!selectionDragRef.current.active) return;
+      if (selectionDragRef.current.target !== 'write') return;
+      updateVisibleSelection(selectionDragRef.current.anchor, globalCharIndex);
+    },
+    [updateVisibleSelection]
+  );
+
   const renderPage = useCallback(
     (pageIndex: number, scale: number, isVisiblePreview: boolean) => {
       const pageLines = pages[pageIndex] ?? [];
-      const pageLineStarts = pageIndex === currentPageIndex ? currentPageLineStarts : getPageLineStarts(pageIndex);
       const pageTextFieldsForPage =
         pageIndex === currentPageIndex
           ? currentPageTextFieldSegments
           : paginatedTextFieldSegments.filter((segment) => segment.pageIndex === pageIndex);
 
-      const pageBackground = getBackgroundForPage(pageIndex);
-      const pageHasBackground = !!pageBackground;
       const ps = getPageSettings(pageIndex);
-      const pageLineOffset = pageHasBackground ? ps.customLineOffset : 0;
-      const baseLineHeightPx = ps.fontSize * settings.lineHeight;
-      const pageLineHeightPx =
-        pageHasBackground && ps.customLineSpacing ? ps.customLineSpacing : baseLineHeightPx;
-      const contentHeight = PAGE_HEIGHT - ps.marginTop - ps.marginBottom;
-      const ruledTextLeft =
-        settings.paperStyle === 'ruled' && !pageHasBackground
-          ? ps.marginLeft + settings.ruledMarginLineOffset + 10
-          : ps.marginLeft;
-      const ruledTextWidth = PAGE_WIDTH - ruledTextLeft - ps.marginRight;
-
-      const paperLines =
-        pageIndex === currentPageIndex ? pagePaperLines : renderPaperLines(pageIndex);
-
       const showCursorForPage = isVisiblePreview && pageIndex === currentPageIndex;
       const effectiveCursorPositionForPage = showCursorForPage && isFocused ? cursorPosition : null;
+      const currentStartOffset = pageStartOffsets[pageIndex] ?? 0;
 
       return (
         <div
           key={pageIndex}
-          className="relative"
+          ref={(el) => {
+            if (isVisiblePreview) {
+              pageElsRef.current[pageIndex] = el;
+            }
+          }}
+          className="relative shadow-2xl"
           style={{
             width: PAGE_WIDTH * scale,
             height: PAGE_HEIGHT * scale,
           }}
+          role="button"
+          tabIndex={isVisiblePreview ? 0 : -1}
+          aria-label={`Page ${pageIndex + 1}`}
+          onClick={(e) => {
+            if (!isVisiblePreview) return;
+            handlePageClick(e, pageIndex);
+          }}
+          onKeyDown={(e) => {
+            if (!isVisiblePreview) return;
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              const syntheticEvent = {
+                currentTarget: e.currentTarget,
+                clientX: 0,
+                clientY: 0,
+              } as React.MouseEvent<HTMLDivElement>;
+              handlePageClick(syntheticEvent, pageIndex);
+            }
+          }}
         >
-          <div
-            ref={(el) => {
-              if (isVisiblePreview) {
-                pageElsRef.current[pageIndex] = el;
-              }
-            }}
-            className="relative shadow-2xl cursor-text"
-            style={{
-              width: PAGE_WIDTH,
-              height: PAGE_HEIGHT,
-              backgroundColor: ps.paperColor,
-              backgroundImage: pageBackground ? `url(${pageBackground})` : undefined,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              transform: `scale(${scale})`,
-              transformOrigin: 'top left',
-            }}
-            role="button"
-            tabIndex={isVisiblePreview ? 0 : -1}
-            aria-label={`Page ${pageIndex + 1}`}
-            onClick={(e) => {
-              if (!isVisiblePreview) return;
-              handlePageClick(e, pageIndex);
-            }}
-            onKeyDown={(e) => {
-              if (!isVisiblePreview) return;
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                // Create a synthetic mouse event for keyboard interaction
-                const syntheticEvent = {
-                  currentTarget: e.currentTarget,
-                  clientX: 0,
-                  clientY: 0,
-                } as React.MouseEvent<HTMLDivElement>;
-                handlePageClick(syntheticEvent, pageIndex);
-              }
-            }}
-          >
-            {paperLines}
+          {/* Canvas-based preview (replaces DOM text + paper lines) */}
+          <CanvasPreview
+            lines={pageLines}
+            pageSettings={ps}
+            settings={settings}
+            textFields={textFields}
+            pageIndex={pageIndex}
+            previewScale={scale}
+            fontFamily={resolvedFontFamily}
+            cursorPosition={effectiveCursorPositionForPage}
+            selectionStart={selectionRange.start}
+            selectionEnd={selectionRange.end}
+            pageStartOffset={currentStartOffset}
+            isFocused={isFocused}
+            onCharClick={isVisiblePreview ? handleCanvasCharClick : undefined}
+            onCharMouseDown={isVisiblePreview ? handleCanvasCharMouseDown : undefined}
+            onCharMouseMove={isVisiblePreview ? handleCanvasCharMouseMove : undefined}
+            onMouseUp={isVisiblePreview ? handleSelectionEnd : undefined}
+          />
 
+          {/* Placeholder text overlay when empty */}
+          {isVisiblePreview && (pageLines.length === 0 || (pageLines.length === 1 && pageLines[0].text === '')) && (
             <div
-              className={`absolute select-none ${fontClass}`}
+              className="absolute pointer-events-none select-none"
               style={{
-                top: ps.marginTop + pageLineOffset,
-                left: ruledTextLeft,
-                width: ruledTextWidth,
-                height: contentHeight,
-                fontFamily: customFontFamily ? `"${customFontFamily}", cursive` : undefined,
+                top: ps.marginTop,
+                left: ps.marginLeft,
+                color: '#9ca3af',
                 fontSize: ps.fontSize,
-                lineHeight:
-                  pageHasBackground && ps.customLineSpacing ? `${ps.customLineSpacing}px` : settings.lineHeight,
-                color: ps.inkColor,
-                transform: ps.lineTilt ? `rotate(${ps.lineTilt}deg)` : undefined,
-                transformOrigin: 'left top',
-                overflowWrap: 'break-word',
-                wordBreak: 'break-word',
-                whiteSpace: 'pre-wrap',
+                fontFamily: customFontFamily ? `"${customFontFamily}", cursive` : undefined,
               }}
             >
-              {pageLines.length === 0 || (pageLines.length === 1 && pageLines[0].text === '') ? (
-                <span className="text-gray-400 pointer-events-none">
-                  Click here to start typing...
-                  {showCursorForPage && isFocused && cursorPosition === 0 && (
-                    <span
-                      className="inline-block animate-pulse ml-0"
-                      style={{
-                        width: 2,
-                        height: '1em',
-                        backgroundColor: ps.inkColor,
-                        verticalAlign: 'text-bottom',
-                      }}
-                    />
-                  )}
-                </span>
-              ) : (
-                pageLines.map((line, lineIdx) => {
-                  const lineStartChar = pageLineStarts[lineIdx] ?? 0;
-                  const lineEndCaret = lineStartChar + line.text.length;
-                  const cursorForLine =
-                    effectiveCursorPositionForPage !== null &&
-                    effectiveCursorPositionForPage >= lineStartChar &&
-                    effectiveCursorPositionForPage <= lineEndCaret
-                      ? effectiveCursorPositionForPage
-                      : null;
-
-                  return (
-                    <LineView
-                      key={lineIdx}
-                      line={line}
-                      lineStartChar={lineStartChar}
-                      cursorPosition={cursorForLine}
-                      selectionStart={selectionRange.start}
-                      selectionEnd={selectionRange.end}
-                      pageLineHeightPx={pageLineHeightPx}
-                      renderCharacter={renderCharacter}
-                      inkColor={ps.inkColor}
-                    />
-                  );
-                })
-              )}
+              Click here to start typing...
             </div>
+          )}
 
-            {pageTextFieldsForPage.map((segment) => {
+          {/* Ruled margin line drag handle (DOM overlay) */}
+          {isVisiblePreview && settings.paperStyle === 'ruled' && !getBackgroundForPage(pageIndex) && onSettingsChange && (
+            <button
+              type="button"
+              className="absolute border-0 bg-transparent p-0"
+              style={{
+                left: (ps.marginLeft + settings.ruledMarginLineOffset - 6) * scale,
+                top: ps.marginTop * scale,
+                width: 14 * scale,
+                height: (PAGE_HEIGHT - ps.marginTop - ps.marginBottom) * scale,
+                cursor: 'col-resize',
+                backgroundColor: 'transparent',
+              }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDraggingMarginLine(true);
+                const pageEl = pageElsRef.current[pageIndex];
+                marginLineDragRef.current = {
+                  pageIndex,
+                  pageRect: pageEl ? pageEl.getBoundingClientRect() : null,
+                };
+              }}
+              title="Drag to reposition margin line"
+              aria-label="Drag to reposition margin line"
+              role="slider"
+              aria-valuemin={0}
+              aria-valuemax={PAGE_WIDTH - (ps.marginLeft + ps.marginRight)}
+              aria-valuenow={settings.ruledMarginLineOffset}
+              aria-orientation="vertical"
+              tabIndex={0}
+            />
+          )}
+          {/* Text field DOM overlays (positioned absolutely over the canvas) */}
+          {pageTextFieldsForPage.map((segment) => {
               const sourceTextField = textFields.find((tf) => tf.id === segment.id);
               if (!sourceTextField) return null;
 
-              const segmentLineStarts = calculateLineStarts(segment.lines, segment.startOffset);
               const isTextFieldFocused = focusedTextFieldId === segment.id;
-              const renderSegmentCharacter = renderTextFieldCharacter(
-                segment.id,
-                isTextFieldFocused,
-                segment.inkColor
-              );
               const visibleHeight = Math.max(
                 segment.lineHeightPx,
                 segment.lines.length * segment.lineHeightPx
@@ -1493,9 +1498,10 @@ export default function HandwritingEditor({
                   key={`${segment.id}-${segment.pageIndex}-${segment.startOffset}`}
                   className="absolute text-field-container group border border-dashed border-black/20 hover:border-blue-500/50 focus-within:border-blue-600/70 rounded-sm transition-colors p-1"
                   style={{
-                    left: segment.x,
-                    top: segment.y,
-                    transform: 'translate(-8px, -16px)',
+                    left: segment.x * scale,
+                    top: segment.y * scale,
+                    transform: `scale(${scale}) translate(-8px, -16px)`,
+                    transformOrigin: 'top left',
                     width: segment.width,
                     minHeight: visibleHeight,
                   }}
@@ -1638,105 +1644,52 @@ export default function HandwritingEditor({
                     autoComplete="off"
                   />
 
-                  <div
-                    className={`select-none ${fontClass}`}
-                    style={{
-                      fontFamily: customFontFamily ? `"${customFontFamily}", cursive` : undefined,
-                      fontSize: getPageSettings(segment.pageIndex).fontSize,
-                      color: segment.inkColor,
-                      lineHeight: `${segment.lineHeightPx}px`,
-                      transform: getPageSettings(segment.pageIndex).lineTilt
-                        ? `rotate(${getPageSettings(segment.pageIndex).lineTilt}deg)`
-                        : undefined,
-                      transformOrigin: 'left top',
-                      whiteSpace: 'pre-wrap',
-                      userSelect: 'none',
-                      WebkitUserSelect: 'none',
-                      minHeight: visibleHeight,
-                    }}
-                  >
-                    {segment.lines.length === 0 ? (
-                      focusedTextFieldId === segment.id ? (
-                        <span
-                          className="inline-block animate-pulse"
-                          style={{
-                            width: 2,
-                            height: '1em',
-                            backgroundColor: segment.inkColor,
-                            verticalAlign: 'text-bottom',
-                          }}
-                        />
-                      ) : null
-                    ) : (
-                      segment.lines.map((line, lineIdx) => {
-                        const lineStartChar = segmentLineStarts[lineIdx] ?? segment.startOffset;
-                        const lineEndCaret = lineStartChar + line.text.length;
-                        const cursorForLine =
-                          focusedTextFieldId === segment.id &&
-                          textFieldSelectionRange.end >= lineStartChar &&
-                          textFieldSelectionRange.end <= lineEndCaret
-                            ? textFieldSelectionRange.end
-                            : null;
-
-                        return (
-                          <LineView
-                            key={`${segment.id}-${lineIdx}`}
-                            line={line}
-                            lineStartChar={lineStartChar}
-                            cursorPosition={cursorForLine}
-                            selectionStart={
-                              activeTextFieldId === segment.id ? textFieldSelectionRange.start : 0
-                            }
-                            selectionEnd={
-                              activeTextFieldId === segment.id ? textFieldSelectionRange.end : 0
-                            }
-                            pageLineHeightPx={segment.lineHeightPx}
-                            renderCharacter={renderSegmentCharacter}
-                            inkColor={segment.inkColor}
-                          />
-                        );
-                      })
-                    )}
-                  </div>
+                  {/* Text field cursor indicator */}
+                  {isTextFieldFocused && segment.lines.length === 0 && (
+                    <span
+                      className="inline-block animate-pulse"
+                      style={{
+                        width: 2,
+                        height: '1em',
+                        backgroundColor: segment.inkColor,
+                        verticalAlign: 'text-bottom',
+                      }}
+                    />
+                  )}
                 </div>
               );
             })}
-          </div>
         </div>
       );
     },
     [
       cursorPosition,
       customFontFamily,
-      fontClass,
       getBackgroundForPage,
-      getPageLineStarts,
       getPageSettings,
+      handleCanvasCharClick,
+      handleCanvasCharMouseDown,
+      handleCanvasCharMouseMove,
       handleDragStart,
       handleTextFieldChange,
       handleTextFieldColorChange,
       handleTextFieldDelete,
       handleTextFieldKeyDown,
       handlePageClick,
+      handleSelectionEnd,
       isFocused,
-      pagePaperLines,
+      pageStartOffsets,
       pages,
       currentPageIndex,
-      currentPageLineStarts,
       currentPageTextFieldSegments,
       focusedTextFieldId,
-      renderCharacter,
-      renderTextFieldCharacter,
-      renderPaperLines,
-      activeTextFieldId,
+      onSettingsChange,
+      paginatedTextFieldSegments,
+      resolvedFontFamily,
       selectionRange.end,
       selectionRange.start,
-      settings.lineHeight,
-      settings.paperStyle,
-      settings.ruledMarginLineOffset,
+      settings,
       syncSelectionFromTextFieldTextarea,
-      textFieldSelectionRange.end,
-      textFieldSelectionRange.start,
       textFields,
     ]
   );
