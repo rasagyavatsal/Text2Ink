@@ -225,6 +225,17 @@ export const UnifiedPagePainter = {
         currentX += charWidth;
       }
 
+      if (lines[lineIdx].hasNewline) {
+        positions.push({
+          x: currentX,
+          y: currentLineY,
+          width: 0,
+          height: pageLineHeightPx,
+          lineIndex: lineIdx,
+          charIndex: lineText.length,
+        });
+      }
+
       currentLineY += pageLineHeightPx;
     }
 

@@ -349,9 +349,7 @@ describe('UnifiedPagePainter', () => {
         fontFamily: 'Caveat',
       });
 
-      // Should have 3 characters + 3 "end-of-line" positions (at the end of each char) 
-      // Actually: one position per character
-      expect(positions.length).toBe(3); // A, B, C
+      expect(positions.length).toBe(4); // A, B, newline, C
       // Each position should have x, y, width
       for (const pos of positions) {
         expect(pos).toHaveProperty('x');
@@ -361,6 +359,33 @@ describe('UnifiedPagePainter', () => {
         expect(pos).toHaveProperty('lineIndex');
         expect(pos).toHaveProperty('charIndex');
       }
+    });
+
+    it('includes explicit newline positions so caret indices stay aligned with textarea text', () => {
+      const settings = {
+        ...DEFAULT_SETTINGS,
+        randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 },
+      };
+      const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
+      const ctx = createMockCtx();
+      const lines = [
+        { text: 'A', lineIndex: 0, hasNewline: true },
+        { text: 'B', lineIndex: 1, hasNewline: false },
+      ];
+
+      const positions = UnifiedPagePainter.computeCharacterPositions({
+        ctx,
+        lines,
+        pageSettings,
+        settings,
+        fontFamily: 'Caveat',
+      });
+
+      expect(positions).toHaveLength(3);
+      expect(positions[0]).toMatchObject({ width: 10, lineIndex: 0, charIndex: 0 });
+      expect(positions[1]).toMatchObject({ width: 0, lineIndex: 0, charIndex: 1 });
+      expect(positions[2]).toMatchObject({ x: pageSettings.marginLeft, lineIndex: 1, charIndex: 0 });
+      expect(positions[2].y).toBe(pageSettings.marginTop + (pageSettings.fontSize * settings.lineHeight));
     });
 
     it('returns empty array for empty lines', () => {
