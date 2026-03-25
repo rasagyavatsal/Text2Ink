@@ -13,6 +13,127 @@ export interface PaintPageOptions {
   fontFamily: string;
 }
 
+type CharacterPositionLines = Array<Pick<LineData, 'text' | 'lineIndex' | 'hasNewline'>>;
+
+function buildCharacterPositionsForLines(opts: {
+  ctx: CanvasRenderingContext2D;
+  lines: CharacterPositionLines;
+  startX: number;
+  startY: number;
+  verticalCenteringOffset: number;
+  pageLineHeightPx: number;
+  pageSettings: PageSettings;
+  settings: HandwritingSettings;
+  fontAscent: number;
+  fontDescent: number;
+  ensureCaretAnchor?: boolean;
+}): CharacterPosition[] {
+  const {
+    ctx,
+    lines,
+    startX,
+    startY,
+    verticalCenteringOffset,
+    pageLineHeightPx,
+    pageSettings,
+    settings,
+    fontAscent,
+    fontDescent,
+    ensureCaretAnchor = false,
+  } = opts;
+
+  const positions: CharacterPosition[] = [];
+  let currentLineY = startY;
+
+  for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+    const lineText = lines[lineIdx].text;
+    const lineIndex = lines[lineIdx].lineIndex;
+    let currentX = startX;
+    let prevEndX = currentX;
+    let prevSelectionY = currentLineY + verticalCenteringOffset - fontAscent;
+    let prevSelectionHeight = fontAscent + fontDescent;
+
+    for (let charIdx = 0; charIdx < lineText.length; charIdx++) {
+      const char = lineText[charIdx];
+      const randomData = calculateRandomStyle(charIdx, lineIndex, settings.randomness);
+      const spacingGap = randomData.spacing;
+      currentX += spacingGap;
+
+      const metrics = ctx.measureText(char);
+      const charWidth = metrics.width;
+
+      const actualBoundingBoxAscent = metrics.actualBoundingBoxAscent ?? fontAscent;
+      const actualBoundingBoxDescent = metrics.actualBoundingBoxDescent ?? fontDescent;
+
+      let selectionY: number;
+      let selectionHeight: number;
+
+      if (char === ' ') {
+        selectionY = prevSelectionY;
+        selectionHeight = prevSelectionHeight;
+      } else {
+        selectionY = currentLineY + verticalCenteringOffset - actualBoundingBoxAscent + randomData.baseline;
+        selectionHeight = actualBoundingBoxAscent + actualBoundingBoxDescent;
+        prevSelectionY = selectionY;
+        prevSelectionHeight = selectionHeight;
+      }
+
+      const selectionX = prevEndX;
+      const selectionWidth = currentX + charWidth - prevEndX;
+
+      positions.push({
+        x: currentX,
+        y: currentLineY,
+        width: charWidth,
+        height: pageLineHeightPx,
+        lineIndex,
+        charIndex: charIdx,
+        selectionY,
+        selectionHeight,
+        selectionX,
+        selectionWidth,
+      });
+
+      currentX += charWidth;
+      prevEndX = currentX;
+    }
+
+    if (lines[lineIdx].hasNewline) {
+      positions.push({
+        x: currentX,
+        y: currentLineY,
+        width: 0,
+        height: pageLineHeightPx,
+        lineIndex,
+        charIndex: lineText.length,
+        selectionY: currentLineY + (pageLineHeightPx - pageSettings.fontSize) / 2,
+        selectionHeight: Math.min(pageLineHeightPx, pageSettings.fontSize),
+        selectionX: currentX,
+        selectionWidth: 0,
+      });
+    }
+
+    currentLineY += pageLineHeightPx;
+  }
+
+  if (ensureCaretAnchor && positions.length === 0) {
+    positions.push({
+      x: startX,
+      y: startY,
+      width: 0,
+      height: pageLineHeightPx,
+      lineIndex: 0,
+      charIndex: 0,
+      selectionY: startY + (pageLineHeightPx - pageSettings.fontSize) / 2,
+      selectionHeight: Math.min(pageLineHeightPx, pageSettings.fontSize),
+      selectionX: startX,
+      selectionWidth: 0,
+    });
+  }
+
+  return positions;
+}
+
 /**
  * UnifiedPagePainter - A single rendering engine used for both preview and export.
  * Accepts a CanvasRenderingContext2D and draws background, paper lines, text, and text fields.
@@ -182,11 +303,23 @@ export const UnifiedPagePainter = {
     pageSettings: PageSettings;
     settings: HandwritingSettings;
     fontFamily: string;
-  }): CharacterPosition[] {
-    const { ctx, lines, pageSettings, settings, fontFamily } = opts;
-    if (lines.length === 0) return [];
+    pageIndex?: number;
+    textFields?: TextField[];
+  }): {
+    mainPositions: CharacterPosition[];
+    textFieldPositions: Map<string, CharacterPosition[]>;
+  } {
+    const {
+      ctx,
+      lines,
+      pageSettings,
+      settings,
+      fontFamily,
+      pageIndex = 0,
+      textFields = [],
+    } = opts;
 
-    const customBg = settings.customBackgroundImages?.[0] ?? settings.customBackgroundImage;
+    const customBg = settings.customBackgroundImages?.[pageIndex] ?? settings.customBackgroundImage;
     const pageLineOffset = customBg ? (pageSettings.customLineOffset ?? 0) : 0;
     const baseLineHeightPx = pageSettings.fontSize * settings.lineHeight;
     const pageLineHeightPx = (customBg && pageSettings.customLineSpacing)
@@ -212,83 +345,48 @@ export const UnifiedPagePainter = {
     const halfLeading = (pageLineHeightPx - pageSettings.fontSize) / 2;
     const verticalCenteringOffset = halfLeading + fontAscent;
 
-    const positions: CharacterPosition[] = [];
-    let currentLineY = pageSettings.marginTop + pageLineOffset;
+    const mainPositions = buildCharacterPositionsForLines({
+      ctx,
+      lines,
+      startX: ruledTextLeft,
+      startY: pageSettings.marginTop + pageLineOffset,
+      verticalCenteringOffset,
+      pageLineHeightPx,
+      pageSettings,
+      settings,
+      fontAscent,
+      fontDescent,
+    });
 
-    for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-      const lineText = lines[lineIdx].text;
-      const lineIndex = lines[lineIdx].lineIndex;
-      let currentX = ruledTextLeft;
-      let prevEndX = currentX; // Track end of previous character for contiguous rects
-      let prevSelectionY = currentLineY + verticalCenteringOffset - fontAscent; // fallback for first char
-      let prevSelectionHeight = fontAscent + fontDescent; // fallback for first char
+    const textFieldPositions = new Map<string, CharacterPosition[]>();
+    for (const tf of textFields) {
+      if (tf.pageIndex !== pageIndex) continue;
 
-      for (let charIdx = 0; charIdx < lineText.length; charIdx++) {
-        const char = lineText[charIdx];
-        const randomData = calculateRandomStyle(charIdx, lineIndex, settings.randomness);
-        const spacingGap = randomData.spacing;
-        currentX += spacingGap;
+      const tfLines: CharacterPositionLines = tf.text.split('\n').map((lineText, lineIdx, allLines) => ({
+        text: lineText,
+        lineIndex: 10000 + lineIdx,
+        hasNewline: lineIdx < allLines.length - 1,
+      }));
 
-        const metrics = ctx.measureText(char);
-        const charWidth = metrics.width;
-
-        // Measure actual bounding box for tight ink metrics
-        let actualBoundingBoxAscent = metrics.actualBoundingBoxAscent ?? fontAscent;
-        let actualBoundingBoxDescent = metrics.actualBoundingBoxDescent ?? fontDescent;
-
-        // Compute selection position with proper alignment
-        let selectionY: number;
-        let selectionHeight: number;
-
-        if (char === ' ') {
-          // Space key: inherit height from the previous character for visual consistency
-          selectionY = prevSelectionY;
-          selectionHeight = prevSelectionHeight;
-        } else {
-          selectionY = currentLineY + verticalCenteringOffset - actualBoundingBoxAscent + randomData.baseline;
-          selectionHeight = actualBoundingBoxAscent + actualBoundingBoxDescent;
-          prevSelectionY = selectionY;
-          prevSelectionHeight = selectionHeight;
-        }
-        const selectionX = prevEndX; // Start from end of previous char to absorb spacing gap
-        const selectionWidth = currentX + charWidth - prevEndX; // Width includes the spacing gap
-
-        positions.push({
-          x: currentX,
-          y: currentLineY,
-          width: charWidth,
-          height: pageLineHeightPx,
-          lineIndex: lineIdx,
-          charIndex: charIdx,
-          selectionY,
-          selectionHeight,
-          selectionX,
-          selectionWidth,
-        });
-
-        currentX += charWidth;
-        prevEndX = currentX; // Update end position for next character
-      }
-
-      if (lines[lineIdx].hasNewline) {
-        positions.push({
-          x: currentX,
-          y: currentLineY,
-          width: 0,
-          height: pageLineHeightPx,
-          lineIndex: lineIdx,
-          charIndex: lineText.length,
-          selectionY: currentLineY + halfLeading,
-          selectionHeight: Math.min(pageLineHeightPx, pageSettings.fontSize),
-          selectionX: currentX,
-          selectionWidth: 0,
-        });
-      }
-
-      currentLineY += pageLineHeightPx;
+      textFieldPositions.set(
+        tf.id,
+        buildCharacterPositionsForLines({
+          ctx,
+          lines: tfLines,
+          startX: tf.x,
+          startY: tf.y,
+          verticalCenteringOffset,
+          pageLineHeightPx,
+          pageSettings,
+          settings,
+          fontAscent,
+          fontDescent,
+          ensureCaretAnchor: true,
+        }),
+      );
     }
 
-    return positions;
+    return { mainPositions, textFieldPositions };
   },
 
   /**
