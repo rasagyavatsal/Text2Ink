@@ -199,21 +199,53 @@ export const UnifiedPagePainter = {
 
     ctx.font = `${pageSettings.fontSize}px ${fontFamily}`;
 
+    // Measure font metrics once for fallback
+    const sampleMetrics = ctx.measureText('Ajpqy');
+    const fontAscent = sampleMetrics.fontBoundingBoxAscent
+      ?? sampleMetrics.actualBoundingBoxAscent
+      ?? (pageSettings.fontSize * 0.85);
+    const fontDescent = sampleMetrics.fontBoundingBoxDescent
+      ?? sampleMetrics.actualBoundingBoxDescent
+      ?? (pageSettings.fontSize * 0.15);
+
+    // Compute vertical centering offset (matches _drawTextLine logic)
+    const halfLeading = (pageLineHeightPx - pageSettings.fontSize) / 2;
+    const verticalCenteringOffset = halfLeading + fontAscent;
+
     const positions: CharacterPosition[] = [];
-    const textTopOffset = Math.max(0, (pageLineHeightPx - pageSettings.fontSize) / 2);
     let currentLineY = pageSettings.marginTop + pageLineOffset;
 
     for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
       const lineText = lines[lineIdx].text;
       const lineIndex = lines[lineIdx].lineIndex;
       let currentX = ruledTextLeft;
+      let prevEndX = currentX; // Track end of previous character for contiguous rects
 
       for (let charIdx = 0; charIdx < lineText.length; charIdx++) {
         const char = lineText[charIdx];
         const randomData = calculateRandomStyle(charIdx, lineIndex, settings.randomness);
-        currentX += randomData.spacing;
+        const spacingGap = randomData.spacing;
+        currentX += spacingGap;
 
-        const charWidth = ctx.measureText(char).width;
+        const metrics = ctx.measureText(char);
+        const charWidth = metrics.width;
+
+        // Measure actual bounding box for tight ink metrics
+        let actualBoundingBoxAscent = metrics.actualBoundingBoxAscent ?? fontAscent;
+        let actualBoundingBoxDescent = metrics.actualBoundingBoxDescent ?? fontDescent;
+
+        // For spaces, use font bounding box as fallback
+        if (char === ' ') {
+          actualBoundingBoxAscent = fontAscent;
+          actualBoundingBoxDescent = fontDescent;
+        }
+
+        // Compute selection position with proper alignment
+        const selectionY = currentLineY + verticalCenteringOffset - actualBoundingBoxAscent + randomData.baseline;
+        const selectionHeight = actualBoundingBoxAscent + actualBoundingBoxDescent;
+        const selectionX = prevEndX; // Start from end of previous char to absorb spacing gap
+        const selectionWidth = currentX + charWidth - prevEndX; // Width includes the spacing gap
+
         positions.push({
           x: currentX,
           y: currentLineY,
@@ -221,11 +253,14 @@ export const UnifiedPagePainter = {
           height: pageLineHeightPx,
           lineIndex: lineIdx,
           charIndex: charIdx,
-          selectionY: currentLineY + textTopOffset,
-          selectionHeight: Math.min(pageLineHeightPx, pageSettings.fontSize),
+          selectionY,
+          selectionHeight,
+          selectionX,
+          selectionWidth,
         });
 
         currentX += charWidth;
+        prevEndX = currentX; // Update end position for next character
       }
 
       if (lines[lineIdx].hasNewline) {
@@ -236,8 +271,10 @@ export const UnifiedPagePainter = {
           height: pageLineHeightPx,
           lineIndex: lineIdx,
           charIndex: lineText.length,
-          selectionY: currentLineY + textTopOffset,
+          selectionY: currentLineY + halfLeading,
           selectionHeight: Math.min(pageLineHeightPx, pageSettings.fontSize),
+          selectionX: currentX,
+          selectionWidth: 0,
         });
       }
 
@@ -304,33 +341,17 @@ export const UnifiedPagePainter = {
     ctx.fillStyle = `${inkColor}33`; // Semi-transparent
     ctx.globalAlpha = 1;
 
-    let runStart = Math.max(0, selStart);
-    while (runStart < selEnd && runStart < charPositions.length) {
-      const startPos = charPositions[runStart];
-      let runEnd = runStart + 1;
+    // Draw per-character rects using the new selection dimensions
+    for (let i = Math.max(0, selStart); i < Math.min(selEnd, charPositions.length); i++) {
+      const pos = charPositions[i];
+      const rectX = pos.selectionX ?? pos.x;
+      const rectY = pos.selectionY ?? pos.y;
+      const rectWidth = pos.selectionWidth ?? pos.width;
+      const rectHeight = pos.selectionHeight ?? pos.height;
 
-      while (
-        runEnd < selEnd &&
-        runEnd < charPositions.length &&
-        charPositions[runEnd].lineIndex === startPos.lineIndex
-      ) {
-        runEnd += 1;
+      if (rectWidth > 0 && rectHeight > 0) {
+        ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
       }
-
-      const lastPos = charPositions[runEnd - 1];
-      const runX = startPos.x;
-      const runY = startPos.selectionY ?? startPos.y;
-      const runWidth = Math.max(0, (lastPos.x + lastPos.width) - runX);
-      const runHeight = Math.max(
-        startPos.selectionHeight ?? startPos.height,
-        lastPos.selectionHeight ?? lastPos.height,
-      );
-
-      if (runWidth > 0) {
-        ctx.fillRect(runX, runY, runWidth, runHeight);
-      }
-
-      runStart = runEnd;
     }
 
     ctx.restore();
@@ -346,4 +367,6 @@ export interface CharacterPosition {
   charIndex: number;
   selectionY?: number;
   selectionHeight?: number;
+  selectionX?: number;
+  selectionWidth?: number;
 }

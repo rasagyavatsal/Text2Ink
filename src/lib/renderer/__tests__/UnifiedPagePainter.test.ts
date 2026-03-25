@@ -446,28 +446,103 @@ describe('UnifiedPagePainter', () => {
       expect(ctx.fillRect).not.toHaveBeenCalled();
     });
 
-    it('aligns the selection highlight with the ink body instead of the top of the line box', () => {
-      const ctx = createMockCtx();
-      const settings = {
-        ...DEFAULT_SETTINGS,
-        randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 },
-      };
-      const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-      const positions = UnifiedPagePainter.computeCharacterPositions({
-        ctx,
-        lines: [{ text: 'A', lineIndex: 0, hasNewline: false }],
-        pageSettings,
-        settings,
-        fontFamily: 'Caveat',
-      });
+     it('aligns the selection highlight with the ink body instead of the top of the line box', () => {
+       const ctx = createMockCtx();
+       const settings = {
+         ...DEFAULT_SETTINGS,
+         randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 },
+       };
+       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
+       const positions = UnifiedPagePainter.computeCharacterPositions({
+         ctx,
+         lines: [{ text: 'A', lineIndex: 0, hasNewline: false }],
+         pageSettings,
+         settings,
+         fontFamily: 'Caveat',
+       });
 
-      UnifiedPagePainter.paintSelectionOverlay(ctx, positions, 0, 1, '#1a365d');
+       UnifiedPagePainter.paintSelectionOverlay(ctx, positions, 0, 1, '#1a365d');
 
-      const [x, y, width, height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0];
-      expect(x).toBe(pageSettings.marginLeft);
-      expect(y).toBeCloseTo(pageSettings.marginTop + 9.6, 1);
-      expect(width).toBe(10);
-      expect(height).toBeCloseTo(24, 1);
-    });
-  });
-});
+       const [x, y, width, height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0];
+       expect(x).toBe(pageSettings.marginLeft);
+       // halfLeading = (43.2 - 24) / 2 = 9.6
+       // fontAscent = 20, actualBoundingBoxAscent = 18
+       // selectionY = marginTop + 9.6 + 20 - 18 = marginTop + 11.6
+       expect(y).toBeCloseTo(pageSettings.marginTop + 11.6, 1);
+       expect(width).toBe(10);
+       // selectionHeight = 18 + 4 = 22
+       expect(height).toBeCloseTo(22, 1);
+     });
+
+     it('computes selectionX that absorbs preceding spacing gap', () => {
+       const ctx = createMockCtx();
+       const settings = {
+         ...DEFAULT_SETTINGS,
+         randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 },
+       };
+       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
+       const positions = UnifiedPagePainter.computeCharacterPositions({
+         ctx,
+         lines: [{ text: 'AB', lineIndex: 0, hasNewline: false }],
+         pageSettings,
+         settings,
+         fontFamily: 'Caveat',
+       });
+
+       // First character should have selectionX = marginLeft
+       expect(positions[0].selectionX).toBe(pageSettings.marginLeft);
+       // Second character should have selectionX = end of first char (contiguous)
+       expect(positions[1].selectionX).toBe(positions[0].selectionX + positions[0].selectionWidth!);
+     });
+
+     it('computes selectionWidth for contiguous highlight rects', () => {
+       const ctx = createMockCtx();
+       const settings = {
+         ...DEFAULT_SETTINGS,
+         randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 },
+       };
+       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
+       const positions = UnifiedPagePainter.computeCharacterPositions({
+         ctx,
+         lines: [{ text: 'A', lineIndex: 0, hasNewline: false }],
+         pageSettings,
+         settings,
+         fontFamily: 'Caveat',
+       });
+
+       // selectionWidth should equal the character width
+       expect(positions[0].selectionWidth).toBe(10);
+     });
+
+     it('aligns selection highlight correctly at low line spacing', () => {
+       const ctx = createMockCtx();
+       const settings = {
+         ...DEFAULT_SETTINGS,
+         randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 },
+         customBackgroundImage: 'data:image/png;base64,abc', // Enable customLineSpacing
+       };
+       const pageSettings = {
+         ...defaultPageSettingsFromHandwritingSettings(settings),
+         customLineSpacing: 24, // Same as fontSize, minimal line spacing
+         fontSize: 24,
+       };
+       const positions = UnifiedPagePainter.computeCharacterPositions({
+         ctx,
+         lines: [{ text: 'A', lineIndex: 0, hasNewline: false }],
+         pageSettings,
+         settings,
+         fontFamily: 'Caveat',
+       });
+
+       UnifiedPagePainter.paintSelectionOverlay(ctx, positions, 0, 1, '#1a365d');
+
+       const [x, y, width, height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0];
+       // At low line spacing, the selection should still align with the ink body
+       // halfLeading = (24 - 24) / 2 = 0
+       // fontAscent = 20, actualBoundingBoxAscent = 18
+       // selectionY = marginTop + 0 + (20 - 18) + 0 = marginTop + 2
+       expect(y).toBeCloseTo(pageSettings.marginTop + 2, 1);
+       expect(height).toBeCloseTo(22, 1); // 18 + 4
+     });
+   });
+ });
