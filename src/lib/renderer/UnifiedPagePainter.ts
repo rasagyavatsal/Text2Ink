@@ -200,6 +200,7 @@ export const UnifiedPagePainter = {
     ctx.font = `${pageSettings.fontSize}px ${fontFamily}`;
 
     const positions: CharacterPosition[] = [];
+    const textTopOffset = Math.max(0, (pageLineHeightPx - pageSettings.fontSize) / 2);
     let currentLineY = pageSettings.marginTop + pageLineOffset;
 
     for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
@@ -220,6 +221,8 @@ export const UnifiedPagePainter = {
           height: pageLineHeightPx,
           lineIndex: lineIdx,
           charIndex: charIdx,
+          selectionY: currentLineY + textTopOffset,
+          selectionHeight: Math.min(pageLineHeightPx, pageSettings.fontSize),
         });
 
         currentX += charWidth;
@@ -233,6 +236,8 @@ export const UnifiedPagePainter = {
           height: pageLineHeightPx,
           lineIndex: lineIdx,
           charIndex: lineText.length,
+          selectionY: currentLineY + textTopOffset,
+          selectionHeight: Math.min(pageLineHeightPx, pageSettings.fontSize),
         });
       }
 
@@ -299,9 +304,33 @@ export const UnifiedPagePainter = {
     ctx.fillStyle = `${inkColor}33`; // Semi-transparent
     ctx.globalAlpha = 1;
 
-    for (let i = selStart; i < selEnd && i < charPositions.length; i++) {
-      const pos = charPositions[i];
-      ctx.fillRect(pos.x, pos.y, pos.width, pos.height);
+    let runStart = Math.max(0, selStart);
+    while (runStart < selEnd && runStart < charPositions.length) {
+      const startPos = charPositions[runStart];
+      let runEnd = runStart + 1;
+
+      while (
+        runEnd < selEnd &&
+        runEnd < charPositions.length &&
+        charPositions[runEnd].lineIndex === startPos.lineIndex
+      ) {
+        runEnd += 1;
+      }
+
+      const lastPos = charPositions[runEnd - 1];
+      const runX = startPos.x;
+      const runY = startPos.selectionY ?? startPos.y;
+      const runWidth = Math.max(0, (lastPos.x + lastPos.width) - runX);
+      const runHeight = Math.max(
+        startPos.selectionHeight ?? startPos.height,
+        lastPos.selectionHeight ?? lastPos.height,
+      );
+
+      if (runWidth > 0) {
+        ctx.fillRect(runX, runY, runWidth, runHeight);
+      }
+
+      runStart = runEnd;
     }
 
     ctx.restore();
@@ -315,4 +344,6 @@ export interface CharacterPosition {
   height: number;
   lineIndex: number;
   charIndex: number;
+  selectionY?: number;
+  selectionHeight?: number;
 }

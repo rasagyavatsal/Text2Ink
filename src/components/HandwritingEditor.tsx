@@ -211,12 +211,15 @@ export default function HandwritingEditor({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0, pageRect: null as DOMRect | null });
   const [isDraggingMarginLine, setIsDraggingMarginLine] = useState(false);
   const marginLineDragRef = useRef({ pageIndex: 0, pageRect: null as DOMRect | null });
-  const selectionDragRef = useRef<{ active: boolean; anchor: number; target: 'write' | 'textfield'; textFieldId: string | null }>({
+  const selectionDragRef = useRef<{ active: boolean; moved: boolean; anchor: number; target: 'write' | 'textfield'; textFieldId: string | null }>({
     active: false,
+    moved: false,
     anchor: 0,
     target: 'write',
     textFieldId: null,
   });
+  const justDidCanvasDragRef = useRef(false);
+  const justDidTextFieldDragRef = useRef(false);
 
   const fontClass = useMemo(() => {
     if (settings.fontFamily === 'custom' && !settings.customFont) {
@@ -703,6 +706,7 @@ export default function HandwritingEditor({
       const newPosition = isLeftHalf ? globalCharIndex : globalCharIndex + 1;
       selectionDragRef.current = {
         active: true,
+        moved: false,
         anchor: newPosition,
         target: 'write',
         textFieldId: null,
@@ -718,6 +722,7 @@ export default function HandwritingEditor({
       if (selectionDragRef.current.target !== 'write') return;
       e.preventDefault();
       e.stopPropagation();
+      selectionDragRef.current.moved = true;
       const nextPosition = isLeftHalf ? globalCharIndex : globalCharIndex + 1;
       updateVisibleSelection(selectionDragRef.current.anchor, nextPosition);
     },
@@ -744,6 +749,7 @@ export default function HandwritingEditor({
       const newPosition = isLeftHalf ? globalCharIndex : globalCharIndex + 1;
       selectionDragRef.current = {
         active: true,
+        moved: false,
         anchor: newPosition,
         target: 'textfield',
         textFieldId: id,
@@ -760,6 +766,7 @@ export default function HandwritingEditor({
       if (selectionDragRef.current.textFieldId !== id) return;
       e.preventDefault();
       e.stopPropagation();
+      selectionDragRef.current.moved = true;
       const nextPosition = isLeftHalf ? globalCharIndex : globalCharIndex + 1;
       updateTextFieldVisibleSelection(id, selectionDragRef.current.anchor, nextPosition);
     },
@@ -767,7 +774,14 @@ export default function HandwritingEditor({
   );
 
   const handleSelectionEnd = useCallback(() => {
+    if (selectionDragRef.current.active && selectionDragRef.current.target === 'write' && selectionDragRef.current.moved) {
+      justDidCanvasDragRef.current = true;
+    }
+    if (selectionDragRef.current.active && selectionDragRef.current.target === 'textfield' && selectionDragRef.current.moved) {
+      justDidTextFieldDragRef.current = true;
+    }
     selectionDragRef.current.active = false;
+    selectionDragRef.current.moved = false;
     selectionDragRef.current.textFieldId = null;
   }, []);
 
@@ -948,8 +962,11 @@ export default function HandwritingEditor({
                 handleTextFieldCharMouseMove(e, textFieldId, globalCharIndex, handlePosition(e));
               }}
               onClick={(e) => {
-                handleTextFieldCharMouseDown(e, textFieldId, globalCharIndex, handlePosition(e));
-                handleSelectionEnd();
+                e.stopPropagation();
+                if (justDidTextFieldDragRef.current) {
+                  justDidTextFieldDragRef.current = false;
+                  return;
+                }
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -1003,8 +1020,11 @@ export default function HandwritingEditor({
               handleTextFieldCharMouseMove(e, textFieldId, globalCharIndex, handlePosition(e));
             }}
             onClick={(e) => {
-              handleTextFieldCharMouseDown(e, textFieldId, globalCharIndex, handlePosition(e));
-              handleSelectionEnd();
+              e.stopPropagation();
+              if (justDidTextFieldDragRef.current) {
+                justDidTextFieldDragRef.current = false;
+                return;
+              }
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
@@ -1145,6 +1165,10 @@ export default function HandwritingEditor({
       } else {
         const textarea = textareaRef.current;
         textarea?.focus();
+        if (justDidCanvasDragRef.current) {
+          justDidCanvasDragRef.current = false;
+          return;
+        }
         if (textarea) {
           syncSelectionFromTextarea(textarea);
         }
@@ -1279,6 +1303,62 @@ export default function HandwritingEditor({
     [currentPageLines, currentPageStartOffset]
   );
 
+  const currentPageEndOffset = pageStartOffsets[currentPageIndex + 1] ?? text.length;
+
+  const setCollapsedSelection = useCallback((position: number) => {
+    setCursorPosition(position);
+    setSelectionRange({ start: position, end: position });
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+      textareaRef.current.setSelectionRange(position, position);
+    }
+  }, []);
+
+  const handleTextareaKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+      e.preventDefault();
+      updateVisibleSelection(currentPageStartOffset, currentPageEndOffset);
+    }
+  }, [currentPageEndOffset, currentPageStartOffset, updateVisibleSelection]);
+
+  const findWordSelectionRange = useCallback((globalCharIndex: number): { start: number; end: number } | null => {
+    if (currentPageLines.length === 0 || currentPageStartOffset >= currentPageEndOffset) return null;
+
+    const pageStart = currentPageStartOffset;
+    const pageEnd = currentPageEndOffset;
+    const pageText = text.slice(pageStart, pageEnd);
+    if (pageText.length === 0) return null;
+
+    const localIndex = Math.max(0, Math.min(globalCharIndex - pageStart, pageText.length - 1));
+    if (/\s/.test(pageText[localIndex] ?? '')) return null;
+
+    let start = localIndex;
+    while (start > 0 && !/\s/.test(pageText[start - 1] ?? '')) start -= 1;
+
+    let end = localIndex + 1;
+    while (end < pageText.length && !/\s/.test(pageText[end] ?? '')) end += 1;
+
+    return { start: pageStart + start, end: pageStart + end };
+  }, [currentPageEndOffset, currentPageLines.length, currentPageStartOffset, text]);
+
+  const findLineSelectionRange = useCallback((globalCharIndex: number): { start: number; end: number } | null => {
+    if (currentPageLines.length === 0) return null;
+
+    for (let i = 0; i < currentPageLines.length; i++) {
+      const line = currentPageLines[i];
+      const lineStart = currentPageLineStarts[i] ?? currentPageStartOffset;
+      const lineEnd = lineStart + line.text.length + (line.hasNewline ? 1 : 0);
+      if (globalCharIndex >= lineStart && globalCharIndex <= lineEnd) {
+        return { start: lineStart, end: lineStart + line.text.length };
+      }
+    }
+
+    const lastLine = currentPageLines[currentPageLines.length - 1];
+    if (!lastLine) return null;
+    const lastStart = currentPageLineStarts[currentPageLineStarts.length - 1] ?? currentPageStartOffset;
+    return { start: lastStart, end: lastStart + lastLine.text.length };
+  }, [currentPageLineStarts, currentPageLines, currentPageStartOffset]);
+
   const pagePaperLines = useMemo(
     () => renderPaperLines(currentPageIndex),
     [currentPageIndex, renderPaperLines]
@@ -1333,37 +1413,71 @@ export default function HandwritingEditor({
   );
 
   const handleCanvasCharClick = useCallback(
-    (globalCharIndex: number, _isLeftHalf: boolean) => {
-      setCursorPosition(globalCharIndex);
-      setSelectionRange({ start: globalCharIndex, end: globalCharIndex });
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-        textareaRef.current.setSelectionRange(globalCharIndex, globalCharIndex);
+    (globalCharIndex: number, isLeftHalf: boolean) => {
+      if (justDidCanvasDragRef.current) {
+        justDidCanvasDragRef.current = false;
+        return;
       }
+
+      const newPosition = isLeftHalf ? globalCharIndex : globalCharIndex + 1;
+      setCollapsedSelection(newPosition);
     },
-    []
+    [setCollapsedSelection]
   );
 
   const handleCanvasCharMouseDown = useCallback(
-    (globalCharIndex: number, _isLeftHalf: boolean) => {
+    (globalCharIndex: number, isLeftHalf: boolean) => {
+      const anchor = isLeftHalf ? globalCharIndex : globalCharIndex + 1;
       selectionDragRef.current = {
         active: true,
-        anchor: globalCharIndex,
+        moved: false,
+        anchor,
         target: 'write',
         textFieldId: null,
       };
-      updateVisibleSelection(globalCharIndex, globalCharIndex);
+      justDidCanvasDragRef.current = false;
+      updateVisibleSelection(anchor, anchor);
     },
     [updateVisibleSelection]
   );
 
   const handleCanvasCharMouseMove = useCallback(
-    (globalCharIndex: number, _isLeftHalf: boolean) => {
+    (globalCharIndex: number, isLeftHalf: boolean) => {
       if (!selectionDragRef.current.active) return;
       if (selectionDragRef.current.target !== 'write') return;
-      updateVisibleSelection(selectionDragRef.current.anchor, globalCharIndex);
+      selectionDragRef.current.moved = true;
+      justDidCanvasDragRef.current = true;
+      const nextPosition = isLeftHalf ? globalCharIndex : globalCharIndex + 1;
+      updateVisibleSelection(selectionDragRef.current.anchor, nextPosition);
     },
     [updateVisibleSelection]
+  );
+
+  const handleCanvasCharShiftClick = useCallback(
+    (globalCharIndex: number, isLeftHalf: boolean) => {
+      const newPosition = isLeftHalf ? globalCharIndex : globalCharIndex + 1;
+      const anchor = cursorPosition ?? newPosition;
+      updateVisibleSelection(anchor, newPosition);
+    },
+    [cursorPosition, updateVisibleSelection]
+  );
+
+  const handleCanvasCharDoubleClick = useCallback(
+    (globalCharIndex: number) => {
+      const range = findWordSelectionRange(globalCharIndex);
+      if (!range) return;
+      updateVisibleSelection(range.start, range.end);
+    },
+    [findWordSelectionRange, updateVisibleSelection]
+  );
+
+  const handleCanvasCharTripleClick = useCallback(
+    (globalCharIndex: number) => {
+      const range = findLineSelectionRange(globalCharIndex);
+      if (!range) return;
+      updateVisibleSelection(range.start, range.end);
+    },
+    [findLineSelectionRange, updateVisibleSelection]
   );
 
   const renderPage = useCallback(
@@ -1427,6 +1541,9 @@ export default function HandwritingEditor({
             pageStartOffset={currentStartOffset}
             isFocused={isFocused}
             onCharClick={isVisiblePreview ? handleCanvasCharClick : undefined}
+            onCharShiftClick={isVisiblePreview ? handleCanvasCharShiftClick : undefined}
+            onCharDoubleClick={isVisiblePreview ? handleCanvasCharDoubleClick : undefined}
+            onCharTripleClick={isVisiblePreview ? handleCanvasCharTripleClick : undefined}
             onCharMouseDown={isVisiblePreview ? handleCanvasCharMouseDown : undefined}
             onCharMouseMove={isVisiblePreview ? handleCanvasCharMouseMove : undefined}
             onMouseUp={isVisiblePreview ? handleSelectionEnd : undefined}
@@ -1634,7 +1751,7 @@ export default function HandwritingEditor({
                     onBlur={() => {
                       setFocusedTextFieldId((prev) => (prev === segment.id ? null : prev));
                     }}
-                    className="text-field-input-overlay absolute inset-0 resize-none border-none bg-transparent text-transparent outline-none pointer-events-none selection:bg-transparent selection:text-transparent"
+                    className="text-field-input-overlay absolute inset-0 resize-none border-none bg-transparent text-transparent outline-none selection:text-transparent"
                     style={{
                       width: segment.width,
                       height: visibleHeight,
@@ -1702,6 +1819,7 @@ export default function HandwritingEditor({
         value={localText}
         onChange={handleTextChange}
         onPaste={handlePaste}
+        onKeyDown={handleTextareaKeyDown}
         onKeyUp={handleKeyUp}
         onClick={handleClick}
         onSelect={handleSelect}

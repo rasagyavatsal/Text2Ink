@@ -445,5 +445,29 @@ describe('UnifiedPagePainter', () => {
 
       expect(ctx.fillRect).not.toHaveBeenCalled();
     });
+
+    it('aligns the selection highlight with the ink body instead of the top of the line box', () => {
+      const ctx = createMockCtx();
+      const settings = {
+        ...DEFAULT_SETTINGS,
+        randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 },
+      };
+      const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
+      const positions = UnifiedPagePainter.computeCharacterPositions({
+        ctx,
+        lines: [{ text: 'A', lineIndex: 0, hasNewline: false }],
+        pageSettings,
+        settings,
+        fontFamily: 'Caveat',
+      });
+
+      UnifiedPagePainter.paintSelectionOverlay(ctx, positions, 0, 1, '#1a365d');
+
+      const [x, y, width, height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(x).toBe(pageSettings.marginLeft);
+      expect(y).toBeCloseTo(pageSettings.marginTop + 9.6, 1);
+      expect(width).toBe(10);
+      expect(height).toBeCloseTo(24, 1);
+    });
   });
 });

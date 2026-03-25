@@ -27,6 +27,12 @@ export interface CanvasPreviewProps {
   onCanvasClick?: (pageX: number, pageY: number) => void;
   /** Called when a character is clicked with the global char index */
   onCharClick?: (globalCharIndex: number, isLeftHalf: boolean) => void;
+  /** Called when shift-click extends a selection */
+  onCharShiftClick?: (globalCharIndex: number, isLeftHalf: boolean) => void;
+  /** Called on double click for word selection */
+  onCharDoubleClick?: (globalCharIndex: number, isLeftHalf: boolean) => void;
+  /** Called on triple click for line selection */
+  onCharTripleClick?: (globalCharIndex: number, isLeftHalf: boolean) => void;
   /** Called when mouse is pressed on a character */
   onCharMouseDown?: (globalCharIndex: number, isLeftHalf: boolean) => void;
   /** Called when mouse moves over a character during selection */
@@ -60,6 +66,9 @@ export default function CanvasPreview({
   isFocused = false,
   onCanvasClick,
   onCharClick,
+  onCharShiftClick,
+  onCharDoubleClick,
+  onCharTripleClick,
   onCharMouseDown,
   onCharMouseMove,
   onMouseUp,
@@ -71,6 +80,8 @@ export default function CanvasPreview({
   const [cursorVisible, setCursorVisible] = useState(true);
   const bgImageRef = useRef<HTMLImageElement | null>(null);
   const bgImageSrcRef = useRef<string | null>(null);
+  const isMouseDownRef = useRef(false);
+  const didDragRef = useRef(false);
 
   // Cursor blink
   useEffect(() => {
@@ -180,6 +191,19 @@ export default function CanvasPreview({
     paint();
   }, [paint]);
 
+  useEffect(() => {
+    const handleWindowMouseUp = (e: MouseEvent) => {
+      if (canvasRef.current && e.target !== canvasRef.current) {
+        didDragRef.current = false;
+      }
+      isMouseDownRef.current = false;
+    };
+    window.addEventListener('mouseup', handleWindowMouseUp);
+    return () => {
+      window.removeEventListener('mouseup', handleWindowMouseUp);
+    };
+  }, []);
+
   /** Find which character was clicked based on page coordinates */
   const findCharAtPoint = useCallback((pageX: number, pageY: number): { index: number; isLeftHalf: boolean } | null => {
     const positions = charPositionsRef.current;
@@ -205,7 +229,7 @@ export default function CanvasPreview({
 
     if (bestIdx === -1) {
       // Fallback: click below all text → position at end
-      return { index: positions.length, isLeftHalf: false };
+      return { index: positions.length, isLeftHalf: true };
     }
 
     const pos = positions[bestIdx];
@@ -223,39 +247,80 @@ export default function CanvasPreview({
   }, [canvasRef, previewScale]);
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (didDragRef.current) {
+      didDragRef.current = false;
+      return;
+    }
+
     const coords = getPageCoords(e);
     if (!coords) return;
 
-    if (onCharClick) {
-      const hit = findCharAtPoint(coords.x, coords.y);
-      if (hit) {
-        onCharClick(pageStartOffset + (hit.isLeftHalf ? hit.index : hit.index + 1), hit.isLeftHalf);
-        return;
-      }
+    const hit = findCharAtPoint(coords.x, coords.y);
+    if (!hit) {
+      onCanvasClick?.(coords.x, coords.y);
+      return;
     }
 
-    onCanvasClick?.(coords.x, coords.y);
-  }, [getPageCoords, onCanvasClick, onCharClick, findCharAtPoint, pageStartOffset]);
+    const globalCharIndex = pageStartOffset + hit.index;
+    if (e.shiftKey) {
+      onCharShiftClick?.(globalCharIndex, hit.isLeftHalf);
+      return;
+    }
+
+    if (e.detail === 3) {
+      onCharTripleClick?.(globalCharIndex, hit.isLeftHalf);
+      return;
+    }
+
+    onCharClick?.(globalCharIndex, hit.isLeftHalf);
+  }, [
+    getPageCoords,
+    onCanvasClick,
+    onCharClick,
+    onCharShiftClick,
+    onCharTripleClick,
+    findCharAtPoint,
+    pageStartOffset,
+  ]);
+
+  const handleDoubleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (didDragRef.current) return;
+    const coords = getPageCoords(e);
+    if (!coords) return;
+    const hit = findCharAtPoint(coords.x, coords.y);
+    if (!hit) return;
+    onCharDoubleClick?.(pageStartOffset + hit.index, hit.isLeftHalf);
+  }, [getPageCoords, onCharDoubleClick, findCharAtPoint, pageStartOffset]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    e.stopPropagation();
+    isMouseDownRef.current = true;
+    didDragRef.current = false;
     if (!onCharMouseDown) return;
     const coords = getPageCoords(e);
     if (!coords) return;
     const hit = findCharAtPoint(coords.x, coords.y);
     if (hit) {
-      onCharMouseDown(pageStartOffset + (hit.isLeftHalf ? hit.index : hit.index + 1), hit.isLeftHalf);
+      onCharMouseDown(pageStartOffset + hit.index, hit.isLeftHalf);
     }
   }, [getPageCoords, onCharMouseDown, findCharAtPoint, pageStartOffset]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!onCharMouseMove) return;
+    if (!isMouseDownRef.current) return;
     const coords = getPageCoords(e);
     if (!coords) return;
     const hit = findCharAtPoint(coords.x, coords.y);
     if (hit) {
-      onCharMouseMove(pageStartOffset + (hit.isLeftHalf ? hit.index : hit.index + 1), hit.isLeftHalf);
+      didDragRef.current = true;
+      onCharMouseMove(pageStartOffset + hit.index, hit.isLeftHalf);
     }
   }, [getPageCoords, onCharMouseMove, findCharAtPoint, pageStartOffset]);
+
+  const handleMouseUp = useCallback(() => {
+    isMouseDownRef.current = false;
+    onMouseUp?.();
+  }, [onMouseUp]);
 
   return (
     <canvas
@@ -263,9 +328,10 @@ export default function CanvasPreview({
       role="img"
       aria-label={`Page ${pageIndex + 1} preview`}
       onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
-      onMouseUp={onMouseUp}
+      onMouseUp={handleMouseUp}
       style={{
         width: PAGE_WIDTH * previewScale,
         height: PAGE_HEIGHT * previewScale,
