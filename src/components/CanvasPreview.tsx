@@ -16,13 +16,22 @@ export interface CanvasPreviewProps {
   fontFamily: string;
   /** Cursor position (global char index) - null if no cursor should be shown */
   cursorPosition?: number | null;
+  /** Text field cursor position (local char index) - null if no text field cursor should be shown */
+  textFieldCursorPosition?: number | null;
   /** Selection range */
   selectionStart?: number;
   selectionEnd?: number;
+  /** Text field selection range */
+  textFieldSelectionStart?: number;
+  textFieldSelectionEnd?: number;
   /** Page start offset for mapping global char index to local */
   pageStartOffset?: number;
   /** Whether the editor is focused */
   isFocused?: boolean;
+  /** Whether a text field is focused */
+  isTextFieldFocused?: boolean;
+  /** Currently focused text field id */
+  focusedTextFieldId?: string | null;
   /** Called when canvas is clicked with (pageX, pageY) in page coordinates */
   onCanvasClick?: (pageX: number, pageY: number) => void;
   /** Called when a character is clicked with the global char index */
@@ -39,6 +48,8 @@ export interface CanvasPreviewProps {
   onCharMouseMove?: (globalCharIndex: number, isLeftHalf: boolean) => void;
   /** Called when mouse is released */
   onMouseUp?: () => void;
+  /** Receives the computed text field character positions after each paint */
+  onTextFieldCharPositionsComputed?: (positions: Map<string, CharacterPosition[]>) => void;
   /** Expose the canvas element ref */
   canvasRef?: React.RefObject<HTMLCanvasElement | null>;
 }
@@ -60,10 +71,15 @@ export default function CanvasPreview({
   previewScale,
   fontFamily,
   cursorPosition = null,
+  textFieldCursorPosition = null,
   selectionStart = 0,
   selectionEnd = 0,
+  textFieldSelectionStart = 0,
+  textFieldSelectionEnd = 0,
   pageStartOffset = 0,
   isFocused = false,
+  isTextFieldFocused = false,
+  focusedTextFieldId = null,
   onCanvasClick,
   onCharClick,
   onCharShiftClick,
@@ -72,6 +88,7 @@ export default function CanvasPreview({
   onCharMouseDown,
   onCharMouseMove,
   onMouseUp,
+  onTextFieldCharPositionsComputed,
   canvasRef: externalRef,
 }: CanvasPreviewProps) {
   const internalRef = useRef<HTMLCanvasElement>(null);
@@ -85,13 +102,15 @@ export default function CanvasPreview({
 
   // Cursor blink
   useEffect(() => {
-    if (!isFocused || cursorPosition === null) return;
+    const hasMainCursor = cursorPosition !== null;
+    const hasTextFieldCursor = textFieldCursorPosition !== null;
+    if ((!isFocused && !isTextFieldFocused) || (!hasMainCursor && !hasTextFieldCursor)) return;
     setCursorVisible(true);
     const interval = setInterval(() => {
       setCursorVisible(v => !v);
     }, 530);
     return () => clearInterval(interval);
-  }, [isFocused, cursorPosition]);
+  }, [isFocused, isTextFieldFocused, cursorPosition, textFieldCursorPosition]);
 
   const paint = useCallback(() => {
     const canvas = canvasRef.current;
@@ -130,14 +149,17 @@ export default function CanvasPreview({
     });
 
     // Compute character positions for interaction
-    const charPositions = UnifiedPagePainter.computeCharacterPositions({
+    const { mainPositions, textFieldPositions } = UnifiedPagePainter.computeCharacterPositions({
       ctx,
       lines,
       pageSettings,
       settings,
+      textFields,
+      pageIndex,
       fontFamily,
     });
-    charPositionsRef.current = charPositions;
+    charPositionsRef.current = mainPositions;
+    onTextFieldCharPositionsComputed?.(textFieldPositions);
 
     // Draw selection overlay
     if (selectionStart !== selectionEnd) {
@@ -145,9 +167,9 @@ export default function CanvasPreview({
       const localSelEnd = selectionEnd - pageStartOffset;
       UnifiedPagePainter.paintSelectionOverlay(
         ctx,
-        charPositions,
+        mainPositions,
         Math.max(0, localSelStart),
-        Math.min(charPositions.length, localSelEnd),
+        Math.min(mainPositions.length, localSelEnd),
         pageSettings.inkColor,
       );
     }
@@ -155,16 +177,42 @@ export default function CanvasPreview({
     // Draw cursor overlay
     if (isFocused && cursorPosition !== null && cursorVisible) {
       const localCursor = cursorPosition - pageStartOffset;
-      if (localCursor >= 0 && localCursor <= charPositions.length) {
-        UnifiedPagePainter.paintCursorOverlay(ctx, charPositions, localCursor, pageSettings.inkColor);
+      if (localCursor >= 0 && localCursor <= mainPositions.length) {
+        UnifiedPagePainter.paintCursorOverlay(ctx, mainPositions, localCursor, pageSettings.inkColor);
+      }
+    }
+
+    if (isTextFieldFocused && focusedTextFieldId) {
+      const focusedTextField = textFields.find((tf) => tf.id === focusedTextFieldId);
+      const focusedPositions = textFieldPositions.get(focusedTextFieldId);
+      const focusedInkColor = focusedTextField?.inkColor || pageSettings.inkColor;
+
+      if (focusedPositions && textFieldSelectionStart !== textFieldSelectionEnd) {
+        UnifiedPagePainter.paintSelectionOverlay(
+          ctx,
+          focusedPositions,
+          Math.max(0, textFieldSelectionStart),
+          Math.min(focusedPositions.length, textFieldSelectionEnd),
+          focusedInkColor,
+        );
+      }
+
+      if (cursorVisible && focusedPositions && textFieldCursorPosition !== null && textFieldCursorPosition >= 0) {
+        UnifiedPagePainter.paintCursorOverlay(
+          ctx,
+          focusedPositions,
+          textFieldCursorPosition,
+          focusedInkColor,
+        );
       }
     }
 
     ctx.restore();
   }, [
     lines, pageSettings, settings, textFields, pageIndex, previewScale,
-    fontFamily, cursorPosition, selectionStart, selectionEnd,
-    pageStartOffset, isFocused, cursorVisible, canvasRef,
+    fontFamily, cursorPosition, textFieldCursorPosition, selectionStart, selectionEnd,
+    textFieldSelectionStart, textFieldSelectionEnd, pageStartOffset, isFocused, isTextFieldFocused,
+    focusedTextFieldId, cursorVisible, canvasRef, onTextFieldCharPositionsComputed,
   ]);
 
   // Load background image when it changes

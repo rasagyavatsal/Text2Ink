@@ -4,9 +4,11 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import CanvasPreview from '../CanvasPreview';
 import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '@/lib/types';
 
-const { paintPage, computeCharacterPositions } = vi.hoisted(() => ({
+const { paintPage, computeCharacterPositions, paintCursorOverlay, paintSelectionOverlay } = vi.hoisted(() => ({
   paintPage: vi.fn(),
   computeCharacterPositions: vi.fn(),
+  paintCursorOverlay: vi.fn(),
+  paintSelectionOverlay: vi.fn(),
 }));
 const getBoundingClientRectSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect');
 
@@ -14,8 +16,8 @@ vi.mock('@/lib/renderer/UnifiedPagePainter', () => ({
   UnifiedPagePainter: {
     paintPage,
     computeCharacterPositions,
-    paintCursorOverlay: vi.fn(),
-    paintSelectionOverlay: vi.fn(),
+    paintCursorOverlay,
+    paintSelectionOverlay,
   },
 }));
 
@@ -32,10 +34,13 @@ const defaultProps = {
 describe('CanvasPreview', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    computeCharacterPositions.mockReturnValue([
-      { x: 0, y: 0, width: 10, height: 20, lineIndex: 0, charIndex: 0 },
-      { x: 10, y: 0, width: 10, height: 20, lineIndex: 0, charIndex: 1 },
-    ]);
+    computeCharacterPositions.mockReturnValue({
+      mainPositions: [
+        { x: 0, y: 0, width: 10, height: 20, lineIndex: 0, charIndex: 0 },
+        { x: 10, y: 0, width: 10, height: 20, lineIndex: 0, charIndex: 1 },
+      ],
+      textFieldPositions: new Map(),
+    });
     getBoundingClientRectSpy.mockReturnValue({
       left: 0,
       top: 0,
@@ -132,5 +137,51 @@ describe('CanvasPreview', () => {
     fireEvent.click(canvas, { clientX: 4, clientY: 5 });
 
     expect(onCharClick).toHaveBeenCalledWith(0, true);
+  });
+
+  it('paints the focused text field cursor and selection using computed character positions', () => {
+    const textFieldPositions = new Map([
+      [
+        'tf1',
+        [
+          { x: 100, y: 120, width: 10, height: 20, lineIndex: 10000, charIndex: 0, selectionX: 100, selectionY: 122, selectionWidth: 10, selectionHeight: 18 },
+          { x: 110, y: 120, width: 10, height: 20, lineIndex: 10000, charIndex: 1, selectionX: 110, selectionY: 122, selectionWidth: 10, selectionHeight: 18 },
+        ],
+      ],
+    ]);
+
+    computeCharacterPositions.mockReturnValue({
+      mainPositions: [
+        { x: 0, y: 0, width: 10, height: 20, lineIndex: 0, charIndex: 0 },
+      ],
+      textFieldPositions,
+    });
+
+    render(
+      <CanvasPreview
+        {...defaultProps}
+        textFields={[{ id: 'tf1', x: 100, y: 120, text: 'ab', pageIndex: 0 }]}
+        focusedTextFieldId="tf1"
+        textFieldSelectionStart={0}
+        textFieldSelectionEnd={2}
+        textFieldCursorPosition={2}
+        isTextFieldFocused
+      />
+    );
+
+    expect(computeCharacterPositions).toHaveBeenCalled();
+    expect(paintSelectionOverlay).toHaveBeenCalledWith(
+      expect.anything(),
+      textFieldPositions.get('tf1'),
+      0,
+      2,
+      expect.any(String),
+    );
+    expect(paintCursorOverlay).toHaveBeenCalledWith(
+      expect.anything(),
+      textFieldPositions.get('tf1'),
+      2,
+      expect.any(String),
+    );
   });
 });

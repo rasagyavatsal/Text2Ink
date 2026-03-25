@@ -349,9 +349,9 @@ describe('UnifiedPagePainter', () => {
         fontFamily: 'Caveat',
       });
 
-      expect(positions.length).toBe(4); // A, B, newline, C
+      expect(positions.mainPositions.length).toBe(4); // A, B, newline, C
       // Each position should have x, y, width
-      for (const pos of positions) {
+      for (const pos of positions.mainPositions) {
         expect(pos).toHaveProperty('x');
         expect(pos).toHaveProperty('y');
         expect(pos).toHaveProperty('width');
@@ -381,11 +381,11 @@ describe('UnifiedPagePainter', () => {
         fontFamily: 'Caveat',
       });
 
-      expect(positions).toHaveLength(3);
-      expect(positions[0]).toMatchObject({ width: 10, lineIndex: 0, charIndex: 0 });
-      expect(positions[1]).toMatchObject({ width: 0, lineIndex: 0, charIndex: 1 });
-      expect(positions[2]).toMatchObject({ x: pageSettings.marginLeft, lineIndex: 1, charIndex: 0 });
-      expect(positions[2].y).toBe(pageSettings.marginTop + (pageSettings.fontSize * settings.lineHeight));
+      expect(positions.mainPositions).toHaveLength(3);
+      expect(positions.mainPositions[0]).toMatchObject({ width: 10, lineIndex: 0, charIndex: 0 });
+      expect(positions.mainPositions[1]).toMatchObject({ width: 0, lineIndex: 0, charIndex: 1 });
+      expect(positions.mainPositions[2]).toMatchObject({ x: pageSettings.marginLeft, lineIndex: 1, charIndex: 0 });
+      expect(positions.mainPositions[2].y).toBe(pageSettings.marginTop + (pageSettings.fontSize * settings.lineHeight));
     });
 
     it('returns empty array for empty lines', () => {
@@ -401,7 +401,29 @@ describe('UnifiedPagePainter', () => {
         fontFamily: 'Caveat',
       });
 
-      expect(positions).toEqual([]);
+      expect(positions.mainPositions).toEqual([]);
+    });
+
+    it('computes positions for text fields on the active page only', () => {
+      const settings = { ...DEFAULT_SETTINGS, randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 } };
+      const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
+      const ctx = createMockCtx();
+
+      const positions = UnifiedPagePainter.computeCharacterPositions({
+        ctx,
+        pageIndex: 1,
+        lines: [],
+        pageSettings,
+        settings,
+        textFields: [
+          { id: 'tf-a', x: pageSettings.marginLeft, y: pageSettings.marginTop, text: 'AB', pageIndex: 1 },
+          { id: 'tf-b', x: pageSettings.marginLeft, y: pageSettings.marginTop, text: 'CD', pageIndex: 0 },
+        ],
+        fontFamily: 'Caveat',
+      });
+
+      expect(positions.textFieldPositions.get('tf-a')).toHaveLength(2);
+      expect(positions.textFieldPositions.has('tf-b')).toBe(false);
     });
   });
 
@@ -461,7 +483,7 @@ describe('UnifiedPagePainter', () => {
          fontFamily: 'Caveat',
        });
 
-       UnifiedPagePainter.paintSelectionOverlay(ctx, positions, 0, 1, '#1a365d');
+       UnifiedPagePainter.paintSelectionOverlay(ctx, positions.mainPositions, 0, 1, '#1a365d');
 
        const [x, y, width, height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0];
        expect(x).toBe(pageSettings.marginLeft);
@@ -490,9 +512,11 @@ describe('UnifiedPagePainter', () => {
        });
 
        // First character should have selectionX = marginLeft
-       expect(positions[0].selectionX).toBe(pageSettings.marginLeft);
+       expect(positions.mainPositions[0].selectionX).toBe(pageSettings.marginLeft);
        // Second character should have selectionX = end of first char (contiguous)
-       expect(positions[1].selectionX).toBe(positions[0].selectionX + positions[0].selectionWidth!);
+       expect(positions.mainPositions[1].selectionX).toBe(
+         positions.mainPositions[0].selectionX + positions.mainPositions[0].selectionWidth!
+       );
      });
 
      it('computes selectionWidth for contiguous highlight rects', () => {
@@ -511,7 +535,7 @@ describe('UnifiedPagePainter', () => {
        });
 
        // selectionWidth should equal the character width
-       expect(positions[0].selectionWidth).toBe(10);
+       expect(positions.mainPositions[0].selectionWidth).toBe(10);
      });
 
      it('aligns selection highlight correctly at low line spacing', () => {
@@ -534,7 +558,7 @@ describe('UnifiedPagePainter', () => {
          fontFamily: 'Caveat',
        });
 
-       UnifiedPagePainter.paintSelectionOverlay(ctx, positions, 0, 1, '#1a365d');
+       UnifiedPagePainter.paintSelectionOverlay(ctx, positions.mainPositions, 0, 1, '#1a365d');
 
        const [x, y, width, height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0];
        // At low line spacing, the selection should still align with the ink body
