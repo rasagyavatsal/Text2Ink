@@ -220,6 +220,8 @@ export const UnifiedPagePainter = {
       const lineIndex = lines[lineIdx].lineIndex;
       let currentX = ruledTextLeft;
       let prevEndX = currentX; // Track end of previous character for contiguous rects
+      let prevSelectionY = currentLineY + verticalCenteringOffset - fontAscent; // fallback for first char
+      let prevSelectionHeight = fontAscent + fontDescent; // fallback for first char
 
       for (let charIdx = 0; charIdx < lineText.length; charIdx++) {
         const char = lineText[charIdx];
@@ -234,15 +236,20 @@ export const UnifiedPagePainter = {
         let actualBoundingBoxAscent = metrics.actualBoundingBoxAscent ?? fontAscent;
         let actualBoundingBoxDescent = metrics.actualBoundingBoxDescent ?? fontDescent;
 
-        // For spaces, use font bounding box as fallback
-        if (char === ' ') {
-          actualBoundingBoxAscent = fontAscent;
-          actualBoundingBoxDescent = fontDescent;
-        }
-
         // Compute selection position with proper alignment
-        const selectionY = currentLineY + verticalCenteringOffset - actualBoundingBoxAscent + randomData.baseline;
-        const selectionHeight = actualBoundingBoxAscent + actualBoundingBoxDescent;
+        let selectionY: number;
+        let selectionHeight: number;
+
+        if (char === ' ') {
+          // Space key: inherit height from the previous character for visual consistency
+          selectionY = prevSelectionY;
+          selectionHeight = prevSelectionHeight;
+        } else {
+          selectionY = currentLineY + verticalCenteringOffset - actualBoundingBoxAscent + randomData.baseline;
+          selectionHeight = actualBoundingBoxAscent + actualBoundingBoxDescent;
+          prevSelectionY = selectionY;
+          prevSelectionHeight = selectionHeight;
+        }
         const selectionX = prevEndX; // Start from end of previous char to absorb spacing gap
         const selectionWidth = currentX + charWidth - prevEndX; // Width includes the spacing gap
 
