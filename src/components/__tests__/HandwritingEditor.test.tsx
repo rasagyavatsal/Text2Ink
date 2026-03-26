@@ -4,27 +4,11 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import HandwritingEditor from '../HandwritingEditor';
 import { HandwritingSettings, DEFAULT_SETTINGS } from '../../lib/types';
 
-vi.mock('../../lib/canvasRenderer', () => ({
-  renderCanvas: vi.fn(),
-}));
-
-vi.mock('../../lib/renderer/UnifiedPagePainter', () => ({
-  UnifiedPagePainter: {
-    paintPage: vi.fn(),
-    computeCharacterPositions: vi.fn().mockReturnValue([]),
-    paintCursorOverlay: vi.fn(),
-    paintSelectionOverlay: vi.fn(),
-  },
-}));
-
 vi.mock('../CanvasPreview', () => ({
   default: (props: any) => (
     <div data-testid="canvas-preview">
       <div data-testid="preview-lines">{props.lines.length}</div>
       <div data-testid="preview-selection">{`${props.selectionStart}:${props.selectionEnd}`}</div>
-      <div data-testid="preview-textfield-selection">{`${props.textFieldSelectionStart}:${props.textFieldSelectionEnd}`}</div>
-      <div data-testid="preview-textfield-cursor">{String(props.textFieldCursorPosition ?? '')}</div>
-      <div data-testid="preview-textfield-focused">{String(props.focusedTextFieldId ?? '')}</div>
       <button
         type="button"
         data-testid="single-click"
@@ -79,23 +63,6 @@ vi.mock('../CanvasPreview', () => ({
         onMouseUp={(e) => {
           e.stopPropagation();
           props.onMouseUp?.();
-        }}
-      />
-      <button
-        type="button"
-        data-testid="seed-textfield-positions"
-        onClick={() => {
-          props.onTextFieldCharPositionsComputed?.(
-            new Map([
-              [
-                'tf1',
-                [
-                  { x: 100, y: 100, width: 10, height: 20, lineIndex: 10000, charIndex: 0, selectionX: 100, selectionY: 102, selectionWidth: 10, selectionHeight: 18 },
-                  { x: 110, y: 100, width: 10, height: 20, lineIndex: 10000, charIndex: 1, selectionX: 110, selectionY: 102, selectionWidth: 10, selectionHeight: 18 },
-                ],
-              ],
-            ])
-          );
         }}
       />
     </div>
@@ -162,10 +129,7 @@ describe('HandwritingEditor selection behavior', () => {
     vi.clearAllMocks();
   });
 
-  function renderEditor(
-    text = 'hello world\nSecond line',
-    textFields = [] as Array<{ id: string; x: number; y: number; text: string; pageIndex: number }>
-  ) {
+  function renderEditor(text = 'hello world\nSecond line') {
     render(
       <HandwritingEditor
         text={text}
@@ -175,10 +139,6 @@ describe('HandwritingEditor selection behavior', () => {
         pageSettingsByPage={[]}
         previewScale={1}
         onPreviewScaleChange={vi.fn()}
-        editorMode="write"
-        onEditorModeChange={vi.fn()}
-        textFields={textFields}
-        onTextFieldsChange={vi.fn()}
         currentPageIndex={0}
         onCurrentPageChange={vi.fn()}
         onTotalPagesChange={vi.fn()}
@@ -241,34 +201,5 @@ describe('HandwritingEditor selection behavior', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Page 1' }));
 
     expect(screen.getByTestId('preview-selection')).toHaveTextContent('3:5');
-  });
-
-  it('allows the text field overlay textarea to receive pointer events for selection', async () => {
-    renderEditor('main text', [{ id: 'tf1', x: 100, y: 100, text: 'ab', pageIndex: 0 }]);
-    await waitFor(() => expect(screen.getByLabelText('Text field tf1')).toBeInTheDocument());
-
-    const textarea = screen.getAllByRole('textbox').find(
-      (el) => (el as HTMLTextAreaElement).className.includes('text-field-input-overlay')
-    ) as HTMLTextAreaElement;
-    expect(textarea).toBeDefined();
-    expect(textarea.className).not.toContain('pointer-events-none');
-    expect(textarea.className).not.toContain('selection:bg-transparent');
-  });
-
-  it('focuses a text field and updates the canvas cursor state', async () => {
-    renderEditor('main text', [{ id: 'tf1', x: 100, y: 100, text: 'ab', pageIndex: 0 }]);
-    await waitFor(() => expect(screen.getByLabelText('Text field tf1')).toBeInTheDocument());
-
-    fireEvent.click(screen.getByTestId('seed-textfield-positions'));
-
-    const textarea = screen.getAllByRole('textbox').find(
-      (el) => (el as HTMLTextAreaElement).className.includes('text-field-input-overlay')
-    ) as HTMLTextAreaElement;
-    expect(textarea).toBeDefined();
-
-    fireEvent.mouseDown(textarea, { clientX: 102, clientY: 102 });
-    expect(screen.getByTestId('preview-textfield-focused')).toHaveTextContent('tf1');
-    expect(screen.getByTestId('preview-textfield-selection')).toHaveTextContent('0:0');
-    expect(screen.getByTestId('preview-textfield-cursor')).toHaveTextContent('0');
   });
 });

@@ -26,7 +26,6 @@ import {
   HANDWRITING_FONTS,
   PAPER_STYLES,
   PAPER_COLORS,
-  EditorMode,
   LineData,
   FontOption,
 } from '@/lib/types';
@@ -40,7 +39,6 @@ import {
   Wand2, 
   Upload, 
   X, 
-  PenLine, 
   Minus, 
   Plus, 
   ChevronLeft, 
@@ -105,9 +103,6 @@ interface SettingsPanelProps {
   onPageSettingsChange: (pageSettings: PageSettings) => void;
   currentPageIndex: number;
   onApplyToAllPages?: () => void;
-  // New props for sidebar integration
-  editorMode: EditorMode;
-  onEditorModeChange: (mode: EditorMode) => void;
   previewScale: number;
   onPreviewScaleChange: (value: number) => void;
   onCurrentPageChange: (index: number) => void;
@@ -124,8 +119,6 @@ export default function SettingsPanel({
   onPageSettingsChange,
   currentPageIndex,
   onApplyToAllPages,
-  editorMode,
-  onEditorModeChange,
   previewScale,
   onPreviewScaleChange,
   onCurrentPageChange,
@@ -255,33 +248,7 @@ export default function SettingsPanel({
         </div>
 
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-2">
-              <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Editor Mode</Label>
-              <div className="flex p-1 bg-gray-100 rounded-lg">
-                <button
-                  onClick={() => onEditorModeChange('write')}
-                  className={`flex-1 flex items-center justify-center p-2 rounded-md transition-all ${editorMode === 'write'
-                    ? 'bg-white text-[#E0A32A] shadow-sm'
-                    : 'text-gray-500 hover:text-gray-900'
-                    }`}
-                  title="Write Mode"
-                >
-                  <PenLine className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => onEditorModeChange('textfield')}
-                  className={`flex-1 flex items-center justify-center p-2 rounded-md transition-all ${editorMode === 'textfield'
-                    ? 'bg-white text-[#E0A32A] shadow-sm'
-                    : 'text-gray-500 hover:text-gray-900'
-                    }`}
-                  title="Text Field Mode"
-                >
-                  <Type className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
+          <div className="grid grid-cols-1 gap-4">
             <div className="flex flex-col gap-2">
               <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Zoom</Label>
               <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderPageToCanvas } from '../canvasRenderer';
-import { HandwritingSettings, PageSettings, LineData, TextField } from '../types';
+import { HandwritingSettings, PageSettings, LineData } from '../types';
 
 // Mock the global Image for background loading
 global.Image = class {
@@ -100,7 +100,6 @@ describe('canvasRenderer', () => {
       lines: mockLines,
       pageSettings: mockPageSettings,
       settings: mockSettings,
-      textFields: [],
       scale,
       fontFamily: 'Caveat',
     });
@@ -130,7 +129,6 @@ describe('canvasRenderer', () => {
       lines: mockLines,
       pageSettings: mockPageSettings,
       settings: settingsNoRandom,
-      textFields: [],
       scale: 1,
       fontFamily: 'Caveat',
     });
@@ -150,7 +148,6 @@ describe('canvasRenderer', () => {
       lines: mockLines,
       pageSettings: mockPageSettings,
       settings: mockSettings,
-      textFields: [],
       scale: 1,
       fontFamily: 'Caveat',
     });
@@ -158,30 +155,6 @@ describe('canvasRenderer', () => {
     expect(mockCtx.beginPath).toHaveBeenCalled();
     expect(mockCtx.stroke).toHaveBeenCalled();
     expect(mockCtx.strokeStyle).toBe(mockSettings.lineColor);
-  });
-
-  it('renders text fields on the correct page', async () => {
-    const textFields: TextField[] = [
-      { id: '1', x: 100, y: 100, text: 'Field 1', pageIndex: 0 },
-      { id: '2', x: 200, y: 200, text: 'Field 2', pageIndex: 1 },
-    ];
-
-    await renderPageToCanvas({
-      canvas: mockCanvas,
-      pageIndex: 0,
-      lines: mockLines,
-      pageSettings: mockPageSettings,
-      settings: mockSettings,
-      textFields,
-      scale: 1,
-      fontFamily: 'Caveat',
-    });
-
-    // Should only render characters from "Field 1"
-    const fillTextCalls = mockCtx.fillText.mock.calls.map((call: any[]) => call[0]);
-    expect(fillTextCalls).toContain('F');
-    expect(fillTextCalls).toContain('1');
-    expect(fillTextCalls).not.toContain('2');
   });
 
   it('skips background fill if custom background is provided', async () => {
@@ -196,7 +169,6 @@ describe('canvasRenderer', () => {
       lines: mockLines,
       pageSettings: mockPageSettings,
       settings: settingsWithBg,
-      textFields: [],
       scale: 1,
       fontFamily: 'Caveat',
     });

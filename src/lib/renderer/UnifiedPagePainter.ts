@@ -1,4 +1,4 @@
-import { HandwritingSettings, PageSettings, TextField } from '../types';
+import { HandwritingSettings, PageSettings } from '../types';
 import { LineData, calculateRandomStyle } from '../editorHelpers';
 import { PAGE_WIDTH, PAGE_HEIGHT } from '../pageConstants';
 
@@ -8,7 +8,6 @@ export interface PaintPageOptions {
   lines: LineData[];
   pageSettings: PageSettings;
   settings: HandwritingSettings;
-  textFields: TextField[];
   scaleFactor: number;
   fontFamily: string;
 }
@@ -141,7 +140,7 @@ function buildCharacterPositionsForLines(opts: {
  */
 export const UnifiedPagePainter = {
   paintPage(opts: PaintPageOptions): void {
-    const { ctx, pageIndex, lines, pageSettings, settings, textFields, fontFamily } = opts;
+    const { ctx, pageIndex, lines, pageSettings, settings, fontFamily } = opts;
 
     // 1. Draw background
     const customBg = settings.customBackgroundImages?.[pageIndex] ?? settings.customBackgroundImage;
@@ -185,20 +184,6 @@ export const UnifiedPagePainter = {
       currentLineY += pageLineHeightPx;
     }
 
-    // 4. Draw text fields
-    for (const tf of textFields) {
-      if (tf.pageIndex !== pageIndex) continue;
-
-      ctx.font = `${pageSettings.fontSize}px ${fontFamily}`;
-      ctx.fillStyle = tf.inkColor || pageSettings.inkColor;
-
-      const tfLines = tf.text.split('\n');
-      let tfY = tf.y;
-      for (let i = 0; i < tfLines.length; i++) {
-        this._drawTextLine(ctx, tfLines[i], 10000 + i, tf.x, tfY, verticalCenteringOffset, pageSettings, settings);
-        tfY += pageLineHeightPx;
-      }
-    }
   },
 
   _drawTextLine(
@@ -304,10 +289,8 @@ export const UnifiedPagePainter = {
     settings: HandwritingSettings;
     fontFamily: string;
     pageIndex?: number;
-    textFields?: TextField[];
   }): {
     mainPositions: CharacterPosition[];
-    textFieldPositions: Map<string, CharacterPosition[]>;
   } {
     const {
       ctx,
@@ -316,7 +299,6 @@ export const UnifiedPagePainter = {
       settings,
       fontFamily,
       pageIndex = 0,
-      textFields = [],
     } = opts;
 
     const customBg = settings.customBackgroundImages?.[pageIndex] ?? settings.customBackgroundImage;
@@ -357,36 +339,7 @@ export const UnifiedPagePainter = {
       fontAscent,
       fontDescent,
     });
-
-    const textFieldPositions = new Map<string, CharacterPosition[]>();
-    for (const tf of textFields) {
-      if (tf.pageIndex !== pageIndex) continue;
-
-      const tfLines: CharacterPositionLines = tf.text.split('\n').map((lineText, lineIdx, allLines) => ({
-        text: lineText,
-        lineIndex: 10000 + lineIdx,
-        hasNewline: lineIdx < allLines.length - 1,
-      }));
-
-      textFieldPositions.set(
-        tf.id,
-        buildCharacterPositionsForLines({
-          ctx,
-          lines: tfLines,
-          startX: tf.x,
-          startY: tf.y,
-          verticalCenteringOffset,
-          pageLineHeightPx,
-          pageSettings,
-          settings,
-          fontAscent,
-          fontDescent,
-          ensureCaretAnchor: true,
-        }),
-      );
-    }
-
-    return { mainPositions, textFieldPositions };
+    return { mainPositions };
   },
 
   /**

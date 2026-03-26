@@ -1,4 +1,4 @@
-import { HandwritingSettings, PageSettings, TextField } from './types';
+import { HandwritingSettings, PageSettings } from './types';
 import { LineData } from './editorHelpers';
 import { PAGE_WIDTH, PAGE_HEIGHT } from './pageConstants';
 import { UnifiedPagePainter } from './renderer/UnifiedPagePainter';
@@ -9,7 +9,6 @@ interface RenderPageOptions {
   lines: LineData[];
   pageSettings: PageSettings;
   settings: HandwritingSettings;
-  textFields: TextField[];
   scale: number;
   fontFamily: string; // The resolved font family string
 }
@@ -25,7 +24,6 @@ export async function renderPageToCanvas({
   lines,
   pageSettings,
   settings,
-  textFields,
   scale,
   fontFamily,
 }: RenderPageOptions): Promise<void> {
@@ -51,7 +49,6 @@ export async function renderPageToCanvas({
     lines,
     pageSettings,
     settings,
-    textFields,
     scaleFactor: scale,
     fontFamily,
   });

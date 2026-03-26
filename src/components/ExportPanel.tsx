@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Download, FileImage, FileText, Loader2 } from 'lucide-react';
-import { HandwritingSettings, PageSettings, TextField, LineData } from '@/lib/types';
+import { HandwritingSettings, PageSettings, LineData } from '@/lib/types';
 import { renderPageToCanvas } from '@/lib/canvasRenderer';
 import FeedbackDialog from './FeedbackDialog';
 
@@ -20,7 +20,6 @@ interface ExportPanelProps {
   settings: HandwritingSettings;
   pages: LineData[][];
   isPaginationComplete: boolean;
-  textFields: TextField[];
   pageSettingsByPage: PageSettings[];
   totalPages: number;
   currentPageIndex: number;
@@ -48,7 +47,6 @@ export default function ExportPanel({
   settings,
   pages,
   isPaginationComplete,
-  textFields,
   pageSettingsByPage,
   totalPages,
   currentPageIndex,
@@ -186,7 +184,6 @@ export default function ExportPanel({
             lines: pageLines,
             pageSettings,
             settings,
-            textFields,
             scale: dpiScale,
             fontFamily: resolvedFontFamily,
           });
@@ -244,7 +241,6 @@ export default function ExportPanel({
             lines: pageLines,
             pageSettings,
             settings,
-            textFields,
             scale: dpiScale,
             fontFamily: resolvedFontFamily,
           });

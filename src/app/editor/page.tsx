@@ -11,14 +11,12 @@ import './editor.css';
 import {
   HandwritingSettings,
   DEFAULT_SETTINGS,
-  TextField,
   PageSettings,
   defaultPageSettingsFromHandwritingSettings,
   LineData,
-  EditorMode,
 } from '@/lib/types';
 import { loadEditorStateV1, saveEditorStateV1 } from '@/lib/editorPersistence';
-import { Settings, Download, ChevronLeft, ChevronRight, Trash2, PenLine, Type, Minus, Plus, Wand2 } from 'lucide-react';
+import { Settings, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const MemoSettingsPanel = React.memo(SettingsPanel);
 const MemoExportPanel = React.memo(ExportPanel);
@@ -32,9 +30,7 @@ export default function EditorPage() {
   ]);
   const [activePanel, setActivePanel] = useState<'settings' | 'export'>('settings');
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [textFields, setTextFields] = useState<TextField[]>([]);
   const [previewScale, setPreviewScale] = useState(1);
-  const [editorMode, setEditorMode] = useState<EditorMode>('write');
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [pages, setPages] = useState<LineData[][]>([]);
@@ -46,7 +42,7 @@ export default function EditorPage() {
   useEffect(() => {
     if (hasLoadedFromStorageRef.current) return;
 
-    const persisted = loadEditorStateV1<HandwritingSettings, PageSettings, TextField>();
+    const persisted = loadEditorStateV1<HandwritingSettings, PageSettings>();
     if (!persisted) {
       hasLoadedFromStorageRef.current = true;
       return;
@@ -59,13 +55,11 @@ export default function EditorPage() {
         ? persisted.pageSettingsByPage
         : [defaultPageSettingsFromHandwritingSettings(persisted.settings)]
     );
-    setTextFields(persisted.textFields);
 
     setActivePanel(persisted.ui.activePanel);
     setSidebarOpen(persisted.ui.sidebarOpen);
     setPreviewScale(persisted.ui.previewScale);
     setCurrentPageIndex(persisted.ui.currentPageIndex);
-    setEditorMode(persisted.ui.editorMode);
 
     hasLoadedFromStorageRef.current = true;
   }, []);
@@ -75,17 +69,16 @@ export default function EditorPage() {
     if (typeof window === 'undefined') return;
 
     const save = () => {
-      saveEditorStateV1<HandwritingSettings, PageSettings, TextField>({
+      saveEditorStateV1<HandwritingSettings, PageSettings>({
         text,
         settings,
         pageSettingsByPage,
-        textFields,
         ui: {
           activePanel,
           sidebarOpen,
           previewScale,
           currentPageIndex,
-          editorMode,
+          editorMode: 'write',
         },
       });
     };
@@ -100,8 +93,6 @@ export default function EditorPage() {
     settings,
     sidebarOpen,
     text,
-    textFields,
-    editorMode,
   ]);
 
   useEffect(() => {
@@ -109,17 +100,16 @@ export default function EditorPage() {
     if (typeof window === 'undefined') return;
 
     const handleUnload = () => {
-      saveEditorStateV1<HandwritingSettings, PageSettings, TextField>({
+      saveEditorStateV1<HandwritingSettings, PageSettings>({
         text,
         settings,
         pageSettingsByPage,
-        textFields,
         ui: {
           activePanel,
           sidebarOpen,
           previewScale,
           currentPageIndex,
-          editorMode,
+          editorMode: 'write',
         },
       });
     };
@@ -134,8 +124,6 @@ export default function EditorPage() {
     settings,
     sidebarOpen,
     text,
-    textFields,
-    editorMode,
   ]);
 
   const clampPreviewScale = useCallback((value: number) => Math.min(2, Math.max(0.5, value)), []);
@@ -193,10 +181,9 @@ export default function EditorPage() {
   const handleClearAll = useCallback(() => {
     if (window.confirm('Are you sure you want to remove all text from all pages? This action cannot be undone.')) {
       setText('');
-      setTextFields([]);
       setCurrentPageIndex(0);
     }
-  }, [setText, setTextFields, setCurrentPageIndex]);
+  }, [setText, setCurrentPageIndex]);
 
   const handlePreviewScaleChange = useCallback(
     (value: number) => setPreviewScale(clampPreviewScale(value)),
@@ -345,8 +332,6 @@ export default function EditorPage() {
                 onPageSettingsChange={handlePageSettingsChange}
                 currentPageIndex={currentPageIndex}
                 onApplyToAllPages={applyCurrentPageSettingsToAll}
-                editorMode={editorMode}
-                onEditorModeChange={setEditorMode}
                 previewScale={previewScale}
                 onPreviewScaleChange={handlePreviewScaleChange}
                 onCurrentPageChange={handleCurrentPageChange}
@@ -361,7 +346,6 @@ export default function EditorPage() {
                 settings={settings}
                 pages={pages}
                 isPaginationComplete={isPaginationComplete}
-                textFields={textFields}
                 pageSettingsByPage={pageSettingsByPage}
                 totalPages={totalPages}
                 currentPageIndex={currentPageIndex}
@@ -401,10 +385,6 @@ export default function EditorPage() {
               exportingPageIndex={exportPageIndex}
               previewScale={previewScale}
               onPreviewScaleChange={handlePreviewScaleChange}
-              editorMode={editorMode}
-              onEditorModeChange={setEditorMode}
-              textFields={textFields}
-              onTextFieldsChange={setTextFields}
               currentPageIndex={currentPageIndex}
               onCurrentPageChange={handleCurrentPageChange}
               onTotalPagesChange={handleTotalPagesChange}

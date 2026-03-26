@@ -25,7 +25,6 @@ const defaultProps = {
   lines: [{ text: 'Hi', lineIndex: 0, hasNewline: false }],
   pageSettings: defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
   settings: DEFAULT_SETTINGS,
-  textFields: [],
   pageIndex: 0,
   previewScale: 1,
   fontFamily: 'Caveat, cursive',
@@ -39,7 +38,6 @@ describe('CanvasPreview', () => {
         { x: 0, y: 0, width: 10, height: 20, lineIndex: 0, charIndex: 0 },
         { x: 10, y: 0, width: 10, height: 20, lineIndex: 0, charIndex: 1 },
       ],
-      textFieldPositions: new Map(),
     });
     getBoundingClientRectSpy.mockReturnValue({
       left: 0,
@@ -139,49 +137,4 @@ describe('CanvasPreview', () => {
     expect(onCharClick).toHaveBeenCalledWith(0, true);
   });
 
-  it('paints the focused text field cursor and selection using computed character positions', () => {
-    const textFieldPositions = new Map([
-      [
-        'tf1',
-        [
-          { x: 100, y: 120, width: 10, height: 20, lineIndex: 10000, charIndex: 0, selectionX: 100, selectionY: 122, selectionWidth: 10, selectionHeight: 18 },
-          { x: 110, y: 120, width: 10, height: 20, lineIndex: 10000, charIndex: 1, selectionX: 110, selectionY: 122, selectionWidth: 10, selectionHeight: 18 },
-        ],
-      ],
-    ]);
-
-    computeCharacterPositions.mockReturnValue({
-      mainPositions: [
-        { x: 0, y: 0, width: 10, height: 20, lineIndex: 0, charIndex: 0 },
-      ],
-      textFieldPositions,
-    });
-
-    render(
-      <CanvasPreview
-        {...defaultProps}
-        textFields={[{ id: 'tf1', x: 100, y: 120, text: 'ab', pageIndex: 0 }]}
-        focusedTextFieldId="tf1"
-        textFieldSelectionStart={0}
-        textFieldSelectionEnd={2}
-        textFieldCursorPosition={2}
-        isTextFieldFocused
-      />
-    );
-
-    expect(computeCharacterPositions).toHaveBeenCalled();
-    expect(paintSelectionOverlay).toHaveBeenCalledWith(
-      expect.anything(),
-      textFieldPositions.get('tf1'),
-      0,
-      2,
-      expect.any(String),
-    );
-    expect(paintCursorOverlay).toHaveBeenCalledWith(
-      expect.anything(),
-      textFieldPositions.get('tf1'),
-      2,
-      expect.any(String),
-    );
-  });
 });
