@@ -5,16 +5,18 @@ const mockState = {
   text: 'hello',
   settings: { fontFamily: 'caveat' },
   pageSettingsByPage: [],
-  textFields: [],
   ui: {
     activePanel: 'settings' as const,
     sidebarOpen: true,
     previewScale: 1,
     currentPageIndex: 0,
+    editorMode: 'write' as const,
   }
 };
 
 describe('editorPersistence', () => {
+  const legacyKey = ['text', 'Fields'].join('');
+
   beforeEach(() => {
     vi.stubGlobal('localStorage', {
       getItem: vi.fn(),
@@ -44,11 +46,15 @@ describe('editorPersistence', () => {
       updatedAt: Date.now(),
       ...mockState,
     };
+    (payload as Record<string, unknown>)[legacyKey] = [
+      { id: 'legacy', x: 1, y: 2, text: 'ignored', pageIndex: 0 },
+    ];
     vi.mocked(localStorage.getItem).mockReturnValue(JSON.stringify(payload));
     
     const loaded = loadEditorStateV1();
     expect(loaded).toMatchObject(mockState);
     expect(loaded?.version).toBe(1);
+    expect(loaded).not.toHaveProperty(legacyKey);
   });
 
   it('rejects malformed or version mismatch payloads', () => {

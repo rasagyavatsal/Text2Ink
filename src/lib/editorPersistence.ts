@@ -3,16 +3,15 @@ export type EditorUiState = {
   sidebarOpen: boolean;
   previewScale: number;
   currentPageIndex: number;
-  editorMode: 'write' | 'textfield';
+  editorMode: 'write';
 };
 
-export type PersistedEditorStateV1<TSettings, TPageSettings, TTextField> = {
+export type PersistedEditorStateV1<TSettings, TPageSettings> = {
   version: 1;
   updatedAt: number;
   text: string;
   settings: TSettings;
   pageSettingsByPage: TPageSettings[];
-  textFields: TTextField[];
   ui: EditorUiState;
 };
 
@@ -26,8 +25,8 @@ const safeJsonParse = (value: string): unknown => {
   }
 };
 
-export const loadEditorStateV1 = <TSettings, TPageSettings, TTextField>():
-  | PersistedEditorStateV1<TSettings, TPageSettings, TTextField>
+export const loadEditorStateV1 = <TSettings, TPageSettings>():
+  | PersistedEditorStateV1<TSettings, TPageSettings>
   | null => {
   if (typeof window === 'undefined') return null;
   const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -42,7 +41,6 @@ export const loadEditorStateV1 = <TSettings, TPageSettings, TTextField>():
   if (typeof anyParsed.text !== 'string') return null;
   if (!('settings' in anyParsed)) return null;
   if (!Array.isArray(anyParsed.pageSettingsByPage)) return null;
-  if (!Array.isArray(anyParsed.textFields)) return null;
 
   const ui = anyParsed.ui as Record<string, unknown> | undefined;
   if (!ui || typeof ui !== 'object') return null;
@@ -50,28 +48,33 @@ export const loadEditorStateV1 = <TSettings, TPageSettings, TTextField>():
   const sidebarOpen = ui.sidebarOpen;
   const previewScale = ui.previewScale;
   const currentPageIndex = ui.currentPageIndex;
-  const editorMode = ui.editorMode ?? 'write';
 
   if (activePanel !== 'settings' && activePanel !== 'export') return null;
   if (typeof sidebarOpen !== 'boolean') return null;
   if (typeof previewScale !== 'number') return null;
   if (typeof currentPageIndex !== 'number') return null;
-  if (editorMode !== 'write' && editorMode !== 'textfield') return null;
 
   return {
-    ...anyParsed,
+    version: 1,
+    updatedAt: anyParsed.updatedAt,
+    text: anyParsed.text,
+    settings: anyParsed.settings as TSettings,
+    pageSettingsByPage: anyParsed.pageSettingsByPage as TPageSettings[],
     ui: {
-      ...ui,
-      editorMode,
+      activePanel,
+      sidebarOpen,
+      previewScale,
+      currentPageIndex,
+      editorMode: 'write',
     },
-  } as PersistedEditorStateV1<TSettings, TPageSettings, TTextField>;
+  } as PersistedEditorStateV1<TSettings, TPageSettings>;
 };
 
-export const saveEditorStateV1 = <TSettings, TPageSettings, TTextField>(
-  next: Omit<PersistedEditorStateV1<TSettings, TPageSettings, TTextField>, 'version' | 'updatedAt'>
+export const saveEditorStateV1 = <TSettings, TPageSettings>(
+  next: Omit<PersistedEditorStateV1<TSettings, TPageSettings>, 'version' | 'updatedAt'>
 ): void => {
   if (typeof window === 'undefined') return;
-  const payload: PersistedEditorStateV1<TSettings, TPageSettings, TTextField> = {
+  const payload: PersistedEditorStateV1<TSettings, TPageSettings> = {
     version: 1,
     updatedAt: Date.now(),
     ...next,

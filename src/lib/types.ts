@@ -127,19 +127,10 @@ export const PAPER_COLORS = [
   { name: 'Light Green', value: '#f0fff4' },
 ];
 
-export interface TextField {
-  id: string;
-  x: number;
-  y: number;
-  text: string;
-  inkColor?: string;
-  pageIndex: number;
-}
-
 export type LineData = {
   text: string;
   lineIndex: number;
   hasNewline: boolean;
 };
 
-export type EditorMode = 'write' | 'textfield';
+export type EditorMode = 'write';

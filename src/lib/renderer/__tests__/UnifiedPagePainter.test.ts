@@ -42,7 +42,6 @@ function defaultPaintOptions(overrides?: Partial<PaintPageOptions>): PaintPageOp
     lines: [{ text: 'Hello', lineIndex: 0, hasNewline: false }],
     pageSettings,
     settings,
-    textFields: [],
     scaleFactor: 1,
     fontFamily: 'Caveat, cursive',
     ...overrides,
@@ -207,55 +206,6 @@ describe('UnifiedPagePainter', () => {
     });
   });
 
-  describe('paintPage - text fields', () => {
-    it('renders text field characters on the correct page', () => {
-      const ctx = createMockCtx();
-      const settings = { ...DEFAULT_SETTINGS, randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 } };
-      const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-      const opts = defaultPaintOptions({
-        ctx,
-        settings,
-        pageSettings,
-        lines: [],
-        textFields: [
-          { id: 'tf1', x: 100, y: 100, text: 'AB', pageIndex: 0 },
-          { id: 'tf2', x: 200, y: 200, text: 'CD', pageIndex: 1 },
-        ],
-      });
-
-      UnifiedPagePainter.paintPage(opts);
-
-      const fillTextCalls = (ctx.fillText as ReturnType<typeof vi.fn>).mock.calls;
-      const chars = fillTextCalls.map((c: any[]) => c[0]);
-      expect(chars).toContain('A');
-      expect(chars).toContain('B');
-      // Text field on page 1 should NOT be rendered when pageIndex=0
-      expect(chars).not.toContain('C');
-      expect(chars).not.toContain('D');
-    });
-
-    it('uses text field ink color when specified', () => {
-      const ctx = createMockCtx();
-      const settings = { ...DEFAULT_SETTINGS, randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 } };
-      const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-      const opts = defaultPaintOptions({
-        ctx,
-        settings,
-        pageSettings,
-        lines: [],
-        textFields: [
-          { id: 'tf1', x: 100, y: 100, text: 'X', inkColor: '#00ff00', pageIndex: 0 },
-        ],
-      });
-
-      UnifiedPagePainter.paintPage(opts);
-
-      // When text field has its own ink color, fillStyle should be set to it
-      const fillTextCalls = (ctx.fillText as ReturnType<typeof vi.fn>).mock.calls;
-      expect(fillTextCalls.length).toBeGreaterThan(0);
-    });
-  });
-
   describe('paintPage - scale factor', () => {
     it('uses the same drawing logic regardless of scale factor', () => {
       // Render at scale 1 and scale 4, both should draw text at the same logical coords
@@ -385,7 +335,7 @@ describe('UnifiedPagePainter', () => {
       expect(positions.mainPositions[0]).toMatchObject({ width: 10, lineIndex: 0, charIndex: 0 });
       expect(positions.mainPositions[1]).toMatchObject({ width: 0, lineIndex: 0, charIndex: 1 });
       expect(positions.mainPositions[2]).toMatchObject({ x: pageSettings.marginLeft, lineIndex: 1, charIndex: 0 });
-      expect(positions.mainPositions[2].y).toBe(pageSettings.marginTop + (pageSettings.fontSize * settings.lineHeight));
+       expect(positions.mainPositions[2]!.y).toBe(pageSettings.marginTop + (pageSettings.fontSize * settings.lineHeight));
     });
 
     it('returns empty array for empty lines', () => {
@@ -404,27 +354,6 @@ describe('UnifiedPagePainter', () => {
       expect(positions.mainPositions).toEqual([]);
     });
 
-    it('computes positions for text fields on the active page only', () => {
-      const settings = { ...DEFAULT_SETTINGS, randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 } };
-      const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-      const ctx = createMockCtx();
-
-      const positions = UnifiedPagePainter.computeCharacterPositions({
-        ctx,
-        pageIndex: 1,
-        lines: [],
-        pageSettings,
-        settings,
-        textFields: [
-          { id: 'tf-a', x: pageSettings.marginLeft, y: pageSettings.marginTop, text: 'AB', pageIndex: 1 },
-          { id: 'tf-b', x: pageSettings.marginLeft, y: pageSettings.marginTop, text: 'CD', pageIndex: 0 },
-        ],
-        fontFamily: 'Caveat',
-      });
-
-      expect(positions.textFieldPositions.get('tf-a')).toHaveLength(2);
-      expect(positions.textFieldPositions.has('tf-b')).toBe(false);
-    });
   });
 
   describe('paintCursorOverlay', () => {
@@ -512,11 +441,11 @@ describe('UnifiedPagePainter', () => {
        });
 
        // First character should have selectionX = marginLeft
-       expect(positions.mainPositions[0].selectionX).toBe(pageSettings.marginLeft);
+       const first = positions.mainPositions[0]!;
+       const second = positions.mainPositions[1]!;
+       expect(first.selectionX).toBe(pageSettings.marginLeft);
        // Second character should have selectionX = end of first char (contiguous)
-       expect(positions.mainPositions[1].selectionX).toBe(
-         positions.mainPositions[0].selectionX + positions.mainPositions[0].selectionWidth!
-       );
+       expect(second.selectionX).toBe(first.selectionX! + first.selectionWidth!);
      });
 
      it('computes selectionWidth for contiguous highlight rects', () => {
