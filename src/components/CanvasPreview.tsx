@@ -149,6 +149,7 @@ export default function CanvasPreview({
         Math.max(0, localSelStart),
         Math.min(mainPositions.length, localSelEnd),
         pageSettings.inkColor,
+        pageSettings.lineTilt,
       );
     }
 
@@ -156,7 +157,13 @@ export default function CanvasPreview({
     if (isFocused && cursorPosition !== null && cursorVisible) {
       const localCursor = cursorPosition - pageStartOffset;
       if (localCursor >= 0 && localCursor <= mainPositions.length) {
-        UnifiedPagePainter.paintCursorOverlay(ctx, mainPositions, localCursor, pageSettings.inkColor);
+        UnifiedPagePainter.paintCursorOverlay(
+          ctx, 
+          mainPositions, 
+          localCursor, 
+          pageSettings.inkColor,
+          pageSettings.lineTilt,
+        );
       }
     }
 
@@ -209,6 +216,18 @@ export default function CanvasPreview({
     const positions = charPositionsRef.current;
     if (positions.length === 0) return null;
 
+    const tilt = pageSettings.lineTilt || 0;
+    let targetX = pageX;
+    let targetY = pageY;
+
+    if (tilt !== 0) {
+      const rad = (-tilt * Math.PI) / 180;
+      const cos = Math.cos(rad);
+      const sin = Math.sin(rad);
+      targetX = pageX * cos - pageY * sin;
+      targetY = pageX * sin + pageY * cos;
+    }
+
     // Find the closest character
     let bestIdx = -1;
     let bestDist = Infinity;
@@ -216,10 +235,10 @@ export default function CanvasPreview({
     for (let i = 0; i < positions.length; i++) {
       const pos = positions[i];
       // Check if point is roughly within the line's vertical range
-      if (pageY >= pos.y && pageY <= pos.y + pos.height) {
+      if (targetY >= pos.y && targetY <= pos.y + pos.height) {
         // Check horizontal distance
         const charCenterX = pos.x + pos.width / 2;
-        const dist = Math.abs(pageX - charCenterX);
+        const dist = Math.abs(targetX - charCenterX);
         if (dist < bestDist) {
           bestDist = dist;
           bestIdx = i;
@@ -233,9 +252,9 @@ export default function CanvasPreview({
     }
 
     const pos = positions[bestIdx];
-    const isLeftHalf = pageX < pos.x + pos.width / 2;
+    const isLeftHalf = targetX < pos.x + pos.width / 2;
     return { index: bestIdx, isLeftHalf };
-  }, []);
+  }, [pageSettings.lineTilt]);
 
   const getPageCoords = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;

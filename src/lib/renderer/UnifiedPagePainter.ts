@@ -195,11 +195,18 @@ export const UnifiedPagePainter = {
       ?? (pageSettings.fontSize * 0.85);
     const verticalCenteringOffset = halfLeading + fontAscent;
 
+    ctx.save();
+    const tilt = pageSettings.lineTilt || 0;
+    if (tilt !== 0) {
+      ctx.rotate((tilt * Math.PI) / 180);
+    }
+
     let currentLineY = pageSettings.marginTop + pageLineOffset;
     for (let i = 0; i < lines.length; i++) {
       this._drawTextLine(ctx, lines[i].text, lines[i].lineIndex, ruledTextLeft, currentLineY, verticalCenteringOffset, pageSettings, settings);
       currentLineY += pageLineHeightPx;
     }
+    ctx.restore();
 
     // 4. Draw text fields
     if (renderTextFields && pageSettings.textFields && pageSettings.textFields.length > 0) {
@@ -273,7 +280,6 @@ export const UnifiedPagePainter = {
     settings: HandwritingSettings,
   ): void {
     let currentX = startX;
-    const tilt = pageSettings.lineTilt || 0;
 
     for (let charIdx = 0; charIdx < lineText.length; charIdx++) {
       const char = lineText[charIdx];
@@ -285,9 +291,6 @@ export const UnifiedPagePainter = {
         ctx.save();
         ctx.translate(currentX, startY + verticalCenteringOffset + randomData.baseline);
 
-        if (tilt !== 0) {
-          ctx.rotate((tilt * Math.PI) / 180);
-        }
         if (randomData.rotation !== 0) {
           ctx.rotate((randomData.rotation * Math.PI) / 180);
         }
@@ -427,6 +430,7 @@ export const UnifiedPagePainter = {
     charPositions: CharacterPosition[],
     cursorIndex: number,
     inkColor: string,
+    lineTilt: number = 0,
   ): void {
     if (charPositions.length === 0) return;
 
@@ -454,8 +458,13 @@ export const UnifiedPagePainter = {
       cursorHeight = pos.cursorHeight ?? pos.selectionHeight ?? pos.height;
     }
 
+    ctx.save();
+    if (lineTilt !== 0) {
+      ctx.rotate((lineTilt * Math.PI) / 180);
+    }
     ctx.fillStyle = inkColor;
     ctx.fillRect(cursorX, cursorY, 2, cursorHeight);
+    ctx.restore();
   },
 
   /**
@@ -468,10 +477,14 @@ export const UnifiedPagePainter = {
     selStart: number,
     selEnd: number,
     inkColor: string,
+    lineTilt: number = 0,
   ): void {
     if (selStart >= selEnd) return;
 
     ctx.save();
+    if (lineTilt !== 0) {
+      ctx.rotate((lineTilt * Math.PI) / 180);
+    }
     ctx.fillStyle = `${inkColor}33`; // Semi-transparent
     ctx.globalAlpha = 1;
 
