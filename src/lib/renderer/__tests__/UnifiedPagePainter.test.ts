@@ -264,7 +264,7 @@ describe('UnifiedPagePainter', () => {
   });
 
   describe('paintPage - line tilt', () => {
-    it('applies line tilt rotation when lineTilt is non-zero', () => {
+    it('applies line tilt rotation once at the start of text block, not per character', () => {
       const ctx = createMockCtx();
       const settings = { ...DEFAULT_SETTINGS, randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 } };
       const pageSettings = { ...defaultPageSettingsFromHandwritingSettings(settings), lineTilt: 5 };
@@ -272,11 +272,13 @@ describe('UnifiedPagePainter', () => {
         ctx,
         settings,
         pageSettings,
-        lines: [{ text: 'A', lineIndex: 0, hasNewline: false }],
+        lines: [{ text: 'AB', lineIndex: 0, hasNewline: false }],
       });
 
       UnifiedPagePainter.paintPage(opts);
 
+      // Should be called once for the entire text block, not twice for 'AB'
+      expect(ctx.rotate).toHaveBeenCalledTimes(1);
       expect(ctx.rotate).toHaveBeenCalledWith((5 * Math.PI) / 180);
     });
   });
@@ -407,6 +409,17 @@ describe('UnifiedPagePainter', () => {
           expect(lastCall[3]).toBe(25);
       }
     });
+
+    it('applies line tilt rotation to cursor overlay', () => {
+      const ctx = createMockCtx();
+      const charPositions = [
+        { x: 60, y: 60, width: 10, height: 24, lineIndex: 0, charIndex: 0 },
+      ];
+
+      UnifiedPagePainter.paintCursorOverlay(ctx, charPositions, 0, '#1a365d', 5);
+
+      expect(ctx.rotate).toHaveBeenCalledWith((5 * Math.PI) / 180);
+    });
   });
 
   describe('paintSelectionOverlay', () => {
@@ -422,6 +435,17 @@ describe('UnifiedPagePainter', () => {
 
       // Should draw selection rectangles
       expect(ctx.fillRect).toHaveBeenCalled();
+    });
+
+    it('applies line tilt rotation to selection overlay', () => {
+      const ctx = createMockCtx();
+      const charPositions = [
+        { x: 60, y: 60, width: 10, height: 24, lineIndex: 0, charIndex: 0 },
+      ];
+
+      UnifiedPagePainter.paintSelectionOverlay(ctx, charPositions, 0, 1, '#1a365d', 5);
+
+      expect(ctx.rotate).toHaveBeenCalledWith((5 * Math.PI) / 180);
     });
 
     it('does not draw when selection range is empty', () => {
