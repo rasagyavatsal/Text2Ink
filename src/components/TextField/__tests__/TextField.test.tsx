@@ -106,4 +106,19 @@ describe('TextField', () => {
     expect(lastCall.width).toBe(250); // 200 + (100 - 50)
     expect(lastCall.x).toBe(50); // 100 - 50
   });
+
+  it('disables spellcheck on the textarea', () => {
+    render(
+      <TextField
+        field={mockField}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+        randomness={randomness}
+      />
+    );
+    const textarea = screen.getByPlaceholderText('');
+    expect(textarea.getAttribute('spellcheck')).toBe('false');
+  });
 });

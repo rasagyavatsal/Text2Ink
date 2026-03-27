@@ -886,6 +886,7 @@ export default function HandwritingEditor({
         onBlur={() => setIsFocused(false)}
         className="sr-only"
         aria-label="Handwriting text input"
+        spellCheck={false}
         autoFocus
       />
 

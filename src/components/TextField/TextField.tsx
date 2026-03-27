@@ -258,6 +258,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
         onChange={(e) => onUpdate({ text: e.target.value })}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
+        spellCheck={false}
         style={{
            fontSize: field.fontSize * scale,
            color: isFocused ? field.color : 'transparent',

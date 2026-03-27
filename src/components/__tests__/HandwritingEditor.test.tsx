@@ -202,4 +202,10 @@ describe('HandwritingEditor selection behavior', () => {
 
     expect(screen.getByTestId('preview-selection')).toHaveTextContent('3:5');
   });
+
+  it('disables spellcheck on the hidden textarea', () => {
+    renderEditor();
+    const textarea = screen.getByLabelText('Handwriting text input');
+    expect(textarea.getAttribute('spellcheck')).toBe('false');
+  });
 });

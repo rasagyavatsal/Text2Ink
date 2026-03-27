@@ -135,6 +135,7 @@ export default function FeedbackDialog({ isOpen, onClose }: FeedbackDialogProps)
                   placeholder="Tell us what we can do better..."
                   value={improvement}
                   onChange={(e) => setImprovement(e.target.value)}
+                  spellCheck={false}
                 />
               </div>
               <div className="grid gap-2">
@@ -147,6 +148,7 @@ export default function FeedbackDialog({ isOpen, onClose }: FeedbackDialogProps)
                   placeholder="Share your ideas with us..."
                   value={featureRequest}
                   onChange={(e) => setFeatureRequest(e.target.value)}
+                  spellCheck={false}
                 />
               </div>
             </div>
