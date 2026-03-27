@@ -1,7 +1,86 @@
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, fireEvent, screen, waitFor } from '@testing-library/react';
 import TextField from '../TextField';
+
+vi.mock('@/lib/pagination', () => ({
+  createMeasure: (_fontFamily: string, fontSize: number) => (text: string) => text.length * fontSize * 0.6,
+}));
+
+vi.mock('@/components/ui/popover', async () => {
+  const React = await import('react');
+
+  const PopoverContext = React.createContext<{
+    open: boolean;
+    setOpen: (open: boolean) => void;
+  } | null>(null);
+
+  function Popover({
+    children,
+    open: controlledOpen,
+    onOpenChange,
+  }: {
+    children: React.ReactNode;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+  }) {
+    const [uncontrolledOpen, setUncontrolledOpen] = React.useState(false);
+    const open = controlledOpen ?? uncontrolledOpen;
+    const setOpen = onOpenChange ?? setUncontrolledOpen;
+
+    return (
+      <PopoverContext.Provider value={{ open, setOpen }}>
+        {children}
+      </PopoverContext.Provider>
+    );
+  }
+
+  function PopoverTrigger({
+    asChild,
+    children,
+  }: {
+    asChild?: boolean;
+    children: React.ReactElement;
+  }) {
+    const ctx = React.useContext(PopoverContext);
+
+    if (asChild && React.isValidElement(children)) {
+      return React.cloneElement(children, {
+        onClick: (event: React.MouseEvent) => {
+          children.props.onClick?.(event);
+          ctx?.setOpen(true);
+        },
+      } as any);
+    }
+
+    return (
+      <button type="button" onClick={() => ctx?.setOpen(true)}>
+        {children}
+      </button>
+    );
+  }
+
+  function PopoverContent({ children, ...props }: { children: React.ReactNode }) {
+    const ctx = React.useContext(PopoverContext);
+    if (!ctx?.open) return null;
+    return (
+      <div data-testid="popover-content" {...props}>
+        {children}
+      </div>
+    );
+  }
+
+  function PopoverAnchor(props: React.HTMLAttributes<HTMLDivElement>) {
+    return <div data-testid="popover-anchor" {...props} />;
+  }
+
+  return {
+    Popover,
+    PopoverTrigger,
+    PopoverContent,
+    PopoverAnchor,
+  };
+});
 
 describe('TextField', () => {
   const mockField = {
@@ -20,6 +99,11 @@ describe('TextField', () => {
   const scale = 1;
   const fontFamily = 'caveat';
   const randomness = { enabled: true, spacing: 2, baseline: 1, rotation: 0.5 };
+
+  beforeEach(() => {
+    mockOnUpdate.mockClear();
+    mockOnDelete.mockClear();
+  });
 
   it('renders correctly with initial values', () => {
     render(
@@ -214,5 +298,115 @@ describe('TextField', () => {
     // Math.max(10, 0 + 12) = 12.
     expect(lastCall.width).toBeGreaterThanOrEqual(12);
     expect(lastCall.height).toBeGreaterThanOrEqual(12);
+  });
+
+  it('expands immediately when font size grows beyond the current box size', async () => {
+    const compactField = { ...mockField, width: 150, height: 50, fontSize: 24 };
+    const { rerender } = render(
+      <TextField
+        field={compactField}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+        randomness={randomness}
+      />
+    );
+
+    mockOnUpdate.mockClear();
+
+    rerender(
+      <TextField
+        field={{ ...compactField, fontSize: 40 }}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+        randomness={randomness}
+      />
+    );
+
+    await waitFor(() => {
+      const lastCall = mockOnUpdate.mock.calls[mockOnUpdate.mock.calls.length - 1][0];
+      expect(lastCall.width).toBe(276);
+      expect(lastCall.height).toBe(60);
+    });
+  });
+
+  it('shrinks immediately when font size gets smaller', async () => {
+    const largerField = { ...mockField, width: 300, height: 200, fontSize: 40 };
+    const { rerender } = render(
+      <TextField
+        field={largerField}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+        randomness={randomness}
+      />
+    );
+
+    mockOnUpdate.mockClear();
+
+    rerender(
+      <TextField
+        field={{ ...largerField, fontSize: 24 }}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+        randomness={randomness}
+      />
+    );
+
+    await waitFor(() => {
+      const lastCall = mockOnUpdate.mock.calls[mockOnUpdate.mock.calls.length - 1][0];
+      expect(lastCall.width).toBeCloseTo(170.4, 1);
+      expect(lastCall.height).toBeCloseTo(40.8, 1);
+    });
+  });
+
+  it('keeps the settings popover anchored while font size changes', async () => {
+    const rectSpy = vi.spyOn(HTMLButtonElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      x: 100,
+      y: 200,
+      left: 100,
+      top: 200,
+      right: 116,
+      bottom: 216,
+      width: 16,
+      height: 16,
+      toJSON: () => {},
+    } as DOMRect);
+
+    const { rerender } = render(
+      <TextField
+        field={{ ...mockField, width: 150, height: 50, fontSize: 24 }}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+        randomness={randomness}
+      />
+    );
+
+    fireEvent.click(screen.getByLabelText('Text box settings'));
+
+    const anchor = await screen.findByTestId('popover-anchor');
+    expect(anchor).toHaveStyle({ left: '108px', top: '208px' });
+
+    rerender(
+      <TextField
+        field={{ ...mockField, width: 150, height: 50, fontSize: 40 }}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+        randomness={randomness}
+      />
+    );
+
+    expect(screen.getByTestId('popover-anchor')).toHaveStyle({ left: '108px', top: '208px' });
+    rectSpy.mockRestore();
   });
 });
