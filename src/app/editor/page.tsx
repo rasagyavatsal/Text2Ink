@@ -159,7 +159,10 @@ export default function EditorPage() {
       }
 
       const source = next[currentPageIndex] ?? defaultPageSettingsFromHandwritingSettings(settings);
-      return next.slice(0, desiredLength).map(() => ({ ...source }));
+      return next.slice(0, desiredLength).map(() => ({ 
+        ...source,
+        textFields: source.textFields?.map(tf => ({ ...tf, id: crypto.randomUUID() })) || []
+      }));
     });
   }, [currentPageIndex, ensurePageSettingsLength, settings, totalPages]);
 
@@ -382,6 +385,7 @@ export default function EditorPage() {
               settings={settings}
               onSettingsChange={setSettings}
               pageSettingsByPage={pageSettingsByPage}
+              onPageSettingsChange={handlePageSettingsChange}
               exportingPageIndex={exportPageIndex}
               previewScale={previewScale}
               onPreviewScaleChange={handlePreviewScaleChange}

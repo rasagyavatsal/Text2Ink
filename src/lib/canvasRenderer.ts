@@ -51,6 +51,7 @@ export async function renderPageToCanvas({
     settings,
     scaleFactor: scale,
     fontFamily,
+    renderTextFields: true,
   });
 }
 

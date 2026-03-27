@@ -1,4 +1,15 @@
 // Per-page settings that can be customized for each page
+export interface TextField {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: string;
+  fontSize: number;
+}
+
 export interface PageSettings {
   fontSize: number;
   lineTilt: number;
@@ -13,6 +24,7 @@ export interface PageSettings {
   inkColor: string;
   lineColor: string;
   paperStyle: 'blank' | 'lined' | 'ruled' | 'grid';
+  textFields?: TextField[];
 }
 
 export interface HandwritingSettings {
@@ -45,6 +57,7 @@ export interface HandwritingSettings {
     baseline: number;
     rotation: number;
   };
+  textFields?: TextField[];
 }
 
 export interface FontOption {
@@ -91,6 +104,7 @@ export const DEFAULT_SETTINGS: HandwritingSettings = {
     baseline: 1,
     rotation: 0.5,
   },
+  textFields: [],
 };
 
 export const defaultPageSettingsFromHandwritingSettings = (
@@ -109,7 +123,9 @@ export const defaultPageSettingsFromHandwritingSettings = (
   inkColor: settings.inkColor,
   lineColor: settings.lineColor,
   paperStyle: settings.paperStyle,
+  textFields: settings.textFields || [],
 });
+
 
 export const PAPER_STYLES = [
   { name: 'Blank', value: 'blank' },
