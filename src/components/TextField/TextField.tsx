@@ -111,18 +111,50 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
       }}
     >
       {/* Resize Handles */}
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
         {/* Corners */}
-        <div className="absolute -top-1 -left-1 w-2 h-2 pointer-events-auto cursor-nwse-resize" onMouseDown={(e) => handleResizeStart(e, 'nw')} />
-        <div className="absolute -top-1 -right-1 w-2 h-2 pointer-events-auto cursor-nesw-resize" onMouseDown={(e) => handleResizeStart(e, 'ne')} />
-        <div className="absolute -bottom-1 -left-1 w-2 h-2 pointer-events-auto cursor-nesw-resize" onMouseDown={(e) => handleResizeStart(e, 'sw')} />
-        <div className="absolute -bottom-1 -right-1 w-2 h-2 pointer-events-auto cursor-nwse-resize" onMouseDown={(e) => handleResizeStart(e, 'se')} />
+        <div 
+          data-testid="handle-nw"
+          className="absolute -top-1.5 -left-1.5 w-3 h-3 pointer-events-auto cursor-nwse-resize bg-white border border-gray-400 rounded-sm shadow-sm hover:scale-110 transition-transform" 
+          onMouseDown={(e) => handleResizeStart(e, 'nw')} 
+        />
+        <div 
+          data-testid="handle-ne"
+          className="absolute -top-1.5 -right-1.5 w-3 h-3 pointer-events-auto cursor-nesw-resize bg-white border border-gray-400 rounded-sm shadow-sm hover:scale-110 transition-transform" 
+          onMouseDown={(e) => handleResizeStart(e, 'ne')} 
+        />
+        <div 
+          data-testid="handle-sw"
+          className="absolute -bottom-1.5 -left-1.5 w-3 h-3 pointer-events-auto cursor-nesw-resize bg-white border border-gray-400 rounded-sm shadow-sm hover:scale-110 transition-transform" 
+          onMouseDown={(e) => handleResizeStart(e, 'sw')} 
+        />
+        <div 
+          data-testid="handle-se"
+          className="absolute -bottom-1.5 -right-1.5 w-3 h-3 pointer-events-auto cursor-nwse-resize bg-white border border-gray-400 rounded-sm shadow-sm hover:scale-110 transition-transform" 
+          onMouseDown={(e) => handleResizeStart(e, 'se')} 
+        />
         
         {/* Sides */}
-        <div className="absolute top-0 left-1 right-1 h-1 pointer-events-auto cursor-ns-resize" onMouseDown={(e) => handleResizeStart(e, 'n')} />
-        <div className="absolute bottom-0 left-1 right-1 h-1 pointer-events-auto cursor-ns-resize" onMouseDown={(e) => handleResizeStart(e, 's')} />
-        <div className="absolute left-0 top-1 bottom-1 w-1 pointer-events-auto cursor-ew-resize" onMouseDown={(e) => handleResizeStart(e, 'w')} />
-        <div className="absolute right-0 top-1 bottom-1 w-1 pointer-events-auto cursor-ew-resize" onMouseDown={(e) => handleResizeStart(e, 'e')} />
+        <div 
+          data-testid="handle-n"
+          className="absolute -top-1 left-2 right-2 h-2 pointer-events-auto cursor-ns-resize hover:bg-blue-400/20 transition-colors" 
+          onMouseDown={(e) => handleResizeStart(e, 'n')} 
+        />
+        <div 
+          data-testid="handle-s"
+          className="absolute -bottom-1 left-2 right-2 h-2 pointer-events-auto cursor-ns-resize hover:bg-blue-400/20 transition-colors" 
+          onMouseDown={(e) => handleResizeStart(e, 's')} 
+        />
+        <div 
+          data-testid="handle-w"
+          className="absolute -left-1 top-2 bottom-2 w-2 pointer-events-auto cursor-ew-resize hover:bg-blue-400/20 transition-colors" 
+          onMouseDown={(e) => handleResizeStart(e, 'w')} 
+        />
+        <div 
+          data-testid="handle-e"
+          className="absolute -right-1 top-2 bottom-2 w-2 pointer-events-auto cursor-ew-resize hover:bg-blue-400/20 transition-colors" 
+          onMouseDown={(e) => handleResizeStart(e, 'e')} 
+        />
       </div>
 
       {/* Top Left Icons */}
