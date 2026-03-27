@@ -121,4 +121,70 @@ describe('TextField', () => {
     const textarea = screen.getByPlaceholderText('');
     expect(textarea.getAttribute('spellcheck')).toBe('false');
   });
+
+  it('does not resize smaller than its content', () => {
+    render(
+      <TextField
+        field={mockField}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+        randomness={randomness}
+      />
+    );
+    
+    const eHandle = screen.getByTestId('handle-e');
+    // Mouse down at the right edge (x + width = 300)
+    fireEvent.mouseDown(eHandle, { clientX: 300, clientY: 150 });
+    
+    // Drag way to the left to try to make it tiny
+    const mouseMoveEvent = new MouseEvent('mousemove', {
+      clientX: 120, // Try to make width ~20
+      clientY: 150,
+    });
+    window.dispatchEvent(mouseMoveEvent);
+
+    expect(mockOnUpdate).toHaveBeenCalled();
+    const lastCall = mockOnUpdate.mock.calls[mockOnUpdate.mock.calls.length - 1][0];
+    
+    // Calculate expected minW in test environment:
+    // 'Hello World'.length (11) * 10 = 110
+    // padding = 12 / 1 = 12
+    // minW = Math.max(10, 110 + 12) = 122
+    expect(lastCall.width).toBeGreaterThanOrEqual(122);
+  });
+
+  it('respects a 10px hard minimum when text is empty', () => {
+    const emptyField = { ...mockField, text: '', width: 100, height: 100 };
+    render(
+      <TextField
+        field={emptyField}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+        randomness={randomness}
+      />
+    );
+    
+    const seHandle = screen.getByTestId('handle-se');
+    fireEvent.mouseDown(seHandle, { clientX: 200, clientY: 200 });
+    
+    // Resize to almost zero
+    const mouseMoveEvent = new MouseEvent('mousemove', {
+      clientX: 105,
+      clientY: 105,
+    });
+    window.dispatchEvent(mouseMoveEvent);
+
+    expect(mockOnUpdate).toHaveBeenCalled();
+    const lastCall = mockOnUpdate.mock.calls[mockOnUpdate.mock.calls.length - 1][0];
+    
+    // minW should be at least 10 + padding (12) = 22
+    // Wait, with empty text, textWidth is 0. padding is 12. 
+    // Math.max(10, 0 + 12) = 12.
+    expect(lastCall.width).toBeGreaterThanOrEqual(12);
+    expect(lastCall.height).toBeGreaterThanOrEqual(12);
+  });
 });

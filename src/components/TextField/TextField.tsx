@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Move, X, Settings } from 'lucide-react';
 import { TextField as TextFieldType, HandwritingSettings } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
 import { calculateRandomStyle } from '@/lib/editorHelpers';
+import { createMeasure } from '@/lib/pagination';
 
 interface TextFieldProps {
   field: TextFieldType;
@@ -21,6 +22,27 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
   const [resizeDir, setResizeDir] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
   const dragStartRef = useRef({ x: 0, y: 0, fieldX: 0, fieldY: 0, fieldW: 0, fieldH: 0 });
+
+  // Calculate the minimum width and height based on the text content
+  const [minW, minH] = useMemo(() => {
+    const lines = field.text.split('\n');
+    const measure = createMeasure(fontFamily, field.fontSize);
+    
+    // Calculate width of the longest line
+    const textWidth = Math.max(...lines.map(l => measure(l)), 0);
+    
+    // Calculate height based on number of lines and line-height (1.2)
+    // We add a bit of padding to ensure the outline doesn't touch the text
+    // p-1 is 4px on screen, so 8px total. In canvas units that's 8/scale.
+    // We'll add a 10px buffer in canvas units to be safe.
+    const padding = 12 / scale;
+    const textHeight = lines.length * field.fontSize * 1.2;
+
+    return [
+      Math.max(10, textWidth + padding),
+      Math.max(10, textHeight + padding)
+    ];
+  }, [field.text, field.fontSize, fontFamily, scale]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -66,17 +88,16 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
         });
       } else if (resizeDir) {
         let { fieldX: x, fieldY: y, fieldW: w, fieldH: h } = dragStartRef.current;
-        const minSize = 40;
 
-        if (resizeDir.includes('e')) w = Math.max(minSize, w + dx);
-        if (resizeDir.includes('s')) h = Math.max(minSize, h + dy);
+        if (resizeDir.includes('e')) w = Math.max(minW, w + dx);
+        if (resizeDir.includes('s')) h = Math.max(minH, h + dy);
         if (resizeDir.includes('w')) {
-          const newW = Math.max(minSize, w - dx);
+          const newW = Math.max(minW, w - dx);
           x = x + (w - newW);
           w = newW;
         }
         if (resizeDir.includes('n')) {
-          const newH = Math.max(minSize, h - dy);
+          const newH = Math.max(minH, h - dy);
           y = y + (h - newH);
           h = newH;
         }
@@ -96,7 +117,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, resizeDir, onUpdate, scale]);
+  }, [isDragging, resizeDir, onUpdate, scale, minW, minH]);
 
   return (
     <div
