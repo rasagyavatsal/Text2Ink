@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { Move, X, Settings } from 'lucide-react';
 import { TextField as TextFieldType, HandwritingSettings } from '@/lib/types';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
 import { calculateRandomStyle } from '@/lib/editorHelpers';
 import { createMeasure } from '@/lib/pagination';
@@ -17,32 +17,69 @@ interface TextFieldProps {
   randomness: HandwritingSettings['randomness'];
 }
 
+function calculateMinimumTextBoxSize(field: TextFieldType, fontFamily: string, scale: number) {
+  const lines = field.text.split('\n');
+  const measure = createMeasure(fontFamily, field.fontSize);
+
+  const textWidth = Math.max(...lines.map((line) => measure(line)), 0);
+  const padding = 12 / scale;
+  const textHeight = lines.length * field.fontSize * 1.2;
+
+  return {
+    minW: Math.max(10, textWidth + padding),
+    minH: Math.max(10, textHeight + padding),
+  };
+}
+
 export default function TextField({ field, onUpdate, onDelete, scale, fontFamily, randomness }: TextFieldProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [resizeDir, setResizeDir] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsAnchorPoint, setSettingsAnchorPoint] = useState<{ left: number; top: number } | null>(null);
   const dragStartRef = useRef({ x: 0, y: 0, fieldX: 0, fieldY: 0, fieldW: 0, fieldH: 0 });
+  const settingsTriggerRef = useRef<HTMLButtonElement>(null);
+  const previousMinimumSizeRef = useRef<{ minW: number; minH: number } | null>(null);
 
   // Calculate the minimum width and height based on the text content
-  const [minW, minH] = useMemo(() => {
-    const lines = field.text.split('\n');
-    const measure = createMeasure(fontFamily, field.fontSize);
-    
-    // Calculate width of the longest line
-    const textWidth = Math.max(...lines.map(l => measure(l)), 0);
-    
-    // Calculate height based on number of lines and line-height (1.2)
-    // We add a bit of padding to ensure the outline doesn't touch the text
-    // p-1 is 4px on screen, so 8px total. In canvas units that's 8/scale.
-    // We'll add a 10px buffer in canvas units to be safe.
-    const padding = 12 / scale;
-    const textHeight = lines.length * field.fontSize * 1.2;
+  const { minW, minH } = useMemo(
+    () => calculateMinimumTextBoxSize(field, fontFamily, scale),
+    [field.fontSize, field.text, fontFamily, scale]
+  );
 
-    return [
-      Math.max(10, textWidth + padding),
-      Math.max(10, textHeight + padding)
-    ];
-  }, [field.text, field.fontSize, fontFamily, scale]);
+  useLayoutEffect(() => {
+    if (isDragging || resizeDir) return;
+
+    const previousMinimumSize = previousMinimumSizeRef.current;
+    previousMinimumSizeRef.current = { minW, minH };
+
+    if (previousMinimumSize && previousMinimumSize.minW === minW && previousMinimumSize.minH === minH) {
+      return;
+    }
+
+    if (field.width === minW && field.height === minH) return;
+
+    onUpdate({
+      width: minW,
+      height: minH,
+    });
+  }, [field.height, field.width, isDragging, minH, minW, onUpdate, resizeDir]);
+
+  const handleSettingsOpenChange = (open: boolean) => {
+    if (open && settingsTriggerRef.current) {
+      const rect = settingsTriggerRef.current.getBoundingClientRect();
+      setSettingsAnchorPoint({
+        left: rect.left + rect.width / 2,
+        top: rect.top + rect.height / 2,
+      });
+    }
+
+    if (!open) {
+      setSettingsAnchorPoint(null);
+    }
+
+    setIsSettingsOpen(open);
+  };
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -190,12 +227,29 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
 
       {/* Top Right Icons - Consolidated Settings */}
       <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Popover>
+        <Popover open={isSettingsOpen} onOpenChange={handleSettingsOpenChange}>
           <PopoverTrigger asChild>
-            <button className="bg-white border shadow-sm rounded-full p-1 hover:bg-gray-50 text-gray-500">
+            <button
+              ref={settingsTriggerRef}
+              type="button"
+              aria-label="Text box settings"
+              className="bg-white border shadow-sm rounded-full p-1 hover:bg-gray-50 text-gray-500"
+            >
               <Settings size={12} />
             </button>
           </PopoverTrigger>
+          {settingsAnchorPoint && (
+            <PopoverAnchor
+              style={{
+                position: 'fixed',
+                left: settingsAnchorPoint.left,
+                top: settingsAnchorPoint.top,
+                width: 0,
+                height: 0,
+                pointerEvents: 'none',
+              }}
+            />
+          )}
           <PopoverContent className="w-48 p-4 shadow-xl border-gray-100">
             <div className="space-y-5">
               {/* Font Size Section */}
