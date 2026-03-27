@@ -6,6 +6,7 @@ import Link from 'next/link';
 import HandwritingEditor from '@/components/HandwritingEditor';
 import SettingsPanel from '@/components/SettingsPanel';
 import ExportPanel from '@/components/ExportPanel';
+import Version from '@/components/Version';
 import './editor.css';
 
 import {
@@ -359,6 +360,9 @@ export default function EditorPage() {
                 onExportPageIndexChange={setExportPageIndex}
               />
             )}
+          </div>
+          <div className="shrink-0 py-2 px-4 border-t border-gray-100 flex justify-center bg-gray-50/50">
+            <Version />
           </div>
         </div>
 
