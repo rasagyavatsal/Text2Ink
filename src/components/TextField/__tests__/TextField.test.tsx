@@ -51,6 +51,34 @@ describe('TextField', () => {
     expect(mockOnUpdate).toHaveBeenCalledWith({ text: 'Updated Text' });
   });
 
+  it.each([
+    ['Enter', 'Enter'],
+    ['Space', ' '],
+  ])('stops %s from bubbling out of the text field', (_label, key) => {
+    const parentKeyDown = vi.fn();
+
+    render(
+      <div onKeyDown={parentKeyDown}>
+        <TextField
+          field={mockField}
+          onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
+          scale={scale}
+          fontFamily={fontFamily}
+          randomness={randomness}
+        />
+      </div>
+    );
+
+    const textarea = screen.getByPlaceholderText('');
+    fireEvent.keyDown(textarea, {
+      key,
+      code: key === 'Enter' ? 'Enter' : 'Space',
+    });
+
+    expect(parentKeyDown).not.toHaveBeenCalled();
+  });
+
   it('handles resizing from south-east corner', () => {
     render(
       <TextField

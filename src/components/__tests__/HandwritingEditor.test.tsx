@@ -188,6 +188,26 @@ describe('HandwritingEditor selection behavior', () => {
     expect(screen.getByTestId('preview-selection')).toHaveTextContent('0:23');
   });
 
+  it.each([
+    ['Enter', 'Enter'],
+    ['Space', ' '],
+  ])('keeps %s inside the handwriting textarea', async (_label, key) => {
+    const focusSpy = vi.spyOn(HTMLTextAreaElement.prototype, 'focus').mockImplementation(() => {});
+
+    renderEditor();
+    await waitFor(() => expect(screen.getByTestId('preview-lines')).toHaveTextContent('2'));
+    await waitFor(() => expect(focusSpy).toHaveBeenCalled());
+
+    focusSpy.mockClear();
+    fireEvent.keyDown(screen.getByLabelText('Handwriting text input'), {
+      key,
+      code: key === 'Enter' ? 'Enter' : 'Space',
+    });
+
+    expect(focusSpy).not.toHaveBeenCalled();
+    focusSpy.mockRestore();
+  });
+
   it('preserves a drag selection when the page div is clicked after mouseup', async () => {
     renderEditor();
     await waitFor(() => expect(screen.getByTestId('preview-lines')).toHaveTextContent('2'));

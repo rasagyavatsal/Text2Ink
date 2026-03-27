@@ -875,7 +875,13 @@ export default function HandwritingEditor({
         value={localText}
         onChange={handleTextChange}
         onPaste={handlePaste}
-        onKeyDown={handleTextareaKeyDown}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            // Keep typing keys inside the editor so page-level keyboard handlers do not steal focus.
+            e.stopPropagation();
+          }
+          handleTextareaKeyDown(e);
+        }}
         onKeyUp={handleKeyUp}
         onClick={handleClick}
         onSelect={handleSelect}
