@@ -52,6 +52,8 @@ function buildCharacterPositionsForLines(opts: {
     let prevEndX = currentX;
     let prevSelectionY = currentLineY + verticalCenteringOffset - fontAscent;
     let prevSelectionHeight = fontAscent + fontDescent;
+    let prevCursorY = prevSelectionY;
+    let prevCursorHeight = prevSelectionHeight;
 
     for (let charIdx = 0; charIdx < lineText.length; charIdx++) {
       const char = lineText[charIdx];
@@ -67,15 +69,23 @@ function buildCharacterPositionsForLines(opts: {
 
       let selectionY: number;
       let selectionHeight: number;
+      let cursorY: number;
+      let cursorHeight: number;
 
       if (char === ' ') {
         selectionY = prevSelectionY;
         selectionHeight = prevSelectionHeight;
+        cursorY = prevCursorY;
+        cursorHeight = prevCursorHeight;
       } else {
         selectionY = currentLineY + verticalCenteringOffset - actualBoundingBoxAscent + randomData.baseline;
         selectionHeight = actualBoundingBoxAscent + actualBoundingBoxDescent;
+        cursorY = currentLineY + verticalCenteringOffset - fontAscent + randomData.baseline;
+        cursorHeight = fontAscent + fontDescent;
         prevSelectionY = selectionY;
         prevSelectionHeight = selectionHeight;
+        prevCursorY = cursorY;
+        prevCursorHeight = cursorHeight;
       }
 
       const selectionX = prevEndX;
@@ -92,6 +102,8 @@ function buildCharacterPositionsForLines(opts: {
         selectionHeight,
         selectionX,
         selectionWidth,
+        cursorY,
+        cursorHeight,
       });
 
       currentX += charWidth;
@@ -110,6 +122,8 @@ function buildCharacterPositionsForLines(opts: {
         selectionHeight: Math.min(pageLineHeightPx, pageSettings.fontSize),
         selectionX: currentX,
         selectionWidth: 0,
+        cursorY: currentLineY + (pageLineHeightPx - pageSettings.fontSize) / 2,
+        cursorHeight: Math.min(pageLineHeightPx, pageSettings.fontSize),
       });
     }
 
@@ -128,6 +142,8 @@ function buildCharacterPositionsForLines(opts: {
       selectionHeight: Math.min(pageLineHeightPx, pageSettings.fontSize),
       selectionX: startX,
       selectionWidth: 0,
+      cursorY: startY + (pageLineHeightPx - pageSettings.fontSize) / 2,
+      cursorHeight: Math.min(pageLineHeightPx, pageSettings.fontSize),
     });
   }
 
@@ -422,20 +438,20 @@ export const UnifiedPagePainter = {
       // Before first character
       const first = charPositions[0];
       cursorX = first.x;
-      cursorY = first.y;
-      cursorHeight = first.height;
+      cursorY = first.cursorY ?? first.selectionY ?? first.y;
+      cursorHeight = first.cursorHeight ?? first.selectionHeight ?? first.height;
     } else if (cursorIndex >= charPositions.length) {
       // After last character
       const last = charPositions[charPositions.length - 1];
       cursorX = last.x + last.width;
-      cursorY = last.y;
-      cursorHeight = last.height;
+      cursorY = last.cursorY ?? last.selectionY ?? last.y;
+      cursorHeight = last.cursorHeight ?? last.selectionHeight ?? last.height;
     } else {
       // Between characters: position at the left edge of the character at cursorIndex
       const pos = charPositions[cursorIndex];
       cursorX = pos.x;
-      cursorY = pos.y;
-      cursorHeight = pos.height;
+      cursorY = pos.cursorY ?? pos.selectionY ?? pos.y;
+      cursorHeight = pos.cursorHeight ?? pos.selectionHeight ?? pos.height;
     }
 
     ctx.fillStyle = inkColor;
@@ -487,4 +503,6 @@ export interface CharacterPosition {
   selectionHeight?: number;
   selectionX?: number;
   selectionWidth?: number;
+  cursorY?: number;
+  cursorHeight?: number;
 }

@@ -369,6 +369,44 @@ describe('UnifiedPagePainter', () => {
       // Should draw a cursor (fillRect for the cursor line)
       expect(ctx.fillRect).toHaveBeenCalled();
     });
+
+    it('does NOT stretch the caret when customLineSpacing is large', () => {
+      const ctx = createMockCtx();
+      const settings: HandwritingSettings = { 
+          ...DEFAULT_SETTINGS,
+          customBackgroundImage: 'data:image/png;base64,abc' // Enable customLineSpacing
+      };
+      const pageSettings = {
+          ...defaultPageSettingsFromHandwritingSettings(settings),
+          fontSize: 20,
+          customLineSpacing: 100 // Large line spacing
+      };
+
+      const lines = [{ text: 'A', lineIndex: 0, hasNewline: false }];
+      
+      const { mainPositions } = UnifiedPagePainter.computeCharacterPositions({
+        ctx,
+        lines,
+        pageSettings,
+        settings,
+        fontFamily: 'Arial',
+      });
+
+      // Check the height of the first character position (hit area) still covers the line height
+      expect(mainPositions[0].height).toBe(100);
+      // The caret height should be the font's height (20 + 5 = 25 in our mock)
+      expect(mainPositions[0].cursorHeight).toBe(25);
+
+      // Paint the cursor at index 0
+      UnifiedPagePainter.paintCursorOverlay(ctx, mainPositions, 0, '#000000');
+
+      // The cursor should be painted with height 25 (fontAscent + fontDescent)
+      const lastCall = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls.find((call: any[]) => call[2] === 2); // width is 2
+      expect(lastCall).toBeDefined();
+      if (lastCall) {
+          expect(lastCall[3]).toBe(25);
+      }
+    });
   });
 
   describe('paintSelectionOverlay', () => {
