@@ -222,6 +222,7 @@ export default function RootLayout({
           media="(min-width: 641px)"
           type="image/avif"
         />
+        <script src="https://t.contentsquare.net/uxa/ea250cc30afee.js" async />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
