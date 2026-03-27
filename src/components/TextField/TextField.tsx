@@ -277,6 +277,11 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
         className="absolute inset-0 w-full h-full bg-transparent border-none outline-none resize-none p-1 leading-tight overflow-hidden"
         value={field.text}
         onChange={(e) => onUpdate({ text: e.target.value })}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.stopPropagation();
+          }
+        }}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         spellCheck={false}
