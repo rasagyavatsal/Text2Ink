@@ -187,7 +187,7 @@ export const UnifiedPagePainter = {
 
     // 4. Draw text fields
     if (renderTextFields && pageSettings.textFields && pageSettings.textFields.length > 0) {
-      this._drawTextFields(ctx, pageSettings.textFields, fontFamily);
+      this._drawTextFields(ctx, pageSettings.textFields, fontFamily, settings.randomness);
     }
   },
 
@@ -195,21 +195,54 @@ export const UnifiedPagePainter = {
     ctx: CanvasRenderingContext2D,
     textFields: TextField[],
     fontFamily: string,
+    randomness: HandwritingSettings['randomness'],
   ): void {
     ctx.save();
-    ctx.textBaseline = 'top';
-    for (const field of textFields) {
+    ctx.textBaseline = 'alphabetic'; // Changed to match main text rendering
+    
+    textFields.forEach((field, fieldIdx) => {
       ctx.fillStyle = field.color;
       ctx.font = `${field.fontSize}px ${fontFamily}`;
       
-      // Handle multi-line text in text fields
       const lines = field.text.split('\n');
-      let currentY = field.y;
-      for (const line of lines) {
-        ctx.fillText(line, field.x, currentY);
-        currentY += field.fontSize * 1.2; // Approximate line height
-      }
-    }
+      const lineHeight = field.fontSize * 1.2;
+      
+      // Calculate font ascent for vertical positioning
+      // (Simplified similar to buildCharacterPositionsForLines)
+      const sampleMetrics = ctx.measureText('Ajpqy');
+      const fontAscent = sampleMetrics.fontBoundingBoxAscent
+        ?? sampleMetrics.actualBoundingBoxAscent
+        ?? (field.fontSize * 0.85);
+
+      lines.forEach((lineText, lineInFieldIdx) => {
+        const lineY = field.y + (lineInFieldIdx * lineHeight) + fontAscent;
+        let currentX = field.x;
+        
+        // Use a unique line index for each line in each field to avoid repeating patterns
+        const lineIndexForSeed = (fieldIdx + 1) * 1000 + lineInFieldIdx;
+
+        for (let charIdx = 0; charIdx < lineText.length; charIdx++) {
+          const char = lineText[charIdx];
+          const randomData = calculateRandomStyle(charIdx, lineIndexForSeed, randomness);
+
+          currentX += randomData.spacing;
+
+          if (char !== ' ') {
+            ctx.save();
+            ctx.translate(currentX, lineY + randomData.baseline);
+
+            if (randomData.rotation !== 0) {
+              ctx.rotate((randomData.rotation * Math.PI) / 180);
+            }
+
+            ctx.fillText(char, 0, 0);
+            ctx.restore();
+          }
+
+          currentX += ctx.measureText(char).width;
+        }
+      });
+    });
     ctx.restore();
   },
 

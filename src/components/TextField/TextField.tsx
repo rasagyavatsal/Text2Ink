@@ -2,9 +2,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Move, X, Settings } from 'lucide-react';
-import { TextField as TextFieldType } from '@/lib/types';
+import { TextField as TextFieldType, HandwritingSettings } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
+import { calculateRandomStyle } from '@/lib/editorHelpers';
 
 interface TextFieldProps {
   field: TextFieldType;
@@ -12,11 +13,13 @@ interface TextFieldProps {
   onDelete: () => void;
   scale: number;
   fontFamily: string;
+  randomness: HandwritingSettings['randomness'];
 }
 
-export default function TextField({ field, onUpdate, onDelete, scale, fontFamily }: TextFieldProps) {
+export default function TextField({ field, onUpdate, onDelete, scale, fontFamily, randomness }: TextFieldProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [resizeDir, setResizeDir] = useState<string | null>(null);
+  const [isFocused, setIsFocused] = useState(false);
   const dragStartRef = useRef({ x: 0, y: 0, fieldX: 0, fieldY: 0, fieldW: 0, fieldH: 0 });
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -187,16 +190,49 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
         </Popover>
       </div>
 
+      <div
+        className="relative w-full h-full p-1"
+        style={{
+          fontSize: field.fontSize * scale,
+          lineHeight: 1.2,
+          pointerEvents: 'none',
+        }}
+      >
+        {field.text.split('\n').map((line, lineIdx) => (
+          <div key={lineIdx} className="whitespace-pre">
+            {line.split('').map((char, charIdx) => {
+              const randomStyle = calculateRandomStyle(charIdx, lineIdx + 1000, randomness);
+              return (
+                <span
+                  key={charIdx}
+                  className="inline-block"
+                  style={{
+                    ...randomStyle.style,
+                    opacity: isFocused ? 0 : 1,
+                  }}
+                >
+                  {char}
+                </span>
+              );
+            })}
+            {line.length === 0 && <br />}
+          </div>
+        ))}
+      </div>
+
       <textarea
-        className="w-full h-full bg-transparent border-none outline-none resize-none p-1 leading-tight overflow-hidden"
+        className="absolute inset-0 w-full h-full bg-transparent border-none outline-none resize-none p-1 leading-tight overflow-hidden"
         value={field.text}
         onChange={(e) => onUpdate({ text: e.target.value })}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
         style={{
            fontSize: field.fontSize * scale,
-           color: field.color,
+           color: isFocused ? field.color : 'transparent',
+           caretColor: field.color,
            minHeight: 'inherit',
         }}
-        placeholder="Text..."
+        placeholder={isFocused ? "Text..." : ""}
       />
     </div>
   );

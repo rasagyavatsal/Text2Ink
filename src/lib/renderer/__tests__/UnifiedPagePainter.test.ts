@@ -498,4 +498,57 @@ describe('UnifiedPagePainter', () => {
        expect(height).toBeCloseTo(22, 1); // 18 + 4
      });
    });
- });
+
+   describe('paintPage - text field rendering', () => {
+    it('renders text fields character-by-character when renderTextFields is true', () => {
+      const ctx = createMockCtx();
+      const settings = { ...DEFAULT_SETTINGS, randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 } };
+      const pageSettings = {
+        ...defaultPageSettingsFromHandwritingSettings(settings),
+        textFields: [{
+          id: '1',
+          text: 'Hi',
+          x: 100,
+          y: 100,
+          width: 50,
+          height: 30,
+          color: '#000000',
+          fontSize: 16
+        }]
+      };
+      const opts = defaultPaintOptions({ ctx, settings, pageSettings, renderTextFields: true });
+
+      UnifiedPagePainter.paintPage(opts);
+
+      const fillTextCalls = (ctx.fillText as ReturnType<typeof vi.fn>).mock.calls;
+      const chars = fillTextCalls.map((c: any[]) => c[0]);
+      expect(chars).toContain('H');
+      expect(chars).toContain('i');
+      
+      expect((ctx as any).font).toContain('16px');
+    });
+
+    it('skips text fields when renderTextFields is false', () => {
+      const ctx = createMockCtx();
+      const settings = { ...DEFAULT_SETTINGS };
+      const pageSettings = {
+        ...defaultPageSettingsFromHandwritingSettings(settings),
+        textFields: [{
+          id: '1',
+          text: 'Field',
+          x: 100,
+          y: 100,
+          width: 50,
+          height: 30,
+          color: '#000000',
+          fontSize: 16
+        }]
+      };
+      const opts = defaultPaintOptions({ ctx, settings, pageSettings, renderTextFields: false, lines: [] });
+
+      UnifiedPagePainter.paintPage(opts);
+
+      expect(ctx.fillText).not.toHaveBeenCalled();
+    });
+  });
+});
