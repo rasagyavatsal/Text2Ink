@@ -307,6 +307,31 @@ export default function SettingsPanel({
             <Wand2 className="w-3.5 h-3.5" />
             Apply settings to all pages
           </button>
+
+          <div className="pt-2">
+            <button
+              onClick={() => {
+                const newField = {
+                  id: crypto.randomUUID(),
+                  text: '',
+                  x: 100,
+                  y: 100,
+                  width: 200,
+                  height: 50,
+                  color: settings.inkColor,
+                  fontSize: pageSettings.fontSize,
+                };
+                updatePageSetting('textFields', [...(pageSettings.textFields || []), newField]);
+              }}
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-gray-100 border border-transparent rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-200 transition-all active:scale-95"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Text Box
+            </button>
+            <p className="text-[10px] text-gray-400 mt-2 text-center italic">
+              Add draggable text boxes for dates, names, or signatures.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -935,38 +960,6 @@ export default function SettingsPanel({
             </div>
           )}
         </div>
-      </div>
-
-      <Separator />
-
-      <div>
-        <div className="flex items-center gap-2 mb-5">
-          <Type className="w-5 h-5 text-[#E0A32A]" />
-          <h3 className="font-semibold text-lg">Text Fields</h3>
-        </div>
-
-        <button
-          onClick={() => {
-            const newField = {
-              id: crypto.randomUUID(),
-              text: '',
-              x: 100,
-              y: 100,
-              width: 200,
-              height: 50,
-              color: settings.inkColor,
-              fontSize: pageSettings.fontSize,
-            };
-            updatePageSetting('textFields', [...(pageSettings.textFields || []), newField]);
-          }}
-          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-gray-100 border border-transparent rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-200 transition-all active:scale-95"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Add Text Box
-        </button>
-        <p className="text-[10px] text-gray-400 mt-2 text-center italic">
-          Add draggable text boxes for dates, names, or signatures.
-        </p>
       </div>
 
       <Separator />
