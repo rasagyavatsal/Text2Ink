@@ -83,4 +83,14 @@ describe('FeedbackDialog', () => {
     expect(alertSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to send feedback'));
     alertSpy.mockRestore();
   });
+
+  it('disables spellcheck on feedback textareas', () => {
+    render(<FeedbackDialog isOpen={true} onClose={onClose} />);
+    
+    const improvementTextarea = screen.getByPlaceholderText(/what we can do better/i);
+    const featureTextarea = screen.getByPlaceholderText(/share your ideas/i);
+    
+    expect(improvementTextarea.getAttribute('spellcheck')).toBe('false');
+    expect(featureTextarea.getAttribute('spellcheck')).toBe('false');
+  });
 });
