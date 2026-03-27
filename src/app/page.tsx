@@ -2,6 +2,7 @@ import Link from 'next/link';
 import NextImage from 'next/image';
 import { Image as ImageIcon, Wand2, ArrowRight } from 'lucide-react';
 import SamplePreviewGallery from '@/components/SamplePreviewGallery';
+import Version from '@/components/Version';
 
 export default function LandingPage() {
   return (
@@ -139,9 +140,12 @@ export default function LandingPage() {
               priority
             />
           </div>
-          <p className="text-gray-500 text-xs sm:text-sm">
-            © {new Date().getFullYear()} Text2Ink. All rights reserved.
-          </p>
+          <div className="flex flex-col items-center md:items-end gap-1">
+            <p className="text-gray-500 text-xs sm:text-sm">
+              © {new Date().getFullYear()} Text2Ink. All rights reserved.
+            </p>
+            <Version />
+          </div>
         </div>
       </footer>
     </div>

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import NextImage from 'next/image';
 import { Mail, ArrowLeft } from 'lucide-react';
 import { Metadata } from 'next';
+import Version from '@/components/Version';
 
 export const metadata: Metadata = {
   title: 'Contact Us',
@@ -113,9 +114,12 @@ export default function ContactPage() {
               priority
             />
           </div>
-          <p className="text-gray-500 text-xs sm:text-sm">
-            © {new Date().getFullYear()} Text2Ink. All rights reserved.
-          </p>
+          <div className="flex flex-col items-center md:items-end gap-1">
+            <p className="text-gray-500 text-xs sm:text-sm">
+              © {new Date().getFullYear()} Text2Ink. All rights reserved.
+            </p>
+            <Version />
+          </div>
         </div>
       </footer>
     </div>
