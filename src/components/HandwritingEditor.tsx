@@ -754,6 +754,7 @@ export default function HandwritingEditor({
                 field={field}
                 scale={scale}
                 fontFamily={resolvedFontFamily}
+                randomness={settings.randomness}
                 onUpdate={(updates) => {
                   const nextFields = ps.textFields?.map((f) =>
                     f.id === field.id ? { ...f, ...updates } : f
