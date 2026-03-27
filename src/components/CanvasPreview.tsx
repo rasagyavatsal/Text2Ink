@@ -125,6 +125,7 @@ export default function CanvasPreview({
       settings,
       scaleFactor: previewScale,
       fontFamily,
+      renderTextFields: false,
     });
 
     // Compute character positions for interaction

@@ -16,6 +16,7 @@ import {
   calculateLineStarts,
 } from '@/lib/editorHelpers';
 import CanvasPreview from './CanvasPreview';
+import TextField from './TextField/TextField';
 
 interface HandwritingEditorProps {
   text: string;
@@ -23,6 +24,7 @@ interface HandwritingEditorProps {
   settings: HandwritingSettings;
   onSettingsChange?: (settings: HandwritingSettings) => void;
   pageSettingsByPage: PageSettings[];
+  onPageSettingsChange?: (settings: PageSettings) => void;
   exportingPageIndex?: number | null;
   previewScale: number;
   onPreviewScaleChange: (value: number) => void;
@@ -69,6 +71,7 @@ export default function HandwritingEditor({
   settings,
   onSettingsChange,
   pageSettingsByPage,
+  onPageSettingsChange,
   exportingPageIndex = null,
   previewScale,
   onPreviewScaleChange,
@@ -741,6 +744,30 @@ export default function HandwritingEditor({
             onMouseUp={isVisiblePreview ? handleSelectionEnd : undefined}
           />
 
+          {isVisiblePreview && ps.textFields?.map((field) => (
+            <div
+              key={field.id}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <TextField
+                field={field}
+                scale={scale}
+                fontFamily={resolvedFontFamily}
+                onUpdate={(updates) => {
+                  const nextFields = ps.textFields?.map((f) =>
+                    f.id === field.id ? { ...f, ...updates } : f
+                  );
+                  onPageSettingsChange?.({ ...ps, textFields: nextFields });
+                }}
+                onDelete={() => {
+                  const nextFields = ps.textFields?.filter((f) => f.id !== field.id);
+                  onPageSettingsChange?.({ ...ps, textFields: nextFields });
+                }}
+              />
+            </div>
+          ))}
+
           {isVisiblePreview && (pageLines.length === 0 || (pageLines.length === 1 && pageLines[0].text === '')) && (
             <div
               className="absolute pointer-events-none select-none"
@@ -833,6 +860,8 @@ export default function HandwritingEditor({
       selectionRange.end,
       selectionRange.start,
       settings,
+      currentPageIndex,
+      onPageSettingsChange,
     ]
   );
 

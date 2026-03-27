@@ -1,4 +1,4 @@
-import { HandwritingSettings, PageSettings } from '../types';
+import { HandwritingSettings, PageSettings, TextField } from '../types';
 import { LineData, calculateRandomStyle } from '../editorHelpers';
 import { PAGE_WIDTH, PAGE_HEIGHT } from '../pageConstants';
 
@@ -10,6 +10,7 @@ export interface PaintPageOptions {
   settings: HandwritingSettings;
   scaleFactor: number;
   fontFamily: string;
+  renderTextFields?: boolean;
 }
 
 type CharacterPositionLines = Array<Pick<LineData, 'text' | 'lineIndex' | 'hasNewline'>>;
@@ -140,7 +141,7 @@ function buildCharacterPositionsForLines(opts: {
  */
 export const UnifiedPagePainter = {
   paintPage(opts: PaintPageOptions): void {
-    const { ctx, pageIndex, lines, pageSettings, settings, fontFamily } = opts;
+    const { ctx, pageIndex, lines, pageSettings, settings, fontFamily, renderTextFields = true } = opts;
 
     // 1. Draw background
     const customBg = settings.customBackgroundImages?.[pageIndex] ?? settings.customBackgroundImage;
@@ -184,6 +185,32 @@ export const UnifiedPagePainter = {
       currentLineY += pageLineHeightPx;
     }
 
+    // 4. Draw text fields
+    if (renderTextFields && pageSettings.textFields && pageSettings.textFields.length > 0) {
+      this._drawTextFields(ctx, pageSettings.textFields, fontFamily);
+    }
+  },
+
+  _drawTextFields(
+    ctx: CanvasRenderingContext2D,
+    textFields: TextField[],
+    fontFamily: string,
+  ): void {
+    ctx.save();
+    ctx.textBaseline = 'top';
+    for (const field of textFields) {
+      ctx.fillStyle = field.color;
+      ctx.font = `${field.fontSize}px ${fontFamily}`;
+      
+      // Handle multi-line text in text fields
+      const lines = field.text.split('\n');
+      let currentY = field.y;
+      for (const line of lines) {
+        ctx.fillText(line, field.x, currentY);
+        currentY += field.fontSize * 1.2; // Approximate line height
+      }
+    }
+    ctx.restore();
   },
 
   _drawTextLine(
