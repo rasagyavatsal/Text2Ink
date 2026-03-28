@@ -433,7 +433,8 @@ describe('UnifiedPagePainter', () => {
 
       UnifiedPagePainter.paintSelectionOverlay(ctx, charPositions, 0, 2, '#1a365d');
 
-      // Should draw selection rectangles
+      // Should draw selection rectangles with the native blue color
+      expect(ctx.fillStyle).toBe('rgba(0, 122, 255, 0.35)');
       expect(ctx.fillRect).toHaveBeenCalled();
     });
 
@@ -459,7 +460,7 @@ describe('UnifiedPagePainter', () => {
       expect(ctx.fillRect).not.toHaveBeenCalled();
     });
 
-     it('aligns the selection highlight with the ink body instead of the top of the line box', () => {
+     it('aligns the selection highlight with the caret height and position', () => {
        const ctx = createMockCtx();
        const settings = {
          ...DEFAULT_SETTINGS,
@@ -479,12 +480,11 @@ describe('UnifiedPagePainter', () => {
        const [x, y, width, height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0];
        expect(x).toBe(pageSettings.marginLeft);
        // halfLeading = (43.2 - 24) / 2 = 9.6
-       // fontAscent = 20, actualBoundingBoxAscent = 18
-       // selectionY = marginTop + 9.6 + 20 - 18 = marginTop + 11.6
-       expect(y).toBeCloseTo(pageSettings.marginTop + 11.6, 1);
+       // selectionY = marginTop + halfLeading = marginTop + 9.6
+       expect(y).toBeCloseTo(pageSettings.marginTop + 9.6, 1);
        expect(width).toBe(10);
-       // selectionHeight = 18 + 4 = 22
-       expect(height).toBeCloseTo(22, 1);
+       // selectionHeight = fontAscent + fontDescent = 20 + 5 = 25
+       expect(height).toBeCloseTo(25, 1);
      });
 
      it('computes selectionX that absorbs preceding spacing gap', () => {
@@ -552,12 +552,10 @@ describe('UnifiedPagePainter', () => {
        UnifiedPagePainter.paintSelectionOverlay(ctx, positions.mainPositions, 0, 1, '#1a365d');
 
        const [x, y, width, height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0];
-       // At low line spacing, the selection should still align with the ink body
        // halfLeading = (24 - 24) / 2 = 0
-       // fontAscent = 20, actualBoundingBoxAscent = 18
-       // selectionY = marginTop + 0 + (20 - 18) + 0 = marginTop + 2
-       expect(y).toBeCloseTo(pageSettings.marginTop + 2, 1);
-       expect(height).toBeCloseTo(22, 1); // 18 + 4
+       // selectionY = marginTop + 0 = marginTop
+       expect(y).toBeCloseTo(pageSettings.marginTop, 1);
+       expect(height).toBeCloseTo(25, 1); // fontAscent + fontDescent = 20 + 5 = 25
      });
    });
 
