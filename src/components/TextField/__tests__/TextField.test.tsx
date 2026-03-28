@@ -298,9 +298,42 @@ describe('TextField', () => {
     // Math.max(10, 0 + 12) = 12.
     expect(lastCall.width).toBeGreaterThanOrEqual(12);
     expect(lastCall.height).toBeGreaterThanOrEqual(12);
-  });
+    });
 
-  it('expands immediately when font size grows beyond the current box size', async () => {
+    it('keeps initial size when empty and only shrinks when text is added', async () => {
+    const { rerender } = render(
+      <TextField
+        field={{ ...mockField, text: '', width: 200, height: 50 }}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+        randomness={randomness}
+      />
+    );
+
+    // Should NOT have called onUpdate to shrink yet because it's empty
+    expect(mockOnUpdate).not.toHaveBeenCalled();
+
+    // Now add text
+    rerender(
+      <TextField
+        field={{ ...mockField, text: 'a', width: 200, height: 50 }}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+        randomness={randomness}
+      />
+    );
+
+    // Now it should call onUpdate to shrink to fit 'a'
+    expect(mockOnUpdate).toHaveBeenCalled();
+    const lastCall = mockOnUpdate.mock.calls[mockOnUpdate.mock.calls.length - 1][0];
+    expect(lastCall.width).toBeLessThan(200);
+    });
+
+    it('expands immediately when font size grows beyond the current box size', async () => {
     const compactField = { ...mockField, width: 150, height: 50, fontSize: 24 };
     const { rerender } = render(
       <TextField

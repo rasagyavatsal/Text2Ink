@@ -48,7 +48,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
   );
 
   useLayoutEffect(() => {
-    if (isDragging || resizeDir) return;
+    if (isDragging || resizeDir || field.text === '') return;
 
     const previousMinimumSize = previousMinimumSizeRef.current;
     previousMinimumSizeRef.current = { minW, minH };
@@ -63,7 +63,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
       width: minW,
       height: minH,
     });
-  }, [field.height, field.width, isDragging, minH, minW, onUpdate, resizeDir]);
+  }, [field.height, field.width, isDragging, minH, minW, onUpdate, resizeDir, field.text]);
 
   const handleSettingsOpenChange = (open: boolean) => {
     if (open && settingsTriggerRef.current) {
@@ -345,7 +345,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
            caretColor: field.color,
            minHeight: 'inherit',
         }}
-        placeholder={isFocused ? "Text..." : ""}
+        placeholder={field.text === "" ? "Text..." : ""}
       />
     </div>
   );
