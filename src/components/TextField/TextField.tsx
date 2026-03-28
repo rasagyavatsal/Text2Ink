@@ -345,7 +345,8 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
            caretColor: field.color,
            minHeight: 'inherit',
         }}
-        placeholder={field.text === "" ? "Text..." : ""}
+        /* Keep placeholder empty to only show a blinking caret when the user clicks/focuses an empty text box */
+        placeholder=""
       />
     </div>
   );

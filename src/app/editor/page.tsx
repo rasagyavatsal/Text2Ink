@@ -173,11 +173,13 @@ export default function EditorPage() {
   );
 
   const handleClearAll = useCallback(() => {
-    if (window.confirm('Are you sure you want to remove all text from all pages? This action cannot be undone.')) {
+    if (window.confirm('Are you sure you want to remove all text and text fields from all pages? This action cannot be undone.')) {
       setText('');
       setCurrentPageIndex(0);
+      setSettings((prev) => ({ ...prev, textFields: [] }));
+      setPageSettingsByPage((prev) => prev.map((ps) => ({ ...ps, textFields: [] })));
     }
-  }, [setText, setCurrentPageIndex]);
+  }, [setText, setCurrentPageIndex, setSettings, setPageSettingsByPage]);
 
   const handlePreviewScaleChange = useCallback(
     (value: number) => setPreviewScale(clampPreviewScale(value)),
