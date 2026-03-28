@@ -769,23 +769,6 @@ export default function HandwritingEditor({
             </div>
           ))}
 
-          {isVisiblePreview && (pageLines.length === 0 || (pageLines.length === 1 && pageLines[0].text === '')) && (
-            <div
-              className="absolute pointer-events-none select-none"
-              style={{
-                top: ps.marginTop,
-                left: ps.marginLeft,
-                color: '#9ca3af',
-                fontSize: ps.fontSize,
-                fontFamily: settings.fontFamily === 'custom' && settings.customFont
-                  ? `"${settings.customFont.family}", cursive`
-                  : undefined,
-              }}
-            >
-              Click here to start typing...
-            </div>
-          )}
-
           {isVisiblePreview && settings.paperStyle === 'ruled' && !getBackgroundForPage(pageIndex) && onSettingsChange && (
             <button
               type="button"

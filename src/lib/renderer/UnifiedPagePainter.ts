@@ -417,6 +417,9 @@ export const UnifiedPagePainter = {
       settings,
       fontAscent,
       fontDescent,
+      // Ensure we have at least one position (anchor) even if the page is empty 
+      // so that the blinking caret can be rendered.
+      ensureCaretAnchor: true,
     });
     return { mainPositions };
   },

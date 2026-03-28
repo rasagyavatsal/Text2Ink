@@ -340,7 +340,7 @@ describe('UnifiedPagePainter', () => {
        expect(positions.mainPositions[2]!.y).toBe(pageSettings.marginTop + (pageSettings.fontSize * settings.lineHeight));
     });
 
-    it('returns empty array for empty lines', () => {
+    it('returns a single anchor position for empty lines to support cursor rendering', () => {
       const settings = { ...DEFAULT_SETTINGS };
       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
       const ctx = createMockCtx();
@@ -353,7 +353,9 @@ describe('UnifiedPagePainter', () => {
         fontFamily: 'Caveat',
       });
 
-      expect(positions.mainPositions).toEqual([]);
+      expect(positions.mainPositions).toHaveLength(1);
+      expect(positions.mainPositions[0].charIndex).toBe(0);
+      expect(positions.mainPositions[0].width).toBe(0);
     });
 
   });
