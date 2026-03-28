@@ -78,10 +78,10 @@ function buildCharacterPositionsForLines(opts: {
         cursorY = prevCursorY;
         cursorHeight = prevCursorHeight;
       } else {
-        selectionY = currentLineY + verticalCenteringOffset - actualBoundingBoxAscent + randomData.baseline;
-        selectionHeight = actualBoundingBoxAscent + actualBoundingBoxDescent;
         cursorY = currentLineY + verticalCenteringOffset - fontAscent + randomData.baseline;
         cursorHeight = fontAscent + fontDescent;
+        selectionY = cursorY;
+        selectionHeight = cursorHeight;
         prevSelectionY = selectionY;
         prevSelectionHeight = selectionHeight;
         prevCursorY = cursorY;
@@ -118,12 +118,12 @@ function buildCharacterPositionsForLines(opts: {
         height: pageLineHeightPx,
         lineIndex,
         charIndex: lineText.length,
-        selectionY: currentLineY + (pageLineHeightPx - pageSettings.fontSize) / 2,
-        selectionHeight: Math.min(pageLineHeightPx, pageSettings.fontSize),
+        selectionY: currentLineY + verticalCenteringOffset - fontAscent,
+        selectionHeight: fontAscent + fontDescent,
         selectionX: currentX,
         selectionWidth: 0,
-        cursorY: currentLineY + (pageLineHeightPx - pageSettings.fontSize) / 2,
-        cursorHeight: Math.min(pageLineHeightPx, pageSettings.fontSize),
+        cursorY: currentLineY + verticalCenteringOffset - fontAscent,
+        cursorHeight: fontAscent + fontDescent,
       });
     }
 
@@ -138,12 +138,12 @@ function buildCharacterPositionsForLines(opts: {
       height: pageLineHeightPx,
       lineIndex: 0,
       charIndex: 0,
-      selectionY: startY + (pageLineHeightPx - pageSettings.fontSize) / 2,
-      selectionHeight: Math.min(pageLineHeightPx, pageSettings.fontSize),
+      selectionY: startY + verticalCenteringOffset - fontAscent,
+      selectionHeight: fontAscent + fontDescent,
       selectionX: startX,
       selectionWidth: 0,
-      cursorY: startY + (pageLineHeightPx - pageSettings.fontSize) / 2,
-      cursorHeight: Math.min(pageLineHeightPx, pageSettings.fontSize),
+      cursorY: startY + verticalCenteringOffset - fontAscent,
+      cursorHeight: fontAscent + fontDescent,
     });
   }
 
@@ -485,7 +485,7 @@ export const UnifiedPagePainter = {
     if (lineTilt !== 0) {
       ctx.rotate((lineTilt * Math.PI) / 180);
     }
-    ctx.fillStyle = `${inkColor}33`; // Semi-transparent
+    ctx.fillStyle = 'rgba(0, 122, 255, 0.35)'; // Native-like selection blue
     ctx.globalAlpha = 1;
 
     // Draw per-character rects using the new selection dimensions
