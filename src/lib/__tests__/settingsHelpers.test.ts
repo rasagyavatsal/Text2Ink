@@ -3,7 +3,8 @@ import {
   validateFontFile, 
   generateFontFamilyName, 
   processLineDetectionResult,
-  readFilesAsDataURL
+  readFilesAsDataURL,
+  applyPageSettingsToAll
 } from '../settingsHelpers';
 import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '../types';
 
@@ -75,4 +76,42 @@ describe('settingsHelpers', () => {
       expect(results[0]).toContain('data:text/plain;base64,');
     });
   });
+
+  describe('applyPageSettingsToAll', () => {
+    const defaultPage = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
+    const mockTextField = {
+      id: 'tf-1',
+      text: 'source text',
+      x: 0, y: 0, width: 100, height: 50,
+      color: 'black', fontSize: 16
+    };
+
+    it('copies other settings but NOT text fields', () => {
+      const sourcePage = { ...defaultPage, fontSize: 24, textFields: [mockTextField] };
+      const targetPage = { ...defaultPage, fontSize: 12, textFields: [] };
+      const prev = [sourcePage, targetPage];
+      
+      const result = applyPageSettingsToAll(prev, 0, 2, defaultPage);
+      
+      expect(result[0].fontSize).toBe(24);
+      expect(result[0].textFields).toHaveLength(1);
+      
+      expect(result[1].fontSize).toBe(24); // copied
+      expect(result[1].textFields).toHaveLength(0); // preserved original (empty)
+    });
+
+    it('preserves existing text fields on target pages', () => {
+      const targetTextField = { ...mockTextField, id: 'tf-target', text: 'target text' };
+      const sourcePage = { ...defaultPage, paperColor: '#ffffff', textFields: [mockTextField] };
+      const targetPage = { ...defaultPage, paperColor: '#000000', textFields: [targetTextField] };
+      const prev = [sourcePage, targetPage];
+      
+      const result = applyPageSettingsToAll(prev, 0, 2, defaultPage);
+      
+      expect(result[1].paperColor).toBe('#ffffff'); // copied
+      expect(result[1].textFields).toHaveLength(1);
+      expect(result[1].textFields![0].id).toBe('tf-target'); // preserved
+    });
+  });
 });
+

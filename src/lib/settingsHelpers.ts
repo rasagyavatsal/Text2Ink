@@ -48,3 +48,26 @@ export async function readFilesAsDataURL(files: File[]): Promise<string[]> {
 
   return Promise.all(files.map(readAsDataURL));
 }
+
+export function applyPageSettingsToAll(
+  prev: PageSettings[],
+  sourceIndex: number,
+  totalPages: number,
+  defaultSettings: PageSettings
+): PageSettings[] {
+  const desiredLength = Math.max(totalPages, 1);
+  const next = [...prev];
+
+  while (next.length < desiredLength) {
+    next.push({ ...defaultSettings });
+  }
+
+  const source = next[sourceIndex] ?? defaultSettings;
+
+  return next.slice(0, desiredLength).map((page) => ({
+    ...source,
+    // Keep target page's text fields instead of copying from source
+    textFields: page.textFields || []
+  }));
+}
+
