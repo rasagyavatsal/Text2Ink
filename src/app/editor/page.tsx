@@ -17,6 +17,7 @@ import {
   LineData,
 } from '@/lib/types';
 import { loadEditorStateV1, saveEditorStateV1 } from '@/lib/editorPersistence';
+import { applyPageSettingsToAll } from '@/lib/settingsHelpers';
 import { Settings, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const MemoSettingsPanel = React.memo(SettingsPanel);
@@ -150,22 +151,11 @@ export default function EditorPage() {
   );
 
   const applyCurrentPageSettingsToAll = useCallback(() => {
-    ensurePageSettingsLength(totalPages);
     setPageSettingsByPage((prev) => {
-      const desiredLength = Math.max(totalPages, 1);
-      const next = [...prev];
-
-      while (next.length < desiredLength) {
-        next.push(defaultPageSettingsFromHandwritingSettings(settings));
-      }
-
-      const source = next[currentPageIndex] ?? defaultPageSettingsFromHandwritingSettings(settings);
-      return next.slice(0, desiredLength).map(() => ({ 
-        ...source,
-        textFields: source.textFields?.map(tf => ({ ...tf, id: crypto.randomUUID() })) || []
-      }));
+      const defaultSettings = defaultPageSettingsFromHandwritingSettings(settings);
+      return applyPageSettingsToAll(prev, currentPageIndex, totalPages, defaultSettings);
     });
-  }, [currentPageIndex, ensurePageSettingsLength, settings, totalPages]);
+  }, [currentPageIndex, settings, totalPages]);
 
   const handlePageSettingsChange = useCallback(
     (nextPageSettings: PageSettings) => {
