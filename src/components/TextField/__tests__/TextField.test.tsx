@@ -443,4 +443,61 @@ describe('TextField', () => {
     expect(screen.getByTestId('popover-anchor')).toHaveStyle({ left: '108px', top: '208px' });
     rectSpy.mockRestore();
   });
+
+  it('shows handles when focused', () => {
+    render(
+      <TextField
+        field={mockField}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+        randomness={randomness}
+      />
+    );
+    
+    const textarea = screen.getByPlaceholderText('');
+    const container = screen.getByTestId('resize-handles-container');
+
+    // Initially should have opacity-0 and group-hover:opacity-100
+    let classes = container.className.split(' ');
+    expect(classes).toContain('opacity-0');
+    expect(classes).toContain('group-hover:opacity-100');
+    expect(classes).not.toContain('opacity-100');
+
+    // Focus the textarea
+    fireEvent.focus(textarea);
+
+    // Now it should have opacity-100 and NOT opacity-0
+    classes = container.className.split(' ');
+    expect(classes).toContain('opacity-100');
+    expect(classes).not.toContain('opacity-0');
+    expect(classes).not.toContain('group-hover:opacity-100');
+  });
+
+  it('shows settings icon when settings are open', async () => {
+    render(
+      <TextField
+        field={mockField}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+        randomness={randomness}
+      />
+    );
+    
+    const settingsButton = screen.getByLabelText('Text box settings');
+    const settingsContainer = screen.getByTestId('settings-icon-container');
+
+    // Initially hidden
+    expect(settingsContainer.className.split(' ')).toContain('opacity-0');
+
+    // Click settings to open popover
+    fireEvent.click(settingsButton);
+
+    // Now it should be visible
+    expect(settingsContainer.className.split(' ')).toContain('opacity-100');
+    expect(settingsContainer.className.split(' ')).not.toContain('opacity-0');
+  });
 });

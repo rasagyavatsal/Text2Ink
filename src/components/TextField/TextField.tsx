@@ -7,6 +7,7 @@ import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@/compon
 import { Slider } from '@/components/ui/slider';
 import { calculateRandomStyle } from '@/lib/editorHelpers';
 import { createMeasure } from '@/lib/pagination';
+import { cn } from '@/lib/utils';
 
 interface TextFieldProps {
   field: TextFieldType;
@@ -175,6 +176,8 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
     };
   }, [isDragging, resizeDir, onUpdate, scale, minW, minH]);
 
+  const isVisible = isFocused || isSettingsOpen || isDragging || !!resizeDir;
+
   return (
     <div
       className="absolute border border-dotted border-gray-400 group"
@@ -188,29 +191,35 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
       }}
     >
       {/* Resize Handles */}
-      <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+      <div 
+        data-testid="resize-handles-container"
+        className={cn(
+          "absolute inset-0 pointer-events-none transition-opacity",
+          isVisible ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+        )}
+      >
         {/* Corners */}
         <div 
           data-testid="handle-nw"
-          className="absolute -top-1.5 -left-1.5 w-3 h-3 pointer-events-auto cursor-nwse-resize bg-white border border-gray-400 rounded-sm shadow-sm hover:scale-110 transition-transform" 
+          className="absolute -top-2 -left-2 w-4 h-4 pointer-events-auto cursor-nwse-resize bg-white border border-gray-400 rounded-sm shadow-sm hover:scale-110 transition-transform" 
           onMouseDown={(e) => handleResizeStart(e, 'nw')} 
           onTouchStart={(e) => handleResizeStart(e, 'nw')}
         />
         <div 
           data-testid="handle-ne"
-          className="absolute -top-1.5 -right-1.5 w-3 h-3 pointer-events-auto cursor-nesw-resize bg-white border border-gray-400 rounded-sm shadow-sm hover:scale-110 transition-transform" 
+          className="absolute -top-2 -right-2 w-4 h-4 pointer-events-auto cursor-nesw-resize bg-white border border-gray-400 rounded-sm shadow-sm hover:scale-110 transition-transform" 
           onMouseDown={(e) => handleResizeStart(e, 'ne')} 
           onTouchStart={(e) => handleResizeStart(e, 'ne')}
         />
         <div 
           data-testid="handle-sw"
-          className="absolute -bottom-1.5 -left-1.5 w-3 h-3 pointer-events-auto cursor-nesw-resize bg-white border border-gray-400 rounded-sm shadow-sm hover:scale-110 transition-transform" 
+          className="absolute -bottom-2 -left-2 w-4 h-4 pointer-events-auto cursor-nesw-resize bg-white border border-gray-400 rounded-sm shadow-sm hover:scale-110 transition-transform" 
           onMouseDown={(e) => handleResizeStart(e, 'sw')} 
           onTouchStart={(e) => handleResizeStart(e, 'sw')}
         />
         <div 
           data-testid="handle-se"
-          className="absolute -bottom-1.5 -right-1.5 w-3 h-3 pointer-events-auto cursor-nwse-resize bg-white border border-gray-400 rounded-sm shadow-sm hover:scale-110 transition-transform" 
+          className="absolute -bottom-2 -right-2 w-4 h-4 pointer-events-auto cursor-nwse-resize bg-white border border-gray-400 rounded-sm shadow-sm hover:scale-110 transition-transform" 
           onMouseDown={(e) => handleResizeStart(e, 'se')} 
           onTouchStart={(e) => handleResizeStart(e, 'se')}
         />
@@ -218,52 +227,64 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
         {/* Sides */}
         <div 
           data-testid="handle-n"
-          className="absolute -top-1 left-2 right-2 h-2 pointer-events-auto cursor-ns-resize hover:bg-blue-400/20 transition-colors" 
+          className="absolute -top-1.5 left-2 right-2 h-3 pointer-events-auto cursor-ns-resize hover:bg-blue-400/20 transition-colors" 
           onMouseDown={(e) => handleResizeStart(e, 'n')} 
           onTouchStart={(e) => handleResizeStart(e, 'n')}
         />
         <div 
           data-testid="handle-s"
-          className="absolute -bottom-1 left-2 right-2 h-2 pointer-events-auto cursor-ns-resize hover:bg-blue-400/20 transition-colors" 
+          className="absolute -bottom-1.5 left-2 right-2 h-3 pointer-events-auto cursor-ns-resize hover:bg-blue-400/20 transition-colors" 
           onMouseDown={(e) => handleResizeStart(e, 's')} 
           onTouchStart={(e) => handleResizeStart(e, 's')}
         />
         <div 
           data-testid="handle-w"
-          className="absolute -left-1 top-2 bottom-2 w-2 pointer-events-auto cursor-ew-resize hover:bg-blue-400/20 transition-colors" 
+          className="absolute -left-1.5 top-2 bottom-2 w-3 pointer-events-auto cursor-ew-resize hover:bg-blue-400/20 transition-colors" 
           onMouseDown={(e) => handleResizeStart(e, 'w')} 
           onTouchStart={(e) => handleResizeStart(e, 'w')}
         />
         <div 
           data-testid="handle-e"
-          className="absolute -right-1 top-2 bottom-2 w-2 pointer-events-auto cursor-ew-resize hover:bg-blue-400/20 transition-colors" 
+          className="absolute -right-1.5 top-2 bottom-2 w-3 pointer-events-auto cursor-ew-resize hover:bg-blue-400/20 transition-colors" 
           onMouseDown={(e) => handleResizeStart(e, 'e')} 
           onTouchStart={(e) => handleResizeStart(e, 'e')}
         />
       </div>
 
       {/* Top Left Icons */}
-      <div className="absolute -top-3 -left-3 flex items-center z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div 
+        data-testid="move-icon-container"
+        className={cn(
+          "absolute -top-3.5 -left-3.5 flex items-center z-10 transition-opacity",
+          isVisible ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+        )}
+      >
         <div 
-          className="bg-white border shadow-sm rounded-full p-1 cursor-move hover:bg-gray-50 text-gray-500"
+          className="bg-white border shadow-sm rounded-full p-1.5 cursor-move hover:bg-gray-50 text-gray-500"
           onMouseDown={handleMouseDown}
           onTouchStart={handleMouseDown}
         >
-          <Move size={12} />
+          <Move size={14} />
         </div>
       </div>
 
       {/* Top Right Icons - Consolidated Settings */}
-      <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div 
+        data-testid="settings-icon-container"
+        className={cn(
+          "absolute -top-3.5 -right-3.5 z-10 transition-opacity",
+          isVisible ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+        )}
+      >
         <Popover open={isSettingsOpen} onOpenChange={handleSettingsOpenChange}>
           <PopoverTrigger asChild>
             <button
               ref={settingsTriggerRef}
               type="button"
               aria-label="Text box settings"
-              className="bg-white border shadow-sm rounded-full p-1 hover:bg-gray-50 text-gray-500"
+              className="bg-white border shadow-sm rounded-full p-1.5 hover:bg-gray-50 text-gray-500"
             >
-              <Settings size={12} />
+              <Settings size={14} />
             </button>
           </PopoverTrigger>
           {settingsAnchorPoint && (
