@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { UnifiedPagePainter, PaintPageOptions } from '../UnifiedPagePainter';
-import { HandwritingSettings, PageSettings, DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '../../types';
+import { HandwritingSettings, DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '../../types';
 
 function createMockCtx() {
   return {
@@ -123,11 +123,11 @@ describe('UnifiedPagePainter', () => {
 
       // Ruled style sets strokeStyle to '#ffb3b3' for the margin line
       // The margin line is drawn vertically
-      const moveToCalls = (ctx.moveTo as ReturnType<typeof vi.fn>).mock.calls;
-      const lineToCalls = (ctx.lineTo as ReturnType<typeof vi.fn>).mock.calls;
+      const moveToCalls = vi.mocked(ctx.moveTo).mock.calls as [number, number][];
+      const lineToCalls = vi.mocked(ctx.lineTo).mock.calls as [number, number][];
       // There should be at least one vertical line (same x for moveTo and lineTo)
-      const verticalLines = moveToCalls.filter((call: [number, number], idx: number) => {
-        const lineToCall = lineToCalls[idx] as [number, number] | undefined;
+      const verticalLines = moveToCalls.filter((call, idx) => {
+        const lineToCall = lineToCalls[idx];
         return lineToCall && call[0] === lineToCall[0]; // same x = vertical
       });
       expect(verticalLines.length).toBeGreaterThan(0);
@@ -148,8 +148,8 @@ describe('UnifiedPagePainter', () => {
 
       UnifiedPagePainter.paintPage(opts);
 
-      const fillTextCalls = (ctx.fillText as ReturnType<typeof vi.fn>).mock.calls;
-      const chars = fillTextCalls.map((c: [string, number, number]) => c[0]);
+      const fillTextCalls = vi.mocked(ctx.fillText).mock.calls as [string, number, number][];
+      const chars = fillTextCalls.map((c) => c[0]);
       expect(chars).toContain('H');
       expect(chars).toContain('i');
     });
@@ -167,8 +167,8 @@ describe('UnifiedPagePainter', () => {
 
       UnifiedPagePainter.paintPage(opts);
 
-      const fillTextCalls = (ctx.fillText as ReturnType<typeof vi.fn>).mock.calls;
-      const chars = fillTextCalls.map((c: [string, number, number]) => c[0]);
+      const fillTextCalls = vi.mocked(ctx.fillText).mock.calls as [string, number, number][];
+      const chars = fillTextCalls.map((c) => c[0]);
       expect(chars).toContain('A');
       expect(chars).toContain('B');
       expect(chars).not.toContain(' ');
@@ -404,7 +404,7 @@ describe('UnifiedPagePainter', () => {
       UnifiedPagePainter.paintCursorOverlay(ctx, mainPositions, 0, '#000000');
 
       // The cursor should be painted with height 25 (fontAscent + fontDescent)
-      const lastCall = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls.find((call: [number, number, number, number]) => call[2] === 2); // width is 2
+      const lastCall = vi.mocked(ctx.fillRect).mock.calls.find((call) => call[2] === 2); // width is 2
       expect(lastCall).toBeDefined();
       if (lastCall) {
           expect(lastCall[3]).toBe(25);
@@ -581,8 +581,8 @@ describe('UnifiedPagePainter', () => {
 
       UnifiedPagePainter.paintPage(opts);
 
-      const fillTextCalls = (ctx.fillText as ReturnType<typeof vi.fn>).mock.calls;
-      const chars = fillTextCalls.map((c: [string, number, number]) => c[0]);
+      const fillTextCalls = vi.mocked(ctx.fillText).mock.calls as [string, number, number][];
+      const chars = fillTextCalls.map((c) => c[0]);
       expect(chars).toContain('H');
       expect(chars).toContain('i');
       

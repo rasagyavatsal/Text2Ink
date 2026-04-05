@@ -44,8 +44,7 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Trash2,
-  Settings2,
-  Grid
+  Settings2
 } from 'lucide-react';
 
 import {
@@ -213,7 +212,7 @@ export default function SettingsPanel({
         return;
       }
 
-      const { offset, spacing } = processLineDetectionResult(result, pageSettings, settings);
+      const { offset, spacing } = processLineDetectionResult(result);
 
       onPageSettingsChange({
         ...pageSettings,
@@ -221,7 +220,7 @@ export default function SettingsPanel({
         customLineSpacing: spacing,
       });
       setLineDetectInfo({ offset, spacing });
-    } catch (err) {
+    } catch {
       setLineDetectError('Failed to analyze background. Please try another image.');
     } finally {
       setLineDetecting(false);

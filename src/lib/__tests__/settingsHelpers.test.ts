@@ -47,8 +47,7 @@ describe('settingsHelpers', () => {
         lineSpacing: 45.2,
         linePositions: [12.6, 57.8],
       };
-      const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
-      const processed = processLineDetectionResult(result, pageSettings, DEFAULT_SETTINGS);
+      const processed = processLineDetectionResult(result);
       
       expect(processed.offset).toBe(13);
       expect(processed.spacing).toBe(45);
@@ -60,8 +59,7 @@ describe('settingsHelpers', () => {
         lineSpacing: 10,  // min is 20
         linePositions: [],
       };
-      const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
-      const processed = processLineDetectionResult(result, pageSettings, DEFAULT_SETTINGS);
+      const processed = processLineDetectionResult(result);
       
       expect(processed.offset).toBe(50);
       expect(processed.spacing).toBe(20);

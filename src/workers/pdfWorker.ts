@@ -2,6 +2,9 @@ import jsPDF from 'jspdf';
 
 let pdf: jsPDF | null = null;
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const ctx: any = self;
+
 self.onmessage = async (event: MessageEvent) => {
   const { type, payload } = event.data;
 
@@ -13,13 +16,13 @@ self.onmessage = async (event: MessageEvent) => {
         unit,
         format,
       });
-      self.postMessage({ type: 'initialized' });
+      ctx.postMessage({ type: 'initialized' });
       break;
     }
 
     case 'addPage': {
       if (!pdf) {
-        self.postMessage({ type: 'error', payload: 'PDF not initialized' });
+        ctx.postMessage({ type: 'error', payload: 'PDF not initialized' });
         return;
       }
       const { imgData, width, height, isFirstPage } = payload;
@@ -32,18 +35,18 @@ self.onmessage = async (event: MessageEvent) => {
       const data = imgData instanceof ArrayBuffer ? new Uint8Array(imgData) : imgData;
       pdf.addImage(data, 'PNG', 0, 0, width, height, undefined, 'FAST');
       
-      self.postMessage({ type: 'pageAdded' });
+      ctx.postMessage({ type: 'pageAdded' });
       break;
     }
 
     case 'generate': {
       if (!pdf) {
-        self.postMessage({ type: 'error', payload: 'PDF not initialized' });
+        ctx.postMessage({ type: 'error', payload: 'PDF not initialized' });
         return;
       }
       
-      const output = pdf.output('arraybuffer');
-      self.postMessage({ type: 'generated', payload: output }, [output]);
+      const output = pdf.output('arraybuffer') as ArrayBuffer;
+      ctx.postMessage({ type: 'generated', payload: output }, [output]);
       break;
     }
     

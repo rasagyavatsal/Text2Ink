@@ -74,7 +74,15 @@ describe('lineDetection', () => {
 
   describe('detectBackgroundLines', () => {
     it('returns null outside browser (already tested via typeof document check)', async () => {
-      const result = await detectBackgroundLines('src', {} as HTMLImageElement);
+      const result = await detectBackgroundLines('src', {
+        targetWidth: 800,
+        targetHeight: 1000,
+        marginTop: 50,
+        marginBottom: 50,
+        marginLeft: 50,
+        marginRight: 50,
+        expectedLineHeight: 36
+      });
       // In jsdom document IS defined
       expect(result).toBeDefined();
     });

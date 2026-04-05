@@ -171,10 +171,11 @@ export default function CanvasPreview({
     }
 
     ctx.restore();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     lines, pageSettings, settings, pageIndex, previewScale,
     fontFamily, cursorPosition, selectionStart, selectionEnd,
-    pageStartOffset, isFocused, cursorVisible, canvasRef,
+    pageStartOffset, isFocused, cursorVisible, canvasRef.current,
   ]);
 
   // Load background image when it changes
@@ -212,7 +213,7 @@ export default function CanvasPreview({
     return () => {
       window.removeEventListener('mouseup', handleWindowMouseUp);
     };
-  }, []);
+  }, [canvasRef]);
 
   /** Find which character was clicked based on page coordinates */
   const findCharAtPoint = useCallback((pageX: number, pageY: number): { index: number; isLeftHalf: boolean } | null => {
@@ -266,7 +267,8 @@ export default function CanvasPreview({
     const x = (e.clientX - rect.left) / previewScale;
     const y = (e.clientY - rect.top) / previewScale;
     return { x, y };
-  }, [canvasRef, previewScale]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canvasRef.current, previewScale]);
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (didDragRef.current) {

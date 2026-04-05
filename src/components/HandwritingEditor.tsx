@@ -11,7 +11,6 @@ import {
 import { PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/pageConstants';
 import type { PaginationResponse } from '@/lib/pagination';
 import {
-  calculateRandomStyle,
   calculatePageStartOffsets,
   calculateLineStarts,
 } from '@/lib/editorHelpers';
@@ -36,7 +35,8 @@ interface HandwritingEditorProps {
   onApplyToAllPages?: () => void;
 }
 
-function useDebouncedCallback<T extends (...args: never[]) => void>(cb: T, delayMs: number) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function useDebouncedCallback<T extends (...args: any[]) => void>(cb: T, delayMs: number) {
   const cbRef = useRef(cb);
   const timeoutRef = useRef<number | null>(null);
 
@@ -62,7 +62,7 @@ function useDebouncedCallback<T extends (...args: never[]) => void>(cb: T, delay
       }, delayMs);
     },
     [delayMs]
-  );
+  ) as (...args: Parameters<T>) => void;
 }
 
 export default function HandwritingEditor({
@@ -74,13 +74,11 @@ export default function HandwritingEditor({
   onPageSettingsChange,
   exportingPageIndex = null,
   previewScale,
-  onPreviewScaleChange,
   currentPageIndex,
   onCurrentPageChange,
   onTotalPagesChange,
   onPagesChange,
   onPaginationCompleteChange,
-  onApplyToAllPages,
 }: HandwritingEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const pageElsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -90,7 +88,6 @@ export default function HandwritingEditor({
   const [fontMetricsVersion, setFontMetricsVersion] = useState(0);
   const [localText, setLocalText] = useState(text);
   const [pages, setPages] = useState<LineData[][]>([[]]);
-  const [isPaginationComplete, setIsPaginationComplete] = useState(true);
   const [totalPages, setTotalPages] = useState(1);
   const latestPaginationRequestIdRef = useRef(0);
   const workerRef = useRef<Worker | null>(null);
@@ -107,9 +104,9 @@ export default function HandwritingEditor({
     setLocalText(text);
   }, [text]);
 
-  const debouncedPropagateText = useDebouncedCallback(((nextText: string) => {
+  const debouncedPropagateText = useDebouncedCallback((nextText: string) => {
     onTextChange(nextText);
-  }) as never, 150);
+  }, 150);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -181,6 +178,10 @@ export default function HandwritingEditor({
   );
 
   const resolvedFontFamily = useMemo(() => {
+    // Reference fontMetricsVersion to force re-calculation when fonts load
+    // Using void to satisfy the lint rule
+    void fontMetricsVersion;
+    
     if (settings.fontFamily === 'custom' && settings.customFont) {
       return `"${settings.customFont.family}", cursive`;
     }
@@ -234,7 +235,7 @@ export default function HandwritingEditor({
     return out;
   }, [currentPageIndex, getBackgroundForPage, pageSettingsByPage.length]);
 
-  const debouncedRequestPagination = useDebouncedCallback((() => {
+  const debouncedRequestPagination = useDebouncedCallback(() => {
     const worker = workerRef.current;
     if (!worker) return;
 
@@ -259,7 +260,7 @@ export default function HandwritingEditor({
       pageHasBackground: desiredPageHasBackground,
       fontFamily: resolvedFontFamily,
     });
-  }) as never, 40);
+  }, 40);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -278,7 +279,6 @@ export default function HandwritingEditor({
       const nextPages = msg.pages as LineData[][];
       setPages(nextPages);
       onPagesChange?.(nextPages);
-      setIsPaginationComplete(msg.isPaginationComplete);
       onPaginationCompleteChange?.(msg.isPaginationComplete);
       setTotalPages(msg.totalPages);
     };
@@ -311,11 +311,6 @@ export default function HandwritingEditor({
     onTotalPagesChange?.(totalPages);
   }, [onTotalPagesChange, totalPages]);
 
-  const applyRandomness = useCallback(
-    (charIndex: number, lineIndex: number) => calculateRandomStyle(charIndex, lineIndex, settings.randomness),
-    [settings.randomness]
-  );
-
   const syncSelectionFromTextarea = useCallback((el: HTMLTextAreaElement) => {
     const start = el.selectionStart ?? 0;
     const end = el.selectionEnd ?? start;
@@ -333,34 +328,6 @@ export default function HandwritingEditor({
       textareaRef.current.setSelectionRange(anchor, focus);
     }
   }, []);
-
-  const handleCharClick = useCallback(
-    (e: React.MouseEvent, globalCharIndex: number, isLeftHalf: boolean) => {
-      e.stopPropagation();
-      const newPosition = isLeftHalf ? globalCharIndex : globalCharIndex + 1;
-      setCursorPosition(newPosition);
-      setSelectionRange({ start: newPosition, end: newPosition });
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-        textareaRef.current.setSelectionRange(newPosition, newPosition);
-      }
-    },
-    []
-  );
-
-  const handleCharKeyDown = useCallback(
-    (e: React.KeyboardEvent, globalCharIndex: number, isLeftHalf: boolean = true) => {
-      e.stopPropagation();
-      const newPosition = isLeftHalf ? globalCharIndex : globalCharIndex + 1;
-      setCursorPosition(newPosition);
-      setSelectionRange({ start: newPosition, end: newPosition });
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-        textareaRef.current.setSelectionRange(newPosition, newPosition);
-      }
-    },
-    []
-  );
 
   const handleCharMouseDown = useCallback(
     (globalCharIndex: number, isLeftHalf: boolean) => {

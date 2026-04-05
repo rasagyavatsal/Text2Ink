@@ -210,7 +210,7 @@ export default function ExportPanel({
           // Final progress step: PDF Generation
           setExportProgress({ current: exportTotal, total: progressTotal });
           worker.postMessage({ type: 'generate' });
-          const pdfBuffer = await waitMessage('generated');
+          const pdfBuffer = await waitMessage('generated') as ArrayBuffer;
           
           const blob = new Blob([pdfBuffer], { type: 'application/pdf' });
           const url = URL.createObjectURL(blob);

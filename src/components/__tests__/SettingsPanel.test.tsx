@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import SettingsPanel from '../SettingsPanel';
-import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '../../lib/types';
+import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings, LineData } from '../../lib/types';
 
 // Mock lucide-react icons with a standard object mock
 vi.mock('lucide-react', () => {
@@ -58,7 +58,7 @@ describe('SettingsPanel', () => {
     onCurrentPageChange: mockOnCurrentPageChange,
     totalPages: 1,
     isPaginationComplete: true,
-    pages: [[]] as unknown as unknown[][],
+    pages: [[]] as LineData[][],
     onClearAll: mockOnClearAll,
   };
 

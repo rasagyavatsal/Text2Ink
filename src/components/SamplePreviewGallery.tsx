@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import Image from 'next/image';
 
 type SampleImage = {
   src: string;
@@ -39,16 +40,14 @@ export default function SamplePreviewGallery() {
           className="bg-white border-2 border-gray-200 rounded-xl sm:rounded-2xl overflow-hidden w-full max-w-sm md:max-w-none"
           style={{ aspectRatio: '210/297', maxHeight: '500px' }}
         >
-          <img
+          <Image
             src={img.src}
             alt={img.alt}
             width={img.width}
             height={img.height}
             className="w-full h-full object-cover"
-            // @ts-expect-error - fetchPriority is supported in React 19 but types may be missing
-            fetchPriority={idx === 0 ? "high" : undefined}
-            loading={idx === 0 ? "eager" : "lazy"}
-            srcSet={img.mobileSrc ? `${img.mobileSrc} 400w, ${img.src} 840w` : undefined}
+            priority={idx === 0}
+            loading={idx === 0 ? undefined : "lazy"}
             sizes="(max-width: 640px) 400px, 840px"
           />
         </div>

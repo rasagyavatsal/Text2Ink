@@ -14,12 +14,8 @@ global.Image = class {
 } as unknown as typeof Image;
 
 describe('canvasRenderer', () => {
-  let mockCanvas: {
-    getContext: (type: string) => unknown;
-    width: number;
-    height: number;
-  };
-  let mockCtx: unknown;
+  let mockCanvas: HTMLCanvasElement;
+  let mockCtx: CanvasRenderingContext2D;
 
   const mockSettings: HandwritingSettings = {
     fontFamily: 'caveat',
@@ -87,13 +83,13 @@ describe('canvasRenderer', () => {
       strokeStyle: '',
       lineWidth: 0,
       textBaseline: '',
-    };
+    } as unknown as CanvasRenderingContext2D;
 
     mockCanvas = {
       getContext: vi.fn().mockReturnValue(mockCtx),
       width: 0,
       height: 0,
-    };
+    } as unknown as HTMLCanvasElement;
   });
 
   it('sets correct canvas dimensions based on scale', async () => {
@@ -110,7 +106,7 @@ describe('canvasRenderer', () => {
 
     expect(mockCanvas.width).toBe(612 * scale); // 612 is PAGE_WIDTH
     expect(mockCanvas.height).toBe(792 * scale); // 792 is PAGE_HEIGHT
-    expect(mockCtx.scale).toHaveBeenCalledWith(scale, scale);
+    expect(vi.mocked(mockCtx.scale)).toHaveBeenCalledWith(scale, scale);
   });
 
   it('applies correct vertical centering offset', async () => {
@@ -140,7 +136,7 @@ describe('canvasRenderer', () => {
     expect(mockCtx.textBaseline).toBe('alphabetic');
     
     // The first line starts at marginTop (50) + offset (21) = 71
-    const translateCalls = mockCtx.translate.mock.calls;
+    const translateCalls = vi.mocked(mockCtx.translate).mock.calls;
     const yValue = translateCalls[0][1];
     expect(yValue).toBe(71);
   });
@@ -156,8 +152,8 @@ describe('canvasRenderer', () => {
       fontFamily: 'Caveat',
     });
 
-    expect(mockCtx.beginPath).toHaveBeenCalled();
-    expect(mockCtx.stroke).toHaveBeenCalled();
+    expect(vi.mocked(mockCtx.beginPath)).toHaveBeenCalled();
+    expect(vi.mocked(mockCtx.stroke)).toHaveBeenCalled();
     expect(mockCtx.strokeStyle).toBe(mockSettings.lineColor);
   });
 
@@ -177,7 +173,7 @@ describe('canvasRenderer', () => {
       fontFamily: 'Caveat',
     });
 
-    expect(mockCtx.drawImage).toHaveBeenCalled();
-    expect(mockCtx.fillRect).not.toHaveBeenCalled();
+    expect(vi.mocked(mockCtx.drawImage)).toHaveBeenCalled();
+    expect(vi.mocked(mockCtx.fillRect)).not.toHaveBeenCalled();
   });
 });

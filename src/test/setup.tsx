@@ -1,3 +1,5 @@
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
@@ -59,7 +61,7 @@ if (typeof window !== 'undefined') {
     transform: vi.fn(),
     rect: vi.fn(),
     clip: vi.fn(),
-  }));
+  }) as unknown as CanvasRenderingContext2D) as any;
 }
 
 // Mock OffscreenCanvas if not available
@@ -135,12 +137,13 @@ vi.mock("next/image", () => ({
     alt?: string;
     [key: string]: unknown;
   }) => {
-    // eslint-disable-next-line @next/next/no-img-element
     return (
-      <img
-        {...props}
-        alt={props.alt || ""}
-        data-priority={priority ? "true" : undefined}
+      <img 
+        {...props} 
+        alt={props.alt || ""} 
+        fetchPriority={priority ? "high" : undefined}
+        loading={priority ? "eager" : (props.loading as "lazy" | "eager" | undefined)}
+        data-priority={priority ? "true" : undefined} 
       />
     );
   },

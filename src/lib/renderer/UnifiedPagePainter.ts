@@ -22,7 +22,6 @@ function buildCharacterPositionsForLines(opts: {
   startY: number;
   verticalCenteringOffset: number;
   pageLineHeightPx: number;
-  pageSettings: PageSettings;
   settings: HandwritingSettings;
   fontAscent: number;
   fontDescent: number;
@@ -35,7 +34,6 @@ function buildCharacterPositionsForLines(opts: {
     startY,
     verticalCenteringOffset,
     pageLineHeightPx,
-    pageSettings,
     settings,
     fontAscent,
     fontDescent,
@@ -63,9 +61,6 @@ function buildCharacterPositionsForLines(opts: {
 
       const metrics = ctx.measureText(char);
       const charWidth = metrics.width;
-
-      const actualBoundingBoxAscent = metrics.actualBoundingBoxAscent ?? fontAscent;
-      const actualBoundingBoxDescent = metrics.actualBoundingBoxDescent ?? fontDescent;
 
       let selectionY: number;
       let selectionHeight: number;
@@ -413,7 +408,6 @@ export const UnifiedPagePainter = {
       startY: pageSettings.marginTop + pageLineOffset,
       verticalCenteringOffset,
       pageLineHeightPx,
-      pageSettings,
       settings,
       fontAscent,
       fontDescent,

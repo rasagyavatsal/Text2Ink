@@ -1,5 +1,5 @@
 import { LineDetectionResult } from './lineDetection';
-import { PageSettings, HandwritingSettings } from './types';
+import { PageSettings } from './types';
 
 export function validateFontFile(file: File): { format: 'truetype' | 'opentype' | null; error: string | null } {
   const lowerName = file.name.toLowerCase();
@@ -24,9 +24,7 @@ export function generateFontFamilyName(fileName: string): string {
 }
 
 export function processLineDetectionResult(
-  result: LineDetectionResult,
-  _pageSettings: PageSettings,
-  _settings: HandwritingSettings
+  result: LineDetectionResult
 ): { offset: number; spacing: number } {
   const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
   const detectedOffset = Math.round(result.lineOffset);

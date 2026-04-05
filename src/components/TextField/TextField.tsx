@@ -45,7 +45,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
   // Calculate the minimum width and height based on the text content
   const { minW, minH } = useMemo(
     () => calculateMinimumTextBoxSize(field, fontFamily, scale),
-    [field.fontSize, field.text, fontFamily, scale]
+    [field, fontFamily, scale]
   );
 
   useLayoutEffect(() => {
