@@ -5,7 +5,18 @@ import HandwritingEditor from '../HandwritingEditor';
 import { HandwritingSettings, DEFAULT_SETTINGS } from '../../lib/types';
 
 vi.mock('../CanvasPreview', () => ({
-  default: (props: any) => (
+  default: (props: {
+    lines: unknown[];
+    selectionStart: number;
+    selectionEnd: number;
+    onCharClick?: (idx: number, left: boolean) => void;
+    onCharShiftClick?: (idx: number, left: boolean) => void;
+    onCharDoubleClick?: (idx: number, left: boolean) => void;
+    onCharTripleClick?: (idx: number, left: boolean) => void;
+    onCharMouseDown?: (idx: number, left: boolean) => void;
+    onCharMouseMove?: (idx: number, left: boolean) => void;
+    onMouseUp?: () => void;
+  }) => (
     <div data-testid="canvas-preview">
       <div data-testid="preview-lines">{props.lines.length}</div>
       <div data-testid="preview-selection">{`${props.selectionStart}:${props.selectionEnd}`}</div>
@@ -87,13 +98,14 @@ function buildPagesFromText(text: string) {
 class MockWorker {
   private listeners = new Set<(event: MessageEvent) => void>();
 
-  postMessage = vi.fn((msg: any) => {
-    if (!msg || msg.type !== 'paginate') return;
-    const pages = buildPagesFromText(msg.text ?? '');
+  postMessage = vi.fn((msg: unknown) => {
+    const typedMsg = msg as { type: string; text?: string; requestId: number };
+    if (!typedMsg || typedMsg.type !== 'paginate') return;
+    const pages = buildPagesFromText(typedMsg.text ?? '');
     const event = {
       data: {
         type: 'pagination-result',
-        requestId: msg.requestId,
+        requestId: typedMsg.requestId,
         pages,
         isPaginationComplete: true,
         totalPages: pages.length,
@@ -117,7 +129,10 @@ class MockWorker {
   });
 }
 
-global.Worker = MockWorker as any;
+global.Worker = MockWorker as unknown as {
+  new (url: string | URL, options?: WorkerOptions): Worker;
+  prototype: Worker;
+};
 
 describe('HandwritingEditor selection behavior', () => {
   const settings: HandwritingSettings = {

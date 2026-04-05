@@ -36,7 +36,7 @@ interface HandwritingEditorProps {
   onApplyToAllPages?: () => void;
 }
 
-function useDebouncedCallback<T extends (...args: any[]) => void>(cb: T, delayMs: number) {
+function useDebouncedCallback<T extends (...args: never[]) => void>(cb: T, delayMs: number) {
   const cbRef = useRef(cb);
   const timeoutRef = useRef<number | null>(null);
 
@@ -107,9 +107,9 @@ export default function HandwritingEditor({
     setLocalText(text);
   }, [text]);
 
-  const debouncedPropagateText = useDebouncedCallback((nextText: string) => {
+  const debouncedPropagateText = useDebouncedCallback(((nextText: string) => {
     onTextChange(nextText);
-  }, 150);
+  }) as never, 150);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -234,7 +234,7 @@ export default function HandwritingEditor({
     return out;
   }, [currentPageIndex, getBackgroundForPage, pageSettingsByPage.length]);
 
-  const debouncedRequestPagination = useDebouncedCallback(() => {
+  const debouncedRequestPagination = useDebouncedCallback((() => {
     const worker = workerRef.current;
     if (!worker) return;
 
@@ -259,7 +259,7 @@ export default function HandwritingEditor({
       pageHasBackground: desiredPageHasBackground,
       fontFamily: resolvedFontFamily,
     });
-  }, 40);
+  }) as never, 40);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -283,9 +283,9 @@ export default function HandwritingEditor({
       setTotalPages(msg.totalPages);
     };
 
-    worker.addEventListener('message', onMessage as any);
+    worker.addEventListener('message', onMessage as EventListener);
     return () => {
-      worker.removeEventListener('message', onMessage as any);
+      worker.removeEventListener('message', onMessage as EventListener);
       worker.terminate();
       workerRef.current = null;
     };
@@ -636,56 +636,6 @@ export default function HandwritingEditor({
       window.removeEventListener('touchcancel', handleUp);
     };
   }, [getPageSettings, isDraggingMarginLine, onSettingsChange, previewScale, settings]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (workerRef.current) return;
-
-    const worker = new Worker(new URL('../workers/paginationWorker.ts', import.meta.url), {
-      type: 'module',
-    });
-    workerRef.current = worker;
-
-    const onMessage = (ev: MessageEvent<PaginationResponse>) => {
-      const msg = ev.data;
-      if (!msg || msg.type !== 'pagination-result') return;
-      if (msg.requestId !== latestPaginationRequestIdRef.current) return;
-
-      const nextPages = msg.pages as LineData[][];
-      setPages(nextPages);
-      onPagesChange?.(nextPages);
-      setIsPaginationComplete(msg.isPaginationComplete);
-      onPaginationCompleteChange?.(msg.isPaginationComplete);
-      setTotalPages(msg.totalPages);
-    };
-
-    worker.addEventListener('message', onMessage as any);
-    return () => {
-      worker.removeEventListener('message', onMessage as any);
-      worker.terminate();
-      workerRef.current = null;
-    };
-  }, [onPagesChange, onPaginationCompleteChange]);
-
-  useEffect(() => {
-    debouncedRequestPagination();
-  }, [
-    currentPageIndex,
-    debouncedRequestPagination,
-    desiredPageHasBackground,
-    desiredPageSettings,
-    hasAnyCustomBackground,
-    localText,
-    exportingPageIndex,
-    resolvedFontFamily,
-    settings.lineHeight,
-    settings.paperStyle,
-    settings.ruledMarginLineOffset,
-  ]);
-
-  useEffect(() => {
-    onTotalPagesChange?.(totalPages);
-  }, [onTotalPagesChange, totalPages]);
 
   const renderPage = useCallback(
     (pageIndex: number, scale: number, isVisiblePreview: boolean) => {

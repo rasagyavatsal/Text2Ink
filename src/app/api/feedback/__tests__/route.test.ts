@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from '../route';
-import nodemailer from 'nodemailer';
 
 // Mock nodemailer
 const mockSendMail = vi.fn();

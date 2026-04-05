@@ -8,5 +8,5 @@ self.onmessage = (ev: MessageEvent<PaginationRequest>) => {
   if (!msg || msg.type !== 'paginate') return;
 
   const res = paginate(msg);
-  (self as any).postMessage(res);
+  self.postMessage(res);
 };

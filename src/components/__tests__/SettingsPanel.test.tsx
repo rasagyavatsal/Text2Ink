@@ -6,7 +6,7 @@ import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '..
 
 // Mock lucide-react icons with a standard object mock
 vi.mock('lucide-react', () => {
-  const MockIcon = (props: any) => <div {...props} />;
+  const MockIcon = (props: React.HTMLAttributes<HTMLDivElement>) => <div {...props} />;
   return {
     Type: MockIcon,
     Palette: MockIcon,
@@ -29,7 +29,10 @@ vi.mock('lucide-react', () => {
 
 // Mock next/image
 vi.mock('next/image', () => ({
-  default: (props: any) => <img {...props} />,
+  default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img alt="" {...props} />
+  ),
 }));
 
 describe('SettingsPanel', () => {
@@ -55,7 +58,7 @@ describe('SettingsPanel', () => {
     onCurrentPageChange: mockOnCurrentPageChange,
     totalPages: 1,
     isPaginationComplete: true,
-    pages: [[]] as any,
+    pages: [[]] as unknown as unknown[][],
     onClearAll: mockOnClearAll,
   };
 

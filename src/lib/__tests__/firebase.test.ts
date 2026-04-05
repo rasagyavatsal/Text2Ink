@@ -39,7 +39,7 @@ describe('firebase helpers', () => {
 
   it('getFirebaseAnalytics returns null when window is undefined', async () => {
     const originalWindow = global.window;
-    // @ts-ignore
+    // @ts-expect-error - deleting window is necessary for server-side testing
     delete global.window;
     
     const analytics = await getFirebaseAnalytics();

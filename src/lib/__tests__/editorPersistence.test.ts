@@ -27,7 +27,7 @@ describe('editorPersistence', () => {
 
   it('loads null when window is unavailable (server-side)', () => {
     const originalWindow = global.window;
-    // @ts-ignore
+    // @ts-expect-error - deleting window is necessary for server-side testing
     delete global.window;
     
     expect(loadEditorStateV1()).toBeNull();

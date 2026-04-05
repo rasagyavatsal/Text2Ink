@@ -59,17 +59,17 @@ if (typeof window !== 'undefined') {
     transform: vi.fn(),
     rect: vi.fn(),
     clip: vi.fn(),
-  })) as any;
+  }));
 }
 
 // Mock OffscreenCanvas if not available
 if (typeof window !== 'undefined' && !window.OffscreenCanvas) {
-  // @ts-ignore
+  // @ts-expect-error - Mocking OffscreenCanvas which is missing in jsdom
   window.OffscreenCanvas = class OffscreenCanvas {
     constructor(width: number, height: number) {
-      // @ts-ignore
+      // @ts-expect-error - Mocking missing width property
       this.width = width;
-      // @ts-ignore
+      // @ts-expect-error - Mocking missing height property
       this.height = height;
     }
     getContext() {
@@ -112,11 +112,11 @@ window.requestAnimationFrame = vi.fn(callback => setTimeout(callback, 0) as unkn
 window.cancelAnimationFrame = vi.fn(id => clearTimeout(id as unknown as NodeJS.Timeout));
 
 // Mock Image
-// @ts-ignore
+// @ts-expect-error - Mocking global Image for testing
 global.Image = class {
   onload: () => void = () => {};
   onerror: () => void = () => {};
-  src: string = '';
+  src: string = "";
   width: number = 100;
   height: number = 100;
   constructor() {
@@ -125,18 +125,37 @@ global.Image = class {
 };
 
 // Mock next/image
-vi.mock('next/image', () => ({
+vi.mock("next/image", () => ({
   __esModule: true,
-  default: ({ priority, ...props }: any) => {
+  default: ({
+    priority,
+    ...props
+  }: {
+    priority?: boolean;
+    alt?: string;
+    [key: string]: unknown;
+  }) => {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img {...props} alt={props.alt || ''} data-priority={priority ? 'true' : undefined} />;
+    return (
+      <img
+        {...props}
+        alt={props.alt || ""}
+        data-priority={priority ? "true" : undefined}
+      />
+    );
   },
 }));
 
 // Mock next/link
-vi.mock('next/link', () => ({
+vi.mock("next/link", () => ({
   __esModule: true,
-  default: ({ children, ...props }: any) => {
+  default: ({
+    children,
+    ...props
+  }: {
+    children: React.ReactNode;
+    [key: string]: unknown;
+  }) => {
     return <a {...props}>{children}</a>;
   },
 }));

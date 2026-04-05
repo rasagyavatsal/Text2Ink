@@ -45,10 +45,10 @@ vi.mock('@/components/ui/popover', async () => {
     const ctx = React.useContext(PopoverContext);
 
     if (asChild && React.isValidElement(children)) {
-      const element = children as React.ReactElement<any>;
+      const element = children as React.ReactElement<Record<string, unknown>>;
       return React.cloneElement(element, {
         onClick: (event: React.MouseEvent) => {
-          element.props.onClick?.(event);
+          (element.props as Record<string, unknown>).onClick?.(event);
           ctx?.setOpen(true);
         },
       });

@@ -25,6 +25,8 @@ vi.mock('nodemailer', () => ({
 
 import { feedback } from '../index';
 
+type FeedbackFunction = (req: httpMocks.MockRequest<unknown>, res: httpMocks.MockResponse<unknown>) => Promise<void>;
+
 describe('feedback function', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -35,7 +37,7 @@ describe('feedback function', () => {
     const req = httpMocks.createRequest({ method: 'GET' });
     const res = httpMocks.createResponse();
 
-    await (feedback as any)(req, res);
+    await (feedback as unknown as FeedbackFunction)(req, res);
 
     expect(res.statusCode).toBe(405);
   });
@@ -47,7 +49,7 @@ describe('feedback function', () => {
     });
     const res = httpMocks.createResponse();
 
-    await (feedback as any)(req, res);
+    await (feedback as unknown as FeedbackFunction)(req, res);
 
     expect(res.statusCode).toBe(400);
   });
@@ -55,12 +57,12 @@ describe('feedback function', () => {
   it('handles string body JSON parsing', async () => {
     const req = httpMocks.createRequest({
       method: 'POST',
-      body: JSON.stringify({ rating: 5, improvement: 'test' }) as any,
+      body: JSON.stringify({ rating: 5, improvement: 'test' }),
     });
     const res = httpMocks.createResponse();
     mockSendMail.mockResolvedValueOnce({});
 
-    await (feedback as any)(req, res);
+    await (feedback as unknown as FeedbackFunction)(req, res);
 
     expect(res.statusCode).toBe(200);
     expect(mockSendMail).toHaveBeenCalled();
@@ -74,7 +76,7 @@ describe('feedback function', () => {
     });
     const res = httpMocks.createResponse();
 
-    await (feedback as any)(req, res);
+    await (feedback as unknown as FeedbackFunction)(req, res);
 
     expect(res.statusCode).toBe(200);
     expect(res._getJSONData().message).toContain('missing credentials');
@@ -89,7 +91,7 @@ describe('feedback function', () => {
     const res = httpMocks.createResponse();
     mockSendMail.mockResolvedValueOnce({});
 
-    await (feedback as any)(req, res);
+    await (feedback as unknown as FeedbackFunction)(req, res);
 
     expect(res.statusCode).toBe(200);
     expect(res._getJSONData().message).toBe('Feedback sent successfully');
@@ -107,7 +109,7 @@ describe('feedback function', () => {
     const res = httpMocks.createResponse();
     mockSendMail.mockRejectedValueOnce(new Error('Send failed'));
 
-    await (feedback as any)(req, res);
+    await (feedback as unknown as FeedbackFunction)(req, res);
 
     expect(res.statusCode).toBe(500);
     expect(res._getJSONData().error).toBe('Failed to send feedback');

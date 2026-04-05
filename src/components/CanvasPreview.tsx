@@ -85,7 +85,10 @@ export default function CanvasPreview({
   useEffect(() => {
     const hasMainCursor = cursorPosition !== null;
     if (!isFocused || !hasMainCursor) return;
-    setCursorVisible(true);
+    
+    // Use requestAnimationFrame to avoid synchronous setState in effect
+    requestAnimationFrame(() => setCursorVisible(true));
+    
     const interval = setInterval(() => {
       setCursorVisible(v => !v);
     }, 530);

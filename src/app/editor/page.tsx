@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import HandwritingEditor from '@/components/HandwritingEditor';
 import SettingsPanel from '@/components/SettingsPanel';
@@ -18,7 +17,7 @@ import {
 } from '@/lib/types';
 import { loadEditorStateV1, saveEditorStateV1 } from '@/lib/editorPersistence';
 import { applyPageSettingsToAll } from '@/lib/settingsHelpers';
-import { Settings, Download, ChevronLeft, ChevronRight, X, Pencil, LayoutGrid } from 'lucide-react';
+import { Settings, Download, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 const MemoSettingsPanel = React.memo(SettingsPanel);
 const MemoExportPanel = React.memo(ExportPanel);
@@ -26,25 +25,35 @@ const MemoExportPanel = React.memo(ExportPanel);
 export default function EditorPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [text, setText] = useState('');
-  const [settings, setSettings] = useState<HandwritingSettings>(DEFAULT_SETTINGS);
-  const [pageSettingsByPage, setPageSettingsByPage] = useState<PageSettings[]>(() => [
-    defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
-  ]);
-  const [activePanel, setActivePanel] = useState<'settings' | 'export'>('settings');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [previewScale, setPreviewScale] = useState(1);
-  const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  
+  // Initialize state from storage to avoid initial useEffect setState
+  const [initialData] = useState(() => {
+    if (typeof window === 'undefined') return null;
+    return loadEditorStateV1<HandwritingSettings, PageSettings>();
+  });
+
+  const [text, setText] = useState(() => initialData?.text ?? '');
+  const [settings, setSettings] = useState<HandwritingSettings>(() => initialData?.settings ?? DEFAULT_SETTINGS);
+  const [pageSettingsByPage, setPageSettingsByPage] = useState<PageSettings[]>(() => {
+    if (initialData?.pageSettingsByPage && initialData.pageSettingsByPage.length > 0) {
+      return initialData.pageSettingsByPage;
+    }
+    return [defaultPageSettingsFromHandwritingSettings(initialData?.settings ?? DEFAULT_SETTINGS)];
+  });
+  const [activePanel, setActivePanel] = useState<'settings' | 'export'>(() => initialData?.ui.activePanel ?? 'settings');
+  const [sidebarOpen, setSidebarOpen] = useState(() => initialData?.ui.sidebarOpen ?? true);
+  const [previewScale, setPreviewScale] = useState(() => initialData?.ui.previewScale ?? 1);
+  const [currentPageIndex, setCurrentPageIndex] = useState(() => initialData?.ui.currentPageIndex ?? 0);
   const [totalPages, setTotalPages] = useState(1);
   const [pages, setPages] = useState<LineData[][]>([]);
   const [isPaginationComplete, setIsPaginationComplete] = useState(true);
   const [exportPageIndex, setExportPageIndex] = useState<number | null>(null);
   const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
 
-  const hasLoadedFromStorageRef = useRef(false);
+  const hasLoadedFromStorageRef = useRef(!!initialData);
 
   useEffect(() => {
-    setMounted(true);
+    requestAnimationFrame(() => setMounted(true));
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024);
     };
@@ -59,34 +68,33 @@ export default function EditorPage() {
       const padding = 32; // 16px on each side
       const availableWidth = window.innerWidth - padding;
       const scale = Number((availableWidth / 612).toFixed(2));
-      setPreviewScale(Math.min(1.2, Math.max(0.4, scale)));
+      const clamped = Math.min(1.2, Math.max(0.4, scale));
+      if (clamped !== previewScale) {
+        requestAnimationFrame(() => setPreviewScale(clamped));
+      }
     }
-  }, [isMobile]);
+  }, [isMobile, previewScale]);
 
+  // Sync settings to all pages when global settings change
   useEffect(() => {
-    if (hasLoadedFromStorageRef.current) return;
-
-    const persisted = loadEditorStateV1<HandwritingSettings, PageSettings>();
-    if (!persisted) {
-      hasLoadedFromStorageRef.current = true;
-      return;
-    }
-
-    setText(persisted.text);
-    setSettings(persisted.settings);
-    setPageSettingsByPage(
-      persisted.pageSettingsByPage.length > 0
-        ? persisted.pageSettingsByPage
-        : [defaultPageSettingsFromHandwritingSettings(persisted.settings)]
-    );
-
-    setActivePanel(persisted.ui.activePanel);
-    setSidebarOpen(persisted.ui.sidebarOpen);
-    setPreviewScale(persisted.ui.previewScale);
-    setCurrentPageIndex(persisted.ui.currentPageIndex);
-
-    hasLoadedFromStorageRef.current = true;
-  }, []);
+    requestAnimationFrame(() => {
+      setPageSettingsByPage((prev) => {
+        const anyChanged = prev.some(ps => 
+          ps.inkColor !== settings.inkColor || 
+          ps.paperColor !== settings.paperColor || 
+          ps.lineColor !== settings.lineColor
+        );
+        if (!anyChanged) return prev;
+        
+        return prev.map((pageSettings) => ({
+          ...pageSettings,
+          inkColor: settings.inkColor,
+          paperColor: settings.paperColor,
+          lineColor: settings.lineColor,
+        }));
+      });
+    });
+  }, [settings.inkColor, settings.paperColor, settings.lineColor]);
 
   useEffect(() => {
     if (!hasLoadedFromStorageRef.current) return;
@@ -223,17 +231,6 @@ export default function EditorPage() {
     },
     [ensurePageSettingsLength]
   );
-
-  useEffect(() => {
-    setPageSettingsByPage((prev) => {
-      return prev.map((pageSettings) => ({
-        ...pageSettings,
-        inkColor: settings.inkColor,
-        paperColor: settings.paperColor,
-        lineColor: settings.lineColor,
-      }));
-    });
-  }, [settings.inkColor, settings.paperColor, settings.lineColor]);
 
   const openMobilePanel = (panel: 'settings' | 'export') => {
     setActivePanel(panel);

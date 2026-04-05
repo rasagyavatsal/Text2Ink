@@ -11,11 +11,15 @@ global.Image = class {
   constructor() {
     setTimeout(() => this.onload(), 0);
   }
-} as any;
+} as unknown as typeof Image;
 
 describe('canvasRenderer', () => {
-  let mockCanvas: any;
-  let mockCtx: any;
+  let mockCanvas: {
+    getContext: (type: string) => unknown;
+    width: number;
+    height: number;
+  };
+  let mockCtx: unknown;
 
   const mockSettings: HandwritingSettings = {
     fontFamily: 'caveat',

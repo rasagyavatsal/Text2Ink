@@ -45,7 +45,7 @@ export default function SamplePreviewGallery() {
             width={img.width}
             height={img.height}
             className="w-full h-full object-cover"
-            // @ts-ignore
+            // @ts-expect-error - fetchPriority is supported in React 19 but types may be missing
             fetchPriority={idx === 0 ? "high" : undefined}
             loading={idx === 0 ? "eager" : "lazy"}
             srcSet={img.mobileSrc ? `${img.mobileSrc} 400w, ${img.src} 840w` : undefined}

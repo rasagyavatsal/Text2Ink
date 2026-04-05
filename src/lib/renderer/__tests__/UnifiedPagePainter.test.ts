@@ -122,13 +122,12 @@ describe('UnifiedPagePainter', () => {
       UnifiedPagePainter.paintPage(opts);
 
       // Ruled style sets strokeStyle to '#ffb3b3' for the margin line
-      const strokeStyleSets = (ctx as any).__proto__; // can't easily track property sets, but we check moveTo calls
       // The margin line is drawn vertically
       const moveToCalls = (ctx.moveTo as ReturnType<typeof vi.fn>).mock.calls;
       const lineToCalls = (ctx.lineTo as ReturnType<typeof vi.fn>).mock.calls;
       // There should be at least one vertical line (same x for moveTo and lineTo)
-      const verticalLines = moveToCalls.filter((call: number[], idx: number) => {
-        const lineToCall = lineToCalls[idx];
+      const verticalLines = moveToCalls.filter((call: [number, number], idx: number) => {
+        const lineToCall = lineToCalls[idx] as [number, number] | undefined;
         return lineToCall && call[0] === lineToCall[0]; // same x = vertical
       });
       expect(verticalLines.length).toBeGreaterThan(0);
@@ -150,7 +149,7 @@ describe('UnifiedPagePainter', () => {
       UnifiedPagePainter.paintPage(opts);
 
       const fillTextCalls = (ctx.fillText as ReturnType<typeof vi.fn>).mock.calls;
-      const chars = fillTextCalls.map((c: any[]) => c[0]);
+      const chars = fillTextCalls.map((c: [string, number, number]) => c[0]);
       expect(chars).toContain('H');
       expect(chars).toContain('i');
     });
@@ -169,7 +168,7 @@ describe('UnifiedPagePainter', () => {
       UnifiedPagePainter.paintPage(opts);
 
       const fillTextCalls = (ctx.fillText as ReturnType<typeof vi.fn>).mock.calls;
-      const chars = fillTextCalls.map((c: any[]) => c[0]);
+      const chars = fillTextCalls.map((c: [string, number, number]) => c[0]);
       expect(chars).toContain('A');
       expect(chars).toContain('B');
       expect(chars).not.toContain(' ');
@@ -405,7 +404,7 @@ describe('UnifiedPagePainter', () => {
       UnifiedPagePainter.paintCursorOverlay(ctx, mainPositions, 0, '#000000');
 
       // The cursor should be painted with height 25 (fontAscent + fontDescent)
-      const lastCall = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls.find((call: any[]) => call[2] === 2); // width is 2
+      const lastCall = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls.find((call: [number, number, number, number]) => call[2] === 2); // width is 2
       expect(lastCall).toBeDefined();
       if (lastCall) {
           expect(lastCall[3]).toBe(25);
@@ -479,7 +478,7 @@ describe('UnifiedPagePainter', () => {
 
        UnifiedPagePainter.paintSelectionOverlay(ctx, positions.mainPositions, 0, 1, '#1a365d');
 
-       const [x, y, width, height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0];
+       const [x, y, width, height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0] as [number, number, number, number];
        expect(x).toBe(pageSettings.marginLeft);
        // halfLeading = (43.2 - 24) / 2 = 9.6
        // selectionY = marginTop + halfLeading = marginTop + 9.6
@@ -553,7 +552,7 @@ describe('UnifiedPagePainter', () => {
 
        UnifiedPagePainter.paintSelectionOverlay(ctx, positions.mainPositions, 0, 1, '#1a365d');
 
-       const [x, y, width, height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0];
+       const [, y, , height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0] as [number, number, number, number];
        // halfLeading = (24 - 24) / 2 = 0
        // selectionY = marginTop + 0 = marginTop
        expect(y).toBeCloseTo(pageSettings.marginTop, 1);
@@ -583,11 +582,11 @@ describe('UnifiedPagePainter', () => {
       UnifiedPagePainter.paintPage(opts);
 
       const fillTextCalls = (ctx.fillText as ReturnType<typeof vi.fn>).mock.calls;
-      const chars = fillTextCalls.map((c: any[]) => c[0]);
+      const chars = fillTextCalls.map((c: [string, number, number]) => c[0]);
       expect(chars).toContain('H');
       expect(chars).toContain('i');
       
-      expect((ctx as any).font).toContain('16px');
+      expect(ctx.font).toContain('16px');
     });
 
     it('skips text fields when renderTextFields is false', () => {

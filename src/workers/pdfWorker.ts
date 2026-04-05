@@ -13,13 +13,13 @@ self.onmessage = async (event: MessageEvent) => {
         unit,
         format,
       });
-      (self as any).postMessage({ type: 'initialized' });
+      self.postMessage({ type: 'initialized' });
       break;
     }
 
     case 'addPage': {
       if (!pdf) {
-        (self as any).postMessage({ type: 'error', payload: 'PDF not initialized' });
+        self.postMessage({ type: 'error', payload: 'PDF not initialized' });
         return;
       }
       const { imgData, width, height, isFirstPage } = payload;
@@ -32,18 +32,18 @@ self.onmessage = async (event: MessageEvent) => {
       const data = imgData instanceof ArrayBuffer ? new Uint8Array(imgData) : imgData;
       pdf.addImage(data, 'PNG', 0, 0, width, height, undefined, 'FAST');
       
-      (self as any).postMessage({ type: 'pageAdded' });
+      self.postMessage({ type: 'pageAdded' });
       break;
     }
 
     case 'generate': {
       if (!pdf) {
-        (self as any).postMessage({ type: 'error', payload: 'PDF not initialized' });
+        self.postMessage({ type: 'error', payload: 'PDF not initialized' });
         return;
       }
       
       const output = pdf.output('arraybuffer');
-      (self as any).postMessage({ type: 'generated', payload: output }, [output]);
+      self.postMessage({ type: 'generated', payload: output }, [output]);
       break;
     }
     

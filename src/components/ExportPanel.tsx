@@ -147,7 +147,7 @@ export default function ExportPanel({
         });
 
         const waitMessage = (type: string) => 
-          new Promise<any>((resolve, reject) => {
+          new Promise<unknown>((resolve, reject) => {
             const handler = (ev: MessageEvent) => {
               if (ev.data.type === type) {
                 worker.removeEventListener('message', handler);
