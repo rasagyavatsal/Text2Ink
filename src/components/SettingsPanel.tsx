@@ -239,7 +239,7 @@ export default function SettingsPanel({
   };
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="p-4 md:p-6 space-y-8">
       {/* General Controls Section */}
       <div>
         <div className="flex items-center gap-2 mb-5">

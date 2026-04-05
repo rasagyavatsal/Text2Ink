@@ -18,13 +18,14 @@ import {
 } from '@/lib/types';
 import { loadEditorStateV1, saveEditorStateV1 } from '@/lib/editorPersistence';
 import { applyPageSettingsToAll } from '@/lib/settingsHelpers';
-import { Settings, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Settings, Download, ChevronLeft, ChevronRight, X, Pencil, LayoutGrid } from 'lucide-react';
 
 const MemoSettingsPanel = React.memo(SettingsPanel);
 const MemoExportPanel = React.memo(ExportPanel);
 
 export default function EditorPage() {
-  const [isMobileBlocked, setIsMobileBlocked] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [text, setText] = useState('');
   const [settings, setSettings] = useState<HandwritingSettings>(DEFAULT_SETTINGS);
   const [pageSettingsByPage, setPageSettingsByPage] = useState<PageSettings[]>(() => [
@@ -38,8 +39,29 @@ export default function EditorPage() {
   const [pages, setPages] = useState<LineData[][]>([]);
   const [isPaginationComplete, setIsPaginationComplete] = useState(true);
   const [exportPageIndex, setExportPageIndex] = useState<number | null>(null);
+  const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
 
   const hasLoadedFromStorageRef = useRef(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Initial scale for mobile
+  useEffect(() => {
+    if (isMobile && hasLoadedFromStorageRef.current) {
+      const padding = 32; // 16px on each side
+      const availableWidth = window.innerWidth - padding;
+      const scale = Number((availableWidth / 612).toFixed(2));
+      setPreviewScale(Math.min(1.2, Math.max(0.4, scale)));
+    }
+  }, [isMobile]);
 
   useEffect(() => {
     if (hasLoadedFromStorageRef.current) return;
@@ -203,27 +225,6 @@ export default function EditorPage() {
   );
 
   useEffect(() => {
-    const isLikelyMobile = () => {
-      const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-      const uaMobile = /Mobi|Android|iPhone|iPad|iPod|IEMobile|Windows Phone/i.test(ua);
-      const smallViewport = typeof window !== 'undefined' ? window.innerWidth < 1024 : false;
-      const coarsePointer =
-        typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-          ? window.matchMedia('(pointer: coarse)').matches
-          : false;
-
-      return uaMobile || (smallViewport && coarsePointer);
-    };
-
-    const update = () => setIsMobileBlocked(isLikelyMobile());
-
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, []);
-
-  // Sync global color settings to all page settings
-  useEffect(() => {
     setPageSettingsByPage((prev) => {
       return prev.map((pageSettings) => ({
         ...pageSettings,
@@ -234,45 +235,20 @@ export default function EditorPage() {
     });
   }, [settings.inkColor, settings.paperColor, settings.lineColor]);
 
-  if (isMobileBlocked) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center px-6">
-        <div className="max-w-md w-full text-center">
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <Image
-              src="/logo-192.png"
-              alt="Text2Ink logo"
-              width={48}
-              height={48}
-              className="w-12 h-12"
-              priority
-            />
-            <span className="font-bold text-2xl text-gray-900">Text2Ink</span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Editor is desktop-only</h1>
-          <p className="text-gray-600 mt-3">
-            Please open this page on a desktop/laptop for the best experience.
-          </p>
-          <div className="mt-8">
-            <Link
-              href="/"
-              className="inline-flex items-center justify-center bg-[#E0A32A] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#c99225] transition-colors"
-            >
-              Back to Home
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const openMobilePanel = (panel: 'settings' | 'export') => {
+    setActivePanel(panel);
+    setMobilePanelOpen(true);
+  };
+
+  if (!mounted) return null;
 
   return (
-    <div className="h-screen bg-white flex flex-col overflow-hidden">
+    <div className="h-screen bg-white flex flex-col overflow-hidden relative">
       {/* Header */}
       <header className="border-b border-gray-200 shrink-0 bg-white">
-        <div className="max-w-full mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-full mx-auto px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Link href="/" className="font-bold text-3xl font-dancing-script hover:opacity-80 transition-opacity">
+            <Link href="/" className="font-bold text-2xl md:text-3xl font-dancing-script hover:opacity-80 transition-opacity">
               <span className="text-[#E0A32A]">Text</span>
               <span className="text-black">2</span>
               <span className="text-[#E0A32A]">Ink</span>
@@ -280,101 +256,105 @@ export default function EditorPage() {
           </div>
           <Link
             href="/"
-            className="bg-[#E0A32A] text-white px-5 py-2 rounded-lg font-medium hover:bg-[#c99225] transition-colors"
+            className="bg-[#E0A32A] text-white px-3 md:px-5 py-1.5 md:py-2 rounded-lg text-sm md:text-base font-medium hover:bg-[#c99225] transition-colors"
           >
-            Back to Home
+            {isMobile ? 'Home' : 'Back to Home'}
           </Link>
         </div>
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex min-h-0 bg-gray-100 overflow-hidden">
-        {/* Sidebar */}
-        <div
-          className={`bg-white border-r border-gray-200 flex flex-col min-h-0 transition-all duration-300 ${sidebarOpen ? 'w-96' : 'w-0'
-            } overflow-hidden`}
-        >
-          {/* Panel Tabs at the Top */}
-          <div className="flex border-b border-gray-200 shrink-0">
-            <button
-              onClick={() => setActivePanel('settings')}
-              className={`flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${activePanel === 'settings'
-                ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/5'
-                : 'text-gray-500 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
-                }`}
-            >
-              <Settings className="w-4 h-4" />
-              Settings
-            </button>
-            <button
-              onClick={() => setActivePanel('export')}
-              className={`flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${activePanel === 'export'
-                ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/5'
-                : 'text-gray-500 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
-                }`}
-            >
-              <Download className="w-4 h-4" />
-              Export
-            </button>
-          </div>
+      <div className="flex-1 flex min-h-0 bg-gray-100 overflow-hidden relative">
+        {/* Desktop Sidebar */}
+        {!isMobile && (
+          <div
+            className={`bg-white border-r border-gray-200 flex flex-col min-h-0 transition-all duration-300 ${sidebarOpen ? 'w-96' : 'w-0'
+              } overflow-hidden`}
+          >
+            {/* Panel Tabs at the Top */}
+            <div className="flex border-b border-gray-200 shrink-0">
+              <button
+                onClick={() => setActivePanel('settings')}
+                className={`flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${activePanel === 'settings'
+                  ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/5'
+                  : 'text-gray-500 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
+                  }`}
+              >
+                <Settings className="w-4 h-4" />
+                Settings
+              </button>
+              <button
+                onClick={() => setActivePanel('export')}
+                className={`flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${activePanel === 'export'
+                  ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/5'
+                  : 'text-gray-500 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
+                  }`}
+              >
+                <Download className="w-4 h-4" />
+                Export
+              </button>
+            </div>
 
-          {/* Panel Content - Scrollable */}
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-white">
-            {activePanel === 'settings' ? (
-              <MemoSettingsPanel
-                settings={settings}
-                onSettingsChange={setSettings}
-                pageSettings={currentPageSettings}
-                onPageSettingsChange={handlePageSettingsChange}
-                currentPageIndex={currentPageIndex}
-                onApplyToAllPages={applyCurrentPageSettingsToAll}
-                previewScale={previewScale}
-                onPreviewScaleChange={handlePreviewScaleChange}
-                onCurrentPageChange={handleCurrentPageChange}
-                totalPages={totalPages}
-                isPaginationComplete={isPaginationComplete}
-                pages={pages}
-                onClearAll={handleClearAll}
-              />
+            {/* Panel Content - Scrollable */}
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-white">
+              {activePanel === 'settings' ? (
+                <MemoSettingsPanel
+                  settings={settings}
+                  onSettingsChange={setSettings}
+                  pageSettings={currentPageSettings}
+                  onPageSettingsChange={handlePageSettingsChange}
+                  currentPageIndex={currentPageIndex}
+                  onApplyToAllPages={applyCurrentPageSettingsToAll}
+                  previewScale={previewScale}
+                  onPreviewScaleChange={handlePreviewScaleChange}
+                  onCurrentPageChange={handleCurrentPageChange}
+                  totalPages={totalPages}
+                  isPaginationComplete={isPaginationComplete}
+                  pages={pages}
+                  onClearAll={handleClearAll}
+                />
+              ) : (
+                <MemoExportPanel
+                  hasContent={text.trim().length > 0}
+                  settings={settings}
+                  pages={pages}
+                  isPaginationComplete={isPaginationComplete}
+                  pageSettingsByPage={pageSettingsByPage}
+                  totalPages={totalPages}
+                  currentPageIndex={currentPageIndex}
+                  onCurrentPageChange={handleCurrentPageChange}
+                  onExportingChange={(isExporting) => {
+                    if (!isExporting) setExportPageIndex(null);
+                  }}
+                  onExportPageIndexChange={setExportPageIndex}
+                />
+              )}
+            </div>
+            <div className="shrink-0 py-2 px-4 border-t border-gray-100 flex justify-center bg-gray-50/50">
+              <Version />
+            </div>
+          </div>
+        )}
+
+        {/* Toggle Sidebar Button (Desktop Only) */}
+        {!isMobile && (
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className={`fixed top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-r-xl p-3 shadow-xl hover:shadow-2xl transition-all duration-300 group ${sidebarOpen ? 'left-[384px]' : 'left-0'
+              }`}
+            aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+          >
+            {sidebarOpen ? (
+              <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:text-[#E0A32A] transition-colors" />
             ) : (
-              <MemoExportPanel
-                hasContent={text.trim().length > 0}
-                settings={settings}
-                pages={pages}
-                isPaginationComplete={isPaginationComplete}
-                pageSettingsByPage={pageSettingsByPage}
-                totalPages={totalPages}
-                currentPageIndex={currentPageIndex}
-                onCurrentPageChange={handleCurrentPageChange}
-                onExportingChange={(isExporting) => {
-                  if (!isExporting) setExportPageIndex(null);
-                }}
-                onExportPageIndexChange={setExportPageIndex}
-              />
+              <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[#E0A32A] transition-colors" />
             )}
-          </div>
-          <div className="shrink-0 py-2 px-4 border-t border-gray-100 flex justify-center bg-gray-50/50">
-            <Version />
-          </div>
-        </div>
-
-        {/* Toggle Sidebar Button */}
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className={`fixed top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-r-xl p-3 shadow-xl hover:shadow-2xl transition-all duration-300 group ${sidebarOpen ? 'left-[384px]' : 'left-0'
-            }`}
-          aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
-        >
-          {sidebarOpen ? (
-            <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:text-[#E0A32A] transition-colors" />
-          ) : (
-            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[#E0A32A] transition-colors" />
-          )}
-        </button>
+          </button>
+        )}
 
         {/* Main Content - Editor */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-gray-100">
-          <div className="min-h-full flex justify-center py-12 px-6">
+        <div className={`flex-1 min-h-0 overflow-y-auto overscroll-contain bg-gray-100 pb-20 lg:pb-0`}>
+          <div className={`min-h-full flex justify-center ${isMobile ? 'py-4 px-4' : 'py-12 px-6'}`}>
             <HandwritingEditor
               text={text}
               onTextChange={setText}
@@ -394,6 +374,141 @@ export default function EditorPage() {
             />
           </div>
         </div>
+
+        {/* Mobile Bottom Navigation */}
+        {isMobile && (
+          <div className="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 flex items-center justify-around px-2 z-50">
+            <button
+              onClick={() => {
+                const textarea = document.querySelector('textarea[aria-label="Handwriting text input"]') as HTMLTextAreaElement;
+                textarea?.focus();
+              }}
+              className="flex flex-col items-center gap-1 text-gray-500 active:text-[#E0A32A]"
+            >
+              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-50">
+                <Pencil className="w-5 h-5" />
+              </div>
+              <span className="text-[10px] font-bold uppercase">Write</span>
+            </button>
+            <button
+              onClick={() => openMobilePanel('settings')}
+              className={`flex flex-col items-center gap-1 ${activePanel === 'settings' ? 'text-[#E0A32A]' : 'text-gray-500'}`}
+            >
+              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-50">
+                <Settings className="w-5 h-5" />
+              </div>
+              <span className="text-[10px] font-bold uppercase">Settings</span>
+            </button>
+            <button
+              onClick={() => openMobilePanel('export')}
+              className={`flex flex-col items-center gap-1 ${activePanel === 'export' ? 'text-[#E0A32A]' : 'text-gray-500'}`}
+            >
+              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-50">
+                <Download className="w-5 h-5" />
+              </div>
+              <span className="text-[10px] font-bold uppercase">Export</span>
+            </button>
+            <div className="flex flex-col items-center gap-1 text-gray-500">
+              <div className="flex items-center gap-2 bg-gray-50 px-3 h-10 rounded-full">
+                <button
+                  onClick={() => handleCurrentPageChange(Math.max(0, currentPageIndex - 1))}
+                  disabled={currentPageIndex === 0}
+                  className="disabled:opacity-30"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="text-[11px] font-bold min-w-[3rem] text-center">
+                  {currentPageIndex + 1}/{totalPages}
+                </span>
+                <button
+                  onClick={() =>
+                    handleCurrentPageChange(
+                      isPaginationComplete
+                        ? Math.min(pages.length - 1, currentPageIndex + 1)
+                        : currentPageIndex + 1
+                    )
+                  }
+                  disabled={isPaginationComplete && currentPageIndex >= pages.length - 1}
+                  className="disabled:opacity-30"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+              <span className="text-[10px] font-bold uppercase">Pages</span>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile Sidebar Panel (Dialog) */}
+        {isMobile && (
+          <div
+            className={`fixed inset-0 z-[60] transition-opacity duration-300 ${mobilePanelOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+              }`}
+          >
+            <div className="absolute inset-0 bg-black/50" onClick={() => setMobilePanelOpen(false)} />
+            <div
+              className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl transition-transform duration-300 ease-out overflow-hidden flex flex-col max-h-[90vh] ${mobilePanelOpen ? 'translate-y-0' : 'translate-y-full'
+                }`}
+            >
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setActivePanel('settings')}
+                    className={`text-sm font-bold uppercase tracking-wider ${activePanel === 'settings' ? 'text-[#E0A32A]' : 'text-gray-400'}`}
+                  >
+                    Settings
+                  </button>
+                  <button
+                    onClick={() => setActivePanel('export')}
+                    className={`text-sm font-bold uppercase tracking-wider ${activePanel === 'export' ? 'text-[#E0A32A]' : 'text-gray-400'}`}
+                  >
+                    Export
+                  </button>
+                </div>
+                <button
+                  onClick={() => setMobilePanelOpen(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto pb-20">
+                {activePanel === 'settings' ? (
+                  <MemoSettingsPanel
+                    settings={settings}
+                    onSettingsChange={setSettings}
+                    pageSettings={currentPageSettings}
+                    onPageSettingsChange={handlePageSettingsChange}
+                    currentPageIndex={currentPageIndex}
+                    onApplyToAllPages={applyCurrentPageSettingsToAll}
+                    previewScale={previewScale}
+                    onPreviewScaleChange={handlePreviewScaleChange}
+                    onCurrentPageChange={handleCurrentPageChange}
+                    totalPages={totalPages}
+                    isPaginationComplete={isPaginationComplete}
+                    pages={pages}
+                    onClearAll={handleClearAll}
+                  />
+                ) : (
+                  <MemoExportPanel
+                    hasContent={text.trim().length > 0}
+                    settings={settings}
+                    pages={pages}
+                    isPaginationComplete={isPaginationComplete}
+                    pageSettingsByPage={pageSettingsByPage}
+                    totalPages={totalPages}
+                    currentPageIndex={currentPageIndex}
+                    onCurrentPageChange={handleCurrentPageChange}
+                    onExportingChange={(isExporting) => {
+                      if (!isExporting) setExportPageIndex(null);
+                    }}
+                    onExportPageIndexChange={setExportPageIndex}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

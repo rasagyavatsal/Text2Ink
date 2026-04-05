@@ -81,14 +81,19 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
     setIsSettingsOpen(open);
   };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
+    if ('button' in e && e.button !== 0) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
     setResizeDir(null);
+    
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
     dragStartRef.current = {
-      x: e.clientX,
-      y: e.clientY,
+      x: clientX,
+      y: clientY,
       fieldX: field.x,
       fieldY: field.y,
       fieldW: field.width,
@@ -96,14 +101,19 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
     };
   };
 
-  const handleResizeStart = (e: React.MouseEvent, dir: string) => {
+  const handleResizeStart = (e: React.MouseEvent | React.TouchEvent, dir: string) => {
+    if ('button' in e && e.button !== 0) return;
     e.preventDefault();
     e.stopPropagation();
     setResizeDir(dir);
     setIsDragging(false);
+
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
     dragStartRef.current = {
-      x: e.clientX,
-      y: e.clientY,
+      x: clientX,
+      y: clientY,
       fieldX: field.x,
       fieldY: field.y,
       fieldW: field.width,
@@ -114,9 +124,12 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
   useEffect(() => {
     if (!isDragging && !resizeDir) return;
 
-    const handleMouseMove = (e: MouseEvent) => {
-      const dx = (e.clientX - dragStartRef.current.x) / scale;
-      const dy = (e.clientY - dragStartRef.current.y) / scale;
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+      const dx = (clientX - dragStartRef.current.x) / scale;
+      const dy = (clientY - dragStartRef.current.y) / scale;
 
       if (isDragging) {
         onUpdate({
@@ -143,16 +156,22 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
       }
     };
 
-    const handleMouseUp = () => {
+    const handleUp = () => {
       setIsDragging(false);
       setResizeDir(null);
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+    window.addEventListener('touchmove', handleMove, { passive: false });
+    window.addEventListener('touchend', handleUp);
+    window.addEventListener('touchcancel', handleUp);
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchend', handleUp);
+      window.removeEventListener('touchcancel', handleUp);
     };
   }, [isDragging, resizeDir, onUpdate, scale, minW, minH]);
 
@@ -175,21 +194,25 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
           data-testid="handle-nw"
           className="absolute -top-1.5 -left-1.5 w-3 h-3 pointer-events-auto cursor-nwse-resize bg-white border border-gray-400 rounded-sm shadow-sm hover:scale-110 transition-transform" 
           onMouseDown={(e) => handleResizeStart(e, 'nw')} 
+          onTouchStart={(e) => handleResizeStart(e, 'nw')}
         />
         <div 
           data-testid="handle-ne"
           className="absolute -top-1.5 -right-1.5 w-3 h-3 pointer-events-auto cursor-nesw-resize bg-white border border-gray-400 rounded-sm shadow-sm hover:scale-110 transition-transform" 
           onMouseDown={(e) => handleResizeStart(e, 'ne')} 
+          onTouchStart={(e) => handleResizeStart(e, 'ne')}
         />
         <div 
           data-testid="handle-sw"
           className="absolute -bottom-1.5 -left-1.5 w-3 h-3 pointer-events-auto cursor-nesw-resize bg-white border border-gray-400 rounded-sm shadow-sm hover:scale-110 transition-transform" 
           onMouseDown={(e) => handleResizeStart(e, 'sw')} 
+          onTouchStart={(e) => handleResizeStart(e, 'sw')}
         />
         <div 
           data-testid="handle-se"
           className="absolute -bottom-1.5 -right-1.5 w-3 h-3 pointer-events-auto cursor-nwse-resize bg-white border border-gray-400 rounded-sm shadow-sm hover:scale-110 transition-transform" 
           onMouseDown={(e) => handleResizeStart(e, 'se')} 
+          onTouchStart={(e) => handleResizeStart(e, 'se')}
         />
         
         {/* Sides */}
@@ -197,21 +220,25 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
           data-testid="handle-n"
           className="absolute -top-1 left-2 right-2 h-2 pointer-events-auto cursor-ns-resize hover:bg-blue-400/20 transition-colors" 
           onMouseDown={(e) => handleResizeStart(e, 'n')} 
+          onTouchStart={(e) => handleResizeStart(e, 'n')}
         />
         <div 
           data-testid="handle-s"
           className="absolute -bottom-1 left-2 right-2 h-2 pointer-events-auto cursor-ns-resize hover:bg-blue-400/20 transition-colors" 
           onMouseDown={(e) => handleResizeStart(e, 's')} 
+          onTouchStart={(e) => handleResizeStart(e, 's')}
         />
         <div 
           data-testid="handle-w"
           className="absolute -left-1 top-2 bottom-2 w-2 pointer-events-auto cursor-ew-resize hover:bg-blue-400/20 transition-colors" 
           onMouseDown={(e) => handleResizeStart(e, 'w')} 
+          onTouchStart={(e) => handleResizeStart(e, 'w')}
         />
         <div 
           data-testid="handle-e"
           className="absolute -right-1 top-2 bottom-2 w-2 pointer-events-auto cursor-ew-resize hover:bg-blue-400/20 transition-colors" 
           onMouseDown={(e) => handleResizeStart(e, 'e')} 
+          onTouchStart={(e) => handleResizeStart(e, 'e')}
         />
       </div>
 
@@ -220,6 +247,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
         <div 
           className="bg-white border shadow-sm rounded-full p-1 cursor-move hover:bg-gray-50 text-gray-500"
           onMouseDown={handleMouseDown}
+          onTouchStart={handleMouseDown}
         >
           <Move size={12} />
         </div>
