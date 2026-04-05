@@ -379,18 +379,6 @@ export default function EditorPage() {
         {isMobile && (
           <div className="fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-gray-200 flex items-center justify-around px-2 z-50">
             <button
-              onClick={() => {
-                const textarea = document.querySelector('textarea[aria-label="Handwriting text input"]') as HTMLTextAreaElement;
-                textarea?.focus();
-              }}
-              className="flex flex-col items-center gap-1 text-gray-500 active:text-[#E0A32A]"
-            >
-              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-50">
-                <Pencil className="w-5 h-5" />
-              </div>
-              <span className="text-[10px] font-bold uppercase">Write</span>
-            </button>
-            <button
               onClick={() => openMobilePanel('settings')}
               className={`flex flex-col items-center gap-1 ${activePanel === 'settings' ? 'text-[#E0A32A]' : 'text-gray-500'}`}
             >
@@ -408,34 +396,6 @@ export default function EditorPage() {
               </div>
               <span className="text-[10px] font-bold uppercase">Export</span>
             </button>
-            <div className="flex flex-col items-center gap-1 text-gray-500">
-              <div className="flex items-center gap-2 bg-gray-50 px-3 h-10 rounded-full">
-                <button
-                  onClick={() => handleCurrentPageChange(Math.max(0, currentPageIndex - 1))}
-                  disabled={currentPageIndex === 0}
-                  className="disabled:opacity-30"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <span className="text-[11px] font-bold min-w-[3rem] text-center">
-                  {currentPageIndex + 1}/{totalPages}
-                </span>
-                <button
-                  onClick={() =>
-                    handleCurrentPageChange(
-                      isPaginationComplete
-                        ? Math.min(pages.length - 1, currentPageIndex + 1)
-                        : currentPageIndex + 1
-                    )
-                  }
-                  disabled={isPaginationComplete && currentPageIndex >= pages.length - 1}
-                  className="disabled:opacity-30"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-              <span className="text-[10px] font-bold uppercase">Pages</span>
-            </div>
           </div>
         )}
 
@@ -451,20 +411,9 @@ export default function EditorPage() {
                 }`}
             >
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => setActivePanel('settings')}
-                    className={`text-sm font-bold uppercase tracking-wider ${activePanel === 'settings' ? 'text-[#E0A32A]' : 'text-gray-400'}`}
-                  >
-                    Settings
-                  </button>
-                  <button
-                    onClick={() => setActivePanel('export')}
-                    className={`text-sm font-bold uppercase tracking-wider ${activePanel === 'export' ? 'text-[#E0A32A]' : 'text-gray-400'}`}
-                  >
-                    Export
-                  </button>
-                </div>
+                <h2 className="text-sm font-bold uppercase tracking-wider text-gray-900">
+                  {activePanel === 'settings' ? 'Settings' : 'Export'}
+                </h2>
                 <button
                   onClick={() => setMobilePanelOpen(false)}
                   className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
