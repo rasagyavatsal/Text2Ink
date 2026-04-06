@@ -1,1 +1,0 @@
-analyze [UBIQUITOUS_LANGUAGE.md](UBIQUITOUS_LANGUAGE.md) in every session.
