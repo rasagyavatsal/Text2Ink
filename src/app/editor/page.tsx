@@ -25,6 +25,8 @@ const MemoExportPanel = React.memo(ExportPanel);
 export default function EditorPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 0);
+  const [isZoomManual, setIsZoomManual] = useState(false);
   
   // Initialize state from storage to avoid initial useEffect setState
   const [initialData] = useState(() => {
@@ -54,26 +56,27 @@ export default function EditorPage() {
 
   useEffect(() => {
     requestAnimationFrame(() => setMounted(true));
-    const checkMobile = () => {
+    const handleResize = () => {
       setIsMobile(window.innerWidth < 1024);
+      setWindowWidth(window.innerWidth);
     };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Initial scale for mobile
+  // Initial scale for mobile and auto-fit on rotation
   useEffect(() => {
-    if (isMobile && hasLoadedFromStorageRef.current) {
+    if (isMobile && hasLoadedFromStorageRef.current && !isZoomManual) {
       const padding = 32; // 16px on each side
-      const availableWidth = window.innerWidth - padding;
+      const availableWidth = windowWidth - padding;
       const scale = Number((availableWidth / 612).toFixed(2));
       const clamped = Math.min(1.2, Math.max(0.4, scale));
       if (clamped !== previewScale) {
         requestAnimationFrame(() => setPreviewScale(clamped));
       }
     }
-  }, [isMobile, previewScale]);
+  }, [isMobile, windowWidth, isZoomManual, previewScale]);
 
   // Sync settings to all pages when global settings change
   useEffect(() => {
@@ -212,7 +215,10 @@ export default function EditorPage() {
   }, [setText, setCurrentPageIndex, setSettings, setPageSettingsByPage]);
 
   const handlePreviewScaleChange = useCallback(
-    (value: number) => setPreviewScale(clampPreviewScale(value)),
+    (value: number) => {
+      setPreviewScale(clampPreviewScale(value));
+      setIsZoomManual(true);
+    },
     [clampPreviewScale]
   );
 
