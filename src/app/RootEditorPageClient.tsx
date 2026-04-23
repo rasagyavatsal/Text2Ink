@@ -1,14 +1,11 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Image from 'next/image';
+import React, { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import HandwritingEditor from '@/components/HandwritingEditor';
 import SettingsPanel from '@/components/SettingsPanel';
 import ExportPanel from '@/components/ExportPanel';
 import Version from '@/components/Version';
-import './editor.css';
-
 import {
   HandwritingSettings,
   DEFAULT_SETTINGS,
@@ -23,51 +20,90 @@ import { Settings, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 const MemoSettingsPanel = React.memo(SettingsPanel);
 const MemoExportPanel = React.memo(ExportPanel);
 
-export default function EditorPage() {
-  const [isMobileBlocked, setIsMobileBlocked] = useState(false);
-  const [text, setText] = useState('');
-  const [settings, setSettings] = useState<HandwritingSettings>(DEFAULT_SETTINGS);
-  const [pageSettingsByPage, setPageSettingsByPage] = useState<PageSettings[]>(() => [
-    defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
-  ]);
-  const [activePanel, setActivePanel] = useState<'settings' | 'export'>('settings');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [previewScale, setPreviewScale] = useState(1);
-  const [currentPageIndex, setCurrentPageIndex] = useState(0);
+type EditorInitialState = {
+  text: string;
+  settings: HandwritingSettings;
+  pageSettingsByPage: PageSettings[];
+  activePanel: 'settings' | 'export';
+  sidebarOpen: boolean;
+  previewScale: number;
+  currentPageIndex: number;
+};
+
+const DEFAULT_INITIAL_STATE: EditorInitialState = {
+  text: '',
+  settings: DEFAULT_SETTINGS,
+  pageSettingsByPage: [defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS)],
+  activePanel: 'settings',
+  sidebarOpen: true,
+  previewScale: 1,
+  currentPageIndex: 0,
+};
+
+const getInitialEditorState = (): EditorInitialState => {
+  const persisted = loadEditorStateV1<HandwritingSettings, PageSettings>();
+  if (!persisted) return DEFAULT_INITIAL_STATE;
+
+  return {
+    text: persisted.text,
+    settings: persisted.settings,
+    pageSettingsByPage:
+      persisted.pageSettingsByPage.length > 0
+        ? persisted.pageSettingsByPage
+        : [defaultPageSettingsFromHandwritingSettings(persisted.settings)],
+    activePanel: persisted.ui.activePanel,
+    sidebarOpen: persisted.ui.sidebarOpen,
+    previewScale: persisted.ui.previewScale,
+    currentPageIndex: persisted.ui.currentPageIndex,
+  };
+};
+
+const subscribeClientReady = () => () => {};
+const getClientReadySnapshot = () => true;
+const getServerReadySnapshot = () => false;
+
+type RootEditorShellProps = {
+  initialState: EditorInitialState;
+  persistState: boolean;
+};
+
+function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
+  const [resolvedInitialState] = useState<EditorInitialState>(initialState);
+
+  const [text, setText] = useState(resolvedInitialState.text);
+  const [settings, setSettings] = useState<HandwritingSettings>(resolvedInitialState.settings);
+  const [pageSettingsByPage, setPageSettingsByPage] = useState<PageSettings[]>(resolvedInitialState.pageSettingsByPage);
+  const [activePanel, setActivePanel] = useState<'settings' | 'export'>(resolvedInitialState.activePanel);
+  const [sidebarOpen, setSidebarOpen] = useState(resolvedInitialState.sidebarOpen);
+  const [previewScale, setPreviewScale] = useState(resolvedInitialState.previewScale);
+  const [currentPageIndex, setCurrentPageIndex] = useState(resolvedInitialState.currentPageIndex);
   const [totalPages, setTotalPages] = useState(1);
   const [pages, setPages] = useState<LineData[][]>([]);
   const [isPaginationComplete, setIsPaginationComplete] = useState(true);
   const [exportPageIndex, setExportPageIndex] = useState<number | null>(null);
 
-  const hasLoadedFromStorageRef = useRef(false);
+  const handleSettingsChange = useCallback((next: React.SetStateAction<HandwritingSettings>) => {
+    setSettings((prevSettings) => {
+      const resolvedSettings =
+        typeof next === 'function'
+          ? (next as (prevState: HandwritingSettings) => HandwritingSettings)(prevSettings)
+          : next;
 
-  useEffect(() => {
-    if (hasLoadedFromStorageRef.current) return;
+      setPageSettingsByPage((prevPageSettings) =>
+        prevPageSettings.map((pageSettings) => ({
+          ...pageSettings,
+          inkColor: resolvedSettings.inkColor,
+          paperColor: resolvedSettings.paperColor,
+          lineColor: resolvedSettings.lineColor,
+        })),
+      );
 
-    const persisted = loadEditorStateV1<HandwritingSettings, PageSettings>();
-    if (!persisted) {
-      hasLoadedFromStorageRef.current = true;
-      return;
-    }
-
-    setText(persisted.text);
-    setSettings(persisted.settings);
-    setPageSettingsByPage(
-      persisted.pageSettingsByPage.length > 0
-        ? persisted.pageSettingsByPage
-        : [defaultPageSettingsFromHandwritingSettings(persisted.settings)]
-    );
-
-    setActivePanel(persisted.ui.activePanel);
-    setSidebarOpen(persisted.ui.sidebarOpen);
-    setPreviewScale(persisted.ui.previewScale);
-    setCurrentPageIndex(persisted.ui.currentPageIndex);
-
-    hasLoadedFromStorageRef.current = true;
+      return resolvedSettings;
+    });
   }, []);
 
   useEffect(() => {
-    if (!hasLoadedFromStorageRef.current) return;
+    if (!persistState) return;
     if (typeof window === 'undefined') return;
 
     const save = () => {
@@ -91,6 +127,7 @@ export default function EditorPage() {
     activePanel,
     currentPageIndex,
     pageSettingsByPage,
+    persistState,
     previewScale,
     settings,
     sidebarOpen,
@@ -98,7 +135,7 @@ export default function EditorPage() {
   ]);
 
   useEffect(() => {
-    if (!hasLoadedFromStorageRef.current) return;
+    if (!persistState) return;
     if (typeof window === 'undefined') return;
 
     const handleUnload = () => {
@@ -122,6 +159,7 @@ export default function EditorPage() {
     activePanel,
     currentPageIndex,
     pageSettingsByPage,
+    persistState,
     previewScale,
     settings,
     sidebarOpen,
@@ -142,12 +180,12 @@ export default function EditorPage() {
         return next;
       });
     },
-    [settings]
+    [settings],
   );
 
   const currentPageSettings = useMemo(
     () => pageSettingsByPage[currentPageIndex] ?? defaultPageSettingsFromHandwritingSettings(settings),
-    [currentPageIndex, pageSettingsByPage, settings]
+    [currentPageIndex, pageSettingsByPage, settings],
   );
 
   const applyCurrentPageSettingsToAll = useCallback(() => {
@@ -169,21 +207,21 @@ export default function EditorPage() {
         return next;
       });
     },
-    [currentPageIndex, ensurePageSettingsLength, settings]
+    [currentPageIndex, ensurePageSettingsLength, settings],
   );
 
   const handleClearAll = useCallback(() => {
     if (window.confirm('Are you sure you want to remove all text and text fields from all pages? This action cannot be undone.')) {
       setText('');
       setCurrentPageIndex(0);
-      setSettings((prev) => ({ ...prev, textFields: [] }));
+      handleSettingsChange((prev) => ({ ...prev, textFields: [] }));
       setPageSettingsByPage((prev) => prev.map((ps) => ({ ...ps, textFields: [] })));
     }
-  }, [setText, setCurrentPageIndex, setSettings, setPageSettingsByPage]);
+  }, [handleSettingsChange]);
 
   const handlePreviewScaleChange = useCallback(
     (value: number) => setPreviewScale(clampPreviewScale(value)),
-    [clampPreviewScale]
+    [clampPreviewScale],
   );
 
   const handleCurrentPageChange = useCallback(
@@ -191,7 +229,7 @@ export default function EditorPage() {
       ensurePageSettingsLength(nextIndex + 1);
       setCurrentPageIndex(nextIndex);
     },
-    [ensurePageSettingsLength]
+    [ensurePageSettingsLength],
   );
 
   const handleTotalPagesChange = useCallback(
@@ -199,77 +237,12 @@ export default function EditorPage() {
       setTotalPages(nextTotalPages);
       ensurePageSettingsLength(nextTotalPages);
     },
-    [ensurePageSettingsLength]
+    [ensurePageSettingsLength],
   );
-
-  useEffect(() => {
-    const isLikelyMobile = () => {
-      const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-      const uaMobile = /Mobi|Android|iPhone|iPad|iPod|IEMobile|Windows Phone/i.test(ua);
-      const smallViewport = typeof window !== 'undefined' ? window.innerWidth < 1024 : false;
-      const coarsePointer =
-        typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-          ? window.matchMedia('(pointer: coarse)').matches
-          : false;
-
-      return uaMobile || (smallViewport && coarsePointer);
-    };
-
-    const update = () => setIsMobileBlocked(isLikelyMobile());
-
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, []);
-
-  // Sync global color settings to all page settings
-  useEffect(() => {
-    setPageSettingsByPage((prev) => {
-      return prev.map((pageSettings) => ({
-        ...pageSettings,
-        inkColor: settings.inkColor,
-        paperColor: settings.paperColor,
-        lineColor: settings.lineColor,
-      }));
-    });
-  }, [settings.inkColor, settings.paperColor, settings.lineColor]);
-
-  if (isMobileBlocked) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center px-6">
-        <div className="max-w-md w-full text-center">
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <Image
-              src="/logo-192.png"
-              alt="Text2Ink logo"
-              width={48}
-              height={48}
-              className="w-12 h-12"
-              priority
-            />
-            <span className="font-bold text-2xl text-gray-900">Text2Ink</span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Editor is desktop-only</h1>
-          <p className="text-gray-600 mt-3">
-            Please open this page on a desktop/laptop for the best experience.
-          </p>
-          <div className="mt-8">
-            <Link
-              href="/"
-              className="inline-flex items-center justify-center bg-[#E0A32A] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#c99225] transition-colors"
-            >
-              Back to Home
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="h-screen bg-white flex flex-col overflow-hidden">
-      {/* Header */}
-      <header className="border-b border-gray-200 shrink-0 bg-white">
+      <header className="border-b border-gray-200 shrink-0 bg-white" role="banner">
         <div className="max-w-full mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Link href="/" className="font-bold text-3xl font-dancing-script hover:opacity-80 transition-opacity">
@@ -279,29 +252,25 @@ export default function EditorPage() {
             </Link>
           </div>
           <Link
-            href="/"
-            className="bg-[#E0A32A] text-white px-5 py-2 rounded-lg font-medium hover:bg-[#c99225] transition-colors"
+            href="/contact"
+            className="text-gray-700 hover:text-[#E0A32A] font-medium transition-colors"
           >
-            Back to Home
+            Contact
           </Link>
         </div>
       </header>
 
-      {/* Main Content */}
       <div className="flex-1 flex min-h-0 bg-gray-100 overflow-hidden">
-        {/* Sidebar */}
         <div
-          className={`bg-white border-r border-gray-200 flex flex-col min-h-0 transition-all duration-300 ${sidebarOpen ? 'w-96' : 'w-0'
-            } overflow-hidden`}
+          className={`bg-white border-r border-gray-200 flex flex-col min-h-0 transition-all duration-300 ${sidebarOpen ? 'w-96' : 'w-0'} overflow-hidden`}
         >
-          {/* Panel Tabs at the Top */}
           <div className="flex border-b border-gray-200 shrink-0">
             <button
               onClick={() => setActivePanel('settings')}
               className={`flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${activePanel === 'settings'
                 ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/5'
                 : 'text-gray-500 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
-                }`}
+              }`}
             >
               <Settings className="w-4 h-4" />
               Settings
@@ -311,19 +280,18 @@ export default function EditorPage() {
               className={`flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${activePanel === 'export'
                 ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/5'
                 : 'text-gray-500 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
-                }`}
+              }`}
             >
               <Download className="w-4 h-4" />
               Export
             </button>
           </div>
 
-          {/* Panel Content - Scrollable */}
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-white">
             {activePanel === 'settings' ? (
               <MemoSettingsPanel
                 settings={settings}
-                onSettingsChange={setSettings}
+                onSettingsChange={handleSettingsChange}
                 pageSettings={currentPageSettings}
                 onPageSettingsChange={handlePageSettingsChange}
                 currentPageIndex={currentPageIndex}
@@ -358,11 +326,9 @@ export default function EditorPage() {
           </div>
         </div>
 
-        {/* Toggle Sidebar Button */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className={`fixed top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-r-xl p-3 shadow-xl hover:shadow-2xl transition-all duration-300 group ${sidebarOpen ? 'left-[384px]' : 'left-0'
-            }`}
+          className={`fixed top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-r-xl p-3 shadow-xl hover:shadow-2xl transition-all duration-300 group ${sidebarOpen ? 'left-[384px]' : 'left-0'}`}
           aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
         >
           {sidebarOpen ? (
@@ -372,14 +338,13 @@ export default function EditorPage() {
           )}
         </button>
 
-        {/* Main Content - Editor */}
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-gray-100">
           <div className="min-h-full flex justify-center py-12 px-6">
             <HandwritingEditor
               text={text}
               onTextChange={setText}
               settings={settings}
-              onSettingsChange={setSettings}
+              onSettingsChange={handleSettingsChange}
               pageSettingsByPage={pageSettingsByPage}
               onPageSettingsChange={handlePageSettingsChange}
               exportingPageIndex={exportPageIndex}
@@ -396,5 +361,23 @@ export default function EditorPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RootEditorPageClient() {
+  const isClientReady = useSyncExternalStore(
+    subscribeClientReady,
+    getClientReadySnapshot,
+    getServerReadySnapshot,
+  );
+
+  const initialState = isClientReady ? getInitialEditorState() : DEFAULT_INITIAL_STATE;
+
+  return (
+    <RootEditorShell
+      key={isClientReady ? 'hydrated' : 'ssr'}
+      initialState={initialState}
+      persistState={isClientReady}
+    />
   );
 }

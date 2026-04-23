@@ -16,7 +16,7 @@ import FirebaseAnalytics from "./firebase-analytics";
 
 const siteUrl = "https://text2ink.com";
 const siteName = "Text2Ink";
-const siteDescription = "Convert your typed text into beautiful, realistic handwritten notes. Customize fonts, paper styles, ink effects, and export as PDF or images. Free online text to handwriting converter.";
+const siteDescription = "Create realistic handwritten notes from typed text with Text2Ink.";
 const siteKeywords = [
   "text to handwriting",
   "handwriting converter",
@@ -108,7 +108,7 @@ const homemadeApple = Homemade_Apple({
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Text2Ink - Free Text to Handwriting Converter Online",
+    default: "Text2Ink",
     template: "%s | Text2Ink",
   },
   description: siteDescription,
@@ -132,32 +132,6 @@ export const metadata: Metadata = {
     apple: "/logo-192.png",
   },
   manifest: "/manifest.json",
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    url: siteUrl,
-    siteName: siteName,
-    title: "Text2Ink - Free Text to Handwriting Converter Online",
-    description: siteDescription,
-    images: [
-      {
-        url: "/Sample-handwriting-preview1.avif",
-        width: 840,
-        height: 1188,
-        alt: "Text2Ink - Convert text to realistic handwriting",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Text2Ink - Free Text to Handwriting Converter Online",
-    description: siteDescription,
-    images: ["/Sample-handwriting-preview1.avif"],
-    creator: "@text2ink",
-  },
-  alternates: {
-    canonical: siteUrl,
-  },
   category: "technology",
 };
 
@@ -166,35 +140,6 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-};
-
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "WebApplication",
-  name: siteName,
-  description: siteDescription,
-  url: siteUrl,
-  applicationCategory: "UtilityApplication",
-  operatingSystem: "Any",
-  offers: {
-    "@type": "Offer",
-    price: "0",
-    priceCurrency: "USD",
-  },
-  featureList: [
-    "Convert text to handwriting",
-    "Multiple handwriting fonts",
-    "Custom paper backgrounds",
-    "Realistic ink effects",
-    "Export to PDF and images",
-    "Adjustable margins and spacing",
-  ],
-  screenshot: `${siteUrl}/Sample-handwriting-preview1.avif`,
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: "4.8",
-    ratingCount: "150",
-  },
 };
 
 export default function RootLayout({
@@ -208,25 +153,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://www.googletagmanager.com" />
         <link rel="preconnect" href="https://www.google-analytics.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="preload"
-          as="image"
-          href="/Sample-handwriting-preview1-mobile.avif"
-          media="(max-width: 640px)"
-          type="image/avif"
-        />
-        <link
-          rel="preload"
-          as="image"
-          href="/Sample-handwriting-preview1.avif"
-          media="(min-width: 641px)"
-          type="image/avif"
-        />
         <script src="https://t.contentsquare.net/uxa/ea250cc30afee.js" async />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
       </head>
       <body
         className={`${inter.variable} ${caveat.variable} ${dancingScript.variable} ${indieFlower.variable} ${shadowsIntoLight.variable} ${kalam.variable} ${patrickHand.variable} ${architectsDaughter.variable} ${satisfy.variable} ${homemadeApple.variable} antialiased font-sans`}
