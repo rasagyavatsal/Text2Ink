@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import NextImage from 'next/image';
-import { Mail, ArrowLeft } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import { Metadata } from 'next';
 import Version from '@/components/Version';
 
@@ -26,10 +26,10 @@ export default function ContactPage() {
             </Link>
           </div>
           <Link
-            href="/editor"
+            href="/"
             className="bg-[#E0A32A] text-white px-4 sm:px-5 py-2 rounded-lg font-medium text-sm sm:text-base hover:bg-[#c99225] transition-colors"
           >
-            Open Editor
+            Back to Editor
           </Link>
         </div>
       </header>
@@ -37,14 +37,6 @@ export default function ContactPage() {
       {/* Main Content */}
       <main className="py-12 sm:py-16 md:py-20 px-4 sm:px-6">
         <div className="max-w-3xl mx-auto">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 sm:mb-8 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Home
-          </Link>
-
           <div className="text-center mb-10 sm:mb-12">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
               Get in Touch
