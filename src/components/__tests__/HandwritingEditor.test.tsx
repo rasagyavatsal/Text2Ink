@@ -2,10 +2,11 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import HandwritingEditor from '../HandwritingEditor';
+import type { CanvasPreviewProps } from '../CanvasPreview';
 import { HandwritingSettings, DEFAULT_SETTINGS } from '../../lib/types';
 
 vi.mock('../CanvasPreview', () => ({
-  default: (props: any) => (
+  default: (props: CanvasPreviewProps) => (
     <div data-testid="canvas-preview">
       <div data-testid="preview-lines">{props.lines.length}</div>
       <div data-testid="preview-selection">{`${props.selectionStart}:${props.selectionEnd}`}</div>
@@ -87,7 +88,7 @@ function buildPagesFromText(text: string) {
 class MockWorker {
   private listeners = new Set<(event: MessageEvent) => void>();
 
-  postMessage = vi.fn((msg: any) => {
+  postMessage = vi.fn((msg: { requestId?: number; text?: string; type?: string }) => {
     if (!msg || msg.type !== 'paginate') return;
     const pages = buildPagesFromText(msg.text ?? '');
     const event = {
@@ -117,7 +118,7 @@ class MockWorker {
   });
 }
 
-global.Worker = MockWorker as any;
+global.Worker = MockWorker as unknown as typeof Worker;
 
 describe('HandwritingEditor selection behavior', () => {
   const settings: HandwritingSettings = {
@@ -227,5 +228,28 @@ describe('HandwritingEditor selection behavior', () => {
     renderEditor();
     const textarea = screen.getByLabelText('Handwriting text input');
     expect(textarea.getAttribute('spellcheck')).toBe('false');
+  });
+
+  it('notifies the shell when main text typing starts', () => {
+    const onTypingFocus = vi.fn();
+    render(
+      <HandwritingEditor
+        text="hello"
+        settings={settings}
+        onTextChange={vi.fn()}
+        onSettingsChange={vi.fn()}
+        pageSettingsByPage={[]}
+        previewScale={1}
+        onPreviewScaleChange={vi.fn()}
+        currentPageIndex={0}
+        onCurrentPageChange={vi.fn()}
+        onTotalPagesChange={vi.fn()}
+        onTypingFocus={onTypingFocus}
+      />
+    );
+
+    fireEvent.focus(screen.getByLabelText('Handwriting text input'));
+
+    expect(onTypingFocus).toHaveBeenCalled();
   });
 });

@@ -65,16 +65,19 @@ describe('CanvasPreview', () => {
     expect(canvas.getAttribute('aria-label')).toContain('Page 3');
   });
 
-  it('stops mouse down from bubbling to the parent', async () => {
+  it('stops pointer and mouse down from bubbling to the parent', async () => {
     const parentMouseDown = vi.fn();
+    const parentPointerDown = vi.fn();
     render(
-      <div onMouseDown={parentMouseDown}>
+      <div onMouseDown={parentMouseDown} onPointerDown={parentPointerDown}>
         <CanvasPreview {...defaultProps} />
       </div>
     );
 
+    fireEvent.pointerDown(screen.getByRole('img'), { pointerId: 1 });
     fireEvent.mouseDown(screen.getByRole('img'));
 
+    expect(parentPointerDown).not.toHaveBeenCalled();
     expect(parentMouseDown).not.toHaveBeenCalled();
   });
 
@@ -93,9 +96,9 @@ describe('CanvasPreview', () => {
     );
 
     const canvas = screen.getByRole('img');
-    fireEvent.mouseDown(canvas, { clientX: 4, clientY: 5 });
-    fireEvent.mouseMove(canvas, { clientX: 14, clientY: 5 });
-    fireEvent.mouseUp(canvas);
+    fireEvent.pointerDown(canvas, { clientX: 4, clientY: 5, pointerId: 1 });
+    fireEvent.pointerMove(canvas, { clientX: 14, clientY: 5, pointerId: 1 });
+    fireEvent.pointerUp(canvas, { pointerId: 1 });
     fireEvent.click(canvas, { clientX: 14, clientY: 5 });
 
     expect(onCharMouseDown).toHaveBeenCalledWith(0, true);
@@ -129,9 +132,9 @@ describe('CanvasPreview', () => {
     render(<CanvasPreview {...defaultProps} onCharClick={onCharClick} onCharMouseMove={vi.fn()} onCharMouseDown={vi.fn()} />);
 
     const canvas = screen.getByRole('img');
-    fireEvent.mouseDown(canvas, { clientX: 4, clientY: 5 });
-    fireEvent.mouseMove(canvas, { clientX: 14, clientY: 5 });
-    fireEvent.mouseUp(window);
+    fireEvent.pointerDown(canvas, { clientX: 4, clientY: 5, pointerId: 1 });
+    fireEvent.pointerMove(canvas, { clientX: 14, clientY: 5, pointerId: 1 });
+    fireEvent.pointerUp(window, { pointerId: 1 });
     fireEvent.click(canvas, { clientX: 4, clientY: 5 });
 
     expect(onCharClick).toHaveBeenCalledWith(0, true);

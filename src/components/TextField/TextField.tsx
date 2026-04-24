@@ -7,6 +7,7 @@ import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@/compon
 import { Slider } from '@/components/ui/slider';
 import { calculateRandomStyle } from '@/lib/editorHelpers';
 import { createMeasure } from '@/lib/pagination';
+import { cn } from '@/lib/utils';
 
 interface TextFieldProps {
   field: TextFieldType;
@@ -15,15 +16,16 @@ interface TextFieldProps {
   scale: number;
   fontFamily: string;
   randomness: HandwritingSettings['randomness'];
+  onTypingFocus?: () => void;
 }
 
-function calculateMinimumTextBoxSize(field: TextFieldType, fontFamily: string, scale: number) {
-  const lines = field.text.split('\n');
-  const measure = createMeasure(fontFamily, field.fontSize);
+function calculateMinimumTextBoxSize(text: string, fontSize: number, fontFamily: string, scale: number) {
+  const lines = text.split('\n');
+  const measure = createMeasure(fontFamily, fontSize);
 
   const textWidth = Math.max(...lines.map((line) => measure(line)), 0);
   const padding = 12 / scale;
-  const textHeight = lines.length * field.fontSize * 1.2;
+  const textHeight = lines.length * fontSize * 1.2;
 
   return {
     minW: Math.max(10, textWidth + padding),
@@ -31,19 +33,27 @@ function calculateMinimumTextBoxSize(field: TextFieldType, fontFamily: string, s
   };
 }
 
-export default function TextField({ field, onUpdate, onDelete, scale, fontFamily, randomness }: TextFieldProps) {
+export default function TextField({ field, onUpdate, onDelete, scale, fontFamily, randomness, onTypingFocus }: TextFieldProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [resizeDir, setResizeDir] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
+  const [isSelected, setIsSelected] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsAnchorPoint, setSettingsAnchorPoint] = useState<{ left: number; top: number } | null>(null);
   const dragStartRef = useRef({ x: 0, y: 0, fieldX: 0, fieldY: 0, fieldW: 0, fieldH: 0 });
+  const rootRef = useRef<HTMLDivElement>(null);
+  const activePointerIdRef = useRef<number | null>(null);
+  const interactionRef = useRef<{ mode: 'drag' | 'resize' | null; resizeDir: string | null }>({
+    mode: null,
+    resizeDir: null,
+  });
   const settingsTriggerRef = useRef<HTMLButtonElement>(null);
   const previousMinimumSizeRef = useRef<{ minW: number; minH: number } | null>(null);
+  const showControls = isSelected || isFocused || isSettingsOpen || isDragging || resizeDir !== null;
 
   // Calculate the minimum width and height based on the text content
   const { minW, minH } = useMemo(
-    () => calculateMinimumTextBoxSize(field, fontFamily, scale),
+    () => calculateMinimumTextBoxSize(field.text, field.fontSize, fontFamily, scale),
     [field.fontSize, field.text, fontFamily, scale]
   );
 
@@ -81,11 +91,32 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
     setIsSettingsOpen(open);
   };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    const handleDocumentPointerDown = (event: PointerEvent) => {
+      const root = rootRef.current;
+      if (!root || root.contains(event.target as Node)) return;
+      if (isFocused || isSettingsOpen || isDragging || resizeDir) return;
+      setIsSelected(false);
+    };
+
+    document.addEventListener('pointerdown', handleDocumentPointerDown);
+    return () => document.removeEventListener('pointerdown', handleDocumentPointerDown);
+  }, [isDragging, isFocused, isSettingsOpen, resizeDir]);
+
+  const handleDragPointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setIsSelected(true);
     setIsDragging(true);
     setResizeDir(null);
+    interactionRef.current = { mode: 'drag', resizeDir: null };
+    const pointerId = typeof e.pointerId === 'number' ? e.pointerId : null;
+    activePointerIdRef.current = pointerId;
+    if (pointerId !== null) {
+      e.currentTarget.setPointerCapture?.(pointerId);
+    }
     dragStartRef.current = {
       x: e.clientX,
       y: e.clientY,
@@ -96,11 +127,18 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
     };
   };
 
-  const handleResizeStart = (e: React.MouseEvent, dir: string) => {
+  const handleResizeStart = (e: React.PointerEvent, dir: string) => {
     e.preventDefault();
     e.stopPropagation();
+    setIsSelected(true);
     setResizeDir(dir);
     setIsDragging(false);
+    interactionRef.current = { mode: 'resize', resizeDir: dir };
+    const pointerId = typeof e.pointerId === 'number' ? e.pointerId : null;
+    activePointerIdRef.current = pointerId;
+    if (pointerId !== null) {
+      e.currentTarget.setPointerCapture?.(pointerId);
+    }
     dragStartRef.current = {
       x: e.clientX,
       y: e.clientY,
@@ -112,28 +150,29 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
   };
 
   useEffect(() => {
-    if (!isDragging && !resizeDir) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
+    const handlePointerMove = (e: PointerEvent) => {
+      const interaction = interactionRef.current;
+      if (!interaction.mode) return;
+      if (activePointerIdRef.current !== null && e.pointerId !== activePointerIdRef.current) return;
       const dx = (e.clientX - dragStartRef.current.x) / scale;
       const dy = (e.clientY - dragStartRef.current.y) / scale;
 
-      if (isDragging) {
+      if (interaction.mode === 'drag') {
         onUpdate({
           x: dragStartRef.current.fieldX + dx,
           y: dragStartRef.current.fieldY + dy,
         });
-      } else if (resizeDir) {
+      } else if (interaction.resizeDir) {
         let { fieldX: x, fieldY: y, fieldW: w, fieldH: h } = dragStartRef.current;
 
-        if (resizeDir.includes('e')) w = Math.max(minW, w + dx);
-        if (resizeDir.includes('s')) h = Math.max(minH, h + dy);
-        if (resizeDir.includes('w')) {
+        if (interaction.resizeDir.includes('e')) w = Math.max(minW, w + dx);
+        if (interaction.resizeDir.includes('s')) h = Math.max(minH, h + dy);
+        if (interaction.resizeDir.includes('w')) {
           const newW = Math.max(minW, w - dx);
           x = x + (w - newW);
           w = newW;
         }
-        if (resizeDir.includes('n')) {
+        if (interaction.resizeDir.includes('n')) {
           const newH = Math.max(minH, h - dy);
           y = y + (h - newH);
           h = newH;
@@ -143,22 +182,34 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
       }
     };
 
-    const handleMouseUp = () => {
+    const handlePointerUp = (e: PointerEvent) => {
+      if (activePointerIdRef.current !== null && e.pointerId !== activePointerIdRef.current) return;
+      activePointerIdRef.current = null;
+      interactionRef.current = { mode: null, resizeDir: null };
       setIsDragging(false);
       setResizeDir(null);
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
     };
   }, [isDragging, resizeDir, onUpdate, scale, minW, minH]);
 
   return (
     <div
-      className="absolute border border-dotted border-gray-400 group"
+      ref={rootRef}
+      className={cn(
+        "absolute border border-dotted group",
+        showControls ? "border-[#E0A32A]" : "border-gray-400"
+      )}
+      onPointerDown={() => {
+        setIsSelected(true);
+      }}
       style={{
         left: field.x * scale,
         top: field.y * scale,
@@ -169,73 +220,98 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
       }}
     >
       {/* Resize Handles */}
-      <div className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+      <div
+        className={cn(
+          "absolute inset-0 pointer-events-none transition-opacity",
+          showControls ? "opacity-100" : "opacity-0 xl:group-hover:opacity-100"
+        )}
+      >
         {/* Corners */}
-        <div 
+        <div
           data-testid="handle-nw"
-          className="absolute -top-1.5 -left-1.5 w-3 h-3 pointer-events-auto cursor-nwse-resize bg-white border border-gray-400 rounded-sm shadow-sm hover:scale-110 transition-transform" 
-          onMouseDown={(e) => handleResizeStart(e, 'nw')} 
-        />
-        <div 
+          className="absolute -top-5 -left-5 size-11 pointer-events-auto cursor-nwse-resize touch-none flex items-center justify-center"
+          onPointerDown={(e) => handleResizeStart(e, 'nw')}
+        >
+          <span className="h-3 w-3 rounded-sm border border-gray-400 bg-white shadow-sm" />
+        </div>
+        <div
           data-testid="handle-ne"
-          className="absolute -top-1.5 -right-1.5 w-3 h-3 pointer-events-auto cursor-nesw-resize bg-white border border-gray-400 rounded-sm shadow-sm hover:scale-110 transition-transform" 
-          onMouseDown={(e) => handleResizeStart(e, 'ne')} 
-        />
-        <div 
+          className="absolute -top-5 -right-5 size-11 pointer-events-auto cursor-nesw-resize touch-none flex items-center justify-center"
+          onPointerDown={(e) => handleResizeStart(e, 'ne')}
+        >
+          <span className="h-3 w-3 rounded-sm border border-gray-400 bg-white shadow-sm" />
+        </div>
+        <div
           data-testid="handle-sw"
-          className="absolute -bottom-1.5 -left-1.5 w-3 h-3 pointer-events-auto cursor-nesw-resize bg-white border border-gray-400 rounded-sm shadow-sm hover:scale-110 transition-transform" 
-          onMouseDown={(e) => handleResizeStart(e, 'sw')} 
-        />
-        <div 
+          className="absolute -bottom-5 -left-5 size-11 pointer-events-auto cursor-nesw-resize touch-none flex items-center justify-center"
+          onPointerDown={(e) => handleResizeStart(e, 'sw')}
+        >
+          <span className="h-3 w-3 rounded-sm border border-gray-400 bg-white shadow-sm" />
+        </div>
+        <div
           data-testid="handle-se"
-          className="absolute -bottom-1.5 -right-1.5 w-3 h-3 pointer-events-auto cursor-nwse-resize bg-white border border-gray-400 rounded-sm shadow-sm hover:scale-110 transition-transform" 
-          onMouseDown={(e) => handleResizeStart(e, 'se')} 
-        />
-        
+          className="absolute -bottom-5 -right-5 size-11 pointer-events-auto cursor-nwse-resize touch-none flex items-center justify-center"
+          onPointerDown={(e) => handleResizeStart(e, 'se')}
+        >
+          <span className="h-3 w-3 rounded-sm border border-gray-400 bg-white shadow-sm" />
+        </div>
+
         {/* Sides */}
-        <div 
+        <div
           data-testid="handle-n"
-          className="absolute -top-1 left-2 right-2 h-2 pointer-events-auto cursor-ns-resize hover:bg-blue-400/20 transition-colors" 
-          onMouseDown={(e) => handleResizeStart(e, 'n')} 
+          className="absolute -top-5 left-3 right-3 h-11 pointer-events-auto cursor-ns-resize touch-none hover:bg-blue-400/20 transition-colors"
+          onPointerDown={(e) => handleResizeStart(e, 'n')}
         />
-        <div 
+        <div
           data-testid="handle-s"
-          className="absolute -bottom-1 left-2 right-2 h-2 pointer-events-auto cursor-ns-resize hover:bg-blue-400/20 transition-colors" 
-          onMouseDown={(e) => handleResizeStart(e, 's')} 
+          className="absolute -bottom-5 left-3 right-3 h-11 pointer-events-auto cursor-ns-resize touch-none hover:bg-blue-400/20 transition-colors"
+          onPointerDown={(e) => handleResizeStart(e, 's')}
         />
-        <div 
+        <div
           data-testid="handle-w"
-          className="absolute -left-1 top-2 bottom-2 w-2 pointer-events-auto cursor-ew-resize hover:bg-blue-400/20 transition-colors" 
-          onMouseDown={(e) => handleResizeStart(e, 'w')} 
+          className="absolute -left-5 top-3 bottom-3 w-11 pointer-events-auto cursor-ew-resize touch-none hover:bg-blue-400/20 transition-colors"
+          onPointerDown={(e) => handleResizeStart(e, 'w')}
         />
-        <div 
+        <div
           data-testid="handle-e"
-          className="absolute -right-1 top-2 bottom-2 w-2 pointer-events-auto cursor-ew-resize hover:bg-blue-400/20 transition-colors" 
-          onMouseDown={(e) => handleResizeStart(e, 'e')} 
+          className="absolute -right-5 top-3 bottom-3 w-11 pointer-events-auto cursor-ew-resize touch-none hover:bg-blue-400/20 transition-colors"
+          onPointerDown={(e) => handleResizeStart(e, 'e')}
         />
       </div>
 
       {/* Top Left Icons */}
-      <div className="absolute -top-3 -left-3 flex items-center z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-        <div 
-          className="bg-white border shadow-sm rounded-full p-1 cursor-move hover:bg-gray-50 text-gray-500"
-          onMouseDown={handleMouseDown}
+      <div
+        className={cn(
+          "absolute -top-5 -left-5 flex items-center z-10 transition-opacity",
+          showControls ? "opacity-100" : "opacity-0 xl:group-hover:opacity-100"
+        )}
+      >
+        <button
+          type="button"
+          aria-label="Move text box"
+          className="size-11 bg-white border shadow-sm rounded-full cursor-move hover:bg-gray-50 text-gray-500 touch-none flex items-center justify-center"
+          onPointerDown={handleDragPointerDown}
         >
-          <Move size={12} />
-        </div>
+          <Move size={16} />
+        </button>
       </div>
 
       {/* Top Right Icons - Consolidated Settings */}
-      <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div
+        className={cn(
+          "absolute -top-5 -right-5 z-10 transition-opacity",
+          showControls ? "opacity-100" : "opacity-0 xl:group-hover:opacity-100"
+        )}
+      >
         <Popover open={isSettingsOpen} onOpenChange={handleSettingsOpenChange}>
           <PopoverTrigger asChild>
             <button
               ref={settingsTriggerRef}
               type="button"
               aria-label="Text box settings"
-              className="bg-white border shadow-sm rounded-full p-1 hover:bg-gray-50 text-gray-500"
+              className="size-11 bg-white border shadow-sm rounded-full hover:bg-gray-50 text-gray-500 flex items-center justify-center"
             >
-              <Settings size={12} />
+              <Settings size={16} />
             </button>
           </PopoverTrigger>
           {settingsAnchorPoint && (
@@ -284,7 +360,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
               </div>
 
               <div className="pt-2 border-t border-gray-100">
-                <button 
+                <button
                   className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-[10px] font-bold text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors uppercase tracking-widest"
                   onClick={onDelete}
                 >
@@ -336,7 +412,11 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
             e.stopPropagation();
           }
         }}
-        onFocus={() => setIsFocused(true)}
+        onFocus={() => {
+          onTypingFocus?.();
+          setIsFocused(true);
+          setIsSelected(true);
+        }}
         onBlur={() => setIsFocused(false)}
         spellCheck={false}
         style={{
