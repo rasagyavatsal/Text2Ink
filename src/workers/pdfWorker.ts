@@ -2,27 +2,64 @@ import jsPDF from 'jspdf';
 
 let pdf: jsPDF | null = null;
 
-self.onmessage = async (event: MessageEvent) => {
-  const { type, payload } = event.data;
+type PdfInitPayload = {
+  orientation: 'portrait' | 'landscape';
+  unit: 'pt' | 'mm' | 'cm' | 'in' | 'px';
+  format: 'letter' | [number, number];
+};
 
-  switch (type) {
+type AddPagePayload = {
+  imgData: ArrayBuffer | Uint8Array;
+  width: number;
+  height: number;
+  isFirstPage: boolean;
+};
+
+type PdfWorkerRequest =
+  | { type: 'init'; payload: PdfInitPayload }
+  | { type: 'addPage'; payload: AddPagePayload }
+  | { type: 'generate' }
+  | { type: 'cleanup' };
+
+type PdfWorkerResponse =
+  | { type: 'initialized' }
+  | { type: 'pageAdded' }
+  | { type: 'generated'; payload: ArrayBuffer }
+  | { type: 'error'; payload: string };
+
+type PdfWorkerScope = {
+  postMessage: (message: PdfWorkerResponse, transfer?: Transferable[]) => void;
+  onmessage: ((event: MessageEvent<PdfWorkerRequest>) => Promise<void>) | null;
+};
+
+const workerScope = self as unknown as PdfWorkerScope;
+
+workerScope.onmessage = async (event: MessageEvent<PdfWorkerRequest>) => {
+  const message = event.data;
+
+  switch (message.type) {
     case 'init': {
-      const { orientation, unit, format } = payload;
+      const { orientation, unit, format } = message.payload;
       pdf = new jsPDF({
         orientation,
         unit,
         format,
       });
-      (self as any).postMessage({ type: 'initialized' });
+      const response: PdfWorkerResponse = { type: 'initialized' };
+      workerScope.postMessage(response);
       break;
     }
 
     case 'addPage': {
       if (!pdf) {
-        (self as any).postMessage({ type: 'error', payload: 'PDF not initialized' });
+        const errorResponse: PdfWorkerResponse = {
+          type: 'error',
+          payload: 'PDF not initialized',
+        };
+        workerScope.postMessage(errorResponse);
         return;
       }
-      const { imgData, width, height, isFirstPage } = payload;
+      const { imgData, width, height, isFirstPage } = message.payload;
       
       if (!isFirstPage) {
         pdf.addPage();
@@ -32,18 +69,24 @@ self.onmessage = async (event: MessageEvent) => {
       const data = imgData instanceof ArrayBuffer ? new Uint8Array(imgData) : imgData;
       pdf.addImage(data, 'PNG', 0, 0, width, height, undefined, 'FAST');
       
-      (self as any).postMessage({ type: 'pageAdded' });
+      const response: PdfWorkerResponse = { type: 'pageAdded' };
+      workerScope.postMessage(response);
       break;
     }
 
     case 'generate': {
       if (!pdf) {
-        (self as any).postMessage({ type: 'error', payload: 'PDF not initialized' });
+        const errorResponse: PdfWorkerResponse = {
+          type: 'error',
+          payload: 'PDF not initialized',
+        };
+        workerScope.postMessage(errorResponse);
         return;
       }
       
-      const output = pdf.output('arraybuffer');
-      (self as any).postMessage({ type: 'generated', payload: output }, [output]);
+      const output = pdf.output('arraybuffer') as ArrayBuffer;
+      const response: PdfWorkerResponse = { type: 'generated', payload: output };
+      workerScope.postMessage(response, [output]);
       break;
     }
     

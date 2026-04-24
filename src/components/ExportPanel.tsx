@@ -30,6 +30,12 @@ interface ExportPanelProps {
 
 type ExportFormat = 'pdf' | 'png' | 'jpg';
 
+type PdfWorkerMessage =
+  | { type: 'initialized' }
+  | { type: 'pageAdded' }
+  | { type: 'generated'; payload: ArrayBuffer }
+  | { type: 'error'; payload: string };
+
 const FONT_VARIABLES: Record<string, string> = {
   'caveat': '--font-caveat',
   'dancing-script': '--font-dancing-script',
@@ -146,12 +152,12 @@ export default function ExportPanel({
           type: 'module',
         });
 
-        const waitMessage = (type: string) => 
-          new Promise<any>((resolve, reject) => {
-            const handler = (ev: MessageEvent) => {
+        const waitMessage = (type: PdfWorkerMessage['type']) =>
+          new Promise<PdfWorkerMessage>((resolve, reject) => {
+            const handler = (ev: MessageEvent<PdfWorkerMessage>) => {
               if (ev.data.type === type) {
                 worker.removeEventListener('message', handler);
-                resolve(ev.data.payload);
+                resolve(ev.data);
               } else if (ev.data.type === 'error') {
                 worker.removeEventListener('message', handler);
                 reject(new Error(ev.data.payload));
@@ -210,7 +216,11 @@ export default function ExportPanel({
           // Final progress step: PDF Generation
           setExportProgress({ current: exportTotal, total: progressTotal });
           worker.postMessage({ type: 'generate' });
-          const pdfBuffer = await waitMessage('generated');
+          const generatedMessage = await waitMessage('generated');
+          if (generatedMessage.type !== 'generated') {
+            throw new Error('Unexpected response from PDF worker');
+          }
+          const pdfBuffer = generatedMessage.payload;
           
           const blob = new Blob([pdfBuffer], { type: 'application/pdf' });
           const url = URL.createObjectURL(blob);
