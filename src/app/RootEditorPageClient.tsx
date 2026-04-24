@@ -217,17 +217,14 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
   const effectiveMobileSheetHeight = isMobileEditorLayout
     ? clampMobileSheetHeight(mobileSheetHeight ?? mobileSheetMetrics.defaultSheetHeight, mobileSheetMetrics)
     : 0;
-  const mobilePreviewAvailableHeight = Math.max(
-    0,
-    viewportSize.height - headerHeight - effectiveMobileSheetHeight,
-  );
+  const mobileStablePreviewAvailableHeight = Math.max(0, viewportSize.height - headerHeight);
   const mobilePreviewMaxScale = useMemo(
     () =>
       computeMobilePreviewScale({
         availableWidth: viewportSize.width,
-        availableHeight: mobilePreviewAvailableHeight,
+        availableHeight: mobileStablePreviewAvailableHeight,
       }),
-    [mobilePreviewAvailableHeight, viewportSize.width],
+    [mobileStablePreviewAvailableHeight, viewportSize.width],
   );
   const effectivePreviewScale = isMobileEditorLayout
     ? clampEditorPreviewScale(previewScale, mobilePreviewMaxScale, MOBILE_PREVIEW_MIN_SCALE)
@@ -519,6 +516,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
         )}
 
         <div
+          data-testid="preview-scroll-container"
           className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-gray-100"
           style={isMobileEditorLayout ? { paddingBottom: effectiveMobileSheetHeight } : undefined}
         >
