@@ -105,4 +105,23 @@ describe('mobile preview scale', () => {
     expect(scale).toBeGreaterThanOrEqual(0.2);
     expect(scale).toBeLessThan(0.5);
   });
+
+  it('stays stable for sheet anchor changes when caller keeps available height stable', () => {
+    const stableViewportHeight = 844 - 72;
+    const scaleAtPeek = computeMobilePreviewScale({
+      availableWidth: 390,
+      availableHeight: stableViewportHeight,
+    });
+    const scaleAtDefault = computeMobilePreviewScale({
+      availableWidth: 390,
+      availableHeight: stableViewportHeight,
+    });
+    const scaleAtExpanded = computeMobilePreviewScale({
+      availableWidth: 390,
+      availableHeight: stableViewportHeight,
+    });
+
+    expect(scaleAtPeek).toBe(scaleAtDefault);
+    expect(scaleAtDefault).toBe(scaleAtExpanded);
+  });
 });

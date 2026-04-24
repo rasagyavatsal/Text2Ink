@@ -1,8 +1,9 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 import RootEditorPageClient from '../RootEditorPageClient';
 import { metadata } from '../page';
+import type { MobileEditorSheetMetrics, MobileSheetAnchor } from '@/lib/mobileEditorSheet';
 
 type MockHandwritingEditorProps = {
   previewScale: number;
@@ -34,21 +35,49 @@ vi.mock('@/components/Version', () => ({
 
 type MockMobileEditorBottomSheetProps = {
   activePanel: 'settings' | 'export';
-  anchor: string;
+  anchor: MobileSheetAnchor;
   exportPanel: ReactNode;
+  metrics: MobileEditorSheetMetrics;
   onHandlePress: () => void;
+  onHeightChange: (height: number) => void;
   settingsPanel: ReactNode;
 };
 
 vi.mock('@/components/MobileEditorBottomSheet', () => ({
-  default: ({ activePanel, anchor, exportPanel, onHandlePress, settingsPanel }: MockMobileEditorBottomSheetProps) => (
-    <div data-testid="mobile-editor-bottom-sheet" data-anchor={anchor}>
-      <button type="button" data-testid="sheet-handle" onClick={onHandlePress}>
-        Sheet handle
-      </button>
-      {activePanel === 'settings' ? settingsPanel : exportPanel}
-    </div>
-  ),
+  default: function MockMobileEditorBottomSheet({
+    activePanel,
+    anchor,
+    exportPanel,
+    metrics,
+    onHandlePress,
+    onHeightChange,
+    settingsPanel,
+  }: MockMobileEditorBottomSheetProps) {
+    React.useEffect(() => {
+      const anchorHeight =
+        anchor === 'peek'
+          ? metrics.minSheetHeight
+          : anchor === 'expanded'
+            ? metrics.maxSheetHeight
+            : metrics.defaultSheetHeight;
+      onHeightChange(anchorHeight);
+    }, [anchor, metrics.defaultSheetHeight, metrics.maxSheetHeight, metrics.minSheetHeight, onHeightChange]);
+
+    return (
+      <div data-testid="mobile-editor-bottom-sheet" data-anchor={anchor}>
+        <button type="button" data-testid="sheet-handle" onClick={onHandlePress}>
+          Sheet handle
+        </button>
+        <button type="button" data-testid="sheet-drag-expanded" onClick={() => onHeightChange(metrics.maxSheetHeight)}>
+          Drag to expanded
+        </button>
+        <button type="button" data-testid="sheet-drag-peek" onClick={() => onHeightChange(metrics.minSheetHeight)}>
+          Drag to peek
+        </button>
+        {activePanel === 'settings' ? settingsPanel : exportPanel}
+      </div>
+    );
+  },
 }));
 
 vi.mock('@/lib/editorPersistence', () => ({
@@ -97,7 +126,7 @@ describe('Root editor page', () => {
     expect(metadata.openGraph?.url).toBe('https://text2ink.com/');
   });
 
-  it('uses the persistent bottom sheet on mobile and collapses it while typing', async () => {
+  it('keeps preview scale stable when the mobile sheet collapses and reopens', async () => {
     mockMatchMedia(true);
     Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 390 });
     Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: 844 });
@@ -105,19 +134,62 @@ describe('Root editor page', () => {
     render(<RootEditorPageClient />);
 
     const sheet = await screen.findByTestId('mobile-editor-bottom-sheet');
+    const getPreviewScale = () => Number(screen.getByTestId('handwriting-editor').getAttribute('data-preview-scale'));
+    const previewScrollContainer = screen.getByTestId('preview-scroll-container');
+
     expect(sheet).toHaveAttribute('data-anchor', 'default');
-    expect(Number(screen.getByTestId('handwriting-editor').getAttribute('data-preview-scale'))).toBeLessThan(1);
+    const previewScaleBeforeCollapse = getPreviewScale();
+    const defaultPadding = previewScrollContainer.style.paddingBottom;
 
     fireEvent.click(screen.getByTestId('typing-focus'));
 
     await waitFor(() => {
       expect(screen.getByTestId('mobile-editor-bottom-sheet')).toHaveAttribute('data-anchor', 'peek');
     });
+    const previewScaleAfterCollapse = getPreviewScale();
+    const collapsedPadding = previewScrollContainer.style.paddingBottom;
+
+    expect(previewScaleAfterCollapse).toBe(previewScaleBeforeCollapse);
+    expect(collapsedPadding).not.toBe(defaultPadding);
 
     fireEvent.click(screen.getByTestId('sheet-handle'));
 
     await waitFor(() => {
       expect(screen.getByTestId('mobile-editor-bottom-sheet')).toHaveAttribute('data-anchor', 'default');
     });
+
+    expect(getPreviewScale()).toBe(previewScaleBeforeCollapse);
+    expect(previewScrollContainer.style.paddingBottom).toBe(defaultPadding);
+  });
+
+  it('updates preview bottom scroll space as sheet height changes without changing preview scale', async () => {
+    mockMatchMedia(true);
+    Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 390 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: 844 });
+
+    render(<RootEditorPageClient />);
+
+    await screen.findByTestId('mobile-editor-bottom-sheet');
+
+    const getPreviewScale = () => Number(screen.getByTestId('handwriting-editor').getAttribute('data-preview-scale'));
+    const previewScrollContainer = screen.getByTestId('preview-scroll-container');
+    const parsePadding = () => Number.parseFloat(previewScrollContainer.style.paddingBottom);
+    const initialScale = getPreviewScale();
+    const defaultPadding = parsePadding();
+
+    fireEvent.click(screen.getByTestId('sheet-drag-expanded'));
+
+    await waitFor(() => {
+      expect(parsePadding()).toBeGreaterThan(defaultPadding);
+    });
+    const expandedPadding = parsePadding();
+    expect(getPreviewScale()).toBe(initialScale);
+
+    fireEvent.click(screen.getByTestId('sheet-drag-peek'));
+
+    await waitFor(() => {
+      expect(parsePadding()).toBeLessThan(expandedPadding);
+    });
+    expect(getPreviewScale()).toBe(initialScale);
   });
 });
