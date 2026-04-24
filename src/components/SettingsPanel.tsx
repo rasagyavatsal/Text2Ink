@@ -44,8 +44,7 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Trash2,
-  Settings2,
-  Grid
+  Settings2
 } from 'lucide-react';
 
 import {
@@ -221,7 +220,7 @@ export default function SettingsPanel({
         customLineSpacing: spacing,
       });
       setLineDetectInfo({ offset, spacing });
-    } catch (err) {
+    } catch {
       setLineDetectError('Failed to analyze background. Please try another image.');
     } finally {
       setLineDetecting(false);
@@ -402,14 +401,14 @@ export default function SettingsPanel({
                 <>
                   <button
                     onClick={handlePrevFonts}
-                    className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm text-gray-400 hover:text-[#E0A32A] hover:border-[#E0A32A] transition-all opacity-0 group-hover/grid:opacity-100 -translate-x-2 group-hover/grid:translate-x-0"
+                    className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm text-gray-400 hover:text-[#E0A32A] hover:border-[#E0A32A] transition-all opacity-100 translate-x-0 xl:opacity-0 xl:-translate-x-2 xl:group-hover/grid:opacity-100 xl:group-hover/grid:translate-x-0"
                     aria-label="Previous fonts"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={handleNextFonts}
-                    className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm text-gray-400 hover:text-[#E0A32A] hover:border-[#E0A32A] transition-all opacity-0 group-hover/grid:opacity-100 translate-x-2 group-hover/grid:translate-x-0"
+                    className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm text-gray-400 hover:text-[#E0A32A] hover:border-[#E0A32A] transition-all opacity-100 translate-x-0 xl:opacity-0 xl:translate-x-2 xl:group-hover/grid:opacity-100 xl:group-hover/grid:translate-x-0"
                     aria-label="Next fonts"
                   >
                     <ChevronRight className="w-3.5 h-3.5" />
@@ -444,7 +443,7 @@ export default function SettingsPanel({
                         customFont: null,
                       });
                     }}
-                    className="absolute -top-1.5 -right-1.5 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100 shadow-sm z-10"
+                    className="absolute -top-1.5 -right-1.5 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors opacity-100 xl:opacity-0 xl:group-hover:opacity-100 shadow-sm z-10"
                     title="Remove custom font"
                     type="button"
                   >
@@ -704,7 +703,7 @@ export default function SettingsPanel({
                               customBackgroundImage: next.length > 0 ? next[0] : null,
                             });
                           }}
-                          className="absolute -top-1 -right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                          className="absolute -top-1 -right-1 p-1 bg-red-500 text-white rounded-full opacity-100 xl:opacity-0 xl:group-hover:opacity-100 transition-opacity shadow-sm"
                           title="Remove background image"
                         >
                           <X className="w-3 h-3" />

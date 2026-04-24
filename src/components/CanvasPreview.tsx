@@ -42,6 +42,17 @@ export interface CanvasPreviewProps {
   canvasRef?: React.RefObject<HTMLCanvasElement | null>;
 }
 
+function getPageCoordsFromCanvas(
+  canvas: HTMLCanvasElement,
+  e: { clientX: number; clientY: number },
+  previewScale: number,
+) {
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) / previewScale;
+  const y = (e.clientY - rect.top) / previewScale;
+  return { x, y };
+}
+
 /**
  * CanvasPreview renders a single page using the UnifiedPagePainter onto a Canvas element.
  * This replaces the DOM-based preview (thousands of span elements) with a single canvas,
@@ -72,27 +83,28 @@ export default function CanvasPreview({
   onMouseUp,
   canvasRef: externalRef,
 }: CanvasPreviewProps) {
-  const internalRef = useRef<HTMLCanvasElement>(null);
+  const internalRef = useRef<HTMLCanvasElement | null>(null);
   const canvasRef = externalRef ?? internalRef;
   const charPositionsRef = useRef<CharacterPosition[]>([]);
   const [cursorVisible, setCursorVisible] = useState(true);
+  const [backgroundImageRevision, setBackgroundImageRevision] = useState(0);
   const bgImageRef = useRef<HTMLImageElement | null>(null);
   const bgImageSrcRef = useRef<string | null>(null);
-  const isMouseDownRef = useRef(false);
+  const isPointerDownRef = useRef(false);
   const didDragRef = useRef(false);
+  const activePointerIdRef = useRef<number | null>(null);
 
   // Cursor blink
   useEffect(() => {
     const hasMainCursor = cursorPosition !== null;
     if (!isFocused || !hasMainCursor) return;
-    setCursorVisible(true);
     const interval = setInterval(() => {
       setCursorVisible(v => !v);
     }, 530);
     return () => clearInterval(interval);
   }, [isFocused, cursorPosition]);
 
-  const paint = useCallback(() => {
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -171,7 +183,7 @@ export default function CanvasPreview({
   }, [
     lines, pageSettings, settings, pageIndex, previewScale,
     fontFamily, cursorPosition, selectionStart, selectionEnd,
-    pageStartOffset, isFocused, cursorVisible, canvasRef,
+    pageStartOffset, isFocused, cursorVisible, canvasRef, backgroundImageRevision,
   ]);
 
   // Load background image when it changes
@@ -189,27 +201,26 @@ export default function CanvasPreview({
     img.onload = () => {
       bgImageRef.current = img;
       bgImageSrcRef.current = customBg;
-      paint();
+      setBackgroundImageRevision((revision) => revision + 1);
     };
     img.src = customBg;
-  }, [settings.customBackgroundImages, settings.customBackgroundImage, pageIndex, paint]);
+  }, [settings.customBackgroundImages, settings.customBackgroundImage, pageIndex]);
 
   useEffect(() => {
-    paint();
-  }, [paint]);
-
-  useEffect(() => {
-    const handleWindowMouseUp = (e: MouseEvent) => {
+    const handleWindowPointerUp = (e: PointerEvent) => {
       if (canvasRef.current && e.target !== canvasRef.current) {
         didDragRef.current = false;
       }
-      isMouseDownRef.current = false;
+      isPointerDownRef.current = false;
+      activePointerIdRef.current = null;
     };
-    window.addEventListener('mouseup', handleWindowMouseUp);
+    window.addEventListener('pointerup', handleWindowPointerUp);
+    window.addEventListener('pointercancel', handleWindowPointerUp);
     return () => {
-      window.removeEventListener('mouseup', handleWindowMouseUp);
+      window.removeEventListener('pointerup', handleWindowPointerUp);
+      window.removeEventListener('pointercancel', handleWindowPointerUp);
     };
-  }, []);
+  }, [canvasRef]);
 
   /** Find which character was clicked based on page coordinates */
   const findCharAtPoint = useCallback((pageX: number, pageY: number): { index: number; isLeftHalf: boolean } | null => {
@@ -256,23 +267,13 @@ export default function CanvasPreview({
     return { index: bestIdx, isLeftHalf };
   }, [pageSettings.lineTilt]);
 
-  const getPageCoords = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / previewScale;
-    const y = (e.clientY - rect.top) / previewScale;
-    return { x, y };
-  }, [canvasRef, previewScale]);
-
   const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (didDragRef.current) {
       didDragRef.current = false;
       return;
     }
 
-    const coords = getPageCoords(e);
-    if (!coords) return;
+    const coords = getPageCoordsFromCanvas(e.currentTarget, e, previewScale);
 
     const hit = findCharAtPoint(coords.x, coords.y);
     if (!hit) {
@@ -293,51 +294,56 @@ export default function CanvasPreview({
 
     onCharClick?.(globalCharIndex, hit.isLeftHalf);
   }, [
-    getPageCoords,
     onCanvasClick,
     onCharClick,
     onCharShiftClick,
     onCharTripleClick,
     findCharAtPoint,
     pageStartOffset,
+    previewScale,
   ]);
 
   const handleDoubleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (didDragRef.current) return;
-    const coords = getPageCoords(e);
-    if (!coords) return;
+    const coords = getPageCoordsFromCanvas(e.currentTarget, e, previewScale);
     const hit = findCharAtPoint(coords.x, coords.y);
     if (!hit) return;
     onCharDoubleClick?.(pageStartOffset + hit.index, hit.isLeftHalf);
-  }, [getPageCoords, onCharDoubleClick, findCharAtPoint, pageStartOffset]);
+  }, [onCharDoubleClick, findCharAtPoint, pageStartOffset, previewScale]);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handlePointerDown = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     e.stopPropagation();
-    isMouseDownRef.current = true;
+    isPointerDownRef.current = true;
+    const pointerId = typeof e.pointerId === 'number' ? e.pointerId : null;
+    activePointerIdRef.current = pointerId;
     didDragRef.current = false;
+    if (pointerId !== null) {
+      e.currentTarget.setPointerCapture?.(pointerId);
+    }
     if (!onCharMouseDown) return;
-    const coords = getPageCoords(e);
-    if (!coords) return;
+    const coords = getPageCoordsFromCanvas(e.currentTarget, e, previewScale);
     const hit = findCharAtPoint(coords.x, coords.y);
     if (hit) {
       onCharMouseDown(pageStartOffset + hit.index, hit.isLeftHalf);
     }
-  }, [getPageCoords, onCharMouseDown, findCharAtPoint, pageStartOffset]);
+  }, [onCharMouseDown, findCharAtPoint, pageStartOffset, previewScale]);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handlePointerMove = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!onCharMouseMove) return;
-    if (!isMouseDownRef.current) return;
-    const coords = getPageCoords(e);
-    if (!coords) return;
+    if (!isPointerDownRef.current) return;
+    if (activePointerIdRef.current !== null && e.pointerId !== activePointerIdRef.current) return;
+    const coords = getPageCoordsFromCanvas(e.currentTarget, e, previewScale);
     const hit = findCharAtPoint(coords.x, coords.y);
     if (hit) {
       didDragRef.current = true;
       onCharMouseMove(pageStartOffset + hit.index, hit.isLeftHalf);
     }
-  }, [getPageCoords, onCharMouseMove, findCharAtPoint, pageStartOffset]);
+  }, [onCharMouseMove, findCharAtPoint, pageStartOffset, previewScale]);
 
-  const handleMouseUp = useCallback(() => {
-    isMouseDownRef.current = false;
+  const handlePointerUp = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (activePointerIdRef.current !== null && e.pointerId !== activePointerIdRef.current) return;
+    isPointerDownRef.current = false;
+    activePointerIdRef.current = null;
     onMouseUp?.();
   }, [onMouseUp]);
 
@@ -348,9 +354,11 @@ export default function CanvasPreview({
       aria-label={`Page ${pageIndex + 1} preview`}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
+      onMouseDown={(e) => e.stopPropagation()}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
       style={{
         width: PAGE_WIDTH * previewScale,
         height: PAGE_HEIGHT * previewScale,

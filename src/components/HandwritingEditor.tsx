@@ -34,9 +34,11 @@ interface HandwritingEditorProps {
   onPagesChange?: (pages: LineData[][]) => void;
   onPaginationCompleteChange?: (isComplete: boolean) => void;
   onApplyToAllPages?: () => void;
+  isMobileLayout?: boolean;
+  onTypingFocus?: () => void;
 }
 
-function useDebouncedCallback<T extends (...args: any[]) => void>(cb: T, delayMs: number) {
+function useDebouncedCallback<TArgs extends unknown[]>(cb: (...args: TArgs) => void, delayMs: number) {
   const cbRef = useRef(cb);
   const timeoutRef = useRef<number | null>(null);
 
@@ -53,7 +55,7 @@ function useDebouncedCallback<T extends (...args: any[]) => void>(cb: T, delayMs
   }, []);
 
   return useCallback(
-    (...args: Parameters<T>) => {
+    (...args: TArgs) => {
       if (timeoutRef.current !== null) {
         window.clearTimeout(timeoutRef.current);
       }
@@ -81,6 +83,8 @@ export default function HandwritingEditor({
   onPagesChange,
   onPaginationCompleteChange,
   onApplyToAllPages,
+  isMobileLayout = false,
+  onTypingFocus,
 }: HandwritingEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const pageElsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -96,6 +100,7 @@ export default function HandwritingEditor({
   const workerRef = useRef<Worker | null>(null);
   const [isDraggingMarginLine, setIsDraggingMarginLine] = useState(false);
   const marginLineDragRef = useRef({ pageIndex: 0, pageRect: null as DOMRect | null });
+  const marginLinePointerIdRef = useRef<number | null>(null);
   const selectionDragRef = useRef<{ active: boolean; moved: boolean; anchor: number }>({
     active: false,
     moved: false,
@@ -283,9 +288,9 @@ export default function HandwritingEditor({
       setTotalPages(msg.totalPages);
     };
 
-    worker.addEventListener('message', onMessage as any);
+    worker.addEventListener('message', onMessage);
     return () => {
-      worker.removeEventListener('message', onMessage as any);
+      worker.removeEventListener('message', onMessage);
       worker.terminate();
       workerRef.current = null;
     };
@@ -599,12 +604,13 @@ export default function HandwritingEditor({
 
     const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
-    const handleMove = (e: MouseEvent | TouchEvent) => {
+    const handleMove = (e: PointerEvent) => {
+      if (marginLinePointerIdRef.current !== null && e.pointerId !== marginLinePointerIdRef.current) return;
       const { pageIndex, pageRect } = marginLineDragRef.current;
       if (!pageRect) return;
 
       const ps = getPageSettings(pageIndex);
-      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientX = e.clientX;
       const x = (clientX - pageRect.left) / previewScale;
       const minLeft = 0;
       const maxLeft = PAGE_WIDTH;
@@ -619,21 +625,19 @@ export default function HandwritingEditor({
       onSettingsChange({ ...settings, ruledMarginLineOffset: clampedOffset });
     };
 
-    const handleUp = () => {
+    const handleUp = (e: PointerEvent) => {
+      if (marginLinePointerIdRef.current !== null && e.pointerId !== marginLinePointerIdRef.current) return;
+      marginLinePointerIdRef.current = null;
       setIsDraggingMarginLine(false);
     };
 
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('mouseup', handleUp);
-    window.addEventListener('touchmove', handleMove, { passive: false });
-    window.addEventListener('touchend', handleUp);
-    window.addEventListener('touchcancel', handleUp);
+    window.addEventListener('pointermove', handleMove);
+    window.addEventListener('pointerup', handleUp);
+    window.addEventListener('pointercancel', handleUp);
     return () => {
-      window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('mouseup', handleUp);
-      window.removeEventListener('touchmove', handleMove);
-      window.removeEventListener('touchend', handleUp);
-      window.removeEventListener('touchcancel', handleUp);
+      window.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('pointerup', handleUp);
+      window.removeEventListener('pointercancel', handleUp);
     };
   }, [getPageSettings, isDraggingMarginLine, onSettingsChange, previewScale, settings]);
 
@@ -659,9 +663,9 @@ export default function HandwritingEditor({
       setTotalPages(msg.totalPages);
     };
 
-    worker.addEventListener('message', onMessage as any);
+    worker.addEventListener('message', onMessage);
     return () => {
-      worker.removeEventListener('message', onMessage as any);
+      worker.removeEventListener('message', onMessage);
       worker.terminate();
       workerRef.current = null;
     };
@@ -748,6 +752,7 @@ export default function HandwritingEditor({
             <div
               key={field.id}
               onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
             >
               <TextField
@@ -755,6 +760,7 @@ export default function HandwritingEditor({
                 scale={scale}
                 fontFamily={resolvedFontFamily}
                 randomness={settings.randomness}
+                onTypingFocus={onTypingFocus}
                 onUpdate={(updates) => {
                   const nextFields = ps.textFields?.map((f) =>
                     f.id === field.id ? { ...f, ...updates } : f
@@ -781,18 +787,14 @@ export default function HandwritingEditor({
                 cursor: 'col-resize',
                 backgroundColor: 'transparent',
               }}
-              onMouseDown={(e) => {
+              onPointerDown={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                setIsDraggingMarginLine(true);
-                const pageEl = pageElsRef.current[pageIndex];
-                marginLineDragRef.current = {
-                  pageIndex,
-                  pageRect: pageEl ? pageEl.getBoundingClientRect() : null,
-                };
-              }}
-              onTouchStart={(e) => {
-                e.stopPropagation();
+                const pointerId = typeof e.pointerId === 'number' ? e.pointerId : null;
+                marginLinePointerIdRef.current = pointerId;
+                if (pointerId !== null) {
+                  e.currentTarget.setPointerCapture?.(pointerId);
+                }
                 setIsDraggingMarginLine(true);
                 const pageEl = pageElsRef.current[pageIndex];
                 marginLineDragRef.current = {
@@ -838,6 +840,7 @@ export default function HandwritingEditor({
       handleSelectionEnd,
       isFocused,
       onSettingsChange,
+      onTypingFocus,
       pageStartOffsets,
       pages,
       resolvedFontFamily,
@@ -852,7 +855,7 @@ export default function HandwritingEditor({
   const visiblePage = pages.length > 0 ? renderPage(currentPageIndex, previewScale, true) : null;
 
   return (
-    <div className="flex flex-col items-center gap-8 py-8">
+    <div className={`flex flex-col items-center ${isMobileLayout ? 'gap-4 py-3' : 'gap-8 py-8'}`}>
       <textarea
         ref={textareaRef}
         value={localText}
@@ -869,12 +872,14 @@ export default function HandwritingEditor({
         onClick={handleClick}
         onSelect={handleSelect}
         onFocus={(e) => {
+          onTypingFocus?.();
           setIsFocused(true);
           syncSelectionFromTextarea(e.currentTarget);
         }}
         onBlur={() => setIsFocused(false)}
         className="sr-only"
         aria-label="Handwriting text input"
+        inputMode="text"
         spellCheck={false}
         autoFocus
       />

@@ -45,6 +45,7 @@
 
 :root {
   --radius: 0.625rem;
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -118,5 +119,22 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .mobile-editor-sheet__container {
+    height: var(--mobile-editor-sheet-max-height) !important;
+    max-height: var(--mobile-editor-sheet-max-height) !important;
+    overflow: hidden;
+  }
+
+  .mobile-editor-sheet__header {
+    min-height: var(--mobile-editor-sheet-peek-height);
+  }
+
+  .mobile-editor-sheet__scroller {
+    overscroll-behavior: contain;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
