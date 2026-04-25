@@ -219,23 +219,23 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
     >
       <div
         className={cn(
-          'absolute -top-5 -left-5 flex items-center z-10 transition-opacity',
+          'absolute -top-3.5 -left-3.5 flex items-center z-10 transition-opacity',
           showControls ? 'opacity-100' : 'opacity-0 xl:group-hover:opacity-100'
         )}
       >
         <button
           type="button"
           aria-label="Move text box"
-          className="size-11 bg-white border shadow-sm rounded-full cursor-move hover:bg-gray-50 text-gray-500 touch-none flex items-center justify-center"
+          className="size-7 bg-white border shadow-sm rounded-full cursor-move hover:bg-gray-50 text-gray-500 touch-none flex items-center justify-center"
           onPointerDown={handleDragPointerDown}
         >
-          <Move size={16} />
+          <Move size={10} />
         </button>
       </div>
 
       <div
         className={cn(
-          'absolute -top-5 -right-5 z-10 transition-opacity',
+          'absolute -top-3.5 -right-3.5 z-10 transition-opacity',
           showControls ? 'opacity-100' : 'opacity-0 xl:group-hover:opacity-100'
         )}
       >
@@ -245,9 +245,9 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
               ref={settingsTriggerRef}
               type="button"
               aria-label="Text box settings"
-              className="size-11 bg-white border shadow-sm rounded-full hover:bg-gray-50 text-gray-500 flex items-center justify-center"
+              className="size-7 bg-white border shadow-sm rounded-full hover:bg-gray-50 text-gray-500 flex items-center justify-center"
             >
-              <Settings size={16} />
+              <Settings size={10} />
             </button>
           </PopoverTrigger>
           {settingsAnchorPoint && (
