@@ -12,6 +12,7 @@ export function pageTextFromLines(lines: LineData[]): string {
 function applyExportStyleReset(element: HTMLElement) {
   Object.assign(element.style, {
     all: 'initial',
+    display: 'block',
     boxSizing: 'border-box',
     borderStyle: 'none',
     borderColor: 'transparent',
