@@ -138,7 +138,7 @@ describe('UnifiedPagePainter', () => {
   describe('paintPage - text rendering', () => {
     it('renders each non-space character via fillText', () => {
       const ctx = createMockCtx();
-      const settings = { ...DEFAULT_SETTINGS, randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 } };
+      const settings = { ...DEFAULT_SETTINGS };
       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
       const opts = defaultPaintOptions({
         ctx,
@@ -157,7 +157,7 @@ describe('UnifiedPagePainter', () => {
 
     it('skips spaces when rendering characters', () => {
       const ctx = createMockCtx();
-      const settings = { ...DEFAULT_SETTINGS, randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 } };
+      const settings = { ...DEFAULT_SETTINGS };
       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
       const opts = defaultPaintOptions({
         ctx,
@@ -192,7 +192,7 @@ describe('UnifiedPagePainter', () => {
         ctx,
         pageSettings,
         lines: [{ text: 'X', lineIndex: 0, hasNewline: false }],
-        settings: { ...DEFAULT_SETTINGS, randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 } },
+        settings: { ...DEFAULT_SETTINGS },
       });
 
       UnifiedPagePainter.paintPage(opts);
@@ -211,7 +211,7 @@ describe('UnifiedPagePainter', () => {
       // Render at scale 1 and scale 4, both should draw text at the same logical coords
       const ctx1 = createMockCtx();
       const ctx2 = createMockCtx();
-      const settings = { ...DEFAULT_SETTINGS, randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 } };
+      const settings = { ...DEFAULT_SETTINGS };
       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
       const lines = [{ text: 'A', lineIndex: 0, hasNewline: false }];
 
@@ -227,46 +227,10 @@ describe('UnifiedPagePainter', () => {
     });
   });
 
-  describe('paintPage - randomness', () => {
-    it('applies per-character transforms when randomness is enabled', () => {
-      const ctx = createMockCtx();
-      const settings = { ...DEFAULT_SETTINGS, randomness: { enabled: true, spacing: 5, baseline: 3, rotation: 2 } };
-      const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-      const opts = defaultPaintOptions({
-        ctx,
-        settings,
-        pageSettings,
-        lines: [{ text: 'AB', lineIndex: 0, hasNewline: false }],
-      });
-
-      UnifiedPagePainter.paintPage(opts);
-
-      // save/restore should be called for each character
-      expect((ctx.save as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThanOrEqual(2);
-      expect((ctx.restore as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThanOrEqual(2);
-    });
-
-    it('does not apply rotation when randomness is disabled', () => {
-      const ctx = createMockCtx();
-      const settings = { ...DEFAULT_SETTINGS, randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 }, lineTilt: 0 };
-      const pageSettings = { ...defaultPageSettingsFromHandwritingSettings(settings), lineTilt: 0 };
-      const opts = defaultPaintOptions({
-        ctx,
-        settings,
-        pageSettings,
-        lines: [{ text: 'A', lineIndex: 0, hasNewline: false }],
-      });
-
-      UnifiedPagePainter.paintPage(opts);
-
-      expect(ctx.rotate).not.toHaveBeenCalled();
-    });
-  });
-
   describe('paintPage - line tilt', () => {
     it('applies line tilt rotation once at the start of text block, not per character', () => {
       const ctx = createMockCtx();
-      const settings = { ...DEFAULT_SETTINGS, randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 } };
+      const settings = { ...DEFAULT_SETTINGS };
       const pageSettings = { ...defaultPageSettingsFromHandwritingSettings(settings), lineTilt: 5 };
       const opts = defaultPaintOptions({
         ctx,
@@ -285,7 +249,7 @@ describe('UnifiedPagePainter', () => {
 
   describe('computeCharacterPositions', () => {
     it('returns position data for each character in all lines', () => {
-      const settings = { ...DEFAULT_SETTINGS, randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 } };
+      const settings = { ...DEFAULT_SETTINGS };
       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
       const ctx = createMockCtx();
       const lines = [
@@ -316,7 +280,6 @@ describe('UnifiedPagePainter', () => {
     it('includes explicit newline positions so caret indices stay aligned with textarea text', () => {
       const settings = {
         ...DEFAULT_SETTINGS,
-        randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 },
       };
       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
       const ctx = createMockCtx();
@@ -466,7 +429,6 @@ describe('UnifiedPagePainter', () => {
        const ctx = createMockCtx();
        const settings = {
          ...DEFAULT_SETTINGS,
-         randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 },
        };
        const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
        const positions = UnifiedPagePainter.computeCharacterPositions({
@@ -489,11 +451,10 @@ describe('UnifiedPagePainter', () => {
        expect(height).toBeCloseTo(25, 1);
      });
 
-     it('computes selectionX that absorbs preceding spacing gap', () => {
+     it('computes contiguous selectionX values', () => {
        const ctx = createMockCtx();
        const settings = {
          ...DEFAULT_SETTINGS,
-         randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 },
        };
        const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
        const positions = UnifiedPagePainter.computeCharacterPositions({
@@ -516,7 +477,6 @@ describe('UnifiedPagePainter', () => {
        const ctx = createMockCtx();
        const settings = {
          ...DEFAULT_SETTINGS,
-         randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 },
        };
        const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
        const positions = UnifiedPagePainter.computeCharacterPositions({
@@ -535,7 +495,6 @@ describe('UnifiedPagePainter', () => {
        const ctx = createMockCtx();
        const settings = {
          ...DEFAULT_SETTINGS,
-         randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 },
          customBackgroundImage: 'data:image/png;base64,abc', // Enable customLineSpacing
        };
        const pageSettings = {
@@ -562,9 +521,9 @@ describe('UnifiedPagePainter', () => {
    });
 
    describe('paintPage - text field rendering', () => {
-    it('renders text fields character-by-character when renderTextFields is true', () => {
+    it('renders text fields when renderTextFields is true', () => {
       const ctx = createMockCtx();
-      const settings = { ...DEFAULT_SETTINGS, randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 } };
+      const settings = { ...DEFAULT_SETTINGS };
       const pageSettings = {
         ...defaultPageSettingsFromHandwritingSettings(settings),
         textFields: [{
@@ -584,8 +543,7 @@ describe('UnifiedPagePainter', () => {
 
       const fillTextCalls = (ctx.fillText as ReturnType<typeof vi.fn>).mock.calls;
       const chars = fillTextCalls.map((c: any[]) => c[0]);
-      expect(chars).toContain('H');
-      expect(chars).toContain('i');
+      expect(chars).toContain('Hi');
       
       expect((ctx as any).font).toContain('16px');
     });

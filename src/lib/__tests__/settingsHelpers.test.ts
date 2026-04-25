@@ -4,7 +4,8 @@ import {
   generateFontFamilyName, 
   processLineDetectionResult,
   readFilesAsDataURL,
-  applyPageSettingsToAll
+  applyPageSettingsToAll,
+  normalizeHandwritingSettings
 } from '../settingsHelpers';
 import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '../types';
 
@@ -113,5 +114,23 @@ describe('settingsHelpers', () => {
       expect(result[1].textFields![0].id).toBe('tf-target'); // preserved
     });
   });
-});
 
+  describe('normalizeHandwritingSettings', () => {
+    it('drops legacy randomness and fills missing supported settings from defaults', () => {
+      const normalized = normalizeHandwritingSettings({
+        fontFamily: 'kalam',
+        fontSize: 31,
+        randomness: { enabled: true, spacing: 5, baseline: 3, rotation: 2 },
+        unknownLegacyField: 'remove me',
+      });
+
+      expect(normalized).toMatchObject({
+        ...DEFAULT_SETTINGS,
+        fontFamily: 'kalam',
+        fontSize: 31,
+      });
+      expect(normalized).not.toHaveProperty('randomness');
+      expect(normalized).not.toHaveProperty('unknownLegacyField');
+    });
+  });
+});

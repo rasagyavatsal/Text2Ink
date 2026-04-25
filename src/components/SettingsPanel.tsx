@@ -4,7 +4,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import NextImage from 'next/image';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -225,16 +224,6 @@ export default function SettingsPanel({
     } finally {
       setLineDetecting(false);
     }
-  };
-
-  const updateRandomness = (
-    key: keyof HandwritingSettings['randomness'],
-    value: number | boolean
-  ) => {
-    onSettingsChange({
-      ...settings,
-      randomness: { ...settings.randomness, [key]: value },
-    });
   };
 
   return (
@@ -888,80 +877,6 @@ export default function SettingsPanel({
           )}
         </div>
       </div>
-
-      <Separator />
-
-      <div>
-        <div className="flex items-center gap-2 mb-5">
-          <Wand2 className="w-5 h-5 text-[#E0A32A]" />
-          <h3 className="font-semibold text-lg">Realism Effects</h3>
-        </div>
-
-        <div className="space-y-6">
-          <div className="flex items-center justify-between p-2 bg-gray-100 rounded-lg">
-            <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest" htmlFor="randomness-toggle">Enable Randomness</Label>
-            <Switch
-              id="randomness-toggle"
-              checked={settings.randomness.enabled}
-              onCheckedChange={(checked) => updateRandomness('enabled', checked)}
-            />
-          </div>
-
-          {settings.randomness.enabled && (
-            <div className="space-y-6 pt-2">
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between items-center">
-                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Letter Spacing Variation</Label>
-                  <div className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
-                    {settings.randomness.spacing.toFixed(1)}
-                  </div>
-                </div>
-                <Slider
-                  value={[settings.randomness.spacing]}
-                  onValueChange={([value]) => updateRandomness('spacing', value)}
-                  min={0}
-                  max={5}
-                  step={0.1}
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between items-center">
-                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Baseline Variation</Label>
-                  <div className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
-                    {settings.randomness.baseline.toFixed(1)}
-                  </div>
-                </div>
-                <Slider
-                  value={[settings.randomness.baseline]}
-                  onValueChange={([value]) => updateRandomness('baseline', value)}
-                  min={0}
-                  max={3}
-                  step={0.1}
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between items-center">
-                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Rotation Variation</Label>
-                  <div className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
-                    {settings.randomness.rotation.toFixed(1)}°
-                  </div>
-                </div>
-                <Slider
-                  value={[settings.randomness.rotation]}
-                  onValueChange={([value]) => updateRandomness('rotation', value)}
-                  min={0}
-                  max={3}
-                  step={0.1}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <Separator />
 
       <div className="pt-2">
         <button
