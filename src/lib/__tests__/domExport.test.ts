@@ -1,5 +1,31 @@
-import { describe, expect, it } from 'vitest';
-import { createExportPageElement, pageTextFromLines } from '../domExport';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('html2canvas', () => ({
+  default: vi.fn(async (_element: HTMLElement, options?: { onclone?: (document: Document) => void }) => {
+    const clonedDocument = document.implementation.createHTMLDocument('export-clone');
+    clonedDocument.documentElement.style.backgroundColor = document.documentElement.style.backgroundColor;
+    clonedDocument.body.style.backgroundColor = document.body.style.backgroundColor;
+
+    options?.onclone?.(clonedDocument);
+
+    const htmlBackground = clonedDocument.documentElement.style.backgroundColor;
+    const bodyBackground = clonedDocument.body.style.backgroundColor;
+    if (
+      htmlBackground.includes('lab(') ||
+      htmlBackground.includes('oklab(') ||
+      htmlBackground.includes('oklch(') ||
+      bodyBackground.includes('lab(') ||
+      bodyBackground.includes('oklab(') ||
+      bodyBackground.includes('oklch(')
+    ) {
+      throw new Error('Attempting to parse an unsupported color function "lab"');
+    }
+
+    return document.createElement('canvas');
+  }),
+}));
+
+import { createExportPageElement, pageTextFromLines, renderDomPageToCanvas } from '../domExport';
 import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '../types';
 
 describe('domExport', () => {
@@ -56,5 +82,22 @@ describe('domExport', () => {
     const body = page.querySelector<HTMLElement>('[data-export-layer="body"]');
     expect(body?.style.borderColor).toBe('transparent');
     expect(body?.style.outlineColor).toBe('transparent');
+  });
+
+  it('renders successfully when the app theme uses modern CSS color functions', async () => {
+    document.documentElement.style.backgroundColor = 'oklch(0.145 0 0)';
+    document.body.style.backgroundColor = 'lab(29.2345% 39.3825 20.0664)';
+
+    await expect(renderDomPageToCanvas({
+      pageIndex: 0,
+      pageText: 'Body text',
+      pageSettings: defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
+      settings: DEFAULT_SETTINGS,
+      fontFamily: 'Caveat',
+      scale: 1,
+    })).resolves.toBeInstanceOf(HTMLCanvasElement);
+
+    document.documentElement.style.backgroundColor = '';
+    document.body.style.backgroundColor = '';
   });
 });

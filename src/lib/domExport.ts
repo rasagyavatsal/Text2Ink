@@ -264,6 +264,12 @@ export async function renderDomPageToCanvas(opts: {
       height: PAGE_HEIGHT,
       windowWidth: PAGE_WIDTH,
       windowHeight: PAGE_HEIGHT,
+      onclone: (clonedDocument) => {
+        for (const node of [clonedDocument.documentElement, clonedDocument.body]) {
+          node.style.backgroundColor = 'transparent';
+          node.style.backgroundImage = 'none';
+        }
+      },
     });
   } finally {
     host.remove();
