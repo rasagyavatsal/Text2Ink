@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import { HandwritingSettings, PageSettings } from '@/lib/types';
 import { PAGE_WIDTH, PAGE_HEIGHT } from '@/lib/pageConstants';
 import { extractPlainTextFromContentEditable, normalizePastedPlainText } from '@/lib/domText';
@@ -47,7 +47,7 @@ export default function BodyTextEditor({
   const isFocusedRef = useRef(false);
   const isComposingRef = useRef(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = ref.current;
     if (!el || isFocusedRef.current) return;
     if (el.textContent !== pageText) {
@@ -113,8 +113,6 @@ export default function BodyTextEditor({
         onPageTextChange(extractPlainTextFromContentEditable(event.currentTarget));
         onBlur?.();
       }}
-    >
-      {pageText}
-    </div>
+    />
   );
 }

@@ -11,13 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import {
   HandwritingSettings,
@@ -335,43 +328,9 @@ export default function SettingsPanel({
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Fonts</Label>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <button className="text-[10px] font-bold text-[#E0A32A] hover:underline transition-colors">See all</button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl bg-white border-gray-200 text-gray-900 p-0 overflow-hidden sm:rounded-2xl shadow-xl">
-                  <DialogHeader className="p-6 border-b border-gray-100">
-                    <DialogTitle className="text-lg font-bold">All Handwriting Fonts</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-6 max-h-[70vh] overflow-y-auto bg-gray-50">
-                    {HANDWRITING_FONTS.filter(f => f.value !== 'custom').map((font) => (
-                      <FontCard
-                        key={font.value}
-                        font={font}
-                        isSelected={settings.fontFamily === font.value}
-                        onClick={() => {
-                          setCustomFontError(null);
-                          updateSetting('fontFamily', font.value);
-                        }}
-                      />
-                    ))}
-                    {settings.customFont && (
-                      <FontCard
-                        font={{ name: settings.customFont.name, value: 'custom', className: '' }}
-                        isSelected={settings.fontFamily === 'custom'}
-                        onClick={() => {
-                          setCustomFontError(null);
-                          updateSetting('fontFamily', 'custom');
-                        }}
-                        customStyle={{ fontFamily: settings.customFont.family }}
-                      />
-                    )}
-                  </div>
-                </DialogContent>
-              </Dialog>
             </div>
             
-            <div className="relative group/grid">
+            <div className="relative px-8">
               <div className="grid grid-cols-2 gap-3">
                 {visibleFonts.map((font) => (
                   <FontCard
@@ -390,14 +349,14 @@ export default function SettingsPanel({
                 <>
                   <button
                     onClick={handlePrevFonts}
-                    className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm text-gray-400 hover:text-[#E0A32A] hover:border-[#E0A32A] transition-all opacity-100 translate-x-0 xl:opacity-0 xl:-translate-x-2 xl:group-hover/grid:opacity-100 xl:group-hover/grid:translate-x-0"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-7 h-7 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm text-gray-500 hover:text-[#E0A32A] hover:border-[#E0A32A] transition-all"
                     aria-label="Previous fonts"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={handleNextFonts}
-                    className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm text-gray-400 hover:text-[#E0A32A] hover:border-[#E0A32A] transition-all opacity-100 translate-x-0 xl:opacity-0 xl:translate-x-2 xl:group-hover/grid:opacity-100 xl:group-hover/grid:translate-x-0"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 w-7 h-7 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm text-gray-500 hover:text-[#E0A32A] hover:border-[#E0A32A] transition-all"
                     aria-label="Next fonts"
                   >
                     <ChevronRight className="w-3.5 h-3.5" />

@@ -140,7 +140,60 @@ describe('TextField', () => {
     );
     const textarea = screen.getByPlaceholderText('');
     fireEvent.change(textarea, { target: { value: 'Updated Text' } });
-    expect(mockOnUpdate).toHaveBeenCalledWith({ text: 'Updated Text' });
+    expect(mockOnUpdate).toHaveBeenCalledWith(expect.objectContaining({ text: 'Updated Text' }));
+  });
+
+  it('does not expose manual resize handles', () => {
+    render(
+      <TextField
+        field={mockField}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+      />
+    );
+
+    expect(screen.queryByTestId('handle-se')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('handle-w')).not.toBeInTheDocument();
+  });
+
+  it('clamps dragging so the whole text box stays inside the page', async () => {
+    render(
+      <TextField
+        field={{ ...mockField, x: 500, y: 700, width: 120, height: 80 }}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+      />
+    );
+
+    fireEvent.pointerDown(screen.getByLabelText('Move text box'), { clientX: 500, clientY: 700, pointerId: 1 });
+
+    await waitFor(() => {
+      dispatchPointerMove(700, 900);
+      expect(mockOnUpdate).toHaveBeenCalledWith(expect.objectContaining({ x: 492, y: 712 }));
+    });
+  });
+
+  it('wraps auto-fit text at the available page width', async () => {
+    render(
+      <TextField
+        field={{ ...mockField, text: 'abcdefghij', x: 580, width: 10, height: 10, fontSize: 10 }}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+      />
+    );
+
+    await waitFor(() => {
+      expect(mockOnUpdate).toHaveBeenCalledWith(expect.objectContaining({
+        width: 30,
+        height: 60,
+      }));
+    });
   });
 
   it.each([
@@ -170,55 +223,6 @@ describe('TextField', () => {
     expect(parentKeyDown).not.toHaveBeenCalled();
   });
 
-  it('handles resizing from south-east corner', async () => {
-    render(
-      <TextField
-        field={mockField}
-        onUpdate={mockOnUpdate}
-        onDelete={mockOnDelete}
-        scale={scale}
-        fontFamily={fontFamily}
-      />
-    );
-    
-    mockOnUpdate.mockClear();
-    const seHandle = screen.getByTestId('handle-se');
-    fireEvent.pointerDown(seHandle, { clientX: 300, clientY: 200, pointerId: 1 });
-    
-    await waitFor(() => {
-      dispatchPointerMove(350, 250);
-      expect(mockOnUpdate).toHaveBeenCalled();
-    });
-    const lastCall = mockOnUpdate.mock.calls[mockOnUpdate.mock.calls.length - 1][0];
-    expect(lastCall.width).toBeGreaterThan(200);
-    expect(lastCall.height).toBeGreaterThan(100);
-  });
-
-  it('handles resizing from west side', async () => {
-    render(
-      <TextField
-        field={mockField}
-        onUpdate={mockOnUpdate}
-        onDelete={mockOnDelete}
-        scale={scale}
-        fontFamily={fontFamily}
-      />
-    );
-    
-    mockOnUpdate.mockClear();
-    const wHandle = screen.getByTestId('handle-w');
-    fireEvent.pointerDown(wHandle, { clientX: 100, clientY: 150, pointerId: 1 });
-    
-    // Drag to the left (increase width, decrease x)
-    await waitFor(() => {
-      dispatchPointerMove(50, 150);
-      expect(mockOnUpdate).toHaveBeenCalled();
-    });
-    const lastCall = mockOnUpdate.mock.calls[mockOnUpdate.mock.calls.length - 1][0];
-    expect(lastCall.width).toBe(250); // 200 + (100 - 50)
-    expect(lastCall.x).toBe(50); // 100 - 50
-  });
-
   it('disables spellcheck on the textarea', () => {
     render(
       <TextField
@@ -233,36 +237,7 @@ describe('TextField', () => {
     expect(textarea.getAttribute('spellcheck')).toBe('false');
   });
 
-  it('does not resize smaller than its content', async () => {
-    render(
-      <TextField
-        field={mockField}
-        onUpdate={mockOnUpdate}
-        onDelete={mockOnDelete}
-        scale={scale}
-        fontFamily={fontFamily}
-      />
-    );
-    
-    mockOnUpdate.mockClear();
-    const eHandle = screen.getByTestId('handle-e');
-    fireEvent.pointerDown(eHandle, { clientX: 300, clientY: 150, pointerId: 1 });
-    
-    // Drag way to the left to try to make it tiny
-    await waitFor(() => {
-      dispatchPointerMove(120, 150);
-      expect(mockOnUpdate).toHaveBeenCalled();
-    });
-    const lastCall = mockOnUpdate.mock.calls[mockOnUpdate.mock.calls.length - 1][0];
-    
-    // Calculate expected minW in test environment:
-    // 'Hello World'.length (11) * 10 = 110
-    // padding = 12 / 1 = 12
-    // minW = Math.max(10, 110 + 12) = 122
-    expect(lastCall.width).toBeGreaterThanOrEqual(122);
-  });
-
-  it('respects a 10px hard minimum when text is empty', async () => {
+  it('keeps an empty text box at its placed size without exposing resize handles', async () => {
     const emptyField = { ...mockField, text: '', width: 100, height: 100 };
     render(
       <TextField
@@ -273,26 +248,12 @@ describe('TextField', () => {
         fontFamily={fontFamily}
       />
     );
-    
-    mockOnUpdate.mockClear();
-    const seHandle = screen.getByTestId('handle-se');
-    fireEvent.pointerDown(seHandle, { clientX: 200, clientY: 200, pointerId: 1 });
-    
-    // Resize to almost zero
-    await waitFor(() => {
-      dispatchPointerMove(105, 105);
-      expect(mockOnUpdate).toHaveBeenCalled();
-    });
-    const lastCall = mockOnUpdate.mock.calls[mockOnUpdate.mock.calls.length - 1][0];
-    
-    // minW should be at least 10 + padding (12) = 22
-    // Wait, with empty text, textWidth is 0. padding is 12. 
-    // Math.max(10, 0 + 12) = 12.
-    expect(lastCall.width).toBeGreaterThanOrEqual(12);
-    expect(lastCall.height).toBeGreaterThanOrEqual(12);
-    });
 
-    it('keeps initial size when empty and only shrinks when text is added', async () => {
+    expect(screen.queryByTestId('handle-se')).not.toBeInTheDocument();
+    expect(mockOnUpdate).not.toHaveBeenCalled();
+  });
+
+  it('keeps initial size when empty and only shrinks when text is added', async () => {
     const { rerender } = render(
       <TextField
         field={{ ...mockField, text: '', width: 200, height: 50 }}
@@ -303,10 +264,8 @@ describe('TextField', () => {
       />
     );
 
-    // Should NOT have called onUpdate to shrink yet because it's empty
     expect(mockOnUpdate).not.toHaveBeenCalled();
 
-    // Now add text
     rerender(
       <TextField
         field={{ ...mockField, text: 'a', width: 200, height: 50 }}
@@ -317,13 +276,12 @@ describe('TextField', () => {
       />
     );
 
-    // Now it should call onUpdate to shrink to fit 'a'
     expect(mockOnUpdate).toHaveBeenCalled();
     const lastCall = mockOnUpdate.mock.calls[mockOnUpdate.mock.calls.length - 1][0];
     expect(lastCall.width).toBeLessThan(200);
-    });
+  });
 
-    it('expands immediately when font size grows beyond the current box size', async () => {
+  it('expands immediately when font size grows beyond the current box size', async () => {
     const compactField = { ...mockField, width: 150, height: 50, fontSize: 24 };
     const { rerender } = render(
       <TextField

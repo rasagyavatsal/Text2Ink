@@ -39,4 +39,22 @@ describe('domExport', () => {
     expect(page.querySelector('[data-export-layer="body"]')).not.toBeNull();
     expect(page.querySelector('[data-export-layer="text-fields"]')).not.toBeNull();
   });
+
+  it('marks the export subtree as isolated from app theme styles', () => {
+    const page = createExportPageElement({
+      pageIndex: 0,
+      pageText: 'Body text',
+      pageSettings: defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
+      settings: DEFAULT_SETTINGS,
+      fontFamily: 'Caveat',
+    });
+
+    expect(page.style.all).toBe('initial');
+    expect(page.style.borderColor).toBe('transparent');
+    expect(page.style.outlineColor).toBe('transparent');
+
+    const body = page.querySelector<HTMLElement>('[data-export-layer="body"]');
+    expect(body?.style.borderColor).toBe('transparent');
+    expect(body?.style.outlineColor).toBe('transparent');
+  });
 });
