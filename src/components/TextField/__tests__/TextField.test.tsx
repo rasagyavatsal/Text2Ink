@@ -158,6 +158,30 @@ describe('TextField', () => {
     expect(screen.queryByTestId('handle-w')).not.toBeInTheDocument();
   });
 
+  it('renders tiny move and settings controls', () => {
+    render(
+      <TextField
+        field={mockField}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+      />
+    );
+
+    const moveButton = screen.getByLabelText('Move text box');
+    const settingsButton = screen.getByLabelText('Text box settings');
+    const moveIcon = moveButton.querySelector('svg');
+    const settingsIcon = settingsButton.querySelector('svg');
+
+    expect(moveButton).toHaveClass('size-7');
+    expect(settingsButton).toHaveClass('size-7');
+    expect(moveIcon).toHaveAttribute('width', '10');
+    expect(moveIcon).toHaveAttribute('height', '10');
+    expect(settingsIcon).toHaveAttribute('width', '10');
+    expect(settingsIcon).toHaveAttribute('height', '10');
+  });
+
   it('clamps dragging so the whole text box stays inside the page', async () => {
     render(
       <TextField
