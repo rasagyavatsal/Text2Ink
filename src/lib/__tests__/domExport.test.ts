@@ -84,6 +84,20 @@ describe('domExport', () => {
     expect(body?.style.outlineColor).toBe('transparent');
   });
 
+  it('keeps the isolated export page as a concrete block-level capture target', () => {
+    const page = createExportPageElement({
+      pageIndex: 0,
+      pageText: 'Body text',
+      pageSettings: defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
+      settings: DEFAULT_SETTINGS,
+      fontFamily: 'Caveat',
+    });
+
+    expect(page.style.display).toBe('block');
+    expect(page.style.width).toBe('612px');
+    expect(page.style.height).toBe('792px');
+  });
+
   it('renders successfully when the app theme uses modern CSS color functions', async () => {
     document.documentElement.style.backgroundColor = 'oklch(0.145 0 0)';
     document.body.style.backgroundColor = 'lab(29.2345% 39.3825 20.0664)';
