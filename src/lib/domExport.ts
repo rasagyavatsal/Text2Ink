@@ -9,9 +9,23 @@ export function pageTextFromLines(lines: LineData[]): string {
   return lines.map((line) => line.text + (line.hasNewline ? '\n' : '')).join('');
 }
 
+function applyExportStyleReset(element: HTMLElement) {
+  Object.assign(element.style, {
+    all: 'initial',
+    boxSizing: 'border-box',
+    borderStyle: 'none',
+    borderColor: 'transparent',
+    outlineStyle: 'none',
+    outlineColor: 'transparent',
+    boxShadow: 'none',
+    textDecorationColor: 'transparent',
+  });
+}
+
 function appendPaperLayer(page: HTMLElement, pageSettings: PageSettings, settings: HandwritingSettings) {
   const layer = document.createElement('div');
   layer.dataset.exportLayer = 'paper';
+  applyExportStyleReset(layer);
   Object.assign(layer.style, {
     position: 'absolute',
     inset: '0',
@@ -28,6 +42,7 @@ function appendPaperLayer(page: HTMLElement, pageSettings: PageSettings, setting
 
   const addLine = (style: Partial<CSSStyleDeclaration>) => {
     const line = document.createElement('div');
+    applyExportStyleReset(line);
     Object.assign(line.style, {
       position: 'absolute',
       backgroundColor: pageSettings.lineColor,
@@ -96,6 +111,7 @@ function appendBodyLayer(opts: {
   const body = document.createElement('div');
   body.dataset.exportLayer = 'body';
   body.textContent = pageText;
+  applyExportStyleReset(body);
   Object.assign(body.style, {
     position: 'absolute',
     left: `${left}px`,
@@ -117,6 +133,7 @@ function appendBodyLayer(opts: {
 function appendTextFields(page: HTMLElement, pageSettings: PageSettings, fontFamily: string) {
   const layer = document.createElement('div');
   layer.dataset.exportLayer = 'text-fields';
+  applyExportStyleReset(layer);
   Object.assign(layer.style, {
     position: 'absolute',
     inset: '0',
@@ -127,6 +144,7 @@ function appendTextFields(page: HTMLElement, pageSettings: PageSettings, fontFam
   for (const field of pageSettings.textFields ?? []) {
     const node = document.createElement('div');
     node.textContent = field.text;
+    applyExportStyleReset(node);
     Object.assign(node.style, {
       position: 'absolute',
       left: `${field.x}px`,
@@ -149,6 +167,7 @@ function appendBackgroundImage(page: HTMLElement, src: string) {
   img.dataset.exportLayer = 'background-image';
   img.src = src;
   img.crossOrigin = 'anonymous';
+  applyExportStyleReset(img);
   Object.assign(img.style, {
     position: 'absolute',
     inset: '0',
@@ -171,6 +190,7 @@ export function createExportPageElement(opts: {
   page.dataset.exportPage = String(pageIndex);
   const backgroundImage = settings.customBackgroundImages?.[pageIndex] ?? settings.customBackgroundImage;
 
+  applyExportStyleReset(page);
   Object.assign(page.style, {
     position: 'relative',
     width: `${PAGE_WIDTH}px`,
@@ -219,6 +239,7 @@ export async function renderDomPageToCanvas(opts: {
 }): Promise<HTMLCanvasElement> {
   const page = createExportPageElement(opts);
   const host = document.createElement('div');
+  applyExportStyleReset(host);
   Object.assign(host.style, {
     position: 'fixed',
     left: '-10000px',

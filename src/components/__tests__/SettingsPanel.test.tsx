@@ -103,4 +103,14 @@ describe('SettingsPanel', () => {
     const textFieldHeading = headings.find(h => h.textContent === 'Text Fields');
     expect(textFieldHeading).toBeUndefined();
   });
+
+  it('uses font paging without a separate all-fonts popup', () => {
+    render(<SettingsPanel {...defaultProps} />);
+
+    expect(screen.getByText('Fonts')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /see all/i })).not.toBeInTheDocument();
+    expect(screen.queryByText('All Handwriting Fonts')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /previous fonts/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /next fonts/i })).toBeInTheDocument();
+  });
 });

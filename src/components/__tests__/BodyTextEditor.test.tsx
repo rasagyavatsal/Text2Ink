@@ -25,6 +25,38 @@ describe('BodyTextEditor', () => {
     expect(editor).toHaveAttribute('spellcheck', 'false');
   });
 
+  it('does not let React rewrite editable text while the editor is focused', () => {
+    const { rerender } = render(
+      <BodyTextEditor
+        pageText="Hello"
+        pageSettings={pageSettings}
+        settings={DEFAULT_SETTINGS}
+        scale={1}
+        fontFamily="Caveat"
+        hasCustomBackground={false}
+        onPageTextChange={vi.fn()}
+      />
+    );
+
+    const editor = screen.getByRole('textbox', { name: 'Handwriting body editor' });
+    fireEvent.focus(editor);
+    editor.textContent = 'HelXlo';
+
+    rerender(
+      <BodyTextEditor
+        pageText="Different external text"
+        pageSettings={pageSettings}
+        settings={DEFAULT_SETTINGS}
+        scale={1}
+        fontFamily="Caveat"
+        hasCustomBackground={false}
+        onPageTextChange={vi.fn()}
+      />
+    );
+
+    expect(editor).toHaveTextContent('HelXlo');
+  });
+
   it('emits plain text from contenteditable input', () => {
     const onPageTextChange = vi.fn();
     render(

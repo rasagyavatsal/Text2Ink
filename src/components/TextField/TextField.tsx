@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
-import { Move, X, Settings } from 'lucide-react';
-import { TextField as TextFieldType } from '@/lib/types';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Move, Settings, X } from 'lucide-react';
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
+import { PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/pageConstants';
 import { createMeasure } from '@/lib/pagination';
+import { TextField as TextFieldType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 interface TextFieldProps {
@@ -17,23 +18,58 @@ interface TextFieldProps {
   onTypingFocus?: () => void;
 }
 
-function calculateMinimumTextBoxSize(text: string, fontSize: number, fontFamily: string, scale: number) {
-  const lines = text.split('\n');
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function wrapLineToWidth(line: string, maxContentWidth: number, measure: (text: string) => number) {
+  if (line.length === 0) return [''];
+
+  const wrapped: string[] = [];
+  let current = '';
+
+  for (const char of line) {
+    const candidate = current + char;
+    if (current && measure(candidate) > maxContentWidth) {
+      wrapped.push(current);
+      current = char;
+    } else {
+      current = candidate;
+    }
+  }
+
+  wrapped.push(current);
+  return wrapped;
+}
+
+function calculateAutoFitTextBoxSize(
+  text: string,
+  fontSize: number,
+  fontFamily: string,
+  scale: number,
+  x: number,
+  y: number
+) {
   const measure = createMeasure(fontFamily, fontSize);
-
-  const textWidth = Math.max(...lines.map((line) => measure(line)), 0);
   const padding = 12 / scale;
-  const textHeight = lines.length * fontSize * 1.2;
+  const availableWidth = Math.max(10, PAGE_WIDTH - x);
+  const availableHeight = Math.max(10, PAGE_HEIGHT - y);
+  const maxContentWidth = Math.max(1, availableWidth - padding);
+  const wrappedLines = text
+    .split('\n')
+    .flatMap((line) => wrapLineToWidth(line, maxContentWidth, measure));
+  const textWidth = Math.max(...wrappedLines.map((line) => measure(line)), 0);
+  const textHeight = wrappedLines.length * fontSize * 1.2;
+  const width = Math.min(availableWidth, Math.max(10, textWidth + padding));
+  const height = Math.max(10, textHeight + padding);
 
-  return {
-    minW: Math.max(10, textWidth + padding),
-    minH: Math.max(10, textHeight + padding),
-  };
+  if (height > availableHeight) return null;
+
+  return { width, height };
 }
 
 export default function TextField({ field, onUpdate, onDelete, scale, fontFamily, onTypingFocus }: TextFieldProps) {
   const [isDragging, setIsDragging] = useState(false);
-  const [resizeDir, setResizeDir] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [isSelected, setIsSelected] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -41,37 +77,45 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
   const dragStartRef = useRef({ x: 0, y: 0, fieldX: 0, fieldY: 0, fieldW: 0, fieldH: 0 });
   const rootRef = useRef<HTMLDivElement>(null);
   const activePointerIdRef = useRef<number | null>(null);
-  const interactionRef = useRef<{ mode: 'drag' | 'resize' | null; resizeDir: string | null }>({
-    mode: null,
-    resizeDir: null,
-  });
+  const isDraggingRef = useRef(false);
   const settingsTriggerRef = useRef<HTMLButtonElement>(null);
-  const previousMinimumSizeRef = useRef<{ minW: number; minH: number } | null>(null);
-  const showControls = isSelected || isFocused || isSettingsOpen || isDragging || resizeDir !== null;
+  const previousAutoFitSizeRef = useRef<{ width: number; height: number } | null>(null);
+  const showControls = isSelected || isFocused || isSettingsOpen || isDragging;
 
-  // Calculate the minimum width and height based on the text content
-  const { minW, minH } = useMemo(
-    () => calculateMinimumTextBoxSize(field.text, field.fontSize, fontFamily, scale),
-    [field.fontSize, field.text, fontFamily, scale]
+  const autoFitSize = useMemo(
+    () => calculateAutoFitTextBoxSize(field.text, field.fontSize, fontFamily, scale, field.x, field.y),
+    [field.fontSize, field.text, field.x, field.y, fontFamily, scale]
   );
 
   useLayoutEffect(() => {
-    if (isDragging || resizeDir || field.text === '') return;
+    if (isDragging || field.text === '' || !autoFitSize) return;
 
-    const previousMinimumSize = previousMinimumSizeRef.current;
-    previousMinimumSizeRef.current = { minW, minH };
+    const previousAutoFitSize = previousAutoFitSizeRef.current;
+    previousAutoFitSizeRef.current = autoFitSize;
 
-    if (previousMinimumSize && previousMinimumSize.minW === minW && previousMinimumSize.minH === minH) {
+    if (
+      previousAutoFitSize &&
+      previousAutoFitSize.width === autoFitSize.width &&
+      previousAutoFitSize.height === autoFitSize.height
+    ) {
       return;
     }
 
-    if (field.width === minW && field.height === minH) return;
+    if (field.width === autoFitSize.width && field.height === autoFitSize.height) return;
 
     onUpdate({
-      width: minW,
-      height: minH,
+      width: autoFitSize.width,
+      height: autoFitSize.height,
     });
-  }, [field.height, field.width, isDragging, minH, minW, onUpdate, resizeDir, field.text]);
+  }, [autoFitSize, field.height, field.text, field.width, isDragging, onUpdate]);
+
+  useLayoutEffect(() => {
+    const nextX = clamp(field.x, 0, Math.max(0, PAGE_WIDTH - field.width));
+    const nextY = clamp(field.y, 0, Math.max(0, PAGE_HEIGHT - field.height));
+    if (nextX !== field.x || nextY !== field.y) {
+      onUpdate({ x: nextX, y: nextY });
+    }
+  }, [field.height, field.width, field.x, field.y, onUpdate]);
 
   const handleSettingsOpenChange = (open: boolean) => {
     if (open && settingsTriggerRef.current) {
@@ -95,43 +139,20 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
     const handleDocumentPointerDown = (event: PointerEvent) => {
       const root = rootRef.current;
       if (!root || root.contains(event.target as Node)) return;
-      if (isFocused || isSettingsOpen || isDragging || resizeDir) return;
+      if (isFocused || isSettingsOpen || isDragging) return;
       setIsSelected(false);
     };
 
     document.addEventListener('pointerdown', handleDocumentPointerDown);
     return () => document.removeEventListener('pointerdown', handleDocumentPointerDown);
-  }, [isDragging, isFocused, isSettingsOpen, resizeDir]);
+  }, [isDragging, isFocused, isSettingsOpen]);
 
   const handleDragPointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsSelected(true);
     setIsDragging(true);
-    setResizeDir(null);
-    interactionRef.current = { mode: 'drag', resizeDir: null };
-    const pointerId = typeof e.pointerId === 'number' ? e.pointerId : null;
-    activePointerIdRef.current = pointerId;
-    if (pointerId !== null) {
-      e.currentTarget.setPointerCapture?.(pointerId);
-    }
-    dragStartRef.current = {
-      x: e.clientX,
-      y: e.clientY,
-      fieldX: field.x,
-      fieldY: field.y,
-      fieldW: field.width,
-      fieldH: field.height,
-    };
-  };
-
-  const handleResizeStart = (e: React.PointerEvent, dir: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsSelected(true);
-    setResizeDir(dir);
-    setIsDragging(false);
-    interactionRef.current = { mode: 'resize', resizeDir: dir };
+    isDraggingRef.current = true;
     const pointerId = typeof e.pointerId === 'number' ? e.pointerId : null;
     activePointerIdRef.current = pointerId;
     if (pointerId !== null) {
@@ -149,43 +170,22 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
 
   useEffect(() => {
     const handlePointerMove = (e: PointerEvent) => {
-      const interaction = interactionRef.current;
-      if (!interaction.mode) return;
+      if (!isDraggingRef.current) return;
       if (activePointerIdRef.current !== null && e.pointerId !== activePointerIdRef.current) return;
       const dx = (e.clientX - dragStartRef.current.x) / scale;
       const dy = (e.clientY - dragStartRef.current.y) / scale;
 
-      if (interaction.mode === 'drag') {
-        onUpdate({
-          x: dragStartRef.current.fieldX + dx,
-          y: dragStartRef.current.fieldY + dy,
-        });
-      } else if (interaction.resizeDir) {
-        let { fieldX: x, fieldY: y, fieldW: w, fieldH: h } = dragStartRef.current;
-
-        if (interaction.resizeDir.includes('e')) w = Math.max(minW, w + dx);
-        if (interaction.resizeDir.includes('s')) h = Math.max(minH, h + dy);
-        if (interaction.resizeDir.includes('w')) {
-          const newW = Math.max(minW, w - dx);
-          x = x + (w - newW);
-          w = newW;
-        }
-        if (interaction.resizeDir.includes('n')) {
-          const newH = Math.max(minH, h - dy);
-          y = y + (h - newH);
-          h = newH;
-        }
-
-        onUpdate({ x, y, width: w, height: h });
-      }
+      onUpdate({
+        x: clamp(dragStartRef.current.fieldX + dx, 0, Math.max(0, PAGE_WIDTH - dragStartRef.current.fieldW)),
+        y: clamp(dragStartRef.current.fieldY + dy, 0, Math.max(0, PAGE_HEIGHT - dragStartRef.current.fieldH)),
+      });
     };
 
     const handlePointerUp = (e: PointerEvent) => {
       if (activePointerIdRef.current !== null && e.pointerId !== activePointerIdRef.current) return;
       activePointerIdRef.current = null;
-      interactionRef.current = { mode: null, resizeDir: null };
+      isDraggingRef.current = false;
       setIsDragging(false);
-      setResizeDir(null);
     };
 
     window.addEventListener('pointermove', handlePointerMove);
@@ -196,14 +196,14 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
     };
-  }, [isDragging, resizeDir, onUpdate, scale, minW, minH]);
+  }, [onUpdate, scale]);
 
   return (
     <div
       ref={rootRef}
       className={cn(
-        "absolute border border-dotted group",
-        showControls ? "border-[#E0A32A]" : "border-gray-400"
+        'absolute border border-dotted group',
+        showControls ? 'border-[#E0A32A]' : 'border-gray-400'
       )}
       onPointerDown={() => {
         setIsSelected(true);
@@ -217,71 +217,10 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
         color: field.color,
       }}
     >
-      {/* Resize Handles */}
       <div
         className={cn(
-          "absolute inset-0 pointer-events-none transition-opacity",
-          showControls ? "opacity-100" : "opacity-0 xl:group-hover:opacity-100"
-        )}
-      >
-        {/* Corners */}
-        <div
-          data-testid="handle-nw"
-          className="absolute -top-5 -left-5 size-11 pointer-events-auto cursor-nwse-resize touch-none flex items-center justify-center"
-          onPointerDown={(e) => handleResizeStart(e, 'nw')}
-        >
-          <span className="h-3 w-3 rounded-sm border border-gray-400 bg-white shadow-sm" />
-        </div>
-        <div
-          data-testid="handle-ne"
-          className="absolute -top-5 -right-5 size-11 pointer-events-auto cursor-nesw-resize touch-none flex items-center justify-center"
-          onPointerDown={(e) => handleResizeStart(e, 'ne')}
-        >
-          <span className="h-3 w-3 rounded-sm border border-gray-400 bg-white shadow-sm" />
-        </div>
-        <div
-          data-testid="handle-sw"
-          className="absolute -bottom-5 -left-5 size-11 pointer-events-auto cursor-nesw-resize touch-none flex items-center justify-center"
-          onPointerDown={(e) => handleResizeStart(e, 'sw')}
-        >
-          <span className="h-3 w-3 rounded-sm border border-gray-400 bg-white shadow-sm" />
-        </div>
-        <div
-          data-testid="handle-se"
-          className="absolute -bottom-5 -right-5 size-11 pointer-events-auto cursor-nwse-resize touch-none flex items-center justify-center"
-          onPointerDown={(e) => handleResizeStart(e, 'se')}
-        >
-          <span className="h-3 w-3 rounded-sm border border-gray-400 bg-white shadow-sm" />
-        </div>
-
-        {/* Sides */}
-        <div
-          data-testid="handle-n"
-          className="absolute -top-5 left-3 right-3 h-11 pointer-events-auto cursor-ns-resize touch-none hover:bg-blue-400/20 transition-colors"
-          onPointerDown={(e) => handleResizeStart(e, 'n')}
-        />
-        <div
-          data-testid="handle-s"
-          className="absolute -bottom-5 left-3 right-3 h-11 pointer-events-auto cursor-ns-resize touch-none hover:bg-blue-400/20 transition-colors"
-          onPointerDown={(e) => handleResizeStart(e, 's')}
-        />
-        <div
-          data-testid="handle-w"
-          className="absolute -left-5 top-3 bottom-3 w-11 pointer-events-auto cursor-ew-resize touch-none hover:bg-blue-400/20 transition-colors"
-          onPointerDown={(e) => handleResizeStart(e, 'w')}
-        />
-        <div
-          data-testid="handle-e"
-          className="absolute -right-5 top-3 bottom-3 w-11 pointer-events-auto cursor-ew-resize touch-none hover:bg-blue-400/20 transition-colors"
-          onPointerDown={(e) => handleResizeStart(e, 'e')}
-        />
-      </div>
-
-      {/* Top Left Icons */}
-      <div
-        className={cn(
-          "absolute -top-5 -left-5 flex items-center z-10 transition-opacity",
-          showControls ? "opacity-100" : "opacity-0 xl:group-hover:opacity-100"
+          'absolute -top-5 -left-5 flex items-center z-10 transition-opacity',
+          showControls ? 'opacity-100' : 'opacity-0 xl:group-hover:opacity-100'
         )}
       >
         <button
@@ -294,11 +233,10 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
         </button>
       </div>
 
-      {/* Top Right Icons - Consolidated Settings */}
       <div
         className={cn(
-          "absolute -top-5 -right-5 z-10 transition-opacity",
-          showControls ? "opacity-100" : "opacity-0 xl:group-hover:opacity-100"
+          'absolute -top-5 -right-5 z-10 transition-opacity',
+          showControls ? 'opacity-100' : 'opacity-0 xl:group-hover:opacity-100'
         )}
       >
         <Popover open={isSettingsOpen} onOpenChange={handleSettingsOpenChange}>
@@ -326,7 +264,6 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
           )}
           <PopoverContent className="w-48 p-4 shadow-xl border-gray-100">
             <div className="space-y-5">
-              {/* Font Size Section */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Font Size</label>
@@ -337,11 +274,14 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
                   min={8}
                   max={72}
                   step={1}
-                  onValueChange={([val]) => onUpdate({ fontSize: val })}
+                  onValueChange={([val]) => {
+                    const nextSize = calculateAutoFitTextBoxSize(field.text, val, fontFamily, scale, field.x, field.y);
+                    if (!nextSize) return;
+                    onUpdate({ fontSize: val, width: nextSize.width, height: nextSize.height });
+                  }}
                 />
               </div>
 
-              {/* Color Picker Section */}
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Text Color</label>
                 <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg border border-gray-100">
@@ -379,18 +319,20 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
           pointerEvents: 'none',
         }}
       >
-        {field.text.split('\n').map((line, lineIdx) => (
-          <div key={lineIdx} className="whitespace-pre">
-            <span style={{ opacity: isFocused ? 0 : 1 }}>{line}</span>
-            {line.length === 0 && <br />}
-          </div>
-        ))}
+        <div className="whitespace-pre-wrap break-words" style={{ opacity: isFocused ? 0 : 1 }}>
+          {field.text || '\u00a0'}
+        </div>
       </div>
 
       <textarea
         className="absolute inset-0 w-full h-full bg-transparent border-none outline-none resize-none p-1 leading-tight overflow-hidden"
         value={field.text}
-        onChange={(e) => onUpdate({ text: e.target.value })}
+        onChange={(e) => {
+          const nextText = e.target.value;
+          const nextSize = calculateAutoFitTextBoxSize(nextText, field.fontSize, fontFamily, scale, field.x, field.y);
+          if (!nextSize) return;
+          onUpdate({ text: nextText, width: nextSize.width, height: nextSize.height });
+        }}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.stopPropagation();
@@ -404,12 +346,13 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
         onBlur={() => setIsFocused(false)}
         spellCheck={false}
         style={{
-           fontSize: field.fontSize * scale,
-           color: isFocused ? field.color : 'transparent',
-           caretColor: field.color,
-           minHeight: 'inherit',
+          fontSize: field.fontSize * scale,
+          color: isFocused ? field.color : 'transparent',
+          caretColor: field.color,
+          minHeight: 'inherit',
+          whiteSpace: 'pre-wrap',
+          overflowWrap: 'break-word',
         }}
-        /* Keep placeholder empty to only show a blinking caret when the user clicks/focuses an empty text box */
         placeholder=""
       />
     </div>
