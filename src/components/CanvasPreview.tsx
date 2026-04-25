@@ -40,6 +40,8 @@ export interface CanvasPreviewProps {
   onMouseUp?: () => void;
   /** Expose the canvas element ref */
   canvasRef?: React.RefObject<HTMLCanvasElement | null>;
+  /** Whether to draw body text on the canvas. DOM body editing disables this. */
+  renderBodyText?: boolean;
 }
 
 function getPageCoordsFromCanvas(
@@ -54,12 +56,8 @@ function getPageCoordsFromCanvas(
 }
 
 /**
- * CanvasPreview renders a single page using the UnifiedPagePainter onto a Canvas element.
- * This replaces the DOM-based preview (thousands of span elements) with a single canvas,
- * dramatically reducing DOM node count and improving performance.
- *
- * It also draws cursor and selection overlays, and provides coordinate-to-character
- * mapping for mouse interaction.
+ * CanvasPreview renders the non-editable page backing layer.
+ * Body text is rendered by BodyTextEditor so native browser selection remains available.
  */
 export default function CanvasPreview({
   lines,
@@ -82,6 +80,7 @@ export default function CanvasPreview({
   onCharMouseMove,
   onMouseUp,
   canvasRef: externalRef,
+  renderBodyText = true,
 }: CanvasPreviewProps) {
   const internalRef = useRef<HTMLCanvasElement | null>(null);
   const canvasRef = externalRef ?? internalRef;
@@ -138,6 +137,7 @@ export default function CanvasPreview({
       scaleFactor: previewScale,
       fontFamily,
       renderTextFields: false,
+      renderBodyText,
     });
 
     // Compute character positions for interaction
@@ -183,7 +183,7 @@ export default function CanvasPreview({
   }, [
     lines, pageSettings, settings, pageIndex, previewScale,
     fontFamily, cursorPosition, selectionStart, selectionEnd,
-    pageStartOffset, isFocused, cursorVisible, canvasRef, backgroundImageRevision,
+    pageStartOffset, isFocused, cursorVisible, canvasRef, backgroundImageRevision, renderBodyText,
   ]);
 
   // Load background image when it changes

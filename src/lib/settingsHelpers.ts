@@ -1,5 +1,5 @@
 import { LineDetectionResult } from './lineDetection';
-import { PageSettings, HandwritingSettings } from './types';
+import { DEFAULT_SETTINGS, PageSettings, HandwritingSettings } from './types';
 
 export function validateFontFile(file: File): { format: 'truetype' | 'opentype' | null; error: string | null } {
   const lowerName = file.name.toLowerCase();
@@ -71,3 +71,92 @@ export function applyPageSettingsToAll(
   }));
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isCustomFont = (value: unknown): value is HandwritingSettings['customFont'] => {
+  if (value === null) return true;
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.name === 'string' &&
+    typeof value.family === 'string' &&
+    typeof value.dataUrl === 'string' &&
+    (value.format === 'truetype' || value.format === 'opentype')
+  );
+};
+
+const isPaperStyle = (value: unknown): value is HandwritingSettings['paperStyle'] =>
+  value === 'blank' || value === 'lined' || value === 'ruled' || value === 'grid';
+
+const isTextFields = (value: unknown): value is NonNullable<HandwritingSettings['textFields']> =>
+  Array.isArray(value) &&
+  value.every(
+    (field) =>
+      isRecord(field) &&
+      typeof field.id === 'string' &&
+      typeof field.text === 'string' &&
+      typeof field.x === 'number' &&
+      typeof field.y === 'number' &&
+      typeof field.width === 'number' &&
+      typeof field.height === 'number' &&
+      typeof field.color === 'string' &&
+      typeof field.fontSize === 'number'
+  );
+
+export function normalizeHandwritingSettings(persistedUnknown: unknown): HandwritingSettings {
+  const next: HandwritingSettings = { ...DEFAULT_SETTINGS };
+  if (!isRecord(persistedUnknown)) return next;
+
+  const stringKeys = [
+    'fontFamily',
+    'inkColor',
+    'paperColor',
+    'lineColor',
+    'customBackgroundImage',
+  ] as const;
+  for (const key of stringKeys) {
+    const value = persistedUnknown[key];
+    if (typeof value === 'string' || value === null) {
+      next[key] = value as never;
+    }
+  }
+
+  const numberKeys = [
+    'fontSize',
+    'lineHeight',
+    'lineTilt',
+    'marginTop',
+    'marginBottom',
+    'marginLeft',
+    'marginRight',
+    'ruledMarginLineOffset',
+    'customLineOffset',
+    'customLineSpacing',
+  ] as const;
+  for (const key of numberKeys) {
+    const value = persistedUnknown[key];
+    if (typeof value === 'number' || value === null) {
+      next[key] = value as never;
+    }
+  }
+
+  if (isCustomFont(persistedUnknown.customFont)) {
+    next.customFont = persistedUnknown.customFont;
+  }
+
+  if (Array.isArray(persistedUnknown.customBackgroundImages)) {
+    next.customBackgroundImages = persistedUnknown.customBackgroundImages.filter(
+      (item): item is string => typeof item === 'string'
+    );
+  }
+
+  if (isPaperStyle(persistedUnknown.paperStyle)) {
+    next.paperStyle = persistedUnknown.paperStyle;
+  }
+
+  if (isTextFields(persistedUnknown.textFields)) {
+    next.textFields = persistedUnknown.textFields.map((field) => ({ ...field }));
+  }
+
+  return next;
+}

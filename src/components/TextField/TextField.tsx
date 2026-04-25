@@ -2,10 +2,9 @@
 
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { Move, X, Settings } from 'lucide-react';
-import { TextField as TextFieldType, HandwritingSettings } from '@/lib/types';
+import { TextField as TextFieldType } from '@/lib/types';
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
-import { calculateRandomStyle } from '@/lib/editorHelpers';
 import { createMeasure } from '@/lib/pagination';
 import { cn } from '@/lib/utils';
 
@@ -15,7 +14,6 @@ interface TextFieldProps {
   onDelete: () => void;
   scale: number;
   fontFamily: string;
-  randomness: HandwritingSettings['randomness'];
   onTypingFocus?: () => void;
 }
 
@@ -33,7 +31,7 @@ function calculateMinimumTextBoxSize(text: string, fontSize: number, fontFamily:
   };
 }
 
-export default function TextField({ field, onUpdate, onDelete, scale, fontFamily, randomness, onTypingFocus }: TextFieldProps) {
+export default function TextField({ field, onUpdate, onDelete, scale, fontFamily, onTypingFocus }: TextFieldProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [resizeDir, setResizeDir] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
@@ -383,21 +381,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
       >
         {field.text.split('\n').map((line, lineIdx) => (
           <div key={lineIdx} className="whitespace-pre">
-            {line.split('').map((char, charIdx) => {
-              const randomStyle = calculateRandomStyle(charIdx, lineIdx + 1000, randomness);
-              return (
-                <span
-                  key={charIdx}
-                  className="inline-block"
-                  style={{
-                    ...randomStyle.style,
-                    opacity: isFocused ? 0 : 1,
-                  }}
-                >
-                  {char}
-                </span>
-              );
-            })}
+            <span style={{ opacity: isFocused ? 0 : 1 }}>{line}</span>
             {line.length === 0 && <br />}
           </div>
         ))}

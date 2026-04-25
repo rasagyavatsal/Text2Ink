@@ -51,12 +51,6 @@ export interface HandwritingSettings {
   customBackgroundImages: string[];
   customLineOffset: number;
   customLineSpacing: number | null;
-  randomness: {
-    enabled: boolean;
-    spacing: number;
-    baseline: number;
-    rotation: number;
-  };
   textFields?: TextField[];
 }
 
@@ -98,12 +92,6 @@ export const DEFAULT_SETTINGS: HandwritingSettings = {
   customBackgroundImages: [],
   customLineOffset: 0,
   customLineSpacing: null,
-  randomness: {
-    enabled: true,
-    spacing: 2,
-    baseline: 1,
-    rotation: 0.5,
-  },
   textFields: [],
 };
 

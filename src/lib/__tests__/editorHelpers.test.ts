@@ -1,49 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { 
-  seededRandom, 
-  calculateRandomStyle, 
   calculatePageStartOffsets, 
   calculateLineStarts,
 } from '../editorHelpers';
 
 describe('editorHelpers', () => {
-  describe('seededRandom', () => {
-    it('returns consistent values for same seed', () => {
-      expect(seededRandom(1)).toBe(seededRandom(1));
-      expect(seededRandom(2)).not.toBe(seededRandom(1));
-    });
-
-    it('returns values between 0 and 1', () => {
-      for (let i = 0; i < 100; i++) {
-        const val = seededRandom(i);
-        expect(val).toBeGreaterThanOrEqual(0);
-        expect(val).toBeLessThan(1);
-      }
-    });
-  });
-
-  describe('calculateRandomStyle', () => {
-    const randomness = {
-      enabled: true,
-      spacing: 2,
-      baseline: 1,
-      rotation: 0.5,
-    };
-
-    it('returns none when disabled', () => {
-      const result = calculateRandomStyle(0, 0, { ...randomness, enabled: false });
-      expect(result.style.transform).toBe('none');
-      expect(result.style.marginLeft).toBe('0px');
-    });
-
-    it('returns variation when enabled', () => {
-      const result = calculateRandomStyle(0, 0, randomness);
-      expect(result.style.transform).toContain('translateY');
-      expect(result.style.transform).toContain('rotate');
-      expect(result.style.marginLeft).not.toBe('0px');
-    });
-  });
-
   describe('page offsets', () => {
     const pages = [
       [

@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/select';
 import { Download, FileImage, FileText, Loader2 } from 'lucide-react';
 import { HandwritingSettings, PageSettings, LineData } from '@/lib/types';
-import { renderPageToCanvas } from '@/lib/canvasRenderer';
+import { DOM_EXPORT_SCALE, pageTextFromLines, renderDomPageToCanvas } from '@/lib/domExport';
 import FeedbackDialog from './FeedbackDialog';
 
 interface ExportPanelProps {
@@ -137,15 +137,10 @@ export default function ExportPanel({
       console.warn('Failed to verify font loading for export:', e);
     }
 
-    const canvas = document.createElement('canvas');
-
     let success = false;
     try {
       const progressTotal = format === 'pdf' ? exportTotal + 1 : exportTotal;
       setExportProgress({ current: 0, total: progressTotal });
-
-      // 300 DPI calculation (2550 / 612 = 4.166...)
-      const dpiScale = 4.1666666667;
 
       if (format === 'pdf') {
         const worker = new Worker(new URL('../workers/pdfWorker.ts', import.meta.url), {
@@ -184,14 +179,13 @@ export default function ExportPanel({
           const pageLines = currentPages[i] || [];
           const pageSettings = pageSettingsByPage[i] || pageSettingsByPage[0];
 
-          await renderPageToCanvas({
-            canvas,
+          const canvas = await renderDomPageToCanvas({
             pageIndex: i,
-            lines: pageLines,
+            pageText: pageTextFromLines(pageLines),
             pageSettings,
             settings,
-            scale: dpiScale,
             fontFamily: resolvedFontFamily,
+            scale: DOM_EXPORT_SCALE,
           });
 
           // Optimization: Use toBlob instead of toDataURL to avoid Base64 overhead
@@ -245,14 +239,13 @@ export default function ExportPanel({
           const pageLines = currentPages[i] || [];
           const pageSettings = pageSettingsByPage[i] || pageSettingsByPage[0];
 
-          await renderPageToCanvas({
-            canvas,
+          const canvas = await renderDomPageToCanvas({
             pageIndex: i,
-            lines: pageLines,
+            pageText: pageTextFromLines(pageLines),
             pageSettings,
             settings,
-            scale: dpiScale,
             fontFamily: resolvedFontFamily,
+            scale: DOM_EXPORT_SCALE,
           });
 
           const imgData = canvas.toDataURL(`image/${format === 'jpg' ? 'jpeg' : 'png'}`);

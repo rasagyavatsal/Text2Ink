@@ -15,7 +15,7 @@ import {
   LineData,
 } from '@/lib/types';
 import { loadEditorStateV1, saveEditorStateV1 } from '@/lib/editorPersistence';
-import { applyPageSettingsToAll } from '@/lib/settingsHelpers';
+import { applyPageSettingsToAll, normalizeHandwritingSettings } from '@/lib/settingsHelpers';
 import {
   clampMobileSheetHeight,
   clampPreviewScale as clampEditorPreviewScale,
@@ -55,14 +55,15 @@ const DEFAULT_INITIAL_STATE: EditorInitialState = {
 const getInitialEditorState = (): EditorInitialState => {
   const persisted = loadEditorStateV1<HandwritingSettings, PageSettings>();
   if (!persisted) return DEFAULT_INITIAL_STATE;
+  const settings = normalizeHandwritingSettings(persisted.settings);
 
   return {
     text: persisted.text,
-    settings: persisted.settings,
+    settings,
     pageSettingsByPage:
       persisted.pageSettingsByPage.length > 0
         ? persisted.pageSettingsByPage
-        : [defaultPageSettingsFromHandwritingSettings(persisted.settings)],
+        : [defaultPageSettingsFromHandwritingSettings(settings)],
     activePanel: persisted.ui.activePanel,
     sidebarOpen: persisted.ui.sidebarOpen,
     previewScale: persisted.ui.previewScale,

@@ -99,7 +99,6 @@ describe('TextField', () => {
   const mockOnDelete = vi.fn();
   const scale = 1;
   const fontFamily = 'caveat';
-  const randomness = { enabled: true, spacing: 2, baseline: 1, rotation: 0.5 };
 
   const dispatchPointerMove = (clientX: number, clientY: number) => {
     const event = new Event('pointermove') as PointerEvent;
@@ -124,10 +123,9 @@ describe('TextField', () => {
         onDelete={mockOnDelete}
         scale={scale}
         fontFamily={fontFamily}
-        randomness={randomness}
       />
     );
-    expect(screen.getByText('Hello World')).toBeDefined();
+    expect(screen.getAllByText('Hello World').length).toBeGreaterThan(0);
   });
 
   it('calls onUpdate when text is changed', () => {
@@ -138,7 +136,6 @@ describe('TextField', () => {
         onDelete={mockOnDelete}
         scale={scale}
         fontFamily={fontFamily}
-        randomness={randomness}
       />
     );
     const textarea = screen.getByPlaceholderText('');
@@ -160,7 +157,6 @@ describe('TextField', () => {
           onDelete={mockOnDelete}
           scale={scale}
           fontFamily={fontFamily}
-          randomness={randomness}
         />
       </div>
     );
@@ -182,7 +178,6 @@ describe('TextField', () => {
         onDelete={mockOnDelete}
         scale={scale}
         fontFamily={fontFamily}
-        randomness={randomness}
       />
     );
     
@@ -207,7 +202,6 @@ describe('TextField', () => {
         onDelete={mockOnDelete}
         scale={scale}
         fontFamily={fontFamily}
-        randomness={randomness}
       />
     );
     
@@ -233,7 +227,6 @@ describe('TextField', () => {
         onDelete={mockOnDelete}
         scale={scale}
         fontFamily={fontFamily}
-        randomness={randomness}
       />
     );
     const textarea = screen.getByPlaceholderText('');
@@ -248,7 +241,6 @@ describe('TextField', () => {
         onDelete={mockOnDelete}
         scale={scale}
         fontFamily={fontFamily}
-        randomness={randomness}
       />
     );
     
@@ -279,7 +271,6 @@ describe('TextField', () => {
         onDelete={mockOnDelete}
         scale={scale}
         fontFamily={fontFamily}
-        randomness={randomness}
       />
     );
     
@@ -309,7 +300,6 @@ describe('TextField', () => {
         onDelete={mockOnDelete}
         scale={scale}
         fontFamily={fontFamily}
-        randomness={randomness}
       />
     );
 
@@ -324,7 +314,6 @@ describe('TextField', () => {
         onDelete={mockOnDelete}
         scale={scale}
         fontFamily={fontFamily}
-        randomness={randomness}
       />
     );
 
@@ -343,7 +332,6 @@ describe('TextField', () => {
         onDelete={mockOnDelete}
         scale={scale}
         fontFamily={fontFamily}
-        randomness={randomness}
       />
     );
 
@@ -356,7 +344,6 @@ describe('TextField', () => {
         onDelete={mockOnDelete}
         scale={scale}
         fontFamily={fontFamily}
-        randomness={randomness}
       />
     );
 
@@ -376,7 +363,6 @@ describe('TextField', () => {
         onDelete={mockOnDelete}
         scale={scale}
         fontFamily={fontFamily}
-        randomness={randomness}
       />
     );
 
@@ -389,7 +375,6 @@ describe('TextField', () => {
         onDelete={mockOnDelete}
         scale={scale}
         fontFamily={fontFamily}
-        randomness={randomness}
       />
     );
 
@@ -420,7 +405,6 @@ describe('TextField', () => {
         onDelete={mockOnDelete}
         scale={scale}
         fontFamily={fontFamily}
-        randomness={randomness}
       />
     );
 
@@ -436,7 +420,6 @@ describe('TextField', () => {
         onDelete={mockOnDelete}
         scale={scale}
         fontFamily={fontFamily}
-        randomness={randomness}
       />
     );
 
@@ -453,7 +436,6 @@ describe('TextField', () => {
         onDelete={mockOnDelete}
         scale={scale}
         fontFamily={fontFamily}
-        randomness={randomness}
         onTypingFocus={onTypingFocus}
       />
     );

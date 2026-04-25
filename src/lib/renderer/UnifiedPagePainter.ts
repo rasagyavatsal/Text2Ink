@@ -1,5 +1,5 @@
 import { HandwritingSettings, PageSettings, TextField } from '../types';
-import { LineData, calculateRandomStyle } from '../editorHelpers';
+import { LineData } from '../editorHelpers';
 import { PAGE_WIDTH, PAGE_HEIGHT } from '../pageConstants';
 
 export interface PaintPageOptions {
@@ -11,6 +11,7 @@ export interface PaintPageOptions {
   scaleFactor: number;
   fontFamily: string;
   renderTextFields?: boolean;
+  renderBodyText?: boolean;
 }
 
 type CharacterPositionLines = Array<Pick<LineData, 'text' | 'lineIndex' | 'hasNewline'>>;
@@ -22,8 +23,6 @@ function buildCharacterPositionsForLines(opts: {
   startY: number;
   verticalCenteringOffset: number;
   pageLineHeightPx: number;
-  pageSettings: PageSettings;
-  settings: HandwritingSettings;
   fontAscent: number;
   fontDescent: number;
   ensureCaretAnchor?: boolean;
@@ -35,8 +34,6 @@ function buildCharacterPositionsForLines(opts: {
     startY,
     verticalCenteringOffset,
     pageLineHeightPx,
-    pageSettings,
-    settings,
     fontAscent,
     fontDescent,
     ensureCaretAnchor = false,
@@ -57,15 +54,8 @@ function buildCharacterPositionsForLines(opts: {
 
     for (let charIdx = 0; charIdx < lineText.length; charIdx++) {
       const char = lineText[charIdx];
-      const randomData = calculateRandomStyle(charIdx, lineIndex, settings.randomness);
-      const spacingGap = randomData.spacing;
-      currentX += spacingGap;
-
       const metrics = ctx.measureText(char);
       const charWidth = metrics.width;
-
-      const actualBoundingBoxAscent = metrics.actualBoundingBoxAscent ?? fontAscent;
-      const actualBoundingBoxDescent = metrics.actualBoundingBoxDescent ?? fontDescent;
 
       let selectionY: number;
       let selectionHeight: number;
@@ -78,7 +68,7 @@ function buildCharacterPositionsForLines(opts: {
         cursorY = prevCursorY;
         cursorHeight = prevCursorHeight;
       } else {
-        cursorY = currentLineY + verticalCenteringOffset - fontAscent + randomData.baseline;
+        cursorY = currentLineY + verticalCenteringOffset - fontAscent;
         cursorHeight = fontAscent + fontDescent;
         selectionY = cursorY;
         selectionHeight = cursorHeight;
@@ -151,13 +141,12 @@ function buildCharacterPositionsForLines(opts: {
 }
 
 /**
- * UnifiedPagePainter - A single rendering engine used for both preview and export.
- * Accepts a CanvasRenderingContext2D and draws background, paper lines, text, and text fields.
- * Resolution-independent: uses a scaleFactor so the same code renders at any DPI.
+ * Canvas support for the interactive preview layer.
+ * Export no longer uses this painter; DOM export captures the rendered page tree.
  */
 export const UnifiedPagePainter = {
   paintPage(opts: PaintPageOptions): void {
-    const { ctx, pageIndex, lines, pageSettings, settings, fontFamily, renderTextFields = true } = opts;
+    const { ctx, pageIndex, lines, pageSettings, settings, fontFamily, renderTextFields = true, renderBodyText = true } = opts;
 
     // 1. Draw background
     const customBg = settings.customBackgroundImages?.[pageIndex] ?? settings.customBackgroundImage;
@@ -201,16 +190,18 @@ export const UnifiedPagePainter = {
       ctx.rotate((tilt * Math.PI) / 180);
     }
 
-    let currentLineY = pageSettings.marginTop + pageLineOffset;
-    for (let i = 0; i < lines.length; i++) {
-      this._drawTextLine(ctx, lines[i].text, lines[i].lineIndex, ruledTextLeft, currentLineY, verticalCenteringOffset, pageSettings, settings);
-      currentLineY += pageLineHeightPx;
+    if (renderBodyText) {
+      let currentLineY = pageSettings.marginTop + pageLineOffset;
+      for (let i = 0; i < lines.length; i++) {
+        this._drawTextLine(ctx, lines[i].text, ruledTextLeft, currentLineY, verticalCenteringOffset);
+        currentLineY += pageLineHeightPx;
+      }
     }
     ctx.restore();
 
     // 4. Draw text fields
     if (renderTextFields && pageSettings.textFields && pageSettings.textFields.length > 0) {
-      this._drawTextFields(ctx, pageSettings.textFields, fontFamily, settings.randomness);
+      this._drawTextFields(ctx, pageSettings.textFields, fontFamily);
     }
   },
 
@@ -218,12 +209,11 @@ export const UnifiedPagePainter = {
     ctx: CanvasRenderingContext2D,
     textFields: TextField[],
     fontFamily: string,
-    randomness: HandwritingSettings['randomness'],
   ): void {
     ctx.save();
     ctx.textBaseline = 'alphabetic'; // Changed to match main text rendering
     
-    textFields.forEach((field, fieldIdx) => {
+    textFields.forEach((field) => {
       ctx.fillStyle = field.color;
       ctx.font = `${field.fontSize}px ${fontFamily}`;
       
@@ -239,31 +229,7 @@ export const UnifiedPagePainter = {
 
       lines.forEach((lineText, lineInFieldIdx) => {
         const lineY = field.y + (lineInFieldIdx * lineHeight) + fontAscent;
-        let currentX = field.x;
-        
-        // Use a unique line index for each line in each field to avoid repeating patterns
-        const lineIndexForSeed = (fieldIdx + 1) * 1000 + lineInFieldIdx;
-
-        for (let charIdx = 0; charIdx < lineText.length; charIdx++) {
-          const char = lineText[charIdx];
-          const randomData = calculateRandomStyle(charIdx, lineIndexForSeed, randomness);
-
-          currentX += randomData.spacing;
-
-          if (char !== ' ') {
-            ctx.save();
-            ctx.translate(currentX, lineY + randomData.baseline);
-
-            if (randomData.rotation !== 0) {
-              ctx.rotate((randomData.rotation * Math.PI) / 180);
-            }
-
-            ctx.fillText(char, 0, 0);
-            ctx.restore();
-          }
-
-          currentX += ctx.measureText(char).width;
-        }
+        ctx.fillText(lineText, field.x, lineY);
       });
     });
     ctx.restore();
@@ -272,31 +238,17 @@ export const UnifiedPagePainter = {
   _drawTextLine(
     ctx: CanvasRenderingContext2D,
     lineText: string,
-    lineIndex: number,
     startX: number,
     startY: number,
     verticalCenteringOffset: number,
-    pageSettings: PageSettings,
-    settings: HandwritingSettings,
   ): void {
     let currentX = startX;
 
     for (let charIdx = 0; charIdx < lineText.length; charIdx++) {
       const char = lineText[charIdx];
-      const randomData = calculateRandomStyle(charIdx, lineIndex, settings.randomness);
-
-      currentX += randomData.spacing;
 
       if (char !== ' ') {
-        ctx.save();
-        ctx.translate(currentX, startY + verticalCenteringOffset + randomData.baseline);
-
-        if (randomData.rotation !== 0) {
-          ctx.rotate((randomData.rotation * Math.PI) / 180);
-        }
-
-        ctx.fillText(char, 0, 0);
-        ctx.restore();
+        ctx.fillText(char, currentX, startY + verticalCenteringOffset);
       }
 
       currentX += ctx.measureText(char).width;
@@ -413,8 +365,6 @@ export const UnifiedPagePainter = {
       startY: pageSettings.marginTop + pageLineOffset,
       verticalCenteringOffset,
       pageLineHeightPx,
-      pageSettings,
-      settings,
       fontAscent,
       fontDescent,
       // Ensure we have at least one position (anchor) even if the page is empty 
