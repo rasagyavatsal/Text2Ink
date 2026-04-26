@@ -42,6 +42,12 @@ export type ResolvedPageLayout = {
   format: PageFormat;
   orientation: PageOrientation;
   writingBox: WritingBox;
+  visualRuleBox: WritingBox;
+  accentLine: {
+    x: number;
+    y1: number;
+    y2: number;
+  } | null;
   lineSpacing: number;
   baselineOffset: number;
   backgroundMode: 'template' | 'custom-image';
@@ -74,17 +80,17 @@ export const PAGE_FORMATS: PageFormat[] = [
 ];
 
 export const PAPER_TEMPLATES: PaperTemplate[] = [
-  template('ruled', 'Ruled', 'ruled', '#fffefa', '#9ec7e9', undefined, 60, 60, 60, 60, 43.2, 0),
-  template('narrow-ruled', 'Narrow Ruled', 'ruled', '#fffefa', '#a8d4f0', undefined, 54, 58, 58, 58, 34, 0),
-  template('margin-ruled', 'Margin Ruled', 'ruled', '#fffefa', '#9ec7e9', '#ffb3b3', 60, 60, 60, 74, 43.2, 0),
-  template('legal-pad', 'Legal Pad', 'ruled', '#fff7bf', '#c7d7ec', '#ee9a9a', 62, 56, 58, 78, 42, 0),
+  template('ruled', 'Ruled', 'ruled', '#fffefa', '#9ec7e9', undefined, 60, 60, 60, 60, 29.1, 0),
+  template('narrow-ruled', 'Narrow Ruled', 'ruled', '#fffefa', '#a8d4f0', undefined, 54, 58, 58, 58, 25.5, 0),
+  template('margin-ruled', 'Margin Ruled', 'ruled', '#fffefa', '#9ec7e9', '#ffb3b3', 60, 60, 60, 97, 29.1, 0),
+  template('legal-pad', 'Legal Pad', 'ruled', '#fff7bf', '#c7d7ec', '#ee9a9a', 62, 56, 58, 97, 29.1, 0),
   template('graph', 'Graph', 'graph', '#fbfffb', '#b9d4e8', undefined, 48, 48, 48, 48, 24, 0),
   template('dot-grid', 'Dot Grid', 'dot-grid', '#fffefa', '#9aa7b0', undefined, 48, 48, 48, 48, 28, 0),
   template('blank', 'Blank', 'blank', '#fffefa', undefined, undefined, 60, 60, 60, 60, 43.2, 0),
   template('aged-blank', 'Aged Blank', 'blank', '#f4ead5', undefined, undefined, 62, 62, 62, 62, 43.2, 0),
   template('recycled', 'Recycled', 'blank', '#eef0df', undefined, undefined, 64, 64, 64, 64, 43.2, 0),
-  template('blue-notebook', 'Blue Notebook', 'ruled', '#edf7ff', '#82b9dc', '#d8a0a0', 60, 58, 58, 76, 42, 0),
-  template('torn-ruled', 'Torn Edge', 'ruled', '#fffdf4', '#a9cce8', undefined, 62, 64, 60, 72, 43.2, 0),
+  template('blue-notebook', 'Blue Notebook', 'ruled', '#edf7ff', '#82b9dc', '#d8a0a0', 60, 58, 58, 97, 29.1, 0),
+  template('torn-ruled', 'Torn Edge', 'ruled', '#fffdf4', '#a9cce8', undefined, 62, 64, 60, 72, 29.1, 0),
   template('soft-grid', 'Soft Grid', 'graph', '#fffefa', '#d2dfeb', undefined, 48, 48, 48, 48, 32, 0),
 ];
 
@@ -158,6 +164,32 @@ function scaleTemplateBox(box: WritingBox, width: number, height: number): Writi
   };
 }
 
+function scalePoint(value: number, scale: number): number {
+  return Math.round(value * scale * 100) / 100;
+}
+
+function visualRuleBoxForTemplate(template: PaperTemplate, width: number, height: number): WritingBox {
+  const writingBox = scaleTemplateBox(template.metrics.writingBox, width, height);
+  if (template.kind === 'ruled') {
+    return {
+      x: 0,
+      y: writingBox.y,
+      width,
+      height: writingBox.height,
+    };
+  }
+  return writingBox;
+}
+
+function accentLineForTemplate(template: PaperTemplate, width: number, height: number) {
+  if (!template.accentColor || template.kind !== 'ruled') return null;
+  return {
+    x: scalePoint(79, width / BASE_WIDTH),
+    y1: 0,
+    y2: height,
+  };
+}
+
 function customBackgroundForPage(settings: HandwritingSettings, pageIndex: number) {
   return settings.customBackgroundImages?.[pageIndex] ?? settings.customBackgroundImage ?? null;
 }
@@ -191,6 +223,13 @@ export function resolvePageLayout(opts: {
         width: Math.max(1, width - pageSettings.marginLeft - pageSettings.marginRight),
         height: Math.max(1, height - pageSettings.marginTop - pageSettings.marginBottom),
       },
+      visualRuleBox: {
+        x: pageSettings.marginLeft,
+        y: pageSettings.marginTop + (pageSettings.customLineOffset ?? 0),
+        width: Math.max(1, width - pageSettings.marginLeft - pageSettings.marginRight),
+        height: Math.max(1, height - pageSettings.marginTop - pageSettings.marginBottom),
+      },
+      accentLine: null,
       lineSpacing: pageSettings.customLineSpacing ?? pageSettings.fontSize * settings.lineHeight,
       baselineOffset: pageSettings.customLineOffset ?? 0,
       backgroundMode: 'custom-image',
@@ -210,14 +249,17 @@ export function resolvePageLayout(opts: {
   }
 
   const scaleY = height / BASE_HEIGHT;
+  const writingBox = scaleTemplateBox(paperTemplate.metrics.writingBox, width, height);
   return {
     width,
     height,
     format,
     orientation,
-    writingBox: scaleTemplateBox(paperTemplate.metrics.writingBox, width, height),
-    lineSpacing: Math.round(paperTemplate.metrics.lineSpacing * scaleY * 100) / 100,
-    baselineOffset: Math.round(paperTemplate.metrics.baselineOffset * scaleY * 100) / 100,
+    writingBox,
+    visualRuleBox: visualRuleBoxForTemplate(paperTemplate, width, height),
+    accentLine: accentLineForTemplate(paperTemplate, width, height),
+    lineSpacing: scalePoint(paperTemplate.metrics.lineSpacing, scaleY),
+    baselineOffset: scalePoint(paperTemplate.metrics.baselineOffset, scaleY),
     backgroundMode: 'template',
     customBackgroundImage: null,
     paperTemplate,

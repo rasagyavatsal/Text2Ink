@@ -62,6 +62,113 @@ describe('page layout', () => {
     });
   });
 
+  it('resolves notebook geometry separately from the handwriting box for accent ruled templates', () => {
+    const layout = resolvePageLayout({
+      settings: { ...DEFAULT_SETTINGS, paperTemplateId: 'margin-ruled', paperStyle: 'ruled' },
+      pageSettings,
+      pageIndex: 0,
+    });
+
+    expect(layout.lineSpacing).toBe(29.1);
+    expect(layout.writingBox.x).toBe(97);
+    expect(layout.visualRuleBox).toEqual({
+      x: 0,
+      y: 60,
+      width: 612,
+      height: 672,
+    });
+    expect(layout.accentLine).toEqual({
+      x: 79,
+      y1: 0,
+      y2: 792,
+    });
+  });
+
+  it('keeps narrow ruled denser than regular ruled while preserving plain ruled without an accent line', () => {
+    const ruled = resolvePageLayout({
+      settings: { ...DEFAULT_SETTINGS, paperTemplateId: 'ruled', paperStyle: 'lined' },
+      pageSettings,
+      pageIndex: 0,
+    });
+    const narrow = resolvePageLayout({
+      settings: { ...DEFAULT_SETTINGS, paperTemplateId: 'narrow-ruled', paperStyle: 'lined' },
+      pageSettings,
+      pageIndex: 0,
+    });
+
+    expect(ruled.lineSpacing).toBe(29.1);
+    expect(ruled.accentLine).toBeNull();
+    expect(narrow.lineSpacing).toBe(25.5);
+    expect(narrow.lineSpacing).toBeLessThan(ruled.lineSpacing);
+  });
+
+  it('scales calibrated notebook geometry with page format and orientation', () => {
+    const layout = resolvePageLayout({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        pageFormatId: 'a4',
+        pageOrientation: 'landscape',
+        paperTemplateId: 'blue-notebook',
+        paperStyle: 'ruled',
+      },
+      pageSettings,
+      pageIndex: 0,
+    });
+
+    expect(layout.width).toBe(841.89);
+    expect(layout.height).toBe(595.28);
+    expect(layout.lineSpacing).toBe(21.87);
+    expect(layout.writingBox.x).toBe(133.44);
+    expect(layout.accentLine).toEqual({ x: 108.68, y1: 0, y2: 595.28 });
+    expect(layout.visualRuleBox).toMatchObject({ x: 0, width: 841.89 });
+  });
+
+  it('leaves graph, dot grid, blank, and custom background geometry behavior unchanged', () => {
+    const graph = resolvePageLayout({
+      settings: { ...DEFAULT_SETTINGS, paperTemplateId: 'graph', paperStyle: 'grid' },
+      pageSettings,
+      pageIndex: 0,
+    });
+    const dotGrid = resolvePageLayout({
+      settings: { ...DEFAULT_SETTINGS, paperTemplateId: 'dot-grid', paperStyle: 'grid' },
+      pageSettings,
+      pageIndex: 0,
+    });
+    const blank = resolvePageLayout({
+      settings: { ...DEFAULT_SETTINGS, paperTemplateId: 'blank', paperStyle: 'blank' },
+      pageSettings,
+      pageIndex: 0,
+    });
+    const custom = resolvePageLayout({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        paperTemplateId: 'margin-ruled',
+        customBackgroundImages: ['data:image/png;base64,one'],
+      },
+      pageSettings: {
+        ...pageSettings,
+        marginTop: 42,
+        marginRight: 43,
+        marginBottom: 44,
+        marginLeft: 45,
+        customLineOffset: 7,
+        customLineSpacing: 33,
+      },
+      pageIndex: 0,
+    });
+
+    expect(graph.lineSpacing).toBe(24);
+    expect(graph.visualRuleBox).toEqual(graph.writingBox);
+    expect(dotGrid.lineSpacing).toBe(28);
+    expect(dotGrid.visualRuleBox).toEqual(dotGrid.writingBox);
+    expect(blank.paperTemplate?.kind).toBe('blank');
+    expect(blank.visualRuleBox).toEqual(blank.writingBox);
+    expect(custom.backgroundMode).toBe('custom-image');
+    expect(custom.visualRuleBox).toEqual(custom.writingBox);
+    expect(custom.accentLine).toBeNull();
+    expect(custom.lineSpacing).toBe(33);
+  });
+
   it('lets custom backgrounds override templates while preserving persisted margins and custom spacing', () => {
     const layout = resolvePageLayout({
       settings: {

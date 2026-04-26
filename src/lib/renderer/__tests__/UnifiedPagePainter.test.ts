@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { UnifiedPagePainter, PaintPageOptions } from '../UnifiedPagePainter';
-import { HandwritingSettings, PageSettings, DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '../../types';
+import { HandwritingSettings, DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '../../types';
 
 function createMockCtx() {
   return {
@@ -121,8 +121,6 @@ describe('UnifiedPagePainter', () => {
 
       UnifiedPagePainter.paintPage(opts);
 
-      // Ruled style sets strokeStyle to '#ffb3b3' for the margin line
-      const strokeStyleSets = (ctx as any).__proto__; // can't easily track property sets, but we check moveTo calls
       // The margin line is drawn vertically
       const moveToCalls = (ctx.moveTo as ReturnType<typeof vi.fn>).mock.calls;
       const lineToCalls = (ctx.lineTo as ReturnType<typeof vi.fn>).mock.calls;
@@ -132,6 +130,23 @@ describe('UnifiedPagePainter', () => {
         return lineToCall && call[0] === lineToCall[0]; // same x = vertical
       });
       expect(verticalLines.length).toBeGreaterThan(0);
+    });
+
+    it('draws accent ruled paper from resolved visual geometry', () => {
+      const ctx = createMockCtx();
+      const settings = { ...DEFAULT_SETTINGS, paperStyle: 'ruled' as const, paperTemplateId: 'margin-ruled' as const };
+      const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
+      const opts = defaultPaintOptions({ ctx, settings, pageSettings });
+
+      UnifiedPagePainter.paintPage(opts);
+
+      const moveToCalls = (ctx.moveTo as ReturnType<typeof vi.fn>).mock.calls;
+      const lineToCalls = (ctx.lineTo as ReturnType<typeof vi.fn>).mock.calls;
+
+      expect(moveToCalls[0]).toEqual([0, 60]);
+      expect(lineToCalls[0]).toEqual([612, 60]);
+      expect(moveToCalls).toContainEqual([79, 0]);
+      expect(lineToCalls).toContainEqual([79, 792]);
     });
   });
 
@@ -300,7 +315,7 @@ describe('UnifiedPagePainter', () => {
       expect(positions.mainPositions[0]).toMatchObject({ width: 10, lineIndex: 0, charIndex: 0 });
       expect(positions.mainPositions[1]).toMatchObject({ width: 0, lineIndex: 0, charIndex: 1 });
       expect(positions.mainPositions[2]).toMatchObject({ x: pageSettings.marginLeft, lineIndex: 1, charIndex: 0 });
-       expect(positions.mainPositions[2]!.y).toBe(pageSettings.marginTop + (pageSettings.fontSize * settings.lineHeight));
+      expect(positions.mainPositions[2]!.y).toBe(89.1);
     });
 
     it('returns a single anchor position for empty lines to support cursor rendering', () => {
@@ -443,9 +458,9 @@ describe('UnifiedPagePainter', () => {
 
        const [x, y, width, height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0];
        expect(x).toBe(pageSettings.marginLeft);
-       // halfLeading = (43.2 - 24) / 2 = 9.6
-       // selectionY = marginTop + halfLeading = marginTop + 9.6
-       expect(y).toBeCloseTo(pageSettings.marginTop + 9.6, 1);
+       // halfLeading = (29.1 - 24) / 2 = 2.55
+       // selectionY = marginTop + halfLeading = marginTop + 2.55
+       expect(y).toBeCloseTo(pageSettings.marginTop + 2.55, 1);
        expect(width).toBe(10);
        // selectionHeight = fontAscent + fontDescent = 20 + 5 = 25
        expect(height).toBeCloseTo(25, 1);
@@ -512,7 +527,7 @@ describe('UnifiedPagePainter', () => {
 
        UnifiedPagePainter.paintSelectionOverlay(ctx, positions.mainPositions, 0, 1, '#1a365d');
 
-       const [x, y, width, height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0];
+       const [, y, , height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0];
        // halfLeading = (24 - 24) / 2 = 0
        // selectionY = marginTop + 0 = marginTop
        expect(y).toBeCloseTo(pageSettings.marginTop, 1);
