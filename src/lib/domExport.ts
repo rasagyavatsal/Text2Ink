@@ -72,19 +72,20 @@ function appendPaperLayer(page: HTMLElement, layout: ResolvedPageLayout) {
     svg.appendChild(line);
   };
 
-  const contentWidth = layout.writingBox.width;
-  const contentHeight = layout.writingBox.height;
+  const visualRuleBox = layout.visualRuleBox;
+  const contentWidth = visualRuleBox.width;
+  const contentHeight = visualRuleBox.height;
   const lineHeight = layout.lineSpacing;
   const linesPerPage = Math.max(1, Math.floor(contentHeight / lineHeight));
 
   if (template.kind === 'ruled' || template.kind === 'graph') {
     for (let i = 0; i <= linesPerPage; i++) {
-      const y = layout.writingBox.y + i * lineHeight;
-      if (y > layout.writingBox.y + layout.writingBox.height + lineHeight) continue;
+      const y = visualRuleBox.y + i * lineHeight;
+      if (y > visualRuleBox.y + visualRuleBox.height + lineHeight) continue;
       addSvgLine({
-        x1: layout.writingBox.x,
+        x1: visualRuleBox.x,
         y1: y,
-        x2: layout.writingBox.x + contentWidth,
+        x2: visualRuleBox.x + contentWidth,
         y2: y,
         opacity: template.kind === 'graph' ? 0.5 : 1,
       });
@@ -94,20 +95,20 @@ function appendPaperLayer(page: HTMLElement, layout: ResolvedPageLayout) {
   if (template.kind === 'graph') {
     const cols = Math.floor(contentWidth / lineHeight);
     for (let i = 0; i <= cols; i++) {
-      const x = layout.writingBox.x + i * lineHeight;
+      const x = visualRuleBox.x + i * lineHeight;
       addSvgLine({
         x1: x,
-        y1: layout.writingBox.y,
+        y1: visualRuleBox.y,
         x2: x,
-        y2: layout.writingBox.y + contentHeight,
+        y2: visualRuleBox.y + contentHeight,
         opacity: 0.5,
       });
     }
   }
 
   if (template.kind === 'dot-grid') {
-    for (let y = layout.writingBox.y; y <= layout.writingBox.y + contentHeight; y += lineHeight) {
-      for (let x = layout.writingBox.x; x <= layout.writingBox.x + contentWidth; x += lineHeight) {
+    for (let y = visualRuleBox.y; y <= visualRuleBox.y + contentHeight; y += lineHeight) {
+      for (let x = visualRuleBox.x; x <= visualRuleBox.x + contentWidth; x += lineHeight) {
         const circle = document.createElementNS(svgNS, 'circle');
         circle.setAttribute('cx', String(x));
         circle.setAttribute('cy', String(y));
@@ -119,13 +120,12 @@ function appendPaperLayer(page: HTMLElement, layout: ResolvedPageLayout) {
     }
   }
 
-  if (template.accentColor) {
-    const marginX = Math.max(20, layout.writingBox.x - 18);
+  if (template.accentColor && layout.accentLine) {
     addSvgLine({
-      x1: marginX,
-      y1: layout.writingBox.y,
-      x2: marginX,
-      y2: layout.writingBox.y + contentHeight,
+      x1: layout.accentLine.x,
+      y1: layout.accentLine.y1,
+      x2: layout.accentLine.x,
+      y2: layout.accentLine.y2,
       stroke: template.accentColor,
       strokeWidth: 2,
     });

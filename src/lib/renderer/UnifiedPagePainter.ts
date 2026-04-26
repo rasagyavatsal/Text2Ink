@@ -256,7 +256,7 @@ export const UnifiedPagePainter = {
     const template = layout.paperTemplate;
     if (!template || template.kind === 'blank') return;
 
-    const box = layout.writingBox;
+    const box = layout.visualRuleBox;
     const lineHeightPx = layout.lineSpacing;
     const linesPerPage = Math.max(1, Math.floor(box.height / lineHeightPx));
 
@@ -274,13 +274,12 @@ export const UnifiedPagePainter = {
         }
       }
 
-      if (template.accentColor) {
+      if (template.accentColor && layout.accentLine) {
         ctx.strokeStyle = template.accentColor;
         ctx.lineWidth = 2;
         ctx.beginPath();
-        const marginX = Math.max(20, box.x - 18);
-        ctx.moveTo(marginX, box.y);
-        ctx.lineTo(marginX, box.y + box.height);
+        ctx.moveTo(layout.accentLine.x, layout.accentLine.y1);
+        ctx.lineTo(layout.accentLine.x, layout.accentLine.y2);
         ctx.stroke();
       }
     } else if (template.kind === 'graph') {

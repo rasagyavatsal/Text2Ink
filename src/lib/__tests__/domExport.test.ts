@@ -118,6 +118,29 @@ describe('domExport', () => {
     expect(page.querySelector('[data-export-paper-svg="dot-grid"]')).not.toBeNull();
   });
 
+  it('exports accent ruled templates with full-width rules and a full-height red margin line', () => {
+    const page = createExportPageElement({
+      pageIndex: 0,
+      pageText: 'Body text',
+      pageSettings: defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
+      settings: { ...DEFAULT_SETTINGS, paperTemplateId: 'margin-ruled', paperStyle: 'ruled' },
+      fontFamily: 'Caveat',
+    });
+
+    const lines = Array.from(page.querySelectorAll<SVGLineElement>('line'));
+    expect(lines[0]?.getAttribute('x1')).toBe('0');
+    expect(lines[0]?.getAttribute('y1')).toBe('60');
+    expect(lines[0]?.getAttribute('x2')).toBe('612');
+    expect(lines[0]?.getAttribute('y2')).toBe('60');
+
+    const accentLine = lines.find((line) => line.getAttribute('stroke') === '#ffb3b3');
+    expect(accentLine).not.toBeUndefined();
+    expect(accentLine?.getAttribute('x1')).toBe('79');
+    expect(accentLine?.getAttribute('y1')).toBe('0');
+    expect(accentLine?.getAttribute('x2')).toBe('79');
+    expect(accentLine?.getAttribute('y2')).toBe('792');
+  });
+
   it('renders successfully when the app theme uses modern CSS color functions', async () => {
     document.documentElement.style.backgroundColor = 'oklch(0.145 0 0)';
     document.body.style.backgroundColor = 'lab(29.2345% 39.3825 20.0664)';
