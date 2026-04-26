@@ -2,8 +2,8 @@
 
 import React, { useLayoutEffect, useRef } from 'react';
 import { HandwritingSettings, PageSettings } from '@/lib/types';
-import { PAGE_WIDTH, PAGE_HEIGHT } from '@/lib/pageConstants';
 import { extractPlainTextFromContentEditable, normalizePastedPlainText } from '@/lib/domText';
+import { resolvePageLayout } from '@/lib/pageLayout';
 
 interface BodyTextEditorProps {
   pageText: string;
@@ -12,6 +12,7 @@ interface BodyTextEditorProps {
   scale: number;
   fontFamily: string;
   hasCustomBackground: boolean;
+  pageIndex?: number;
   onPageTextChange: (text: string) => void;
   onFocus?: () => void;
   onBlur?: () => void;
@@ -39,6 +40,7 @@ export default function BodyTextEditor({
   scale,
   fontFamily,
   hasCustomBackground,
+  pageIndex = 0,
   onPageTextChange,
   onFocus,
   onBlur,
@@ -55,13 +57,10 @@ export default function BodyTextEditor({
     }
   }, [pageText]);
 
-  const lineHeightPx = hasCustomBackground && pageSettings.customLineSpacing
-    ? pageSettings.customLineSpacing
-    : pageSettings.fontSize * settings.lineHeight;
-  const pageLineOffset = hasCustomBackground ? (pageSettings.customLineOffset ?? 0) : 0;
-  const left = settings.paperStyle === 'ruled' && !hasCustomBackground
-    ? pageSettings.marginLeft + settings.ruledMarginLineOffset + 10
-    : pageSettings.marginLeft;
+  void hasCustomBackground;
+  const layout = resolvePageLayout({ settings, pageSettings, pageIndex });
+  const lineHeightPx = layout.lineSpacing;
+  const left = layout.writingBox.x;
 
   return (
     <div
@@ -74,9 +73,9 @@ export default function BodyTextEditor({
       className="absolute outline-none"
       style={{
         left: left * scale,
-        top: (pageSettings.marginTop + pageLineOffset) * scale,
-        width: (PAGE_WIDTH - left - pageSettings.marginRight) * scale,
-        height: (PAGE_HEIGHT - pageSettings.marginTop - pageSettings.marginBottom) * scale,
+        top: layout.writingBox.y * scale,
+        width: layout.writingBox.width * scale,
+        height: layout.writingBox.height * scale,
         fontFamily,
         fontSize: pageSettings.fontSize * scale,
         lineHeight: `${lineHeightPx * scale}px`,

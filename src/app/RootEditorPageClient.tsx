@@ -16,6 +16,7 @@ import {
 } from '@/lib/types';
 import { loadEditorStateV1, saveEditorStateV1 } from '@/lib/editorPersistence';
 import { applyPageSettingsToAll, normalizeHandwritingSettings } from '@/lib/settingsHelpers';
+import { resolvePageLayout } from '@/lib/pageLayout';
 import {
   clampMobileSheetHeight,
   clampPreviewScale as clampEditorPreviewScale,
@@ -219,13 +220,23 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
     ? clampMobileSheetHeight(mobileSheetHeight ?? mobileSheetMetrics.defaultSheetHeight, mobileSheetMetrics)
     : 0;
   const mobileStablePreviewAvailableHeight = Math.max(0, viewportSize.height - headerHeight);
+  const currentPageSettings = useMemo(
+    () => pageSettingsByPage[currentPageIndex] ?? defaultPageSettingsFromHandwritingSettings(settings),
+    [currentPageIndex, pageSettingsByPage, settings],
+  );
+  const currentPageLayout = useMemo(
+    () => resolvePageLayout({ settings, pageSettings: currentPageSettings, pageIndex: currentPageIndex }),
+    [currentPageIndex, currentPageSettings, settings],
+  );
   const mobilePreviewMaxScale = useMemo(
     () =>
       computeMobilePreviewScale({
         availableWidth: viewportSize.width,
         availableHeight: mobileStablePreviewAvailableHeight,
+        pageWidth: currentPageLayout.width,
+        pageHeight: currentPageLayout.height,
       }),
-    [mobileStablePreviewAvailableHeight, viewportSize.width],
+    [currentPageLayout.height, currentPageLayout.width, mobileStablePreviewAvailableHeight, viewportSize.width],
   );
   const effectivePreviewScale = isMobileEditorLayout
     ? clampEditorPreviewScale(previewScale, mobilePreviewMaxScale, MOBILE_PREVIEW_MIN_SCALE)
@@ -328,11 +339,6 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       });
     },
     [settings],
-  );
-
-  const currentPageSettings = useMemo(
-    () => pageSettingsByPage[currentPageIndex] ?? defaultPageSettingsFromHandwritingSettings(settings),
-    [currentPageIndex, pageSettingsByPage, settings],
   );
 
   const applyCurrentPageSettingsToAll = useCallback(() => {

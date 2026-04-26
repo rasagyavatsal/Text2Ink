@@ -3,8 +3,8 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { HandwritingSettings, PageSettings } from '@/lib/types';
 import { LineData } from '@/lib/editorHelpers';
-import { PAGE_WIDTH, PAGE_HEIGHT } from '@/lib/pageConstants';
 import { UnifiedPagePainter, CharacterPosition } from '@/lib/renderer/UnifiedPagePainter';
+import { resolvePageLayout } from '@/lib/pageLayout';
 
 export interface CanvasPreviewProps {
   lines: LineData[];
@@ -92,6 +92,7 @@ export default function CanvasPreview({
   const isPointerDownRef = useRef(false);
   const didDragRef = useRef(false);
   const activePointerIdRef = useRef<number | null>(null);
+  const layout = resolvePageLayout({ settings, pageSettings, pageIndex });
 
   // Cursor blink
   useEffect(() => {
@@ -111,8 +112,8 @@ export default function CanvasPreview({
 
     // Set physical canvas size
     const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-    canvas.width = PAGE_WIDTH * previewScale * dpr;
-    canvas.height = PAGE_HEIGHT * previewScale * dpr;
+    canvas.width = layout.width * previewScale * dpr;
+    canvas.height = layout.height * previewScale * dpr;
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -124,7 +125,7 @@ export default function CanvasPreview({
     // Handle custom background image
     const customBg = settings.customBackgroundImages?.[pageIndex] ?? settings.customBackgroundImage;
     if (customBg && bgImageRef.current && bgImageSrcRef.current === customBg) {
-      ctx.drawImage(bgImageRef.current, 0, 0, PAGE_WIDTH, PAGE_HEIGHT);
+      ctx.drawImage(bgImageRef.current, 0, 0, layout.width, layout.height);
     }
 
     // Paint the page content
@@ -181,7 +182,7 @@ export default function CanvasPreview({
 
     ctx.restore();
   }, [
-    lines, pageSettings, settings, pageIndex, previewScale,
+    lines, pageSettings, settings, pageIndex, previewScale, layout.width, layout.height,
     fontFamily, cursorPosition, selectionStart, selectionEnd,
     pageStartOffset, isFocused, cursorVisible, canvasRef, backgroundImageRevision, renderBodyText,
   ]);
@@ -360,8 +361,8 @@ export default function CanvasPreview({
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
       style={{
-        width: PAGE_WIDTH * previewScale,
-        height: PAGE_HEIGHT * previewScale,
+        width: layout.width * previewScale,
+        height: layout.height * previewScale,
         cursor: 'text',
       }}
     />

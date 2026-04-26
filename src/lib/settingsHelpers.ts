@@ -1,5 +1,6 @@
 import { LineDetectionResult } from './lineDetection';
 import { DEFAULT_SETTINGS, PageSettings, HandwritingSettings } from './types';
+import { pageFormatById, paperTemplateById, paperTemplateIdForLegacyStyle } from './pageLayout';
 
 export function validateFontFile(file: File): { format: 'truetype' | 'opentype' | null; error: string | null } {
   const lowerName = file.name.toLowerCase();
@@ -88,6 +89,9 @@ const isCustomFont = (value: unknown): value is HandwritingSettings['customFont'
 const isPaperStyle = (value: unknown): value is HandwritingSettings['paperStyle'] =>
   value === 'blank' || value === 'lined' || value === 'ruled' || value === 'grid';
 
+const isPageOrientation = (value: unknown): value is HandwritingSettings['pageOrientation'] =>
+  value === 'portrait' || value === 'landscape';
+
 const isTextFields = (value: unknown): value is NonNullable<HandwritingSettings['textFields']> =>
   Array.isArray(value) &&
   value.every(
@@ -152,6 +156,20 @@ export function normalizeHandwritingSettings(persistedUnknown: unknown): Handwri
 
   if (isPaperStyle(persistedUnknown.paperStyle)) {
     next.paperStyle = persistedUnknown.paperStyle;
+  }
+
+  if (typeof persistedUnknown.pageFormatId === 'string') {
+    next.pageFormatId = pageFormatById(persistedUnknown.pageFormatId as HandwritingSettings['pageFormatId']).id;
+  }
+
+  if (isPageOrientation(persistedUnknown.pageOrientation)) {
+    next.pageOrientation = persistedUnknown.pageOrientation;
+  }
+
+  if (typeof persistedUnknown.paperTemplateId === 'string') {
+    next.paperTemplateId = paperTemplateById(persistedUnknown.paperTemplateId as HandwritingSettings['paperTemplateId']).id;
+  } else if (isPaperStyle(persistedUnknown.paperStyle)) {
+    next.paperTemplateId = paperTemplateIdForLegacyStyle(persistedUnknown.paperStyle);
   }
 
   if (isTextFields(persistedUnknown.textFields)) {

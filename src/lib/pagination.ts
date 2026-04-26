@@ -25,6 +25,13 @@ export type PaginationRequest = {
     marginLeft: number;
     fontSize: number;
     customLineSpacing?: number;
+    writingBox?: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    };
+    lineSpacing?: number;
   }>;
   pageHasBackground: boolean[];
   fontFamily: string;
@@ -139,17 +146,17 @@ export function paginate(req: PaginationRequest): PaginationResponse {
     const ps = req.pages[pageIndex] ?? req.pages[req.pages.length - 1];
     const pageHasBackground = !!req.pageHasBackground[pageIndex];
 
-    const contentHeight = req.pageHeight - ps.marginTop - ps.marginBottom;
-
-    const ruledTextLeft =
+    const contentHeight = ps.writingBox?.height ?? (req.pageHeight - ps.marginTop - ps.marginBottom);
+    const ruledTextLeft = ps.writingBox?.x ?? (
       req.settings.paperStyle === 'ruled' && !req.hasAnyCustomBackground
         ? ps.marginLeft + req.settings.ruledMarginLineOffset + 10
-        : ps.marginLeft;
+        : ps.marginLeft
+    );
 
-    const ruledTextWidth = req.pageWidth - ruledTextLeft - ps.marginRight;
+    const ruledTextWidth = ps.writingBox?.width ?? (req.pageWidth - ruledTextLeft - ps.marginRight);
 
     const baseLineHeightPx = ps.fontSize * req.settings.lineHeight;
-    const lineHeightPx = pageHasBackground && ps.customLineSpacing ? ps.customLineSpacing : baseLineHeightPx;
+    const lineHeightPx = ps.lineSpacing ?? (pageHasBackground && ps.customLineSpacing ? ps.customLineSpacing : baseLineHeightPx);
     const linesPerPage = Math.max(1, Math.floor(contentHeight / lineHeightPx));
 
     const measure = createMeasure(req.fontFamily, ps.fontSize);

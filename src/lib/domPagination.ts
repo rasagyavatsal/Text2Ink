@@ -1,4 +1,3 @@
-import { PAGE_HEIGHT, PAGE_WIDTH } from './pageConstants';
 import {
   createMeasure,
   type PaginationLineData,
@@ -41,15 +40,16 @@ export function linesFromPageSlice(
 function contentBoxFor(req: PaginationRequest, pageIndex: number) {
   const ps = req.pages[pageIndex] ?? req.pages[req.pages.length - 1];
   const pageHasBackground = !!req.pageHasBackground[pageIndex];
-  const left =
+  const left = ps.writingBox?.x ?? (
     req.settings.paperStyle === 'ruled' && !pageHasBackground
       ? ps.marginLeft + req.settings.ruledMarginLineOffset + 10
-      : ps.marginLeft;
-  const width = req.pageWidth - left - ps.marginRight;
-  const height = req.pageHeight - ps.marginTop - ps.marginBottom;
-  const lineHeight = pageHasBackground && ps.customLineSpacing
+      : ps.marginLeft
+  );
+  const width = ps.writingBox?.width ?? (req.pageWidth - left - ps.marginRight);
+  const height = ps.writingBox?.height ?? (req.pageHeight - ps.marginTop - ps.marginBottom);
+  const lineHeight = ps.lineSpacing ?? (pageHasBackground && ps.customLineSpacing
     ? ps.customLineSpacing
-    : ps.fontSize * req.settings.lineHeight;
+    : ps.fontSize * req.settings.lineHeight);
 
   return { ps, width: Math.max(1, width), height: Math.max(1, height), lineHeight };
 }
@@ -204,6 +204,6 @@ export function paginateDom(req: PaginationRequest): PaginationResponse {
 }
 
 export const DOM_PAGINATION_PAGE_SIZE = {
-  width: PAGE_WIDTH,
-  height: PAGE_HEIGHT,
+  width: 612,
+  height: 792,
 };

@@ -1,7 +1,7 @@
 import html2canvas from 'html2canvas';
-import { PAGE_HEIGHT, PAGE_WIDTH } from './pageConstants';
 import type { LineData } from './editorHelpers';
 import type { HandwritingSettings, PageSettings } from './types';
+import { resolvePageLayout, type ResolvedPageLayout } from './pageLayout';
 
 export const DOM_EXPORT_SCALE = 4.1666666667;
 
@@ -23,7 +23,7 @@ function applyExportStyleReset(element: HTMLElement) {
   });
 }
 
-function appendPaperLayer(page: HTMLElement, pageSettings: PageSettings, settings: HandwritingSettings) {
+function appendPaperLayer(page: HTMLElement, layout: ResolvedPageLayout) {
   const layer = document.createElement('div');
   layer.dataset.exportLayer = 'paper';
   applyExportStyleReset(layer);
@@ -34,60 +34,100 @@ function appendPaperLayer(page: HTMLElement, pageSettings: PageSettings, setting
   });
   page.appendChild(layer);
 
-  if (settings.paperStyle === 'blank') return;
+  const template = layout.paperTemplate;
+  if (!template || template.kind === 'blank') return;
 
-  const contentWidth = PAGE_WIDTH - pageSettings.marginLeft - pageSettings.marginRight;
-  const contentHeight = PAGE_HEIGHT - pageSettings.marginTop - pageSettings.marginBottom;
-  const lineHeight = pageSettings.customLineSpacing ?? pageSettings.fontSize * settings.lineHeight;
-  const linesPerPage = Math.max(1, Math.floor(contentHeight / lineHeight));
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('data-export-paper-svg', template.id);
+  svg.setAttribute('viewBox', `0 0 ${layout.width} ${layout.height}`);
+  svg.setAttribute('width', `${layout.width}`);
+  svg.setAttribute('height', `${layout.height}`);
+  Object.assign(svg.style, {
+    position: 'absolute',
+    inset: '0',
+    width: '100%',
+    height: '100%',
+    pointerEvents: 'none',
+  });
+  layer.appendChild(svg);
 
-  const addLine = (style: Partial<CSSStyleDeclaration>) => {
-    const line = document.createElement('div');
-    applyExportStyleReset(line);
-    Object.assign(line.style, {
-      position: 'absolute',
-      backgroundColor: pageSettings.lineColor,
-      pointerEvents: 'none',
-      ...style,
-    });
-    layer.appendChild(line);
+  const addSvgLine = (attrs: {
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+    stroke?: string;
+    strokeWidth?: number;
+    opacity?: number;
+  }) => {
+    const line = document.createElementNS(svgNS, 'line');
+    line.setAttribute('x1', String(attrs.x1));
+    line.setAttribute('y1', String(attrs.y1));
+    line.setAttribute('x2', String(attrs.x2));
+    line.setAttribute('y2', String(attrs.y2));
+    line.setAttribute('stroke', attrs.stroke ?? template.lineColor ?? '#a8d4f0');
+    line.setAttribute('stroke-width', String(attrs.strokeWidth ?? 1));
+    if (attrs.opacity !== undefined) line.setAttribute('opacity', String(attrs.opacity));
+    svg.appendChild(line);
   };
 
-  if (settings.paperStyle === 'lined' || settings.paperStyle === 'ruled' || settings.paperStyle === 'grid') {
+  const contentWidth = layout.writingBox.width;
+  const contentHeight = layout.writingBox.height;
+  const lineHeight = layout.lineSpacing;
+  const linesPerPage = Math.max(1, Math.floor(contentHeight / lineHeight));
+
+  if (template.kind === 'ruled' || template.kind === 'graph') {
     for (let i = 0; i <= linesPerPage; i++) {
-      const y = pageSettings.marginTop + i * lineHeight;
-      if (y > PAGE_HEIGHT - pageSettings.marginBottom + lineHeight) continue;
-      addLine({
-        left: `${pageSettings.marginLeft}px`,
-        top: `${y}px`,
-        width: `${contentWidth}px`,
-        height: '1px',
-        opacity: settings.paperStyle === 'grid' ? '0.5' : '1',
+      const y = layout.writingBox.y + i * lineHeight;
+      if (y > layout.writingBox.y + layout.writingBox.height + lineHeight) continue;
+      addSvgLine({
+        x1: layout.writingBox.x,
+        y1: y,
+        x2: layout.writingBox.x + contentWidth,
+        y2: y,
+        opacity: template.kind === 'graph' ? 0.5 : 1,
       });
     }
   }
 
-  if (settings.paperStyle === 'grid') {
+  if (template.kind === 'graph') {
     const cols = Math.floor(contentWidth / lineHeight);
     for (let i = 0; i <= cols; i++) {
-      const x = pageSettings.marginLeft + i * lineHeight;
-      addLine({
-        left: `${x}px`,
-        top: `${pageSettings.marginTop}px`,
-        width: '1px',
-        height: `${contentHeight}px`,
-        opacity: '0.5',
+      const x = layout.writingBox.x + i * lineHeight;
+      addSvgLine({
+        x1: x,
+        y1: layout.writingBox.y,
+        x2: x,
+        y2: layout.writingBox.y + contentHeight,
+        opacity: 0.5,
       });
     }
   }
 
-  if (settings.paperStyle === 'ruled') {
-    addLine({
-      left: `${pageSettings.marginLeft + settings.ruledMarginLineOffset}px`,
-      top: `${pageSettings.marginTop}px`,
-      width: '2px',
-      height: `${contentHeight}px`,
-      backgroundColor: '#ffb3b3',
+  if (template.kind === 'dot-grid') {
+    for (let y = layout.writingBox.y; y <= layout.writingBox.y + contentHeight; y += lineHeight) {
+      for (let x = layout.writingBox.x; x <= layout.writingBox.x + contentWidth; x += lineHeight) {
+        const circle = document.createElementNS(svgNS, 'circle');
+        circle.setAttribute('cx', String(x));
+        circle.setAttribute('cy', String(y));
+        circle.setAttribute('r', '1.2');
+        circle.setAttribute('fill', template.lineColor ?? '#9aa7b0');
+        circle.setAttribute('opacity', '0.55');
+        svg.appendChild(circle);
+      }
+    }
+  }
+
+  if (template.accentColor) {
+    const marginX = Math.max(20, layout.writingBox.x - 18);
+    addSvgLine({
+      x1: marginX,
+      y1: layout.writingBox.y,
+      x2: marginX,
+      y2: layout.writingBox.y + contentHeight,
+      stroke: template.accentColor,
+      strokeWidth: 2,
     });
   }
 }
@@ -96,18 +136,12 @@ function appendBodyLayer(opts: {
   page: HTMLElement;
   pageText: string;
   pageSettings: PageSettings;
-  settings: HandwritingSettings;
   fontFamily: string;
-  hasCustomBackground: boolean;
+  layout: ResolvedPageLayout;
 }) {
-  const { page, pageText, pageSettings, settings, fontFamily, hasCustomBackground } = opts;
-  const lineHeight = hasCustomBackground && pageSettings.customLineSpacing
-    ? pageSettings.customLineSpacing
-    : pageSettings.fontSize * settings.lineHeight;
-  const lineOffset = hasCustomBackground ? (pageSettings.customLineOffset ?? 0) : 0;
-  const left = settings.paperStyle === 'ruled' && !hasCustomBackground
-    ? pageSettings.marginLeft + settings.ruledMarginLineOffset + 10
-    : pageSettings.marginLeft;
+  const { page, pageText, pageSettings, fontFamily, layout } = opts;
+  const lineHeight = layout.lineSpacing;
+  const left = layout.writingBox.x;
 
   const body = document.createElement('div');
   body.dataset.exportLayer = 'body';
@@ -116,9 +150,9 @@ function appendBodyLayer(opts: {
   Object.assign(body.style, {
     position: 'absolute',
     left: `${left}px`,
-    top: `${pageSettings.marginTop + lineOffset}px`,
-    width: `${PAGE_WIDTH - left - pageSettings.marginRight}px`,
-    height: `${PAGE_HEIGHT - pageSettings.marginTop - pageSettings.marginBottom}px`,
+    top: `${layout.writingBox.y}px`,
+    width: `${layout.writingBox.width}px`,
+    height: `${layout.writingBox.height}px`,
     fontFamily,
     fontSize: `${pageSettings.fontSize}px`,
     lineHeight: `${lineHeight}px`,
@@ -163,7 +197,7 @@ function appendTextFields(page: HTMLElement, pageSettings: PageSettings, fontFam
   }
 }
 
-function appendBackgroundImage(page: HTMLElement, src: string) {
+function appendBackgroundImage(page: HTMLElement, src: string, layout: ResolvedPageLayout) {
   const img = document.createElement('img');
   img.dataset.exportLayer = 'background-image';
   img.src = src;
@@ -172,8 +206,8 @@ function appendBackgroundImage(page: HTMLElement, src: string) {
   Object.assign(img.style, {
     position: 'absolute',
     inset: '0',
-    width: `${PAGE_WIDTH}px`,
-    height: `${PAGE_HEIGHT}px`,
+    width: `${layout.width}px`,
+    height: `${layout.height}px`,
     objectFit: 'fill',
   });
   page.appendChild(img);
@@ -189,31 +223,31 @@ export function createExportPageElement(opts: {
   const { pageIndex, pageText, pageSettings, settings, fontFamily } = opts;
   const page = document.createElement('div');
   page.dataset.exportPage = String(pageIndex);
-  const backgroundImage = settings.customBackgroundImages?.[pageIndex] ?? settings.customBackgroundImage;
+  const layout = resolvePageLayout({ settings, pageSettings, pageIndex });
+  const backgroundImage = layout.customBackgroundImage;
 
   applyExportStyleReset(page);
   Object.assign(page.style, {
     position: 'relative',
-    width: `${PAGE_WIDTH}px`,
-    height: `${PAGE_HEIGHT}px`,
+    width: `${layout.width}px`,
+    height: `${layout.height}px`,
     overflow: 'hidden',
-    backgroundColor: backgroundImage ? 'transparent' : pageSettings.paperColor,
+    backgroundColor: backgroundImage ? 'transparent' : (layout.paperTemplate?.tone ?? pageSettings.paperColor),
     boxSizing: 'border-box',
   });
 
   if (backgroundImage) {
-    appendBackgroundImage(page, backgroundImage);
+    appendBackgroundImage(page, backgroundImage, layout);
   } else {
-    appendPaperLayer(page, pageSettings, settings);
+    appendPaperLayer(page, layout);
   }
 
   appendBodyLayer({
     page,
     pageText,
     pageSettings,
-    settings,
     fontFamily,
-    hasCustomBackground: !!backgroundImage,
+    layout,
   });
   appendTextFields(page, pageSettings, fontFamily);
 
@@ -239,14 +273,19 @@ export async function renderDomPageToCanvas(opts: {
   scale?: number;
 }): Promise<HTMLCanvasElement> {
   const page = createExportPageElement(opts);
+  const layout = resolvePageLayout({
+    settings: opts.settings,
+    pageSettings: opts.pageSettings,
+    pageIndex: opts.pageIndex,
+  });
   const host = document.createElement('div');
   applyExportStyleReset(host);
   Object.assign(host.style, {
     position: 'fixed',
     left: '-10000px',
     top: '0',
-    width: `${PAGE_WIDTH}px`,
-    height: `${PAGE_HEIGHT}px`,
+    width: `${layout.width}px`,
+    height: `${layout.height}px`,
     overflow: 'hidden',
   });
   host.appendChild(page);
@@ -261,10 +300,10 @@ export async function renderDomPageToCanvas(opts: {
       backgroundColor: null,
       useCORS: true,
       logging: false,
-      width: PAGE_WIDTH,
-      height: PAGE_HEIGHT,
-      windowWidth: PAGE_WIDTH,
-      windowHeight: PAGE_HEIGHT,
+      width: layout.width,
+      height: layout.height,
+      windowWidth: layout.width,
+      windowHeight: layout.height,
       onclone: (clonedDocument) => {
         for (const node of [clonedDocument.documentElement, clonedDocument.body]) {
           node.style.backgroundColor = 'transparent';

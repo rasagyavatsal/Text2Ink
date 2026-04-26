@@ -16,14 +16,14 @@ import {
   HandwritingSettings,
   PageSettings,
   HANDWRITING_FONTS,
-  PAPER_STYLES,
   PAPER_COLORS,
   LineData,
   FontOption,
+  PaperTemplateId,
 } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { detectBackgroundLines } from '@/lib/lineDetection';
-import { PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/pageConstants';
+import { PAGE_FORMATS, PAPER_TEMPLATES, resolvePageLayout } from '@/lib/pageLayout';
 import { 
   Type, 
   Palette, 
@@ -137,16 +137,28 @@ export default function SettingsPanel({
     () => settings.customBackgroundImages?.[currentPageIndex] ?? settings.customBackgroundImage,
     [currentPageIndex, settings.customBackgroundImages, settings.customBackgroundImage]
   );
+  const resolvedLayout = useMemo(
+    () => resolvePageLayout({ settings, pageSettings, pageIndex: currentPageIndex }),
+    [currentPageIndex, pageSettings, settings],
+  );
 
   const [fontPageIndex, setFontPageIndex] = useState(0);
+  const [paperPageIndex, setPaperPageIndex] = useState(0);
   const availableFonts = useMemo(() => HANDWRITING_FONTS.filter(f => f.value !== 'custom'), []);
   const fontsPerPage = 4;
   const totalFontPages = Math.ceil(availableFonts.length / fontsPerPage);
+  const papersPerPage = 4;
+  const totalPaperPages = Math.ceil(PAPER_TEMPLATES.length / papersPerPage);
 
   const visibleFonts = useMemo(() => {
     const start = fontPageIndex * fontsPerPage;
     return availableFonts.slice(start, start + fontsPerPage);
   }, [fontPageIndex, availableFonts]);
+
+  const visiblePaperTemplates = useMemo(() => {
+    const start = paperPageIndex * papersPerPage;
+    return PAPER_TEMPLATES.slice(start, start + papersPerPage);
+  }, [paperPageIndex]);
 
   const handleNextFonts = () => {
     setFontPageIndex((prev) => (prev + 1) % totalFontPages);
@@ -154,6 +166,14 @@ export default function SettingsPanel({
 
   const handlePrevFonts = () => {
     setFontPageIndex((prev) => (prev - 1 + totalFontPages) % totalFontPages);
+  };
+
+  const handleNextPapers = () => {
+    setPaperPageIndex((prev) => (prev + 1) % totalPaperPages);
+  };
+
+  const handlePrevPapers = () => {
+    setPaperPageIndex((prev) => (prev - 1 + totalPaperPages) % totalPaperPages);
   };
 
   useEffect(() => {
@@ -181,6 +201,14 @@ export default function SettingsPanel({
     onSettingsChange({ ...settings, ...patch });
   };
 
+  const paperStyleForTemplate = (templateId: PaperTemplateId): HandwritingSettings['paperStyle'] => {
+    const template = PAPER_TEMPLATES.find((paper) => paper.id === templateId);
+    if (template?.kind === 'blank') return 'blank';
+    if (template?.kind === 'graph' || template?.kind === 'dot-grid') return 'grid';
+    if (templateId === 'margin-ruled' || templateId === 'legal-pad' || templateId === 'blue-notebook') return 'ruled';
+    return 'lined';
+  };
+
   const handleDetectLines = async () => {
     if (!currentBackground || lineDetecting) return;
     setLineDetectError(null);
@@ -188,10 +216,10 @@ export default function SettingsPanel({
     setLineDetecting(true);
 
     try {
-      const expectedLineHeight = pageSettings.customLineSpacing ?? pageSettings.fontSize * settings.lineHeight;
+      const expectedLineHeight = resolvedLayout.lineSpacing;
       const result = await detectBackgroundLines(currentBackground, {
-        targetWidth: PAGE_WIDTH,
-        targetHeight: PAGE_HEIGHT,
+        targetWidth: resolvedLayout.width,
+        targetHeight: resolvedLayout.height,
         marginTop: pageSettings.marginTop,
         marginBottom: pageSettings.marginBottom,
         marginLeft: pageSettings.marginLeft,
@@ -476,7 +504,7 @@ export default function SettingsPanel({
             />
           </div>
 
-          {!hasCustomBackground && (
+          {resolvedLayout.controls.showLineHeightControl && (
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Line Height</Label>
@@ -521,27 +549,131 @@ export default function SettingsPanel({
         </div>
 
         <div className="space-y-6">
-          <div className="flex flex-col gap-2">
-            <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest" htmlFor="paper-style">Paper Style</Label>
-            <Select
-              value={settings.paperStyle}
-              onValueChange={(value) =>
-                updateSetting('paperStyle', value as HandwritingSettings['paperStyle'])
-              }
-            >
-              <SelectTrigger id="paper-style" className="bg-gray-100 border-none h-9 text-sm">
-                <SelectValue placeholder="Select paper style" />
-              </SelectTrigger>
-              <SelectContent>
-                {PAPER_STYLES.map((style) => (
-                  <SelectItem key={style.value} value={style.value}>
-                    {style.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-2">
+              <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest" htmlFor="page-format">Page Format</Label>
+              <Select
+                value={settings.pageFormatId}
+                onValueChange={(value) =>
+                  updateSetting('pageFormatId', value as HandwritingSettings['pageFormatId'])
+                }
+              >
+                <SelectTrigger id="page-format" className="bg-gray-100 border-none h-9 text-sm">
+                  <SelectValue placeholder="Page format" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAGE_FORMATS.map((format) => (
+                    <SelectItem key={format.id} value={format.id}>
+                      {format.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest" htmlFor="page-orientation">Orientation</Label>
+              <Select
+                value={settings.pageOrientation}
+                onValueChange={(value) =>
+                  updateSetting('pageOrientation', value as HandwritingSettings['pageOrientation'])
+                }
+              >
+                <SelectTrigger id="page-orientation" className="bg-gray-100 border-none h-9 text-sm">
+                  <SelectValue placeholder="Orientation" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="portrait">Portrait</SelectItem>
+                  <SelectItem value="landscape">Landscape</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Paper Templates</Label>
+            </div>
+
+            <div className="relative px-8">
+              <div className="grid grid-cols-2 gap-3">
+                {visiblePaperTemplates.map((paper) => {
+                  const isSelected = resolvedLayout.paperTemplate?.id === paper.id && !hasCustomBackground;
+                  return (
+                    <button
+                      key={paper.id}
+                      type="button"
+                      onClick={() =>
+                        updateSettings({
+                          paperTemplateId: paper.id,
+                          paperStyle: paperStyleForTemplate(paper.id),
+                        })
+                      }
+                      className={cn(
+                        "cursor-pointer rounded-xl p-2.5 flex flex-col items-center gap-2 transition-all border-2 w-full",
+                        isSelected
+                          ? "bg-[#E0A32A] border-[#E0A32A] text-white shadow-md shadow-[#E0A32A]/20"
+                          : "bg-gray-100 border-transparent hover:bg-gray-200 text-gray-700"
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "w-full aspect-[1.6/1] rounded-lg overflow-hidden border flex items-center justify-center",
+                          isSelected ? "border-white/30" : "border-gray-200"
+                        )}
+                        style={{ backgroundColor: paper.tone }}
+                        aria-hidden="true"
+                      >
+                        {paper.kind === 'blank' ? (
+                          <span className="w-10 h-10 rounded-full bg-white/30" />
+                        ) : (
+                          <span
+                            className="block w-full h-full"
+                            style={{
+                              backgroundImage:
+                                paper.kind === 'dot-grid'
+                                  ? `radial-gradient(${paper.lineColor ?? '#9aa7b0'} 1px, transparent 1px)`
+                                  : paper.kind === 'graph'
+                                    ? `linear-gradient(${paper.lineColor ?? '#b9d4e8'} 1px, transparent 1px), linear-gradient(90deg, ${paper.lineColor ?? '#b9d4e8'} 1px, transparent 1px)`
+                                    : `repeating-linear-gradient(to bottom, transparent 0 17px, ${paper.lineColor ?? '#9ec7e9'} 18px 19px)`,
+                              backgroundSize: paper.kind === 'dot-grid' ? '12px 12px' : paper.kind === 'graph' ? '14px 14px' : '100% 19px',
+                            }}
+                          />
+                        )}
+                      </span>
+                      <span className={cn(
+                        "text-[10px] font-bold truncate w-full text-center px-1 uppercase tracking-tight",
+                        isSelected ? "text-white" : "text-gray-500"
+                      )}>
+                        {paper.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {totalPaperPages > 1 && (
+                <>
+                  <button
+                    onClick={handlePrevPapers}
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-7 h-7 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm text-gray-500 hover:text-[#E0A32A] hover:border-[#E0A32A] transition-all"
+                    aria-label="Previous papers"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={handleNextPapers}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 w-7 h-7 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm text-gray-500 hover:text-[#E0A32A] hover:border-[#E0A32A] transition-all"
+                    aria-label="Next papers"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {resolvedLayout.controls.showMarginControls && (
           <div className="grid grid-cols-2 gap-x-4 gap-y-6">
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
@@ -607,8 +739,9 @@ export default function SettingsPanel({
               />
             </div>
           </div>
+          )}
 
-          {settings.paperStyle === 'ruled' && (
+          {resolvedLayout.controls.showMarginControls && settings.paperStyle === 'ruled' && (
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Margin Line Offset</Label>
@@ -706,7 +839,7 @@ export default function SettingsPanel({
             </div>
           </div>
 
-          {hasCustomBackground && (
+          {resolvedLayout.controls.showCustomLineControls && (
             <div className="space-y-6 pt-2">
               <div className="flex flex-col gap-2 p-3 bg-gray-100 rounded-lg">
                 <div className="flex items-center justify-between">
@@ -800,6 +933,7 @@ export default function SettingsPanel({
             </div>
           </div>
 
+          {resolvedLayout.controls.showPaperColorControl && (
           <div className="flex flex-col gap-2">
             <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Paper Color</Label>
             <div className="flex flex-wrap gap-2 p-1.5 bg-gray-100 rounded-lg">
@@ -817,8 +951,9 @@ export default function SettingsPanel({
               ))}
             </div>
           </div>
+          )}
 
-          {settings.paperStyle !== 'blank' && (
+          {resolvedLayout.controls.showLineColorControl && settings.paperStyle !== 'blank' && (
             <div className="flex flex-col gap-2">
               <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Line Color</Label>
               <div className="flex items-center gap-3 p-1.5 bg-gray-100 rounded-lg">

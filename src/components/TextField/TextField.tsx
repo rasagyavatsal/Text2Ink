@@ -16,6 +16,8 @@ interface TextFieldProps {
   scale: number;
   fontFamily: string;
   onTypingFocus?: () => void;
+  pageWidth?: number;
+  pageHeight?: number;
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -48,12 +50,14 @@ function calculateAutoFitTextBoxSize(
   fontFamily: string,
   scale: number,
   x: number,
-  y: number
+  y: number,
+  pageWidth: number,
+  pageHeight: number,
 ) {
   const measure = createMeasure(fontFamily, fontSize);
   const padding = 12 / scale;
-  const availableWidth = Math.max(10, PAGE_WIDTH - x);
-  const availableHeight = Math.max(10, PAGE_HEIGHT - y);
+  const availableWidth = Math.max(10, pageWidth - x);
+  const availableHeight = Math.max(10, pageHeight - y);
   const maxContentWidth = Math.max(1, availableWidth - padding);
   const wrappedLines = text
     .split('\n')
@@ -68,7 +72,16 @@ function calculateAutoFitTextBoxSize(
   return { width, height };
 }
 
-export default function TextField({ field, onUpdate, onDelete, scale, fontFamily, onTypingFocus }: TextFieldProps) {
+export default function TextField({
+  field,
+  onUpdate,
+  onDelete,
+  scale,
+  fontFamily,
+  onTypingFocus,
+  pageWidth = PAGE_WIDTH,
+  pageHeight = PAGE_HEIGHT,
+}: TextFieldProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [isSelected, setIsSelected] = useState(false);
@@ -83,8 +96,8 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
   const showControls = isSelected || isFocused || isSettingsOpen || isDragging;
 
   const autoFitSize = useMemo(
-    () => calculateAutoFitTextBoxSize(field.text, field.fontSize, fontFamily, scale, field.x, field.y),
-    [field.fontSize, field.text, field.x, field.y, fontFamily, scale]
+    () => calculateAutoFitTextBoxSize(field.text, field.fontSize, fontFamily, scale, field.x, field.y, pageWidth, pageHeight),
+    [field.fontSize, field.text, field.x, field.y, fontFamily, pageHeight, pageWidth, scale]
   );
 
   useLayoutEffect(() => {
@@ -110,12 +123,12 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
   }, [autoFitSize, field.height, field.text, field.width, isDragging, onUpdate]);
 
   useLayoutEffect(() => {
-    const nextX = clamp(field.x, 0, Math.max(0, PAGE_WIDTH - field.width));
-    const nextY = clamp(field.y, 0, Math.max(0, PAGE_HEIGHT - field.height));
+    const nextX = clamp(field.x, 0, Math.max(0, pageWidth - field.width));
+    const nextY = clamp(field.y, 0, Math.max(0, pageHeight - field.height));
     if (nextX !== field.x || nextY !== field.y) {
       onUpdate({ x: nextX, y: nextY });
     }
-  }, [field.height, field.width, field.x, field.y, onUpdate]);
+  }, [field.height, field.width, field.x, field.y, onUpdate, pageHeight, pageWidth]);
 
   const handleSettingsOpenChange = (open: boolean) => {
     if (open && settingsTriggerRef.current) {
@@ -176,8 +189,8 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
       const dy = (e.clientY - dragStartRef.current.y) / scale;
 
       onUpdate({
-        x: clamp(dragStartRef.current.fieldX + dx, 0, Math.max(0, PAGE_WIDTH - dragStartRef.current.fieldW)),
-        y: clamp(dragStartRef.current.fieldY + dy, 0, Math.max(0, PAGE_HEIGHT - dragStartRef.current.fieldH)),
+        x: clamp(dragStartRef.current.fieldX + dx, 0, Math.max(0, pageWidth - dragStartRef.current.fieldW)),
+        y: clamp(dragStartRef.current.fieldY + dy, 0, Math.max(0, pageHeight - dragStartRef.current.fieldH)),
       });
     };
 
@@ -196,7 +209,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
     };
-  }, [onUpdate, scale]);
+  }, [onUpdate, pageHeight, pageWidth, scale]);
 
   return (
     <div
@@ -275,7 +288,16 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
                   max={72}
                   step={1}
                   onValueChange={([val]) => {
-                    const nextSize = calculateAutoFitTextBoxSize(field.text, val, fontFamily, scale, field.x, field.y);
+                    const nextSize = calculateAutoFitTextBoxSize(
+                      field.text,
+                      val,
+                      fontFamily,
+                      scale,
+                      field.x,
+                      field.y,
+                      pageWidth,
+                      pageHeight,
+                    );
                     if (!nextSize) return;
                     onUpdate({ fontSize: val, width: nextSize.width, height: nextSize.height });
                   }}
@@ -329,7 +351,16 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
         value={field.text}
         onChange={(e) => {
           const nextText = e.target.value;
-          const nextSize = calculateAutoFitTextBoxSize(nextText, field.fontSize, fontFamily, scale, field.x, field.y);
+          const nextSize = calculateAutoFitTextBoxSize(
+            nextText,
+            field.fontSize,
+            fontFamily,
+            scale,
+            field.x,
+            field.y,
+            pageWidth,
+            pageHeight,
+          );
           if (!nextSize) return;
           onUpdate({ text: nextText, width: nextSize.width, height: nextSize.height });
         }}
