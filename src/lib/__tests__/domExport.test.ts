@@ -98,6 +98,26 @@ describe('domExport', () => {
     expect(page.style.height).toBe('792px');
   });
 
+  it('uses selected page dimensions and includes the selected SVG paper template', () => {
+    const page = createExportPageElement({
+      pageIndex: 0,
+      pageText: 'Body text',
+      pageSettings: defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
+      settings: {
+        ...DEFAULT_SETTINGS,
+        pageFormatId: 'a4',
+        pageOrientation: 'landscape',
+        paperTemplateId: 'dot-grid',
+        paperStyle: 'grid',
+      },
+      fontFamily: 'Caveat',
+    });
+
+    expect(page.style.width).toBe('841.89px');
+    expect(page.style.height).toBe('595.28px');
+    expect(page.querySelector('[data-export-paper-svg="dot-grid"]')).not.toBeNull();
+  });
+
   it('renders successfully when the app theme uses modern CSS color functions', async () => {
     document.documentElement.style.backgroundColor = 'oklch(0.145 0 0)';
     document.body.style.backgroundColor = 'lab(29.2345% 39.3825 20.0664)';

@@ -1,6 +1,6 @@
 import { HandwritingSettings, PageSettings, TextField } from '../types';
 import { LineData } from '../editorHelpers';
-import { PAGE_WIDTH, PAGE_HEIGHT } from '../pageConstants';
+import { resolvePageLayout, type ResolvedPageLayout } from '../pageLayout';
 
 export interface PaintPageOptions {
   ctx: CanvasRenderingContext2D;
@@ -147,30 +147,24 @@ function buildCharacterPositionsForLines(opts: {
 export const UnifiedPagePainter = {
   paintPage(opts: PaintPageOptions): void {
     const { ctx, pageIndex, lines, pageSettings, settings, fontFamily, renderTextFields = true, renderBodyText = true } = opts;
+    const layout = resolvePageLayout({ settings, pageSettings, pageIndex });
 
     // 1. Draw background
-    const customBg = settings.customBackgroundImages?.[pageIndex] ?? settings.customBackgroundImage;
+    const customBg = layout.customBackgroundImage;
     if (!customBg) {
-      ctx.fillStyle = pageSettings.paperColor;
-      ctx.fillRect(0, 0, PAGE_WIDTH, PAGE_HEIGHT);
+      ctx.fillStyle = layout.paperTemplate?.tone ?? pageSettings.paperColor;
+      ctx.fillRect(0, 0, layout.width, layout.height);
     }
     // Note: custom background images are drawn asynchronously via drawBackgroundImage()
 
     // 2. Draw paper lines
-    if (!customBg && settings.paperStyle !== 'blank') {
-      this._drawPaperLines(ctx, pageSettings, settings);
+    if (!customBg && layout.paperTemplate?.kind !== 'blank') {
+      this._drawPaperTemplate(ctx, layout);
     }
 
     // 3. Draw main text
-    const pageLineOffset = customBg ? (pageSettings.customLineOffset ?? 0) : 0;
-    const baseLineHeightPx = pageSettings.fontSize * settings.lineHeight;
-    const pageLineHeightPx = (customBg && pageSettings.customLineSpacing)
-      ? pageSettings.customLineSpacing
-      : baseLineHeightPx;
-
-    const ruledTextLeft = (settings.paperStyle === 'ruled' && !customBg)
-      ? pageSettings.marginLeft + settings.ruledMarginLineOffset + 10
-      : pageSettings.marginLeft;
+    const pageLineHeightPx = layout.lineSpacing;
+    const ruledTextLeft = layout.writingBox.x;
 
     ctx.font = `${pageSettings.fontSize}px ${fontFamily}`;
     ctx.fillStyle = pageSettings.inkColor;
@@ -191,7 +185,7 @@ export const UnifiedPagePainter = {
     }
 
     if (renderBodyText) {
-      let currentLineY = pageSettings.marginTop + pageLineOffset;
+      let currentLineY = layout.writingBox.y;
       for (let i = 0; i < lines.length; i++) {
         this._drawTextLine(ctx, lines[i].text, ruledTextLeft, currentLineY, verticalCenteringOffset);
         currentLineY += pageLineHeightPx;
@@ -255,55 +249,69 @@ export const UnifiedPagePainter = {
     }
   },
 
-  _drawPaperLines(
+  _drawPaperTemplate(
     ctx: CanvasRenderingContext2D,
-    ps: PageSettings,
-    settings: HandwritingSettings,
+    layout: ResolvedPageLayout,
   ): void {
-    const contentWidth = PAGE_WIDTH - ps.marginLeft - ps.marginRight;
-    const contentHeight = PAGE_HEIGHT - ps.marginTop - ps.marginBottom;
-    const baseLineHeightPx = ps.fontSize * settings.lineHeight;
-    const lineHeightPx = ps.customLineSpacing ? ps.customLineSpacing : baseLineHeightPx;
-    const linesPerPage = Math.max(1, Math.floor(contentHeight / lineHeightPx));
+    const template = layout.paperTemplate;
+    if (!template || template.kind === 'blank') return;
 
-    ctx.strokeStyle = settings.lineColor;
+    const box = layout.writingBox;
+    const lineHeightPx = layout.lineSpacing;
+    const linesPerPage = Math.max(1, Math.floor(box.height / lineHeightPx));
+
+    ctx.strokeStyle = template.lineColor ?? '#a8d4f0';
     ctx.lineWidth = 1;
 
-    if (settings.paperStyle === 'lined' || settings.paperStyle === 'ruled') {
+    if (template.kind === 'ruled') {
       for (let i = 0; i <= linesPerPage; i++) {
-        const y = ps.marginTop + i * lineHeightPx;
-        if (y < PAGE_HEIGHT - ps.marginBottom + lineHeightPx) {
+        const y = box.y + i * lineHeightPx;
+        if (y < box.y + box.height + lineHeightPx) {
           ctx.beginPath();
-          ctx.moveTo(ps.marginLeft, y);
-          ctx.lineTo(ps.marginLeft + contentWidth, y);
+          ctx.moveTo(box.x, y);
+          ctx.lineTo(box.x + box.width, y);
           ctx.stroke();
         }
       }
 
-      if (settings.paperStyle === 'ruled') {
-        ctx.strokeStyle = '#ffb3b3';
+      if (template.accentColor) {
+        ctx.strokeStyle = template.accentColor;
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(ps.marginLeft + settings.ruledMarginLineOffset, ps.marginTop);
-        ctx.lineTo(ps.marginLeft + settings.ruledMarginLineOffset, ps.marginTop + contentHeight);
+        const marginX = Math.max(20, box.x - 18);
+        ctx.moveTo(marginX, box.y);
+        ctx.lineTo(marginX, box.y + box.height);
         ctx.stroke();
       }
-    } else if (settings.paperStyle === 'grid') {
+    } else if (template.kind === 'graph') {
       ctx.globalAlpha = 0.5;
       for (let i = 0; i <= linesPerPage; i++) {
-        const y = ps.marginTop + i * lineHeightPx;
+        const y = box.y + i * lineHeightPx;
         ctx.beginPath();
-        ctx.moveTo(ps.marginLeft, y);
-        ctx.lineTo(ps.marginLeft + contentWidth, y);
+        ctx.moveTo(box.x, y);
+        ctx.lineTo(box.x + box.width, y);
         ctx.stroke();
       }
-      const cols = Math.floor(contentWidth / lineHeightPx);
+      const cols = Math.floor(box.width / lineHeightPx);
       for (let j = 0; j <= cols; j++) {
-        const x = ps.marginLeft + j * lineHeightPx;
+        const x = box.x + j * lineHeightPx;
         ctx.beginPath();
-        ctx.moveTo(x, ps.marginTop);
-        ctx.lineTo(x, ps.marginTop + contentHeight);
+        ctx.moveTo(x, box.y);
+        ctx.lineTo(x, box.y + box.height);
         ctx.stroke();
+      }
+      ctx.globalAlpha = 1.0;
+    } else if (template.kind === 'dot-grid') {
+      ctx.fillStyle = template.lineColor ?? '#9aa7b0';
+      ctx.globalAlpha = 0.55;
+      for (let y = box.y; y <= box.y + box.height; y += lineHeightPx) {
+        for (let x = box.x; x <= box.x + box.width; x += lineHeightPx) {
+          if (ctx.arc && ctx.fill) {
+            ctx.beginPath();
+            ctx.arc(x, y, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
       }
       ctx.globalAlpha = 1.0;
     }
@@ -332,16 +340,9 @@ export const UnifiedPagePainter = {
       pageIndex = 0,
     } = opts;
 
-    const customBg = settings.customBackgroundImages?.[pageIndex] ?? settings.customBackgroundImage;
-    const pageLineOffset = customBg ? (pageSettings.customLineOffset ?? 0) : 0;
-    const baseLineHeightPx = pageSettings.fontSize * settings.lineHeight;
-    const pageLineHeightPx = (customBg && pageSettings.customLineSpacing)
-      ? pageSettings.customLineSpacing
-      : baseLineHeightPx;
-
-    const ruledTextLeft = (settings.paperStyle === 'ruled' && !customBg)
-      ? pageSettings.marginLeft + settings.ruledMarginLineOffset + 10
-      : pageSettings.marginLeft;
+    const layout = resolvePageLayout({ settings, pageSettings, pageIndex });
+    const pageLineHeightPx = layout.lineSpacing;
+    const ruledTextLeft = layout.writingBox.x;
 
     ctx.font = `${pageSettings.fontSize}px ${fontFamily}`;
 
@@ -362,7 +363,7 @@ export const UnifiedPagePainter = {
       ctx,
       lines,
       startX: ruledTextLeft,
-      startY: pageSettings.marginTop + pageLineOffset,
+      startY: layout.writingBox.y,
       verticalCenteringOffset,
       pageLineHeightPx,
       fontAscent,

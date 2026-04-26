@@ -27,6 +27,32 @@ export interface PageSettings {
   textFields?: TextField[];
 }
 
+export type PaperTemplateId =
+  | 'ruled'
+  | 'narrow-ruled'
+  | 'margin-ruled'
+  | 'legal-pad'
+  | 'graph'
+  | 'dot-grid'
+  | 'blank'
+  | 'aged-blank'
+  | 'recycled'
+  | 'blue-notebook'
+  | 'torn-ruled'
+  | 'soft-grid';
+
+export type PageFormatId =
+  | 'a3'
+  | 'a4'
+  | 'a5'
+  | 'a6'
+  | 'us-letter'
+  | 'us-legal'
+  | 'tabloid'
+  | 'executive';
+
+export type PageOrientation = 'portrait' | 'landscape';
+
 export interface HandwritingSettings {
   fontFamily: string;
   customFont: {
@@ -47,6 +73,9 @@ export interface HandwritingSettings {
   inkColor: string;
   paperColor: string;
   lineColor: string;
+  paperTemplateId?: PaperTemplateId;
+  pageFormatId: PageFormatId;
+  pageOrientation: PageOrientation;
   customBackgroundImage: string | null;
   customBackgroundImages: string[];
   customLineOffset: number;
@@ -88,6 +117,9 @@ export const DEFAULT_SETTINGS: HandwritingSettings = {
   inkColor: '#1a365d',
   paperColor: '#fffef5',
   lineColor: '#a8d4f0',
+  paperTemplateId: 'ruled',
+  pageFormatId: 'us-letter',
+  pageOrientation: 'portrait',
   customBackgroundImage: null,
   customBackgroundImages: [],
   customLineOffset: 0,

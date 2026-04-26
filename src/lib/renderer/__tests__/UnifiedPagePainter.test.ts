@@ -86,7 +86,7 @@ describe('UnifiedPagePainter', () => {
 
       expect(ctx.beginPath).toHaveBeenCalled();
       expect(ctx.stroke).toHaveBeenCalled();
-      expect(ctx.strokeStyle).toBe(settings.lineColor);
+      expect(ctx.strokeStyle).toBe('#9ec7e9');
     });
 
     it('does not draw paper lines for blank paper style', () => {

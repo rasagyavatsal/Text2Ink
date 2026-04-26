@@ -13,6 +13,7 @@ import {
 import { Download, FileImage, FileText, Loader2 } from 'lucide-react';
 import { HandwritingSettings, PageSettings, LineData } from '@/lib/types';
 import { DOM_EXPORT_SCALE, pageTextFromLines, renderDomPageToCanvas } from '@/lib/domExport';
+import { resolvePageLayout } from '@/lib/pageLayout';
 import FeedbackDialog from './FeedbackDialog';
 
 interface ExportPanelProps {
@@ -163,12 +164,24 @@ export default function ExportPanel({
 
         worker.postMessage({
           type: 'init',
-          payload: { orientation: 'portrait', unit: 'pt', format: 'letter' }
+          payload: {
+            orientation: settings.pageOrientation,
+            unit: 'pt',
+            format: [
+              resolvePageLayout({
+                settings,
+                pageSettings: pageSettingsByPage[0],
+                pageIndex: 0,
+              }).width,
+              resolvePageLayout({
+                settings,
+                pageSettings: pageSettingsByPage[0],
+                pageIndex: 0,
+              }).height,
+            ],
+          }
         });
         await waitMessage('initialized');
-
-        const pdfWidth = 612;
-        const pdfHeight = 792;
 
         for (let i = 0; i < exportTotal; i++) {
           if (cancelExportRef.current) break;
@@ -178,6 +191,7 @@ export default function ExportPanel({
           
           const pageLines = currentPages[i] || [];
           const pageSettings = pageSettingsByPage[i] || pageSettingsByPage[0];
+          const layout = resolvePageLayout({ settings, pageSettings, pageIndex: i });
 
           const canvas = await renderDomPageToCanvas({
             pageIndex: i,
@@ -197,8 +211,8 @@ export default function ExportPanel({
             type: 'addPage',
             payload: {
               imgData: arrayBuffer,
-              width: pdfWidth,
-              height: pdfHeight,
+              width: layout.width,
+              height: layout.height,
               isFirstPage: i === 0
             }
           }, [arrayBuffer]);

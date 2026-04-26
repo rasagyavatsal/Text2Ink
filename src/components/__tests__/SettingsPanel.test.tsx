@@ -113,4 +113,36 @@ describe('SettingsPanel', () => {
     expect(screen.getByRole('button', { name: /previous fonts/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /next fonts/i })).toBeInTheDocument();
   });
+
+  it('shows paper template cards and hides built-in paper calibration controls', () => {
+    render(<SettingsPanel {...defaultProps} />);
+
+    expect(screen.getByText('Paper Templates')).toBeInTheDocument();
+    expect(screen.getByText('Page Format')).toBeInTheDocument();
+    expect(screen.getByText('Orientation')).toBeInTheDocument();
+    expect(screen.queryByText('Top Margin')).not.toBeInTheDocument();
+    expect(screen.queryByText('Line Height')).not.toBeInTheDocument();
+    expect(screen.queryByText('Paper Color')).not.toBeInTheDocument();
+    expect(screen.queryByText('Line Color')).not.toBeInTheDocument();
+    expect(screen.getByText('Ink Color')).toBeInTheDocument();
+  });
+
+  it('keeps custom background calibration controls visible', () => {
+    render(
+      <SettingsPanel
+        {...defaultProps}
+        settings={{
+          ...DEFAULT_SETTINGS,
+          customBackgroundImages: ['data:image/png;base64,abc'],
+          customBackgroundImage: 'data:image/png;base64,abc',
+        }}
+      />
+    );
+
+    expect(screen.getByText('Top Margin')).toBeInTheDocument();
+    expect(screen.getByText('Auto-Detect Lines')).toBeInTheDocument();
+    expect(screen.getByText('Line Offset (Y Position)')).toBeInTheDocument();
+    expect(screen.getByText('Custom Line Spacing')).toBeInTheDocument();
+    expect(screen.getByText('Paper Color')).toBeInTheDocument();
+  });
 });
