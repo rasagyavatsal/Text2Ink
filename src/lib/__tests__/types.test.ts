@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { defaultPageSettingsFromHandwritingSettings, DEFAULT_SETTINGS, PAPER_STYLES } from '../types';
+import { defaultPageSettingsFromHandwritingSettings, DEFAULT_SETTINGS, PAPER_STYLES, HANDWRITING_FONTS } from '../types';
 
 describe('types helpers', () => {
   it('defaultPageSettingsFromHandwritingSettings maps all expected fields', () => {
@@ -23,5 +23,17 @@ describe('types helpers', () => {
   it('DEFAULT_SETTINGS and constants remain internally consistent', () => {
     expect(DEFAULT_SETTINGS).toBeDefined();
     expect(PAPER_STYLES).toContainEqual({ name: 'Lined', value: 'lined' });
+  });
+
+  it('includes all newly added local fonts in HANDWRITING_FONTS', () => {
+    const fontValues = HANDWRITING_FONTS.map(f => f.value);
+    expect(fontValues).toContain('beth-ellen');
+    expect(fontValues).toContain('cedarville-cursive');
+    expect(fontValues).toContain('dirty-enough');
+    expect(fontValues).toContain('kalam');
+    expect(fontValues).toContain('kristi');
+    expect(fontValues).toContain('rudiment');
+    expect(fontValues).toContain('singlong');
+    expect(fontValues).toContain('strings-free');
   });
 });
