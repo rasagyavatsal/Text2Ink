@@ -239,7 +239,7 @@ export default function TextField({
         <button
           type="button"
           aria-label="Move text box"
-          className="size-7 bg-white border shadow-sm rounded-full cursor-move hover:bg-gray-50 text-gray-500 touch-none flex items-center justify-center"
+          className="size-7 bg-background border shadow-sm rounded-full cursor-move hover:bg-muted text-muted-foreground touch-none flex items-center justify-center"
           onPointerDown={handleDragPointerDown}
         >
           <Move size={10} />
@@ -258,7 +258,7 @@ export default function TextField({
               ref={settingsTriggerRef}
               type="button"
               aria-label="Text box settings"
-              className="size-7 bg-white border shadow-sm rounded-full hover:bg-gray-50 text-gray-500 flex items-center justify-center"
+              className="size-7 bg-background border shadow-sm rounded-full hover:bg-muted text-muted-foreground flex items-center justify-center"
             >
               <Settings size={10} />
             </button>
@@ -275,12 +275,12 @@ export default function TextField({
               }}
             />
           )}
-          <PopoverContent className="w-48 p-4 shadow-xl border-gray-100">
+          <PopoverContent className="w-48 p-4 shadow-xl border-border bg-background">
             <div className="space-y-5">
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Font Size</label>
-                  <span className="text-[10px] font-mono font-bold text-gray-600">{field.fontSize}px</span>
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Font Size</label>
+                  <span className="text-[10px] font-mono font-bold text-foreground">{field.fontSize}px</span>
                 </div>
                 <Slider
                   value={[field.fontSize]}
@@ -305,23 +305,23 @@ export default function TextField({
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Text Color</label>
-                <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg border border-gray-100">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Text Color</label>
+                <div className="flex items-center gap-3 p-2 bg-muted rounded-lg border border-border">
                   <input
                     type="color"
                     value={field.color}
                     onChange={(e) => onUpdate({ color: e.target.value })}
                     className="w-8 h-8 rounded-md cursor-pointer border-0 p-0 bg-transparent shadow-sm"
                   />
-                  <span className="text-[10px] font-mono font-bold text-gray-600 uppercase">
+                  <span className="text-[10px] font-mono font-bold text-foreground uppercase">
                     {field.color}
                   </span>
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-gray-100">
+              <div className="pt-2 border-t border-border">
                 <button
-                  className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-[10px] font-bold text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors uppercase tracking-widest"
+                  className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-[10px] font-bold text-destructive hover:bg-destructive/10 transition-colors uppercase tracking-widest"
                   onClick={onDelete}
                 >
                   <X size={12} />

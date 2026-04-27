@@ -28,6 +28,7 @@ import {
   MobileSheetAnchor,
   PREVIEW_MAX_SCALE,
 } from '@/lib/mobileEditorSheet';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { Settings, Download } from 'lucide-react';
 
 const MemoSettingsPanel = React.memo(SettingsPanel);
@@ -446,32 +447,35 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
   );
 
   return (
-    <div className="h-[100dvh] bg-white flex flex-col overflow-hidden">
-      <header ref={headerRef} className="border-b border-gray-200 shrink-0 bg-white" role="banner">
+    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
+      <header ref={headerRef} className="border-b border-border shrink-0 bg-background" role="banner">
         <div className="max-w-full mx-auto px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Link href="/" className="font-bold text-2xl sm:text-3xl font-dancing-script hover:opacity-80 transition-opacity">
               <span className="text-[#E0A32A]">Text</span>
-              <span className="text-black">2</span>
+              <span className="text-foreground">2</span>
               <span className="text-[#E0A32A]">Ink</span>
             </Link>
           </div>
-          <Link
-            href="/contact"
-            className="text-gray-700 hover:text-[#E0A32A] font-medium transition-colors"
-          >
-            Contact
-          </Link>
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <Link
+              href="/contact"
+              className="text-foreground hover:text-[#E0A32A] font-medium transition-colors"
+            >
+              Contact
+            </Link>
+          </div>
         </div>
       </header>
 
-      <div className="flex-1 flex min-h-0 bg-gray-100 overflow-hidden">
+      <div className="flex-1 flex min-h-0 bg-muted overflow-hidden">
         {!isMobileEditorLayout && (
           <div
             data-testid="desktop-sidebar"
-            className="hidden xl:flex w-80 bg-white border-r border-gray-200 flex-col min-h-0 shrink-0"
+            className="hidden xl:flex w-80 bg-background border-r border-border flex-col min-h-0 shrink-0"
           >
-            <div className="flex border-b border-gray-200 shrink-0" role="tablist">
+            <div className="flex border-b border-border shrink-0" role="tablist">
               <button
                 role="tab"
                 aria-selected={activePanel === 'settings'}
@@ -479,7 +483,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
                 className={`flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
                   activePanel === 'settings'
                     ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/5'
-                    : 'text-gray-500 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
                 <Settings className="w-4 h-4" />
@@ -492,7 +496,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
                 className={`flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
                   activePanel === 'export'
                     ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/5'
-                    : 'text-gray-500 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
                 <Download className="w-4 h-4" />
@@ -500,10 +504,10 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
               </button>
             </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-white">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-background">
               {activePanel === 'settings' ? settingsPanel : exportPanel}
             </div>
-            <div className="shrink-0 py-2 px-4 border-t border-gray-100 flex justify-center bg-gray-50/50">
+            <div className="shrink-0 py-2 px-4 border-t border-border flex justify-center bg-muted/50">
               <Version />
             </div>
           </div>
@@ -511,7 +515,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
 
         <div
           data-testid="preview-scroll-container"
-          className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-gray-100"
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-muted"
           style={isMobileEditorLayout ? { paddingBottom: effectiveMobileSheetHeight } : undefined}
         >
           <div className={`min-h-full flex justify-center ${isMobileEditorLayout ? 'px-4 py-3' : 'py-12 px-6'}`}>
