@@ -14,6 +14,7 @@ import {
 import localFont from "next/font/local";
 import "./globals.css";
 import FirebaseAnalytics from "./firebase-analytics";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 
 const siteUrl = "https://text2ink.com";
 const siteName = "Text2Ink";
@@ -191,7 +192,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://www.googletagmanager.com" />
         <link rel="preconnect" href="https://www.google-analytics.com" />
@@ -201,8 +202,10 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${caveat.variable} ${dancingScript.variable} ${indieFlower.variable} ${shadowsIntoLight.variable} ${kalam.variable} ${patrickHand.variable} ${architectsDaughter.variable} ${satisfy.variable} ${homemadeApple.variable} ${bethEllen.variable} ${cedarvilleCursive.variable} ${dirtyEnough.variable} ${kristi.variable} ${rudiment.variable} ${singlong.variable} ${stringsFree.variable} antialiased font-sans`}
       >
-        <FirebaseAnalytics />
-        {children}
+        <ThemeProvider>
+          <FirebaseAnalytics />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

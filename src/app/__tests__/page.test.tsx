@@ -113,6 +113,24 @@ describe('Root editor page', () => {
     expect(screen.getByTestId('handwriting-editor')).toBeInTheDocument();
   });
 
+  it('uses a permanent desktop sidebar with Settings and Export top-level views', () => {
+    render(<RootEditorPageClient />);
+
+    expect(screen.getByRole('complementary', { name: /editor tools/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /close sidebar|open sidebar/i })).not.toBeInTheDocument();
+
+    const settingsTab = screen.getByRole('tab', { name: /settings/i });
+    const exportTab = screen.getByRole('tab', { name: /export/i });
+
+    expect(settingsTab).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByTestId('settings-panel')).toBeInTheDocument();
+
+    fireEvent.click(exportTab);
+
+    expect(exportTab).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByTestId('export-panel')).toBeInTheDocument();
+  });
+
   it('removes legacy landing and mobile-blocker copy from root route', () => {
     render(<RootEditorPageClient />);
 

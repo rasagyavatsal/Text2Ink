@@ -1,7 +1,6 @@
-import Link from 'next/link';
-import NextImage from 'next/image';
-import { Mail } from 'lucide-react';
+import { Mail, MessageSquare, Sparkles } from 'lucide-react';
 import { Metadata } from 'next';
+import GlobalHeader from '@/components/patterns/GlobalHeader';
 import Version from '@/components/Version';
 
 export const metadata: Metadata = {
@@ -12,106 +11,92 @@ export const metadata: Metadata = {
   },
 };
 
+const contactReasons = [
+  {
+    title: 'Bug Reports',
+    description: 'Found something broken in the editor or export flow? Send the details and I will prioritize a fix.',
+    icon: MessageSquare,
+  },
+  {
+    title: 'Feature Requests',
+    description: 'Have an idea for a better document workflow? Share what would make Text2Ink more useful.',
+    icon: Sparkles,
+  },
+  {
+    title: 'General Feedback',
+    description: 'Tell me what feels polished, what feels confusing, and where the product can improve.',
+    icon: Mail,
+  },
+];
+
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="border-b border-gray-200" role="banner">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Link href="/" className="font-bold text-2xl sm:text-3xl font-dancing-script hover:text-[#E0A32A] transition-colors">
-              <span className="text-[#E0A32A]">Text</span>
-              <span className="text-black">2</span>
-              <span className="text-[#E0A32A]">Ink</span>
-            </Link>
-          </div>
-          <Link
-            href="/"
-            className="bg-[#E0A32A] text-white px-4 sm:px-5 py-2 rounded-lg font-medium text-sm sm:text-base hover:bg-[#c99225] transition-colors"
-          >
-            Back to Editor
-          </Link>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[var(--t2i-surface-app)] text-[var(--t2i-content-normal)]">
+      <GlobalHeader
+        action={{ href: '/', label: 'Editor', tone: 'primary' }}
+        maxWidth="content"
+      />
 
-      {/* Main Content */}
-      <main className="py-12 sm:py-16 md:py-20 px-4 sm:px-6">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-10 sm:mb-12">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
-              Get in Touch
-            </h1>
-            <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto">
-              Have questions, feedback, or suggestions? I&apos;d love to hear from you!
+      <main className="px-4 py-12 sm:px-6 sm:py-16">
+        <div className="mx-auto max-w-4xl">
+          <section className="t2i-utility-hero text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--t2i-accent-info)]">
+              Utility inbox
             </p>
-          </div>
+            <h1 className="mt-4 text-3xl font-bold tracking-tight text-[var(--t2i-content-strong)] sm:text-5xl">
+              Contact Text2Ink
+            </h1>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-[var(--t2i-content-muted)] sm:text-lg">
+              Have questions, feedback, or suggestions? This page is a lightweight product utility for getting help and sharing what would make the handwriting workflow better.
+            </p>
+          </section>
 
-          <div className="bg-gray-50 border-2 border-gray-200 rounded-2xl p-8 sm:p-10 md:p-12">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#E0A32A] rounded-full flex items-center justify-center mb-6">
-                <Mail className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+          <section className="mt-10 rounded-[var(--t2i-radius-panel)] border border-[var(--t2i-border-default)] bg-[var(--t2i-surface-panel)] p-6 shadow-[var(--t2i-shadow-medium)] sm:p-8">
+            <div className="grid gap-6 md:grid-cols-[auto,1fr] md:items-center">
+              <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-[var(--t2i-brand-soft)] text-[var(--t2i-brand-primary)] ring-1 ring-[var(--t2i-brand-primary)]/20 md:mx-0">
+                <Mail className="h-8 w-8" aria-hidden="true" />
               </div>
 
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">
-                Email Me
-              </h2>
+              <div className="text-center md:text-left">
+                <h2 className="text-xl font-semibold text-[var(--t2i-content-strong)]">
+                  Email
+                </h2>
+                <a
+                  href="mailto:rasagyavatsal@outlook.com"
+                  className="mt-2 inline-flex rounded-md text-lg font-semibold text-[var(--t2i-brand-primary)] transition hover:text-[var(--t2i-brand-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--t2i-focus-ring)]"
+                >
+                  rasagyavatsal@outlook.com
+                </a>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--t2i-content-muted)]">
+                  Whether you found a bug, need help exporting, or just want to share product feedback, feel free to reach out. I typically respond within 24–48 hours.
+                </p>
+              </div>
+            </div>
+          </section>
 
-              <a
-                href="mailto:rasagyavatsal@outlook.com"
-                className="text-lg sm:text-xl text-[#E0A32A] hover:text-[#c99225] font-medium transition-colors mb-6"
+          <section className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {contactReasons.map(({ title, description, icon: Icon }) => (
+              <article
+                key={title}
+                className="rounded-2xl border border-[var(--t2i-border-default)] bg-[var(--t2i-surface-card)] p-5 shadow-[var(--t2i-shadow-low)]"
               >
-                rasagyavatsal@outlook.com
-              </a>
-
-              <p className="text-gray-600 text-sm sm:text-base max-w-md">
-                Whether you&apos;ve found a bug, have a feature request, or just want to say hello,
-                feel free to reach out. I typically respond within 24-48 hours.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-10 sm:mt-12 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-            <div className="p-6 bg-white border border-gray-200 rounded-xl">
-              <h3 className="font-semibold text-gray-900 mb-2">Bug Reports</h3>
-              <p className="text-sm text-gray-600">
-                Found an issue? Let me know so I can fix it quickly.
-              </p>
-            </div>
-            <div className="p-6 bg-white border border-gray-200 rounded-xl">
-              <h3 className="font-semibold text-gray-900 mb-2">Feature Requests</h3>
-              <p className="text-sm text-gray-600">
-                Have an idea? I&apos;m always looking to improve Text2Ink.
-              </p>
-            </div>
-            <div className="p-6 bg-white border border-gray-200 rounded-xl">
-              <h3 className="font-semibold text-gray-900 mb-2">General Feedback</h3>
-              <p className="text-sm text-gray-600">
-                Your thoughts help make Text2Ink better for everyone.
-              </p>
-            </div>
-          </div>
+                <div className="mb-4 grid h-10 w-10 place-items-center rounded-xl bg-[var(--t2i-state-selected)] text-[var(--t2i-accent-info)]">
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <h3 className="font-semibold text-[var(--t2i-content-strong)]">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-[var(--t2i-content-muted)]">
+                  {description}
+                </p>
+              </article>
+            ))}
+          </section>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-200 py-6 sm:py-8 px-4 sm:px-6 mt-12" role="contentinfo">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <NextImage
-              src="/logo-192.png"
-              alt="Text2Ink logo"
-              width={64}
-              height={64}
-              className="w-16 h-16"
-              priority
-            />
-          </div>
-          <div className="flex flex-col items-center md:items-end gap-1">
-            <p className="text-gray-500 text-xs sm:text-sm">
-              © {new Date().getFullYear()} Text2Ink. All rights reserved.
-            </p>
-            <Version />
-          </div>
+      <footer className="border-t border-[var(--t2i-border-subtle)] px-4 py-6 sm:px-6" role="contentinfo">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 text-sm text-[var(--t2i-content-muted)] sm:flex-row">
+          <p>© {new Date().getFullYear()} Text2Ink. All rights reserved.</p>
+          <Version />
         </div>
       </footer>
     </div>

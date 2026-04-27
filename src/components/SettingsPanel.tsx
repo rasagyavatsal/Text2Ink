@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import {
   HandwritingSettings,
   PageSettings,
@@ -22,6 +21,7 @@ import {
   PaperTemplateId,
 } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { SectionCard, SettingRow, SelectorCarousel, UploadWell } from '@/components/patterns/EditorPatterns';
 import { detectBackgroundLines } from '@/lib/lineDetection';
 import { PAGE_FORMATS, PAPER_TEMPLATES, resolvePageLayout } from '@/lib/pageLayout';
 import { 
@@ -58,19 +58,20 @@ const FontCard = ({
   customStyle?: React.CSSProperties
 }) => {
   return (
-    <div
+    <button
+      type="button"
       onClick={onClick}
       className={cn(
         "cursor-pointer rounded-xl p-2.5 flex flex-col items-center gap-2 transition-all border-2 w-full",
         isSelected 
-          ? "bg-[#E0A32A] border-[#E0A32A] text-white shadow-md shadow-[#E0A32A]/20" 
-          : "bg-gray-100 border-transparent hover:bg-gray-200 text-gray-700"
+          ? "bg-[var(--t2i-state-selected)] border-[var(--t2i-state-selected-border)] text-[var(--t2i-accent-info)] shadow-sm" 
+          : "bg-[var(--t2i-surface-panel-muted)] border-transparent hover:bg-[var(--t2i-state-hover)] text-[var(--t2i-content-normal)]"
       )}
     >
       <div 
         className={cn(
           "w-full aspect-[1.6/1] rounded-lg flex items-center justify-center text-2xl overflow-hidden transition-colors",
-          isSelected ? "bg-white/20" : "bg-white",
+          isSelected ? "bg-white/70" : "bg-[var(--t2i-surface-panel)]",
           !customStyle && font.className
         )}
         style={customStyle}
@@ -79,11 +80,11 @@ const FontCard = ({
       </div>
       <span className={cn(
         "text-[10px] font-bold truncate w-full text-center px-1 uppercase tracking-tight",
-        isSelected ? "text-white" : "text-gray-500"
+        isSelected ? "text-[var(--t2i-accent-info)]" : "text-[var(--t2i-content-muted)]"
       )}>
         {font.name}
       </span>
-    </div>
+    </button>
   );
 };
 
@@ -248,52 +249,54 @@ export default function SettingsPanel({
   };
 
   return (
-    <div className="p-6 space-y-8">
-      {/* General Controls Section */}
-      <div>
-        <div className="flex items-center gap-2 mb-5">
-          <Settings2 className="w-5 h-5 text-[#E0A32A]" />
-          <h3 className="font-semibold text-lg">General</h3>
-        </div>
-
+    <div className="space-y-4 p-4">
+      <SectionCard
+        title={(
+          <span className="flex items-center gap-2">
+            <Settings2 className="h-4 w-4 text-[var(--t2i-brand-primary)]" />
+            General
+          </span>
+        )}
+        description="Workspace controls, page navigation, and page-level helpers."
+      >
         <div className="space-y-6">
-          <div className="grid grid-cols-1 gap-4">
-            <div className="flex flex-col gap-2">
-              <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Zoom</Label>
-              <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
-                <button
-                  onClick={() => onPreviewScaleChange(Number((previewScale - 0.1).toFixed(2)))}
-                  className="p-2 rounded-md text-gray-500 hover:text-[#E0A32A] hover:bg-white hover:shadow-sm transition-all"
-                >
-                  <Minus className="w-3.5 h-3.5" />
-                </button>
-                <div className="flex-1 text-center text-xs font-bold text-gray-700">
-                  {Math.round(previewScale * 100)}%
-                </div>
-                <button
-                  onClick={() => onPreviewScaleChange(Number((previewScale + 0.1).toFixed(2)))}
-                  className="p-2 rounded-md text-gray-500 hover:text-[#E0A32A] hover:bg-white hover:shadow-sm transition-all"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Page Navigation</Label>
-            <div className="flex items-center justify-between bg-gray-100 p-1 rounded-lg">
+          <SettingRow label="Zoom" value={`${Math.round(previewScale * 100)}%`}>
+            <div className="flex items-center gap-1 rounded-lg bg-[var(--t2i-surface-panel-muted)] p-1">
               <button
+                type="button"
+                onClick={() => onPreviewScaleChange(Number((previewScale - 0.1).toFixed(2)))}
+                className="rounded-md p-2 text-[var(--t2i-content-muted)] transition-all hover:bg-[var(--t2i-surface-panel)] hover:text-[var(--t2i-brand-primary)] hover:shadow-sm"
+              >
+                <Minus className="w-3.5 h-3.5" />
+              </button>
+              <div className="flex-1 text-center text-xs font-bold text-[var(--t2i-content-normal)]">
+                {Math.round(previewScale * 100)}%
+              </div>
+              <button
+                type="button"
+                onClick={() => onPreviewScaleChange(Number((previewScale + 0.1).toFixed(2)))}
+                className="rounded-md p-2 text-[var(--t2i-content-muted)] transition-all hover:bg-[var(--t2i-surface-panel)] hover:text-[var(--t2i-brand-primary)] hover:shadow-sm"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </SettingRow>
+
+          <SettingRow label="Page Navigation" value={`Page ${currentPageIndex + 1} of ${totalPages}`}>
+            <div className="flex items-center justify-between rounded-lg bg-[var(--t2i-surface-panel-muted)] p-1">
+              <button
+                type="button"
                 onClick={() => onCurrentPageChange(Math.max(0, currentPageIndex - 1))}
                 disabled={currentPageIndex === 0}
-                className="p-2 rounded-md text-gray-500 hover:text-[#E0A32A] hover:bg-white hover:shadow-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                className="rounded-md p-2 text-[var(--t2i-content-muted)] transition-all hover:bg-[var(--t2i-surface-panel)] hover:text-[var(--t2i-brand-primary)] hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-30"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <div className="text-xs font-bold text-gray-700">
+              <div className="text-xs font-bold text-[var(--t2i-content-normal)]">
                 Page {currentPageIndex + 1} of {totalPages}
               </div>
               <button
+                type="button"
                 onClick={() =>
                   onCurrentPageChange(
                     isPaginationComplete
@@ -302,12 +305,12 @@ export default function SettingsPanel({
                   )
                 }
                 disabled={isPaginationComplete && currentPageIndex >= pages.length - 1}
-                className="p-2 rounded-md text-gray-500 hover:text-[#E0A32A] hover:bg-white hover:shadow-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                className="rounded-md p-2 text-[var(--t2i-content-muted)] transition-all hover:bg-[var(--t2i-surface-panel)] hover:text-[var(--t2i-brand-primary)] hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-30"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
-          </div>
+          </SettingRow>
 
           <button
             onClick={onApplyToAllPages}
@@ -342,23 +345,31 @@ export default function SettingsPanel({
             </p>
           </div>
         </div>
-      </div>
+      </SectionCard>
 
-      <Separator />
-
-      <div>
-        <div className="flex items-center gap-2 mb-5">
-          <Type className="w-5 h-5 text-[#E0A32A]" />
-          <h3 className="font-semibold text-lg">Typography</h3>
-        </div>
-
+      <SectionCard
+        title={(
+          <span className="flex items-center gap-2">
+            <Type className="h-4 w-4 text-[var(--t2i-brand-primary)]" />
+            Typography
+          </span>
+        )}
+        description="Handwriting style, sizing, spacing, and line movement."
+      >
         <div className="space-y-6">
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Fonts</Label>
             </div>
             
-            <div className="relative px-8">
+            <SelectorCarousel
+              ariaLabel="Fonts"
+              pageLabel="Font page"
+              currentPage={fontPageIndex}
+              totalPages={totalFontPages}
+              onPrevious={handlePrevFonts}
+              onNext={handleNextFonts}
+            >
               <div className="grid grid-cols-2 gap-3">
                 {visibleFonts.map((font) => (
                   <FontCard
@@ -372,26 +383,7 @@ export default function SettingsPanel({
                   />
                 ))}
               </div>
-
-              {totalFontPages > 1 && (
-                <>
-                  <button
-                    onClick={handlePrevFonts}
-                    className="absolute left-0 top-1/2 -translate-y-1/2 w-7 h-7 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm text-gray-500 hover:text-[#E0A32A] hover:border-[#E0A32A] transition-all"
-                    aria-label="Previous fonts"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={handleNextFonts}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 w-7 h-7 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm text-gray-500 hover:text-[#E0A32A] hover:border-[#E0A32A] transition-all"
-                    aria-label="Next fonts"
-                  >
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </>
-              )}
-            </div>
+            </SelectorCarousel>
           </div>
 
           <div className="flex flex-col gap-2">
@@ -427,7 +419,7 @@ export default function SettingsPanel({
                   </button>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center w-full aspect-[1/0.95] border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-[#E0A32A] hover:bg-[#E0A32A]/5 transition-all group">
+                <UploadWell className="w-full aspect-[1/0.95] gap-2 group">
                   <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center mb-2 group-hover:bg-[#E0A32A]/10 transition-colors">
                     <Upload className="w-4 h-4 text-gray-400 group-hover:text-[#E0A32A] transition-colors" />
                   </div>
@@ -476,7 +468,7 @@ export default function SettingsPanel({
                       reader.readAsDataURL(file);
                     }}
                   />
-                </label>
+                </UploadWell>
               )}
 
               {customFontError && (
@@ -538,16 +530,17 @@ export default function SettingsPanel({
             />
           </div>
         </div>
-      </div>
+      </SectionCard>
 
-      <Separator />
-
-      <div>
-        <div className="flex items-center gap-2 mb-5">
-          <FileText className="w-5 h-5 text-[#E0A32A]" />
-          <h3 className="font-semibold text-lg">Page Layout</h3>
-        </div>
-
+      <SectionCard
+        title={(
+          <span className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-[var(--t2i-brand-primary)]" />
+            Page Layout
+          </span>
+        )}
+        description="Paper format, templates, backgrounds, and calibration controls."
+      >
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-2">
@@ -595,7 +588,14 @@ export default function SettingsPanel({
               <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Paper Templates</Label>
             </div>
 
-            <div className="relative px-8">
+            <SelectorCarousel
+              ariaLabel="Paper templates"
+              pageLabel="Paper page"
+              currentPage={paperPageIndex}
+              totalPages={totalPaperPages}
+              onPrevious={handlePrevPapers}
+              onNext={handleNextPapers}
+            >
               <div className="grid grid-cols-2 gap-3">
                 {visiblePaperTemplates.map((paper) => {
                   const isSelected = resolvedLayout.paperTemplate?.id === paper.id && !hasCustomBackground;
@@ -612,8 +612,8 @@ export default function SettingsPanel({
                       className={cn(
                         "cursor-pointer rounded-xl p-2.5 flex flex-col items-center gap-2 transition-all border-2 w-full",
                         isSelected
-                          ? "bg-[#E0A32A] border-[#E0A32A] text-white shadow-md shadow-[#E0A32A]/20"
-                          : "bg-gray-100 border-transparent hover:bg-gray-200 text-gray-700"
+                          ? "bg-[var(--t2i-state-selected)] border-[var(--t2i-state-selected-border)] text-[var(--t2i-accent-info)] shadow-sm"
+                          : "bg-[var(--t2i-surface-panel-muted)] border-transparent hover:bg-[var(--t2i-state-hover)] text-[var(--t2i-content-normal)]"
                       )}
                     >
                       <span
@@ -643,7 +643,7 @@ export default function SettingsPanel({
                       </span>
                       <span className={cn(
                         "text-[10px] font-bold truncate w-full text-center px-1 uppercase tracking-tight",
-                        isSelected ? "text-white" : "text-gray-500"
+                        isSelected ? "text-[var(--t2i-accent-info)]" : "text-[var(--t2i-content-muted)]"
                       )}>
                         {paper.name}
                       </span>
@@ -651,26 +651,7 @@ export default function SettingsPanel({
                   );
                 })}
               </div>
-
-              {totalPaperPages > 1 && (
-                <>
-                  <button
-                    onClick={handlePrevPapers}
-                    className="absolute left-0 top-1/2 -translate-y-1/2 w-7 h-7 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm text-gray-500 hover:text-[#E0A32A] hover:border-[#E0A32A] transition-all"
-                    aria-label="Previous papers"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={handleNextPapers}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 w-7 h-7 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm text-gray-500 hover:text-[#E0A32A] hover:border-[#E0A32A] transition-all"
-                    aria-label="Next papers"
-                  >
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </>
-              )}
-            </div>
+            </SelectorCarousel>
           </div>
 
           {resolvedLayout.controls.showMarginControls && (
@@ -808,7 +789,7 @@ export default function SettingsPanel({
                 </div>
               )}
 
-              <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:border-[#E0A32A] hover:bg-gray-100/50 transition-colors">
+              <UploadWell className="h-20 w-full">
                 <Upload className="w-5 h-5 text-gray-400 mb-1" />
                 <span className="text-[10px] font-bold text-gray-500 uppercase">Upload PNG or JPG</span>
                 <input
@@ -832,7 +813,7 @@ export default function SettingsPanel({
                       .catch(() => { });
                   }}
                 />
-              </label>
+              </UploadWell>
               <p className="text-[10px] text-gray-400 text-center italic">
                 Image will be used as page background
               </p>
@@ -907,16 +888,17 @@ export default function SettingsPanel({
             </div>
           )}
         </div>
-      </div>
+      </SectionCard>
 
-      <Separator />
-
-      <div>
-        <div className="flex items-center gap-2 mb-5">
-          <Palette className="w-5 h-5 text-[#E0A32A]" />
-          <h3 className="font-semibold text-lg">Colors</h3>
-        </div>
-
+      <SectionCard
+        title={(
+          <span className="flex items-center gap-2">
+            <Palette className="h-4 w-4 text-[var(--t2i-brand-primary)]" />
+            Colors
+          </span>
+        )}
+        description="Ink, paper, and line colors stay faithful to the exported document."
+      >
         <div className="space-y-6">
           <div className="flex flex-col gap-2">
             <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ink Color</Label>
@@ -970,9 +952,9 @@ export default function SettingsPanel({
             </div>
           )}
         </div>
-      </div>
+      </SectionCard>
 
-      <div className="pt-2">
+      <SectionCard title="Danger Zone" description="Destructive reset actions for the current document.">
         <button
           onClick={onClearAll}
           className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-bold text-red-500 hover:bg-red-50 hover:text-red-600 transition-all active:scale-95 border border-red-100"
@@ -980,7 +962,7 @@ export default function SettingsPanel({
           <Trash2 className="w-3.5 h-3.5" />
           Clear Everything
         </button>
-      </div>
+      </SectionCard>
     </div>
   );
 }
