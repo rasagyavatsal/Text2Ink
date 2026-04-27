@@ -28,7 +28,7 @@ import {
   MobileSheetAnchor,
   PREVIEW_MAX_SCALE,
 } from '@/lib/mobileEditorSheet';
-import { Settings, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Settings, Download } from 'lucide-react';
 
 const MemoSettingsPanel = React.memo(SettingsPanel);
 const MemoExportPanel = React.memo(ExportPanel);
@@ -38,7 +38,6 @@ type EditorInitialState = {
   settings: HandwritingSettings;
   pageSettingsByPage: PageSettings[];
   activePanel: 'settings' | 'export';
-  sidebarOpen: boolean;
   previewScale: number;
   currentPageIndex: number;
 };
@@ -48,7 +47,6 @@ const DEFAULT_INITIAL_STATE: EditorInitialState = {
   settings: DEFAULT_SETTINGS,
   pageSettingsByPage: [defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS)],
   activePanel: 'settings',
-  sidebarOpen: true,
   previewScale: 1,
   currentPageIndex: 0,
 };
@@ -66,7 +64,6 @@ const getInitialEditorState = (): EditorInitialState => {
         ? persisted.pageSettingsByPage
         : [defaultPageSettingsFromHandwritingSettings(settings)],
     activePanel: persisted.ui.activePanel,
-    sidebarOpen: persisted.ui.sidebarOpen,
     previewScale: persisted.ui.previewScale,
     currentPageIndex: persisted.ui.currentPageIndex,
   };
@@ -195,7 +192,6 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
   const [settings, setSettings] = useState<HandwritingSettings>(resolvedInitialState.settings);
   const [pageSettingsByPage, setPageSettingsByPage] = useState<PageSettings[]>(resolvedInitialState.pageSettingsByPage);
   const [activePanel, setActivePanel] = useState<'settings' | 'export'>(resolvedInitialState.activePanel);
-  const [sidebarOpen, setSidebarOpen] = useState(resolvedInitialState.sidebarOpen);
   const [previewScale, setPreviewScale] = useState(resolvedInitialState.previewScale);
   const [currentPageIndex, setCurrentPageIndex] = useState(resolvedInitialState.currentPageIndex);
   const [totalPages, setTotalPages] = useState(1);
@@ -273,7 +269,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
         pageSettingsByPage,
         ui: {
           activePanel,
-          sidebarOpen,
+          sidebarOpen: true,
           previewScale,
           currentPageIndex,
           editorMode: 'write',
@@ -290,7 +286,6 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
     persistState,
     previewScale,
     settings,
-    sidebarOpen,
     text,
   ]);
 
@@ -305,7 +300,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
         pageSettingsByPage,
         ui: {
           activePanel,
-          sidebarOpen,
+          sidebarOpen: true,
           previewScale,
           currentPageIndex,
           editorMode: 'write',
@@ -322,7 +317,6 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
     persistState,
     previewScale,
     settings,
-    sidebarOpen,
     text,
   ]);
 
@@ -473,53 +467,46 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
 
       <div className="flex-1 flex min-h-0 bg-gray-100 overflow-hidden">
         {!isMobileEditorLayout && (
-          <>
-            <div
-              className={`hidden xl:flex bg-white border-r border-gray-200 flex-col min-h-0 transition-all duration-300 ${sidebarOpen ? 'w-96' : 'w-0'} overflow-hidden`}
-            >
-              <div className="flex border-b border-gray-200 shrink-0">
-                <button
-                  onClick={() => setActivePanel('settings')}
-                  className={`flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${activePanel === 'settings'
+          <div
+            data-testid="desktop-sidebar"
+            className="hidden xl:flex w-80 bg-white border-r border-gray-200 flex-col min-h-0 shrink-0"
+          >
+            <div className="flex border-b border-gray-200 shrink-0" role="tablist">
+              <button
+                role="tab"
+                aria-selected={activePanel === 'settings'}
+                onClick={() => setActivePanel('settings')}
+                className={`flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
+                  activePanel === 'settings'
                     ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/5'
                     : 'text-gray-500 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
-                  }`}
-                >
-                  <Settings className="w-4 h-4" />
-                  Settings
-                </button>
-                <button
-                  onClick={() => setActivePanel('export')}
-                  className={`flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${activePanel === 'export'
+                }`}
+              >
+                <Settings className="w-4 h-4" />
+                Settings
+              </button>
+              <button
+                role="tab"
+                aria-selected={activePanel === 'export'}
+                onClick={() => setActivePanel('export')}
+                className={`flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${
+                  activePanel === 'export'
                     ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/5'
                     : 'text-gray-500 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
-                  }`}
-                >
-                  <Download className="w-4 h-4" />
-                  Export
-                </button>
-              </div>
-
-              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-white">
-                {activePanel === 'settings' ? settingsPanel : exportPanel}
-              </div>
-              <div className="shrink-0 py-2 px-4 border-t border-gray-100 flex justify-center bg-gray-50/50">
-                <Version />
-              </div>
+                }`}
+              >
+                <Download className="w-4 h-4" />
+                Export
+              </button>
             </div>
 
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className={`hidden xl:block fixed top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-r-xl p-3 shadow-xl hover:shadow-2xl transition-all duration-300 group ${sidebarOpen ? 'left-[384px]' : 'left-0'}`}
-              aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
-            >
-              {sidebarOpen ? (
-                <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:text-[#E0A32A] transition-colors" />
-              ) : (
-                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[#E0A32A] transition-colors" />
-              )}
-            </button>
-          </>
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-white">
+              {activePanel === 'settings' ? settingsPanel : exportPanel}
+            </div>
+            <div className="shrink-0 py-2 px-4 border-t border-gray-100 flex justify-center bg-gray-50/50">
+              <Version />
+            </div>
+          </div>
         )}
 
         <div

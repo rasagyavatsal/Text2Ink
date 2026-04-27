@@ -113,6 +113,46 @@ describe('Root editor page', () => {
     expect(screen.getByTestId('handwriting-editor')).toBeInTheDocument();
   });
 
+  it('desktop: sidebar has no collapse toggle button', () => {
+    render(<RootEditorPageClient />);
+
+    expect(
+      screen.queryByRole('button', { name: /close sidebar|open sidebar/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('desktop: clicking Export tab switches to export panel', () => {
+    render(<RootEditorPageClient />);
+
+    const exportTab = screen.getByRole('tab', { name: /export/i });
+    const settingsTab = screen.getByRole('tab', { name: /settings/i });
+
+    // Default: settings panel active
+    expect(settingsTab).toHaveAttribute('aria-selected', 'true');
+    expect(exportTab).toHaveAttribute('aria-selected', 'false');
+    expect(screen.getByTestId('settings-panel')).toBeInTheDocument();
+    expect(screen.queryByTestId('export-panel')).not.toBeInTheDocument();
+
+    fireEvent.click(exportTab);
+
+    expect(exportTab).toHaveAttribute('aria-selected', 'true');
+    expect(settingsTab).toHaveAttribute('aria-selected', 'false');
+    expect(screen.getByTestId('export-panel')).toBeInTheDocument();
+    expect(screen.queryByTestId('settings-panel')).not.toBeInTheDocument();
+  });
+
+  it('desktop: header is the only banner and contains no editor-specific toolbar', () => {
+    render(<RootEditorPageClient />);
+
+    const banners = screen.getAllByRole('banner');
+    expect(banners).toHaveLength(1);
+
+    const header = banners[0];
+    expect(header).toContainElement(screen.getByRole('link', { name: /contact/i }));
+    // No additional toolbar / secondary header inside the editor shell
+    expect(screen.queryByRole('toolbar')).not.toBeInTheDocument();
+  });
+
   it('removes legacy landing and mobile-blocker copy from root route', () => {
     render(<RootEditorPageClient />);
 
