@@ -29,7 +29,12 @@ vi.mock('lucide-react', () => {
 
 // Mock next/image
 vi.mock('next/image', () => ({
-  default: (props: any) => <img {...props} />,
+  default: (props: any) => {
+    const imageProps = { ...props };
+    delete imageProps.unoptimized;
+    delete imageProps.priority;
+    return React.createElement('img', imageProps);
+  },
 }));
 
 describe('SettingsPanel', () => {

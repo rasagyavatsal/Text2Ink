@@ -12,8 +12,9 @@ import {
   MobileSheetAnchor,
   resolveMobileSheetSnapHeight,
 } from '@/lib/mobileEditorSheet';
-import { cn } from '@/lib/utils';
 import Version from '@/components/Version';
+import { getEditorSidebarViews } from '@/lib/editorShell';
+import { SidebarTabStrip } from '@/components/patterns/EditorPatterns';
 
 interface MobileEditorBottomSheetProps {
   activePanel: 'settings' | 'export';
@@ -90,6 +91,10 @@ export default function MobileEditorBottomSheet({
   }, [metrics, onAnchorChange, onHeightChange, snapPoints]);
 
   const handleLabel = getMobileSheetHandleLabel(anchor);
+  const sidebarViews = getEditorSidebarViews().map((view) => ({
+    ...view,
+    icon: view.id === 'settings' ? Settings : Download,
+  }));
 
   return (
     <Sheet
@@ -108,7 +113,7 @@ export default function MobileEditorBottomSheet({
       onSnap={updateHeightFromSnapIndex}
     >
       <Sheet.Container
-        className="mobile-editor-sheet__container border-t border-gray-200 bg-white shadow-2xl"
+        className="mobile-editor-sheet__container border-t border-[var(--t2i-border-default)] bg-[var(--t2i-surface-panel)] shadow-2xl"
         style={
           {
             '--mobile-editor-sheet-max-height': `${metrics.maxSheetHeight}px`,
@@ -116,62 +121,37 @@ export default function MobileEditorBottomSheet({
           } as React.CSSProperties
         }
       >
-        <Sheet.Header className="mobile-editor-sheet__header bg-white">
+        <Sheet.Header className="mobile-editor-sheet__header bg-[var(--t2i-surface-panel)]">
           <button
             type="button"
-            className="flex min-h-10 w-full touch-none items-center justify-center rounded-t-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E0A32A] focus-visible:ring-offset-2"
+            className="flex min-h-10 w-full touch-none items-center justify-center rounded-t-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--t2i-focus-ring)] focus-visible:ring-offset-2"
             aria-label={handleLabel}
             aria-expanded={anchor !== 'peek'}
             onClick={onHandlePress}
           >
-            <span className="h-1.5 w-14 rounded-full bg-gray-300" aria-hidden="true" />
+            <span className="h-1.5 w-14 rounded-full bg-[var(--t2i-border-strong)]" aria-hidden="true" />
           </button>
         </Sheet.Header>
 
         <Sheet.Content
           disableDrag
-          className="min-h-0 bg-white"
+          className="min-h-0 bg-[var(--t2i-surface-panel)]"
           scrollClassName="mobile-editor-sheet__scroller"
         >
-          <div className="min-h-full bg-white">
-            <div className="sticky top-0 z-10 flex border-b border-gray-200 bg-white">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activePanel === 'settings'}
-                onClick={() => onActivePanelChange('settings')}
-                className={cn(
-                  'flex-1 px-4 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-all',
-                  activePanel === 'settings'
-                    ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/5'
-                    : 'text-gray-500 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5',
-                )}
-              >
-                <Settings className="h-4 w-4" />
-                Settings
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activePanel === 'export'}
-                onClick={() => onActivePanelChange('export')}
-                className={cn(
-                  'flex-1 px-4 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-all',
-                  activePanel === 'export'
-                    ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/5'
-                    : 'text-gray-500 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5',
-                )}
-              >
-                <Download className="h-4 w-4" />
-                Export
-              </button>
+          <div className="min-h-full bg-[var(--t2i-surface-panel)]">
+            <div className="sticky top-0 z-10">
+              <SidebarTabStrip
+                activeView={activePanel}
+                onViewChange={onActivePanelChange}
+                views={sidebarViews}
+              />
             </div>
 
             <div role="tabpanel" className="min-h-0">
               {activePanel === 'settings' ? settingsPanel : exportPanel}
             </div>
 
-            <div className="border-t border-gray-100 bg-gray-50/70 px-4 py-3 text-center">
+            <div className="border-t border-[var(--t2i-border-subtle)] bg-[var(--t2i-surface-panel-muted)] px-4 py-3 text-center">
               <Version />
             </div>
           </div>

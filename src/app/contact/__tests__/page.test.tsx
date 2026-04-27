@@ -1,16 +1,29 @@
-import { describe, it, expect } from 'vitest';
+import React from 'react';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import ContactPage from '../page';
+import ContactPage, { metadata } from '../page';
 
-describe('ContactPage', () => {
-  it('renders contact email and a single editor return action', () => {
+vi.mock('@/components/Version', () => ({
+  default: () => <span data-testid="version">1.0.0</span>,
+}));
+
+describe('Contact page', () => {
+  it('uses the shared product navigation and a lightweight utility layout', () => {
     render(<ContactPage />);
 
-    expect(screen.getByText(/get in touch/i)).toBeInTheDocument();
-    expect(screen.getByText(/rasagyavatsal@outlook.com/i)).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: /back to editor/i })).toHaveLength(1);
-    expect(screen.getByRole('link', { name: /back to editor/i })).toHaveAttribute('href', '/');
-    expect(screen.queryByRole('link', { name: /back to home/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /open editor/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('banner')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /text2ink/i })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('link', { name: /editor/i })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('combobox', { name: /theme preference/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /contact text2ink/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /rasagyavatsal@outlook.com/i })).toHaveAttribute(
+      'href',
+      'mailto:rasagyavatsal@outlook.com',
+    );
+    expect(screen.getByText(/utility inbox/i)).toBeInTheDocument();
+  });
+
+  it('keeps contact metadata canonicalized to the utility page', () => {
+    expect(metadata.alternates?.canonical).toBe('https://text2ink.com/contact');
   });
 });

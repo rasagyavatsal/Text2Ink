@@ -15,6 +15,7 @@ import { HandwritingSettings, PageSettings, LineData } from '@/lib/types';
 import { DOM_EXPORT_SCALE, pageTextFromLines, renderDomPageToCanvas } from '@/lib/domExport';
 import { resolvePageLayout } from '@/lib/pageLayout';
 import FeedbackDialog from './FeedbackDialog';
+import { SectionCard, StatusCallout } from '@/components/patterns/EditorPatterns';
 
 interface ExportPanelProps {
   hasContent: boolean;
@@ -297,13 +298,16 @@ export default function ExportPanel({
   };
 
   return (
-    <div className="p-6 space-y-8">
-      <div>
-        <div className="flex items-center gap-2 mb-5">
-          <Download className="w-5 h-5 text-[#E0A32A]" />
-          <h3 className="font-semibold text-lg">Export Options</h3>
-        </div>
-
+    <div className="space-y-4 p-4">
+      <SectionCard
+        title={(
+          <span className="flex items-center gap-2">
+            <Download className="h-4 w-4 text-[var(--t2i-brand-primary)]" />
+            Export
+          </span>
+        )}
+        description="Choose a format, export the document, and monitor progress inside the sidebar."
+      >
         <div className="space-y-6">
           <div className="flex flex-col gap-2">
             <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest" htmlFor="export-format">Format</Label>
@@ -391,9 +395,9 @@ export default function ExportPanel({
           )}
 
           {!hasContent && (
-            <p className="text-[10px] font-bold text-amber-600/60 text-center uppercase tracking-wider">
+            <StatusCallout tone="warning">
               Start typing to enable export
-            </p>
+            </StatusCallout>
           )}
 
           <p className="text-[10px] text-gray-400 text-center leading-relaxed italic">
@@ -402,7 +406,7 @@ export default function ExportPanel({
               : 'Each page will be downloaded as a separate image'}
           </p>
         </div>
-      </div>
+      </SectionCard>
       <FeedbackDialog 
         isOpen={isFeedbackOpen} 
         onClose={() => setIsFeedbackOpen(false)} 
