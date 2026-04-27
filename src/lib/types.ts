@@ -99,6 +99,13 @@ export const HANDWRITING_FONTS: FontOption[] = [
   { name: 'Architects Daughter', value: 'architects-daughter', className: 'font-[family-name:var(--font-architects-daughter)]' },
   { name: 'Satisfy', value: 'satisfy', className: 'font-[family-name:var(--font-satisfy)]' },
   { name: 'Homemade Apple', value: 'homemade-apple', className: 'font-[family-name:var(--font-homemade-apple)]' },
+  { name: 'Beth Ellen', value: 'beth-ellen', className: 'font-[family-name:var(--font-beth-ellen)]' },
+  { name: 'Cedarville Cursive', value: 'cedarville-cursive', className: 'font-[family-name:var(--font-cedarville-cursive)]' },
+  { name: 'Dirty Enough', value: 'dirty-enough', className: 'font-[family-name:var(--font-dirty-enough)]' },
+  { name: 'Kristi', value: 'kristi', className: 'font-[family-name:var(--font-kristi)]' },
+  { name: 'Rudiment', value: 'rudiment', className: 'font-[family-name:var(--font-rudiment)]' },
+  { name: 'Singlong', value: 'singlong', className: 'font-[family-name:var(--font-singlong)]' },
+  { name: 'Strings Free', value: 'strings-free', className: 'font-[family-name:var(--font-strings-free)]' },
   { name: 'Custom Font', value: 'custom', className: '' },
 ];
 

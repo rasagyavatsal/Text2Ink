@@ -47,6 +47,13 @@ const FONT_VARIABLES: Record<string, string> = {
   'architects-daughter': '--font-architects-daughter',
   'satisfy': '--font-satisfy',
   'homemade-apple': '--font-homemade-apple',
+  'beth-ellen': '--font-beth-ellen',
+  'cedarville-cursive': '--font-cedarville-cursive',
+  'dirty-enough': '--font-dirty-enough',
+  'kristi': '--font-kristi',
+  'rudiment': '--font-rudiment',
+  'singlong': '--font-singlong',
+  'strings-free': '--font-strings-free',
 };
 
 export default function ExportPanel({

@@ -11,6 +11,7 @@ import {
   Satisfy, 
   Homemade_Apple 
 } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import FirebaseAnalytics from "./firebase-analytics";
 
@@ -105,6 +106,48 @@ const homemadeApple = Homemade_Apple({
   display: 'swap',
 });
 
+const bethEllen = localFont({
+  src: "../../public/fonts/BethEllen-Regular.ttf",
+  variable: "--font-beth-ellen",
+  display: 'swap',
+});
+
+const cedarvilleCursive = localFont({
+  src: "../../public/fonts/Cedarville-Cursive.ttf",
+  variable: "--font-cedarville-cursive",
+  display: 'swap',
+});
+
+const dirtyEnough = localFont({
+  src: "../../public/fonts/DirtyEnough-Regular.ttf",
+  variable: "--font-dirty-enough",
+  display: 'swap',
+});
+
+const kristi = localFont({
+  src: "../../public/fonts/Kristi.ttf",
+  variable: "--font-kristi",
+  display: 'swap',
+});
+
+const rudiment = localFont({
+  src: "../../public/fonts/Rudiment.ttf",
+  variable: "--font-rudiment",
+  display: 'swap',
+});
+
+const singlong = localFont({
+  src: "../../public/fonts/Singlong.otf",
+  variable: "--font-singlong",
+  display: 'swap',
+});
+
+const stringsFree = localFont({
+  src: "../../public/fonts/StringsFree.otf",
+  variable: "--font-strings-free",
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
@@ -156,7 +199,7 @@ export default function RootLayout({
         <script src="https://t.contentsquare.net/uxa/ea250cc30afee.js" async />
       </head>
       <body
-        className={`${inter.variable} ${caveat.variable} ${dancingScript.variable} ${indieFlower.variable} ${shadowsIntoLight.variable} ${kalam.variable} ${patrickHand.variable} ${architectsDaughter.variable} ${satisfy.variable} ${homemadeApple.variable} antialiased font-sans`}
+        className={`${inter.variable} ${caveat.variable} ${dancingScript.variable} ${indieFlower.variable} ${shadowsIntoLight.variable} ${kalam.variable} ${patrickHand.variable} ${architectsDaughter.variable} ${satisfy.variable} ${homemadeApple.variable} ${bethEllen.variable} ${cedarvilleCursive.variable} ${dirtyEnough.variable} ${kristi.variable} ${rudiment.variable} ${singlong.variable} ${stringsFree.variable} antialiased font-sans`}
       >
         <FirebaseAnalytics />
         {children}
