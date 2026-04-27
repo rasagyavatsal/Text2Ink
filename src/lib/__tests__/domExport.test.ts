@@ -98,7 +98,7 @@ describe('domExport', () => {
     expect(page.style.height).toBe('792px');
   });
 
-  it('uses selected page dimensions and includes the selected SVG paper template', () => {
+  it('uses selected page dimensions and rasterizes built-in paper templates into a background image', () => {
     const page = createExportPageElement({
       pageIndex: 0,
       pageText: 'Body text',
@@ -115,7 +115,12 @@ describe('domExport', () => {
 
     expect(page.style.width).toBe('841.89px');
     expect(page.style.height).toBe('595.28px');
-    expect(page.querySelector('[data-export-paper-svg="dot-grid"]')).not.toBeNull();
+    expect(page.querySelector('[data-export-paper-svg]')).toBeNull();
+
+    const background = page.querySelector<HTMLImageElement>('[data-export-paper-raster="dot-grid"]');
+    expect(background).not.toBeNull();
+    expect(background?.dataset.exportLayer).toBe('background-image');
+    expect(background?.src.startsWith('data:image/svg+xml;charset=utf-8,')).toBe(true);
   });
 
   it('exports accent ruled templates with full-width rules and a full-height red margin line', () => {
@@ -127,18 +132,33 @@ describe('domExport', () => {
       fontFamily: 'Caveat',
     });
 
-    const lines = Array.from(page.querySelectorAll<SVGLineElement>('line'));
-    expect(lines[0]?.getAttribute('x1')).toBe('0');
-    expect(lines[0]?.getAttribute('y1')).toBe('60');
-    expect(lines[0]?.getAttribute('x2')).toBe('612');
-    expect(lines[0]?.getAttribute('y2')).toBe('60');
+    const background = page.querySelector<HTMLImageElement>('[data-export-paper-raster="margin-ruled"]');
+    const svg = decodeURIComponent(background?.src.split(',')[1] ?? '');
 
-    const accentLine = lines.find((line) => line.getAttribute('stroke') === '#ffb3b3');
-    expect(accentLine).not.toBeUndefined();
-    expect(accentLine?.getAttribute('x1')).toBe('79');
-    expect(accentLine?.getAttribute('y1')).toBe('0');
-    expect(accentLine?.getAttribute('x2')).toBe('79');
-    expect(accentLine?.getAttribute('y2')).toBe('792');
+    expect(svg).toContain('x1="0" y1="60" x2="612" y2="60"');
+    expect(svg).toContain('x1="79" y1="0" x2="79" y2="792" stroke="#ffb3b3" stroke-width="2"');
+  });
+
+  it('keeps custom uploaded backgrounds on the existing export image path', () => {
+    const customBackgroundImage = 'data:image/png;base64,custom-background';
+    const page = createExportPageElement({
+      pageIndex: 0,
+      pageText: 'Body text',
+      pageSettings: {
+        ...defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
+        customBackgroundImage,
+      },
+      settings: {
+        ...DEFAULT_SETTINGS,
+        customBackgroundImage,
+      },
+      fontFamily: 'Caveat',
+    });
+
+    expect(page.querySelector('[data-export-paper-raster]')).toBeNull();
+
+    const background = page.querySelector<HTMLImageElement>('[data-export-layer="background-image"]');
+    expect(background?.src).toContain(customBackgroundImage);
   });
 
   it('renders successfully when the app theme uses modern CSS color functions', async () => {
