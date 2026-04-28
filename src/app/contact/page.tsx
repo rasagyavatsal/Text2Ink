@@ -1,7 +1,7 @@
 import { Mail } from 'lucide-react';
 import { Metadata } from 'next';
 import GlobalHeader from '@/components/patterns/GlobalHeader';
-import Version from '@/components/Version';
+import SiteFooter from '@/components/patterns/SiteFooter';
 
 export const metadata: Metadata = {
   title: 'Contact Us',
@@ -13,10 +13,10 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-[var(--t2i-surface-app)] text-[var(--t2i-content-normal)]">
-      <GlobalHeader action={{ href: '/', label: 'Editor', tone: 'primary' }} />
+    <div className="flex min-h-screen flex-col bg-[var(--t2i-surface-app)] text-[var(--t2i-content-normal)]">
+      <GlobalHeader action={{ href: '/editor', label: 'Editor', tone: 'primary' }} />
 
-      <main className="px-4 py-12 sm:px-6 sm:py-16">
+      <main className="flex-1 px-4 py-12 sm:px-6 sm:py-16">
         <section className="mx-auto max-w-3xl rounded-[var(--t2i-radius-panel)] border border-[var(--t2i-border-default)] bg-[var(--t2i-surface-panel)] p-6 shadow-none sm:p-8">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
             <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-[var(--t2i-border-subtle)] bg-[var(--t2i-brand-soft)] text-[var(--t2i-brand-primary)]">
@@ -41,12 +41,7 @@ export default function ContactPage() {
         </section>
       </main>
 
-      <footer className="border-t border-[var(--t2i-border-subtle)] px-4 py-6 sm:px-6" role="contentinfo">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 text-sm text-[var(--t2i-content-muted)] sm:flex-row">
-          <p>© {new Date().getFullYear()} Text2Ink. All rights reserved.</p>
-          <Version />
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
