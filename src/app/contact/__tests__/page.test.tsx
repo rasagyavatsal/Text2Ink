@@ -13,7 +13,7 @@ describe('Contact page', () => {
 
     expect(screen.getByRole('banner')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /text2ink/i })).toHaveAttribute('href', '/');
-    expect(screen.getByRole('link', { name: /editor/i })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('link', { name: /editor/i })).toHaveAttribute('href', '/editor');
     expect(screen.queryByRole('combobox', { name: /theme preference/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /theme preference: system/i })).toBeInTheDocument();
     expect(screen.getByTestId('global-header-inner')).toHaveClass('max-w-full');
@@ -25,6 +25,7 @@ describe('Contact page', () => {
     expect(screen.queryByText(/utility inbox/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/bug reports/i)).not.toBeInTheDocument();
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
+    expect(screen.getByTestId('version')).toBeInTheDocument();
   });
 
   it('keeps contact metadata canonicalized to the utility page', () => {
