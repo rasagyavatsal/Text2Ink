@@ -113,7 +113,7 @@ export default function MobileEditorBottomSheet({
       onSnap={updateHeightFromSnapIndex}
     >
       <Sheet.Container
-        className="mobile-editor-sheet__container border-t border-[var(--t2i-border-default)] bg-[var(--t2i-surface-panel)] shadow-2xl"
+        className="mobile-editor-sheet__container border-t border-[var(--t2i-border-default)] bg-[var(--t2i-surface-panel)] shadow-[var(--t2i-shadow-medium)]"
         style={
           {
             '--mobile-editor-sheet-max-height': `${metrics.maxSheetHeight}px`,
@@ -124,7 +124,7 @@ export default function MobileEditorBottomSheet({
         <Sheet.Header className="mobile-editor-sheet__header bg-[var(--t2i-surface-panel)]">
           <button
             type="button"
-            className="flex min-h-10 w-full touch-none items-center justify-center rounded-t-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--t2i-focus-ring)] focus-visible:ring-offset-2"
+            className="flex min-h-10 w-full touch-none items-center justify-center rounded-t-[var(--t2i-radius-panel)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--t2i-focus-ring)] focus-visible:ring-offset-2"
             aria-label={handleLabel}
             aria-expanded={anchor !== 'peek'}
             onClick={onHandlePress}

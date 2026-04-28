@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  getNextThemePreference,
   loadThemePreference,
   persistThemePreference,
   resolveThemePreference,
@@ -44,5 +45,12 @@ describe('theme preference behavior', () => {
     expect(loadThemePreference(storage)).toBe('system');
     expect(sanitizeThemePreference('light')).toBe('light');
     expect(sanitizeThemePreference('unexpected')).toBe('system');
+  });
+
+  it('cycles only through system, light, and dark in the header order', () => {
+    expect(getNextThemePreference('system')).toBe('light');
+    expect(getNextThemePreference('light')).toBe('dark');
+    expect(getNextThemePreference('dark')).toBe('system');
+    expect(getNextThemePreference('unexpected')).toBe('light');
   });
 });

@@ -1,8 +1,10 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { ThemeModeSelect } from '@/components/theme/ThemeProvider';
+import { ThemeCycleButton } from '@/components/theme/ThemeProvider';
+import { getGlobalHeaderGutterClassName } from '@/lib/headerLayout';
 import { cn } from '@/lib/utils';
 
 type HeaderAction = {
@@ -14,7 +16,6 @@ type HeaderAction = {
 type GlobalHeaderProps = {
   action?: HeaderAction;
   className?: string;
-  maxWidth?: 'full' | 'content';
 };
 
 const actionClassName = (tone: HeaderAction['tone'] = 'ghost') =>
@@ -26,30 +27,25 @@ const actionClassName = (tone: HeaderAction['tone'] = 'ghost') =>
   );
 
 const GlobalHeader = React.forwardRef<HTMLElement, GlobalHeaderProps>(function GlobalHeader(
-  { action = { href: '/contact', label: 'Contact', tone: 'ghost' }, className, maxWidth = 'full' },
+  { action = { href: '/contact', label: 'Contact', tone: 'ghost' }, className },
   ref,
 ) {
   return (
     <header ref={ref} className={cn('t2i-global-header shrink-0', className)} role="banner">
-      <div
-        className={cn(
-          'mx-auto flex items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4',
-          maxWidth === 'content' ? 'max-w-6xl' : 'max-w-full',
-        )}
-      >
+      <div data-testid="global-header-inner" className={getGlobalHeaderGutterClassName()}>
         <Link
           href="/"
           className="group inline-flex items-center gap-2 rounded-full text-lg font-bold tracking-tight text-[var(--t2i-content-strong)] transition hover:text-[var(--t2i-brand-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--t2i-focus-ring)] sm:text-xl"
           aria-label="Text2Ink"
         >
-          <span className="grid h-8 w-8 place-items-center rounded-xl bg-[var(--t2i-brand-soft)] text-sm font-black text-[var(--t2i-brand-primary)] ring-1 ring-[var(--t2i-brand-primary)]/20">
-            T2
+          <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-lg border border-[var(--t2i-border-subtle)] bg-[var(--t2i-surface-raised)]">
+            <Image src="/logo-without-background.png" alt="Text2Ink logo" width={32} height={32} className="h-7 w-7 object-contain" priority />
           </span>
           <span>Text2Ink</span>
         </Link>
 
         <nav className="flex items-center gap-2" aria-label="Primary navigation">
-          <ThemeModeSelect />
+          <ThemeCycleButton />
           <Link href={action.href} className={actionClassName(action.tone)}>
             {action.label}
           </Link>

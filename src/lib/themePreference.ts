@@ -6,7 +6,7 @@ type ThemeStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 export const THEME_STORAGE_KEY = 'text2ink.themePreference.v1';
 
-const VALID_THEME_PREFERENCES: readonly ThemePreference[] = ['system', 'light', 'dark'];
+export const VALID_THEME_PREFERENCES: readonly ThemePreference[] = ['system', 'light', 'dark'];
 
 export function sanitizeThemePreference(value: unknown): ThemePreference {
   return VALID_THEME_PREFERENCES.includes(value as ThemePreference)
@@ -20,6 +20,19 @@ export function resolveThemePreference(preference: ThemePreference, systemDark: 
   }
 
   return preference;
+}
+
+export function getNextThemePreference(preference: unknown): ThemePreference {
+  const current = sanitizeThemePreference(preference);
+  if (current === 'system') return 'light';
+  if (current === 'light') return 'dark';
+  return 'system';
+}
+
+export function getThemePreferenceLabel(preference: ThemePreference) {
+  if (preference === 'system') return 'System';
+  if (preference === 'light') return 'Light';
+  return 'Dark';
 }
 
 export function loadThemePreference(storage?: ThemeStorage | null): ThemePreference {

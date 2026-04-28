@@ -7,16 +7,28 @@ import {
 } from '@/lib/designSystem';
 
 describe('design system token contract', () => {
-  it('keeps the gold brand as a primary accent while neutral tokens drive chrome surfaces', () => {
+  it('keeps brand accents while neutral minimal tokens drive chrome surfaces', () => {
     const light = resolveChromeTheme('light');
     const dark = resolveChromeTheme('dark');
 
     expect(DESIGN_TOKEN_CONTRACT.color.brand.primary).toBe('#E0A32A');
     expect(light.color.brand.primary).toBe('#E0A32A');
     expect(dark.color.brand.primary).toBe('#E0A32A');
+    expect(light.color.accent.info).toBe('#4F46E5');
+    expect(dark.color.accent.info).toBe('#818CF8');
     expect(light.color.surface.app).not.toBe(light.color.brand.primary);
     expect(light.color.state.selectedBackground).not.toBe(light.color.brand.primary);
-    expect(light.color.accent.info).toMatch(/^#/);
+  });
+
+  it('uses true-black dark chrome with restrained neutral layering', () => {
+    const dark = resolveChromeTheme('dark');
+
+    expect(dark.color.surface.app).toBe('#000000');
+    expect(dark.color.surface.header).toBe('rgba(0, 0, 0, 0.86)');
+    expect(dark.color.surface.panel).toBe('#090909');
+    expect(dark.color.surface.panelMuted).toBe('#0F0F10');
+    expect(dark.color.surface.card).toBe('#111111');
+    expect(dark.elevation.medium).not.toContain('15, 23, 42');
   });
 
   it('changes chrome theme tokens without changing the document preview appearance', () => {

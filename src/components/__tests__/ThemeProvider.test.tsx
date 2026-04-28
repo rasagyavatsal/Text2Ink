@@ -1,7 +1,7 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { ThemeModeSelect, ThemeProvider } from '@/components/theme/ThemeProvider';
+import { ThemeCycleButton, ThemeProvider } from '@/components/theme/ThemeProvider';
 import { THEME_STORAGE_KEY } from '@/lib/themePreference';
 
 function mockMatchMedia(matches: boolean) {
@@ -42,29 +42,44 @@ describe('ThemeProvider', () => {
     localStorage.clear();
     document.documentElement.className = '';
     document.documentElement.removeAttribute('data-theme');
+    document.documentElement.removeAttribute('data-theme-preference');
     mockMatchMedia(false);
   });
 
   afterEach(() => {
     document.documentElement.className = '';
     document.documentElement.removeAttribute('data-theme');
+    document.documentElement.removeAttribute('data-theme-preference');
   });
 
-  it('lets users choose a dark chrome theme and persists that preference locally', async () => {
+  it('cycles the header theme button through system, light, and dark while persisting locally', async () => {
     render(
       <ThemeProvider>
-        <ThemeModeSelect />
+        <ThemeCycleButton />
       </ThemeProvider>,
     );
 
-    const selector = screen.getByRole('combobox', { name: /theme preference/i });
-    expect(selector).toHaveValue('system');
+    expect(screen.queryByRole('combobox', { name: /theme preference/i })).not.toBeInTheDocument();
 
-    fireEvent.change(selector, { target: { value: 'dark' } });
+    const button = screen.getByRole('button', { name: /theme preference: system/i });
+    expect(button).toHaveAttribute('title', expect.stringMatching(/system/i));
+
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(document.documentElement).toHaveAttribute('data-theme', 'light');
+    });
+    expect(document.documentElement).toHaveAttribute('data-theme-preference', 'light');
+    expect(document.documentElement).not.toHaveClass('dark');
+    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('light');
+    expect(screen.getByRole('button', { name: /theme preference: light/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /theme preference: light/i }));
 
     await waitFor(() => {
       expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
     });
+    expect(document.documentElement).toHaveAttribute('data-theme-preference', 'dark');
     expect(document.documentElement).toHaveClass('dark');
     expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
   });
@@ -74,13 +89,14 @@ describe('ThemeProvider', () => {
 
     render(
       <ThemeProvider>
-        <ThemeModeSelect />
+        <ThemeCycleButton />
       </ThemeProvider>,
     );
 
     await waitFor(() => {
       expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
     });
-    expect(screen.getByRole('combobox', { name: /theme preference/i })).toHaveValue('system');
+    expect(document.documentElement).toHaveAttribute('data-theme-preference', 'system');
+    expect(screen.getByRole('button', { name: /theme preference: system/i })).toBeInTheDocument();
   });
 });
