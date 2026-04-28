@@ -68,15 +68,24 @@ describe('SettingsPanel', () => {
     vi.clearAllMocks();
   });
 
-  it('renders the General section with "Add Text Box" button', () => {
+  it('renders a minimal inspector ordered around user-facing control groups', () => {
     render(<SettingsPanel {...defaultProps} />);
-    
-    // Check if General heading exists
-    expect(screen.getByText('General')).toBeInTheDocument();
-    
-    // Check if "Add Text Box" button is in the document
-    const addTextBoxButton = screen.getByRole('button', { name: /Add Text Box/i });
-    expect(addTextBoxButton).toBeInTheDocument();
+
+    const sectionNames = screen
+      .getAllByRole('heading', { level: 3 })
+      .map((heading) => heading.textContent?.replace(/\s+/g, ' ').trim());
+
+    expect(sectionNames).toEqual([
+      'General',
+      'Typography',
+      'Page Layout',
+      'Background Calibration',
+      'Colors',
+      'Destructive Actions',
+    ]);
+    expect(screen.getByRole('button', { name: /Add Text Box/i })).toBeInTheDocument();
+    expect(screen.queryByText(/Workspace controls/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Add draggable text boxes/i)).not.toBeInTheDocument();
   });
 
   it('calls onPageSettingsChange when "Add Text Box" is clicked', () => {
@@ -119,12 +128,13 @@ describe('SettingsPanel', () => {
     expect(screen.getByRole('button', { name: /next fonts/i })).toBeInTheDocument();
   });
 
-  it('shows paper template cards and hides built-in paper calibration controls', () => {
+  it('shows paper template cards and separates custom background calibration from page layout', () => {
     render(<SettingsPanel {...defaultProps} />);
 
     expect(screen.getByText('Paper Templates')).toBeInTheDocument();
     expect(screen.getByText('Page Format')).toBeInTheDocument();
     expect(screen.getByText('Orientation')).toBeInTheDocument();
+    expect(screen.getByText('Custom Background Image')).toBeInTheDocument();
     expect(screen.queryByText('Top Margin')).not.toBeInTheDocument();
     expect(screen.queryByText('Line Height')).not.toBeInTheDocument();
     expect(screen.queryByText('Paper Color')).not.toBeInTheDocument();

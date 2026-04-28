@@ -109,6 +109,8 @@ describe('Root editor page', () => {
     render(<RootEditorPageClient />);
 
     expect(screen.getByRole('link', { name: /contact/i })).toHaveAttribute('href', '/contact');
+    expect(screen.getByRole('button', { name: /theme preference: system/i })).toBeInTheDocument();
+    expect(screen.getByTestId('global-header-inner')).toHaveClass('max-w-full');
     expect(screen.getByTestId('settings-panel')).toBeInTheDocument();
     expect(screen.getByTestId('handwriting-editor')).toBeInTheDocument();
   });

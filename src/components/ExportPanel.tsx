@@ -306,16 +306,15 @@ export default function ExportPanel({
             Export
           </span>
         )}
-        description="Choose a format, export the document, and monitor progress inside the sidebar."
       >
         <div className="space-y-6">
           <div className="flex flex-col gap-2">
-            <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest" htmlFor="export-format">Format</Label>
+            <Label className="text-[10px] font-bold text-[var(--t2i-content-muted)] uppercase tracking-widest" htmlFor="export-format">Format</Label>
             <Select
               value={format}
               onValueChange={(value) => setFormat(value as ExportFormat)}
             >
-              <SelectTrigger id="export-format" className="bg-gray-100 border-none h-9 text-sm">
+              <SelectTrigger id="export-format" className="bg-[var(--t2i-surface-panel-muted)] border-[var(--t2i-border-subtle)] h-9 text-sm">
                 <SelectValue placeholder="Select format" />
               </SelectTrigger>
               <SelectContent>
@@ -345,7 +344,7 @@ export default function ExportPanel({
             onClick={exportPages}
             disabled={isExporting || !hasContent}
             className={`w-full font-bold transition-all active:scale-95 h-11 ${
-              !hasContent ? 'bg-gray-100 text-gray-400 hover:bg-gray-100' : 'bg-[#E0A32A] hover:bg-[#c99225] text-white shadow-sm'
+              !hasContent ? 'bg-[var(--t2i-surface-panel-muted)] text-[var(--t2i-content-subtle)] hover:bg-[var(--t2i-surface-panel-muted)]' : 'bg-[var(--t2i-brand-primary)] hover:bg-[var(--t2i-brand-hover)] text-[var(--t2i-brand-on-primary)] shadow-none'
             }`}
           >
             {isExporting ? (
@@ -362,20 +361,20 @@ export default function ExportPanel({
           </Button>
 
           {isExporting && exportProgress && (
-            <div className="space-y-4 p-3 bg-gray-100 rounded-lg">
+            <div className="space-y-4 p-3 bg-[var(--t2i-surface-panel-muted)] rounded-lg">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                <span className="text-[10px] font-bold text-[var(--t2i-content-muted)] uppercase tracking-widest">
                   {format === 'pdf' && exportProgress.current >= exportProgress.total - 1
                     ? 'Finalizing PDF...'
                     : `Page ${Math.min(exportProgress.total, exportProgress.current + 1)} / ${exportProgress.total}`}
                 </span>
-                <span className="text-[10px] font-bold text-gray-700 bg-white px-1.5 py-0.5 rounded shadow-sm">
+                <span className="text-[10px] font-bold text-[var(--t2i-content-normal)] bg-[var(--t2i-surface-panel)] px-1.5 py-0.5 rounded">
                   {Math.round((exportProgress.current / exportProgress.total) * 100)}%
                 </span>
               </div>
-              <div className="h-1.5 w-full rounded-full bg-gray-200 overflow-hidden">
+              <div className="h-1.5 w-full rounded-full bg-[var(--t2i-border-default)] overflow-hidden">
                 <div
-                  className="h-full bg-[#E0A32A] transition-all duration-300"
+                  className="h-full bg-[var(--t2i-brand-primary)] transition-all duration-300"
                   style={{
                     width: `${Math.round((exportProgress.current / exportProgress.total) * 100)}%`,
                   }}
@@ -384,7 +383,7 @@ export default function ExportPanel({
               <Button
                 type="button"
                 variant="ghost"
-                className="w-full h-8 text-[10px] font-bold text-red-500 hover:text-red-600 hover:bg-white/50 uppercase tracking-widest"
+                className="w-full h-8 text-[10px] font-bold text-red-500 hover:text-red-600 hover:bg-[var(--t2i-state-hover)] uppercase tracking-widest"
                 onClick={() => {
                   cancelExportRef.current = true;
                 }}
@@ -400,10 +399,8 @@ export default function ExportPanel({
             </StatusCallout>
           )}
 
-          <p className="text-[10px] text-gray-400 text-center leading-relaxed italic">
-            {format === 'pdf'
-              ? 'All pages will be combined into a single PDF'
-              : 'Each page will be downloaded as a separate image'}
+          <p className="text-[10px] text-[var(--t2i-content-subtle)] text-center leading-relaxed">
+            {format === 'pdf' ? 'Single PDF' : 'Separate page images'}
           </p>
         </div>
       </SectionCard>

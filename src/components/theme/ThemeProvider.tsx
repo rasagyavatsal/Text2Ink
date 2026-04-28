@@ -1,12 +1,18 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo } from 'react';
+import { Monitor, Moon, Sun } from 'lucide-react';
+import { ThemeProvider as NextThemesProvider, useTheme as useNextTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import {
+  getNextThemePreference,
+  getThemePreferenceLabel,
   loadThemePreference,
   persistThemePreference,
   resolveThemePreference,
   sanitizeThemePreference,
+  THEME_STORAGE_KEY,
+  VALID_THEME_PREFERENCES,
   type ThemePreference,
 } from '@/lib/themePreference';
 import type { ChromeTheme } from '@/lib/designSystem';
@@ -16,6 +22,8 @@ type ThemeContextValue = {
   resolvedTheme: ChromeTheme;
   setPreference: (preference: ThemePreference) => void;
 };
+
+const NEXT_THEMES = VALID_THEME_PREFERENCES.filter((preference) => preference !== 'system');
 
 const ThemeContext = createContext<ThemeContextValue>({
   preference: 'system',
@@ -38,66 +46,86 @@ function getLocalStorage() {
   }
 }
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [preference, setPreferenceState] = useState<ThemePreference>(() => loadThemePreference(getLocalStorage()));
-  const [systemDark, setSystemDark] = useState(() => getSystemDark());
+function applyRootThemeMarkers(preference: ThemePreference, resolvedTheme: ChromeTheme) {
+  if (typeof document === 'undefined') return;
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia?.('(prefers-color-scheme: dark)');
-    if (!mediaQuery) return;
+  const root = document.documentElement;
+  root.dataset.theme = resolvedTheme;
+  root.dataset.themePreference = preference;
+  root.classList.toggle('dark', resolvedTheme === 'dark');
+  root.style.colorScheme = resolvedTheme;
+}
 
-    const update = () => setSystemDark(mediaQuery.matches);
-    mediaQuery.addEventListener('change', update);
-    return () => mediaQuery.removeEventListener('change', update);
-  }, []);
-
+function ChromeThemeBridge({ children }: { children: React.ReactNode }) {
+  const { resolvedTheme: nextResolvedTheme, setTheme, systemTheme, theme } = useNextTheme();
+  const preference = sanitizeThemePreference(theme ?? loadThemePreference(getLocalStorage()));
+  const systemDark = (nextResolvedTheme ?? systemTheme) === 'dark' || (!(nextResolvedTheme ?? systemTheme) && getSystemDark());
   const resolvedTheme = resolveThemePreference(preference, systemDark);
 
   useEffect(() => {
-    const root = document.documentElement;
-    root.dataset.theme = resolvedTheme;
-    root.classList.toggle('dark', resolvedTheme === 'dark');
-    root.style.colorScheme = resolvedTheme;
-  }, [resolvedTheme]);
+    applyRootThemeMarkers(preference, resolvedTheme);
+  }, [preference, resolvedTheme]);
+
+  const setPreference = useCallback(
+    (nextPreference: ThemePreference) => {
+      const sanitized = sanitizeThemePreference(nextPreference);
+      persistThemePreference(getLocalStorage(), sanitized);
+      setTheme(sanitized);
+    },
+    [setTheme],
+  );
 
   const value = useMemo<ThemeContextValue>(
     () => ({
       preference,
       resolvedTheme,
-      setPreference: (nextPreference) => {
-        const sanitized = sanitizeThemePreference(nextPreference);
-        setPreferenceState(sanitized);
-        persistThemePreference(getLocalStorage(), sanitized);
-      },
+      setPreference,
     }),
-    [preference, resolvedTheme],
+    [preference, resolvedTheme, setPreference],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+}
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      storageKey={THEME_STORAGE_KEY}
+      themes={NEXT_THEMES}
+    >
+      <ChromeThemeBridge>{children}</ChromeThemeBridge>
+    </NextThemesProvider>
+  );
 }
 
 export function useTheme() {
   return useContext(ThemeContext);
 }
 
-export function ThemeModeSelect({ className }: { className?: string }) {
+export function ThemeCycleButton({ className }: { className?: string }) {
   const { preference, resolvedTheme, setPreference } = useTheme();
+  const nextPreference = getNextThemePreference(preference);
+  const label = getThemePreferenceLabel(preference);
+  const nextLabel = getThemePreferenceLabel(nextPreference);
+  const Icon = preference === 'system' ? Monitor : preference === 'light' ? Sun : Moon;
 
   return (
-    <label className={cn('inline-flex items-center gap-2 text-sm font-medium text-[var(--t2i-content-muted)]', className)}>
-      <span className="sr-only">Theme</span>
-      <select
-        aria-label="Theme preference"
-        suppressHydrationWarning
-        className="h-9 rounded-full border border-[var(--t2i-border-default)] bg-[var(--t2i-surface-panel)] px-3 text-xs font-semibold text-[var(--t2i-content-normal)] shadow-sm outline-none transition focus-visible:border-[var(--t2i-border-focus)] focus-visible:ring-2 focus-visible:ring-[var(--t2i-focus-ring)]"
-        value={preference}
-        onChange={(event) => setPreference(sanitizeThemePreference(event.target.value))}
-        title={`Chrome theme: ${resolvedTheme}`}
-      >
-        <option value="system">System</option>
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-      </select>
-    </label>
+    <button
+      type="button"
+      aria-label={`Theme preference: ${label}. Current chrome: ${resolvedTheme}. Activate ${nextLabel}.`}
+      title={`Theme preference: ${label} · Current chrome: ${resolvedTheme} · Next: ${nextLabel}`}
+      className={cn('t2i-theme-cycle-button focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--t2i-focus-ring)]', className)}
+      data-theme-preference={preference}
+      onClick={() => setPreference(nextPreference)}
+    >
+      <Icon className="t2i-theme-cycle-button__icon h-4 w-4" aria-hidden="true" />
+    </button>
   );
+}
+
+export function ThemeModeSelect({ className }: { className?: string }) {
+  return <ThemeCycleButton className={className} />;
 }

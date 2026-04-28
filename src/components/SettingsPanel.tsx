@@ -257,7 +257,6 @@ export default function SettingsPanel({
             General
           </span>
         )}
-        description="Workspace controls, page navigation, and page-level helpers."
       >
         <div className="space-y-6">
           <SettingRow label="Zoom" value={`${Math.round(previewScale * 100)}%`}>
@@ -314,7 +313,7 @@ export default function SettingsPanel({
 
           <button
             onClick={onApplyToAllPages}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-[#E0A32A]/5 border border-[#E0A32A]/20 rounded-xl text-xs font-bold text-[#E0A32A] hover:bg-[#E0A32A]/10 transition-all active:scale-95"
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-[var(--t2i-brand-soft)] border border-[var(--t2i-border-subtle)] rounded-xl text-xs font-bold text-[var(--t2i-brand-primary)] hover:bg-[var(--t2i-brand-soft)] transition-all active:scale-95"
           >
             <Wand2 className="w-3.5 h-3.5" />
             Apply settings to all pages
@@ -335,14 +334,11 @@ export default function SettingsPanel({
                 };
                 updatePageSetting('textFields', [...(pageSettings.textFields || []), newField]);
               }}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-gray-100 border border-transparent rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-200 transition-all active:scale-95"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-[var(--t2i-surface-panel-muted)] border border-[var(--t2i-border-subtle)] rounded-xl text-xs font-bold text-[var(--t2i-content-normal)] hover:bg-[var(--t2i-state-hover)] transition-all active:scale-95"
             >
               <Plus className="w-3.5 h-3.5" />
               Add Text Box
             </button>
-            <p className="text-[10px] text-gray-400 mt-2 text-center italic">
-              Add draggable text boxes for dates, names, or signatures.
-            </p>
           </div>
         </div>
       </SectionCard>
@@ -354,12 +350,11 @@ export default function SettingsPanel({
             Typography
           </span>
         )}
-        description="Handwriting style, sizing, spacing, and line movement."
       >
         <div className="space-y-6">
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Fonts</Label>
+              <Label className="text-[10px] font-bold text-[var(--t2i-content-muted)] uppercase tracking-widest">Fonts</Label>
             </div>
             
             <SelectorCarousel
@@ -387,7 +382,7 @@ export default function SettingsPanel({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Custom Font</Label>
+            <Label className="text-[10px] font-bold text-[var(--t2i-content-muted)] uppercase tracking-widest">Custom Font</Label>
             <div className="grid grid-cols-2 gap-3">
               {settings.customFont ? (
                 <div className="relative group">
@@ -420,10 +415,10 @@ export default function SettingsPanel({
                 </div>
               ) : (
                 <UploadWell className="w-full aspect-[1/0.95] gap-2 group">
-                  <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center mb-2 group-hover:bg-[#E0A32A]/10 transition-colors">
-                    <Upload className="w-4 h-4 text-gray-400 group-hover:text-[#E0A32A] transition-colors" />
+                  <div className="w-8 h-8 rounded-full bg-[var(--t2i-surface-panel)] flex items-center justify-center mb-2 group-hover:bg-[var(--t2i-brand-soft)] transition-colors">
+                    <Upload className="w-4 h-4 text-[var(--t2i-content-muted)] group-hover:text-[var(--t2i-brand-primary)] transition-colors" />
                   </div>
-                  <span className="text-[9px] font-bold text-gray-500 uppercase tracking-tight group-hover:text-[#E0A32A] transition-colors text-center px-2">Upload Font</span>
+                  <span className="text-[9px] font-bold text-[var(--t2i-content-muted)] uppercase tracking-tight group-hover:text-[var(--t2i-brand-primary)] transition-colors text-center px-2">Upload Font</span>
                   <input
                     type="file"
                     accept=".ttf,.otf,font/ttf,font/otf,application/x-font-ttf,application/x-font-opentype"
@@ -475,15 +470,12 @@ export default function SettingsPanel({
                 <p className="text-[10px] font-bold text-red-500 uppercase">{customFontError}</p>
               )}
             </div>
-            <p className="text-[10px] text-gray-400 leading-relaxed italic">
-              Upload a custom handwriting font (.ttf or .otf).
-            </p>
           </div>
 
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center">
-              <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Font Size</Label>
-              <div className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
+              <Label className="text-[10px] font-bold text-[var(--t2i-content-muted)] uppercase tracking-widest">Font Size</Label>
+              <div className="text-xs font-bold text-[var(--t2i-content-normal)] bg-[var(--t2i-surface-panel-muted)] px-2 py-0.5 rounded-md">
                 {pageSettings.fontSize}px
               </div>
             </div>
@@ -499,8 +491,8 @@ export default function SettingsPanel({
           {resolvedLayout.controls.showLineHeightControl && (
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Line Height</Label>
-                <div className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
+                <Label className="text-[10px] font-bold text-[var(--t2i-content-muted)] uppercase tracking-widest">Line Height</Label>
+                <div className="text-xs font-bold text-[var(--t2i-content-normal)] bg-[var(--t2i-surface-panel-muted)] px-2 py-0.5 rounded-md">
                   {settings.lineHeight.toFixed(1)}
                 </div>
               </div>
@@ -516,8 +508,8 @@ export default function SettingsPanel({
 
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center">
-              <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Line Tilt</Label>
-              <div className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
+              <Label className="text-[10px] font-bold text-[var(--t2i-content-muted)] uppercase tracking-widest">Line Tilt</Label>
+              <div className="text-xs font-bold text-[var(--t2i-content-normal)] bg-[var(--t2i-surface-panel-muted)] px-2 py-0.5 rounded-md">
                 {pageSettings.lineTilt}°
               </div>
             </div>
@@ -539,19 +531,18 @@ export default function SettingsPanel({
             Page Layout
           </span>
         )}
-        description="Paper format, templates, backgrounds, and calibration controls."
       >
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-2">
-              <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest" htmlFor="page-format">Page Format</Label>
+              <Label className="text-[10px] font-bold text-[var(--t2i-content-muted)] uppercase tracking-widest" htmlFor="page-format">Page Format</Label>
               <Select
                 value={settings.pageFormatId}
                 onValueChange={(value) =>
                   updateSetting('pageFormatId', value as HandwritingSettings['pageFormatId'])
                 }
               >
-                <SelectTrigger id="page-format" className="bg-gray-100 border-none h-9 text-sm">
+                <SelectTrigger id="page-format" className="bg-[var(--t2i-surface-panel-muted)] border-[var(--t2i-border-subtle)] h-9 text-sm">
                   <SelectValue placeholder="Page format" />
                 </SelectTrigger>
                 <SelectContent>
@@ -565,14 +556,14 @@ export default function SettingsPanel({
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest" htmlFor="page-orientation">Orientation</Label>
+              <Label className="text-[10px] font-bold text-[var(--t2i-content-muted)] uppercase tracking-widest" htmlFor="page-orientation">Orientation</Label>
               <Select
                 value={settings.pageOrientation}
                 onValueChange={(value) =>
                   updateSetting('pageOrientation', value as HandwritingSettings['pageOrientation'])
                 }
               >
-                <SelectTrigger id="page-orientation" className="bg-gray-100 border-none h-9 text-sm">
+                <SelectTrigger id="page-orientation" className="bg-[var(--t2i-surface-panel-muted)] border-[var(--t2i-border-subtle)] h-9 text-sm">
                   <SelectValue placeholder="Orientation" />
                 </SelectTrigger>
                 <SelectContent>
@@ -585,7 +576,7 @@ export default function SettingsPanel({
 
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Paper Templates</Label>
+              <Label className="text-[10px] font-bold text-[var(--t2i-content-muted)] uppercase tracking-widest">Paper Templates</Label>
             </div>
 
             <SelectorCarousel
@@ -619,7 +610,7 @@ export default function SettingsPanel({
                       <span
                         className={cn(
                           "w-full aspect-[1.6/1] rounded-lg overflow-hidden border flex items-center justify-center",
-                          isSelected ? "border-white/30" : "border-gray-200"
+                          isSelected ? "border-white/30" : "border-[var(--t2i-border-default)]"
                         )}
                         style={{ backgroundColor: paper.tone }}
                         aria-hidden="true"
@@ -658,8 +649,8 @@ export default function SettingsPanel({
           <div className="grid grid-cols-2 gap-x-4 gap-y-6">
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Top Margin</Label>
-                <span className="text-[10px] font-bold text-gray-500">
+                <Label className="text-[10px] font-bold text-[var(--t2i-content-muted)] uppercase tracking-widest">Top Margin</Label>
+                <span className="text-[10px] font-bold text-[var(--t2i-content-muted)]">
                   {pageSettings.marginTop}px
                 </span>
               </div>
@@ -674,8 +665,8 @@ export default function SettingsPanel({
 
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Bottom Margin</Label>
-                <span className="text-[10px] font-bold text-gray-500">
+                <Label className="text-[10px] font-bold text-[var(--t2i-content-muted)] uppercase tracking-widest">Bottom Margin</Label>
+                <span className="text-[10px] font-bold text-[var(--t2i-content-muted)]">
                   {pageSettings.marginBottom}px
                 </span>
               </div>
@@ -690,8 +681,8 @@ export default function SettingsPanel({
 
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Left Margin</Label>
-                <span className="text-[10px] font-bold text-gray-500">
+                <Label className="text-[10px] font-bold text-[var(--t2i-content-muted)] uppercase tracking-widest">Left Margin</Label>
+                <span className="text-[10px] font-bold text-[var(--t2i-content-muted)]">
                   {pageSettings.marginLeft}px
                 </span>
               </div>
@@ -706,8 +697,8 @@ export default function SettingsPanel({
 
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Right Margin</Label>
-                <span className="text-[10px] font-bold text-gray-500">
+                <Label className="text-[10px] font-bold text-[var(--t2i-content-muted)] uppercase tracking-widest">Right Margin</Label>
+                <span className="text-[10px] font-bold text-[var(--t2i-content-muted)]">
                   {pageSettings.marginRight}px
                 </span>
               </div>
@@ -725,8 +716,8 @@ export default function SettingsPanel({
           {resolvedLayout.controls.showMarginControls && settings.paperStyle === 'ruled' && (
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Margin Line Offset</Label>
-                <div className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
+                <Label className="text-[10px] font-bold text-[var(--t2i-content-muted)] uppercase tracking-widest">Margin Line Offset</Label>
+                <div className="text-xs font-bold text-[var(--t2i-content-normal)] bg-[var(--t2i-surface-panel-muted)] px-2 py-0.5 rounded-md">
                   {settings.ruledMarginLineOffset}px
                 </div>
               </div>
@@ -740,8 +731,20 @@ export default function SettingsPanel({
             </div>
           )}
 
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        title={(
+          <span className="flex items-center gap-2">
+            <Upload className="h-4 w-4 text-[var(--t2i-brand-primary)]" />
+            Background Calibration
+          </span>
+        )}
+      >
+        <div className="space-y-6">
           <div className="flex flex-col gap-2">
-            <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Custom Background Image</Label>
+            <Label className="text-[10px] font-bold text-[var(--t2i-content-muted)] uppercase tracking-widest">Custom Background Image</Label>
             <div className="space-y-3">
               {effectiveBackgroundImages.length > 0 && (
                 <div className="space-y-2">
@@ -753,7 +756,7 @@ export default function SettingsPanel({
                           alt={`Custom background ${idx + 1}`}
                           width={256}
                           height={128}
-                          className="w-full h-16 object-cover rounded-lg border border-gray-100"
+                          className="w-full h-16 object-cover rounded-lg border border-[var(--t2i-border-subtle)]"
                           unoptimized
                         />
                         <button
@@ -790,8 +793,8 @@ export default function SettingsPanel({
               )}
 
               <UploadWell className="h-20 w-full">
-                <Upload className="w-5 h-5 text-gray-400 mb-1" />
-                <span className="text-[10px] font-bold text-gray-500 uppercase">Upload PNG or JPG</span>
+                <Upload className="w-5 h-5 text-[var(--t2i-content-muted)] mb-1" />
+                <span className="text-[10px] font-bold text-[var(--t2i-content-muted)] uppercase">Upload PNG or JPG</span>
                 <input
                   type="file"
                   multiple
@@ -814,22 +817,19 @@ export default function SettingsPanel({
                   }}
                 />
               </UploadWell>
-              <p className="text-[10px] text-gray-400 text-center italic">
-                Image will be used as page background
-              </p>
             </div>
           </div>
 
           {resolvedLayout.controls.showCustomLineControls && (
             <div className="space-y-6 pt-2">
-              <div className="flex flex-col gap-2 p-3 bg-gray-100 rounded-lg">
+              <div className="flex flex-col gap-2 rounded-lg border border-[var(--t2i-border-subtle)] bg-[var(--t2i-surface-panel-muted)] p-3">
                 <div className="flex items-center justify-between">
-                  <Label className="text-[10px] font-bold text-[#E0A32A] uppercase tracking-widest">Auto-Detect Lines</Label>
+                  <Label className="text-[10px] font-bold text-[var(--t2i-brand-primary)] uppercase tracking-widest">Auto-Detect Lines</Label>
                   <button
                     type="button"
                     onClick={handleDetectLines}
                     disabled={!currentBackground || lineDetecting}
-                    className="text-[10px] font-bold bg-[#E0A32A] text-white px-3 py-1.5 rounded-md hover:bg-[#c99225] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                    className="text-[10px] font-bold bg-[var(--t2i-brand-primary)] text-[var(--t2i-brand-on-primary)] px-3 py-1.5 rounded-md hover:bg-[var(--t2i-brand-hover)] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                   >
                     {lineDetecting ? 'Detecting...' : 'Detect Lines'}
                   </button>
@@ -846,8 +846,8 @@ export default function SettingsPanel({
 
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between items-center">
-                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Line Offset (Y Position)</Label>
-                  <div className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
+                  <Label className="text-[10px] font-bold text-[var(--t2i-content-muted)] uppercase tracking-widest">Line Offset (Y Position)</Label>
+                  <div className="text-xs font-bold text-[var(--t2i-content-normal)] bg-[var(--t2i-surface-panel-muted)] px-2 py-0.5 rounded-md">
                     {pageSettings.customLineOffset}px
                   </div>
                 </div>
@@ -862,17 +862,17 @@ export default function SettingsPanel({
 
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between items-center">
-                  <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Custom Line Spacing</Label>
+                  <Label className="text-[10px] font-bold text-[var(--t2i-content-muted)] uppercase tracking-widest">Custom Line Spacing</Label>
                   <div className="flex items-center gap-2">
                     {pageSettings.customLineSpacing !== null && (
                       <button
                         onClick={() => updatePageSetting('customLineSpacing', null)}
-                        className="text-[10px] font-bold text-[#E0A32A] uppercase tracking-wider hover:underline"
+                        className="text-[10px] font-bold text-[var(--t2i-brand-primary)] uppercase tracking-wider hover:underline"
                       >
                         Reset
                       </button>
                     )}
-                    <div className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
+                    <div className="text-xs font-bold text-[var(--t2i-content-normal)] bg-[var(--t2i-surface-panel-muted)] px-2 py-0.5 rounded-md">
                       {pageSettings.customLineSpacing ?? 'Auto'}
                     </div>
                   </div>
@@ -897,19 +897,18 @@ export default function SettingsPanel({
             Colors
           </span>
         )}
-        description="Ink, paper, and line colors stay faithful to the exported document."
       >
         <div className="space-y-6">
           <div className="flex flex-col gap-2">
-            <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ink Color</Label>
-            <div className="flex items-center gap-3 p-1.5 bg-gray-100 rounded-lg">
+            <Label className="text-[10px] font-bold text-[var(--t2i-content-muted)] uppercase tracking-widest">Ink Color</Label>
+            <div className="flex items-center gap-3 p-1.5 bg-[var(--t2i-surface-panel-muted)] rounded-lg">
               <input
                 type="color"
                 value={settings.inkColor}
                 onChange={(e) => updateSetting('inkColor', e.target.value)}
                 className="w-8 h-8 rounded-md cursor-pointer border-0 p-0 bg-transparent"
               />
-              <span className="text-xs font-bold text-gray-700 uppercase tracking-tight">
+              <span className="text-xs font-bold text-[var(--t2i-content-normal)] uppercase tracking-tight">
                 {settings.inkColor}
               </span>
             </div>
@@ -917,15 +916,15 @@ export default function SettingsPanel({
 
           {resolvedLayout.controls.showPaperColorControl && (
           <div className="flex flex-col gap-2">
-            <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Paper Color</Label>
-            <div className="flex flex-wrap gap-2 p-1.5 bg-gray-100 rounded-lg">
+            <Label className="text-[10px] font-bold text-[var(--t2i-content-muted)] uppercase tracking-widest">Paper Color</Label>
+            <div className="flex flex-wrap gap-2 p-1.5 bg-[var(--t2i-surface-panel-muted)] rounded-lg">
               {PAPER_COLORS.map((color) => (
                 <button
                   key={color.value}
                   onClick={() => updateSetting('paperColor', color.value)}
                   className={`w-7 h-7 rounded-md border-2 transition-all ${settings.paperColor === color.value
-                    ? 'border-[#E0A32A] scale-110'
-                    : 'border-white hover:border-gray-200'
+                    ? 'border-[var(--t2i-brand-primary)] scale-110'
+                    : 'border-white hover:border-[var(--t2i-border-default)]'
                     }`}
                   style={{ backgroundColor: color.value }}
                   title={color.name}
@@ -937,15 +936,15 @@ export default function SettingsPanel({
 
           {resolvedLayout.controls.showLineColorControl && settings.paperStyle !== 'blank' && (
             <div className="flex flex-col gap-2">
-              <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Line Color</Label>
-              <div className="flex items-center gap-3 p-1.5 bg-gray-100 rounded-lg">
+              <Label className="text-[10px] font-bold text-[var(--t2i-content-muted)] uppercase tracking-widest">Line Color</Label>
+              <div className="flex items-center gap-3 p-1.5 bg-[var(--t2i-surface-panel-muted)] rounded-lg">
                 <input
                   type="color"
                   value={settings.lineColor}
                   onChange={(e) => updateSetting('lineColor', e.target.value)}
                   className="w-8 h-8 rounded-md cursor-pointer border-0 p-0 bg-transparent"
                 />
-                <span className="text-xs font-bold text-gray-700 uppercase tracking-tight">
+                <span className="text-xs font-bold text-[var(--t2i-content-normal)] uppercase tracking-tight">
                   {settings.lineColor}
                 </span>
               </div>
@@ -954,10 +953,17 @@ export default function SettingsPanel({
         </div>
       </SectionCard>
 
-      <SectionCard title="Danger Zone" description="Destructive reset actions for the current document.">
+      <SectionCard
+        title={(
+          <span className="flex items-center gap-2">
+            <Trash2 className="h-4 w-4 text-red-500" />
+            Destructive Actions
+          </span>
+        )}
+      >
         <button
           onClick={onClearAll}
-          className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-bold text-red-500 hover:bg-red-50 hover:text-red-600 transition-all active:scale-95 border border-red-100"
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-bold text-red-500 hover:bg-red-500/10 hover:text-red-600 transition-all active:scale-95 border border-red-500/20"
         >
           <Trash2 className="w-3.5 h-3.5" />
           Clear Everything
