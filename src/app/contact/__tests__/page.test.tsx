@@ -17,11 +17,12 @@ describe('Contact page', () => {
     expect(screen.queryByRole('combobox', { name: /theme preference/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /theme preference: system/i })).toBeInTheDocument();
     expect(screen.getByTestId('global-header-inner')).toHaveClass('max-w-full');
-    expect(screen.getByRole('heading', { name: /contact text2ink/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Contact' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /rasagyavatsal@outlook.com/i })).toHaveAttribute(
       'href',
       'mailto:rasagyavatsal@outlook.com',
     );
+    expect(screen.queryByText(/send questions or product feedback by email/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/utility inbox/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/bug reports/i)).not.toBeInTheDocument();
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
