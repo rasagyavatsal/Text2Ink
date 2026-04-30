@@ -78,8 +78,8 @@ describe('HandwritingEditor DOM body editor', () => {
     await waitFor(() => expect(onTextChange).toHaveBeenCalledWith('hello\nthere'));
   });
 
-  it('notifies the shell when main text editing starts', async () => {
-    const onTypingFocus = vi.fn();
+  it('notifies the shell when preview editing starts and ends in the body editor', async () => {
+    const onPreviewEditingChange = vi.fn();
     render(
       <HandwritingEditor
         text="hello"
@@ -92,12 +92,15 @@ describe('HandwritingEditor DOM body editor', () => {
         currentPageIndex={0}
         onCurrentPageChange={vi.fn()}
         onTotalPagesChange={vi.fn()}
-        onTypingFocus={onTypingFocus}
+        onPreviewEditingChange={onPreviewEditingChange}
       />
     );
 
-    fireEvent.focus(await screen.findByRole('textbox', { name: 'Handwriting body editor' }));
+    const bodyEditor = await screen.findByRole('textbox', { name: 'Handwriting body editor' });
+    fireEvent.focus(bodyEditor);
+    fireEvent.blur(bodyEditor);
 
-    expect(onTypingFocus).toHaveBeenCalled();
+    expect(onPreviewEditingChange).toHaveBeenNthCalledWith(1, true);
+    expect(onPreviewEditingChange).toHaveBeenNthCalledWith(2, false);
   });
 });
