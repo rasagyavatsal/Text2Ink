@@ -46,18 +46,6 @@
         ]
       }
     ],
-    "redirects": [
-      {
-        "source": "/editor",
-        "destination": "/",
-        "type": 301
-      },
-      {
-        "source": "/editor/**",
-        "destination": "/",
-        "type": 301
-      }
-    ],
     "rewrites": [
       {
         "source": "/api/feedback",
