@@ -31,6 +31,7 @@ import {
 } from '@/lib/mobileEditorSheet';
 import { Settings, Download } from 'lucide-react';
 import { getEditorSidebarViews, resolveEditorShellLayout, type EditorSidebarViewId } from '@/lib/editorShell';
+import { computeKeyboardObstructionHeight, resolveMobilePreviewScrollInset } from '@/lib/mobilePreviewScrollInset';
 
 const MemoSettingsPanel = React.memo(SettingsPanel);
 const MemoExportPanel = React.memo(ExportPanel);
@@ -78,7 +79,14 @@ const subscribeClientReady = () => () => {};
 const getClientReadySnapshot = () => true;
 const getServerReadySnapshot = () => false;
 
-const DEFAULT_VIEWPORT_SIZE = { width: 390, height: 844, safeAreaBottom: 0 };
+const DEFAULT_VIEWPORT_METRICS = {
+  layoutWidth: 390,
+  layoutHeight: 844,
+  visualWidth: 390,
+  visualHeight: 844,
+  visualOffsetTop: 0,
+  safeAreaBottom: 0,
+};
 
 function readSafeAreaBottom() {
   if (typeof window === 'undefined') return 0;
@@ -91,18 +99,22 @@ function readSafeAreaBottom() {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function readViewportSize() {
-  if (typeof window === 'undefined') return DEFAULT_VIEWPORT_SIZE;
+function readViewportMetrics() {
+  if (typeof window === 'undefined') return DEFAULT_VIEWPORT_METRICS;
+
   const visualViewport = window.visualViewport;
   return {
-    width: Math.round(visualViewport?.width ?? window.innerWidth),
-    height: Math.round(visualViewport?.height ?? window.innerHeight),
+    layoutWidth: Math.round(window.innerWidth),
+    layoutHeight: Math.round(window.innerHeight),
+    visualWidth: Math.round(visualViewport?.width ?? window.innerWidth),
+    visualHeight: Math.round(visualViewport?.height ?? window.innerHeight),
+    visualOffsetTop: Math.round(visualViewport?.offsetTop ?? 0),
     safeAreaBottom: readSafeAreaBottom(),
   };
 }
 
-function useViewportSize() {
-  const [viewportSize, setViewportSize] = useState(DEFAULT_VIEWPORT_SIZE);
+function useViewportMetrics() {
+  const [viewportMetrics, setViewportMetrics] = useState(DEFAULT_VIEWPORT_METRICS);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -110,22 +122,24 @@ function useViewportSize() {
     let frame = 0;
     const update = () => {
       window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(() => setViewportSize(readViewportSize()));
+      frame = window.requestAnimationFrame(() => setViewportMetrics(readViewportMetrics()));
     };
 
     update();
     window.addEventListener('resize', update);
     window.addEventListener('orientationchange', update);
     window.visualViewport?.addEventListener('resize', update);
+    window.visualViewport?.addEventListener('scroll', update);
     return () => {
       window.cancelAnimationFrame(frame);
       window.removeEventListener('resize', update);
       window.removeEventListener('orientationchange', update);
       window.visualViewport?.removeEventListener('resize', update);
+      window.visualViewport?.removeEventListener('scroll', update);
     };
   }, []);
 
-  return viewportSize;
+  return viewportMetrics;
 }
 
 function useMediaQuery(query: string) {
@@ -190,7 +204,7 @@ type RootEditorShellProps = {
 function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
   const [resolvedInitialState] = useState<EditorInitialState>(initialState);
   const [headerRef, headerHeight] = useElementHeight<HTMLElement>();
-  const viewportSize = useViewportSize();
+  const viewportMetrics = useViewportMetrics();
   const isMobileEditorLayout = useMediaQuery(MOBILE_EDITOR_MEDIA_QUERY);
 
   const [text, setText] = useState(resolvedInitialState.text);
@@ -205,22 +219,40 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
   const [exportPageIndex, setExportPageIndex] = useState<number | null>(null);
   const [mobileSheetAnchor, setMobileSheetAnchor] = useState<MobileSheetAnchor>('default');
   const [mobileSheetHeight, setMobileSheetHeight] = useState<number | null>(null);
+  const [isPreviewEditing, setIsPreviewEditing] = useState(false);
+  const previewEditingBlurTimeoutRef = useRef<number | null>(null);
 
   const mobileSheetMetrics = useMemo(
     () =>
       computeMobileEditorSheetMetrics({
-        viewportHeight: viewportSize.height,
-        viewportWidth: viewportSize.width,
+        viewportHeight: viewportMetrics.layoutHeight,
+        viewportWidth: viewportMetrics.layoutWidth,
         headerHeight,
-        safeAreaBottom: viewportSize.safeAreaBottom,
+        safeAreaBottom: viewportMetrics.safeAreaBottom,
       }),
-    [headerHeight, viewportSize.height, viewportSize.safeAreaBottom, viewportSize.width],
+    [headerHeight, viewportMetrics.layoutHeight, viewportMetrics.layoutWidth, viewportMetrics.safeAreaBottom],
   );
 
   const effectiveMobileSheetHeight = isMobileEditorLayout
     ? clampMobileSheetHeight(mobileSheetHeight ?? mobileSheetMetrics.defaultSheetHeight, mobileSheetMetrics)
     : 0;
-  const mobileStablePreviewAvailableHeight = Math.max(0, viewportSize.height - headerHeight);
+  const keyboardObstructionHeight = isMobileEditorLayout
+    ? computeKeyboardObstructionHeight({
+        layoutViewportHeight: viewportMetrics.layoutHeight,
+        visualViewportHeight: viewportMetrics.visualHeight,
+        visualViewportOffsetTop: viewportMetrics.visualOffsetTop,
+      })
+    : 0;
+  const previewScrollInset = useMemo(
+    () =>
+      resolveMobilePreviewScrollInset({
+        controlSheetInset: effectiveMobileSheetHeight,
+        isPreviewEditing: isMobileEditorLayout && isPreviewEditing,
+        keyboardObstructionHeight,
+      }),
+    [effectiveMobileSheetHeight, isMobileEditorLayout, isPreviewEditing, keyboardObstructionHeight],
+  );
+  const mobileStablePreviewAvailableHeight = Math.max(0, viewportMetrics.layoutHeight - headerHeight);
   const currentPageSettings = useMemo(
     () => pageSettingsByPage[currentPageIndex] ?? defaultPageSettingsFromHandwritingSettings(settings),
     [currentPageIndex, pageSettingsByPage, settings],
@@ -232,12 +264,12 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
   const mobilePreviewMaxScale = useMemo(
     () =>
       computeMobilePreviewScale({
-        availableWidth: viewportSize.width,
+        availableWidth: viewportMetrics.layoutWidth,
         availableHeight: mobileStablePreviewAvailableHeight,
         pageWidth: currentPageLayout.width,
         pageHeight: currentPageLayout.height,
       }),
-    [currentPageLayout.height, currentPageLayout.width, mobileStablePreviewAvailableHeight, viewportSize.width],
+    [currentPageLayout.height, currentPageLayout.width, mobileStablePreviewAvailableHeight, viewportMetrics.layoutWidth],
   );
   const effectivePreviewScale = isMobileEditorLayout
     ? clampEditorPreviewScale(previewScale, mobilePreviewMaxScale, MOBILE_PREVIEW_MIN_SCALE)
@@ -266,6 +298,25 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       return resolvedSettings;
     });
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (previewEditingBlurTimeoutRef.current !== null) {
+        window.clearTimeout(previewEditingBlurTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isMobileEditorLayout) return;
+
+    if (previewEditingBlurTimeoutRef.current !== null) {
+      window.clearTimeout(previewEditingBlurTimeoutRef.current);
+      previewEditingBlurTimeoutRef.current = null;
+    }
+
+    setIsPreviewEditing(false);
+  }, [isMobileEditorLayout]);
 
   useEffect(() => {
     if (!persistState) return;
@@ -388,20 +439,43 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
     setMobileSheetHeight((prev) => (prev === height ? prev : height));
   }, []);
 
-  const handleEditorTypingFocus = useCallback(() => {
-    if (!isMobileEditorLayout) return;
-    setMobileSheetAnchor('peek');
-    setMobileSheetHeight(mobileSheetMetrics.minSheetHeight);
-  }, [isMobileEditorLayout, mobileSheetMetrics.minSheetHeight]);
+  const handlePreviewEditingChange = useCallback(
+    (nextIsPreviewEditing: boolean) => {
+      if (previewEditingBlurTimeoutRef.current !== null) {
+        window.clearTimeout(previewEditingBlurTimeoutRef.current);
+        previewEditingBlurTimeoutRef.current = null;
+      }
+
+      if (!isMobileEditorLayout) {
+        setIsPreviewEditing(false);
+        return;
+      }
+
+      if (nextIsPreviewEditing) {
+        setIsPreviewEditing(true);
+        setMobileSheetAnchor('peek');
+        setMobileSheetHeight(mobileSheetMetrics.minSheetHeight);
+        return;
+      }
+
+      previewEditingBlurTimeoutRef.current = window.setTimeout(() => {
+        setIsPreviewEditing(false);
+        previewEditingBlurTimeoutRef.current = null;
+      }, 0);
+    },
+    [isMobileEditorLayout, mobileSheetMetrics.minSheetHeight],
+  );
 
   const handleMobileSheetHandlePress = useCallback(() => {
     blurActiveTextInput();
+    if (previewScrollInset.source === 'keyboard') return;
+
     setMobileSheetAnchor((prev) => {
       if (prev === 'peek') return 'default';
       if (prev === 'default') return 'expanded';
       return 'default';
     });
-  }, []);
+  }, [previewScrollInset.source]);
 
   const handleCurrentPageChange = useCallback(
     (nextIndex: number) => {
@@ -494,7 +568,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
         <div
           data-testid="preview-scroll-container"
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[var(--t2i-surface-app)]"
-          style={isMobileEditorLayout ? { paddingBottom: effectiveMobileSheetHeight } : undefined}
+          style={isMobileEditorLayout ? { paddingBottom: previewScrollInset.inset } : undefined}
         >
           <div className={`flex min-h-full justify-center ${isMobileEditorLayout ? 'px-4 py-3' : 'px-6 py-12'}`}>
             <HandwritingEditor
@@ -514,7 +588,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
               onPaginationCompleteChange={setIsPaginationComplete}
               onApplyToAllPages={applyCurrentPageSettingsToAll}
               isMobileLayout={isMobileEditorLayout}
-              onTypingFocus={handleEditorTypingFocus}
+              onPreviewEditingChange={handlePreviewEditingChange}
             />
           </div>
         </div>

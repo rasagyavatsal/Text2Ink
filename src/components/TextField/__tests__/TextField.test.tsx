@@ -409,8 +409,8 @@ describe('TextField', () => {
     rectSpy.mockRestore();
   });
 
-  it('notifies the shell when text box typing starts', () => {
-    const onTypingFocus = vi.fn();
+  it('notifies the shell when preview editing starts and ends in a text box', () => {
+    const onPreviewEditingChange = vi.fn();
     render(
       <TextField
         field={mockField}
@@ -418,12 +418,15 @@ describe('TextField', () => {
         onDelete={mockOnDelete}
         scale={scale}
         fontFamily={fontFamily}
-        onTypingFocus={onTypingFocus}
+        onPreviewEditingChange={onPreviewEditingChange}
       />
     );
 
-    fireEvent.focus(screen.getByPlaceholderText(''));
+    const textarea = screen.getByPlaceholderText('');
+    fireEvent.focus(textarea);
+    fireEvent.blur(textarea);
 
-    expect(onTypingFocus).toHaveBeenCalled();
+    expect(onPreviewEditingChange).toHaveBeenNthCalledWith(1, true);
+    expect(onPreviewEditingChange).toHaveBeenNthCalledWith(2, false);
   });
 });

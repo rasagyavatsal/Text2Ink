@@ -15,7 +15,7 @@ interface TextFieldProps {
   onDelete: () => void;
   scale: number;
   fontFamily: string;
-  onTypingFocus?: () => void;
+  onPreviewEditingChange?: (isPreviewEditing: boolean) => void;
   pageWidth?: number;
   pageHeight?: number;
 }
@@ -78,7 +78,7 @@ export default function TextField({
   onDelete,
   scale,
   fontFamily,
-  onTypingFocus,
+  onPreviewEditingChange,
   pageWidth = PAGE_WIDTH,
   pageHeight = PAGE_HEIGHT,
 }: TextFieldProps) {
@@ -370,11 +370,14 @@ export default function TextField({
           }
         }}
         onFocus={() => {
-          onTypingFocus?.();
+          onPreviewEditingChange?.(true);
           setIsFocused(true);
           setIsSelected(true);
         }}
-        onBlur={() => setIsFocused(false)}
+        onBlur={() => {
+          onPreviewEditingChange?.(false);
+          setIsFocused(false);
+        }}
         spellCheck={false}
         style={{
           fontSize: field.fontSize * scale,

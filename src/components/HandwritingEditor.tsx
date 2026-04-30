@@ -35,7 +35,7 @@ interface HandwritingEditorProps {
   onPaginationCompleteChange?: (isComplete: boolean) => void;
   onApplyToAllPages?: () => void;
   isMobileLayout?: boolean;
-  onTypingFocus?: () => void;
+  onPreviewEditingChange?: (isPreviewEditing: boolean) => void;
 }
 
 function useDebouncedCallback<TArgs extends unknown[]>(cb: (...args: TArgs) => void, delayMs: number) {
@@ -84,7 +84,7 @@ export default function HandwritingEditor({
   onPaginationCompleteChange,
   onApplyToAllPages,
   isMobileLayout = false,
-  onTypingFocus,
+  onPreviewEditingChange,
 }: HandwritingEditorProps) {
   void onPreviewScaleChange;
   void onApplyToAllPages;
@@ -407,7 +407,10 @@ export default function HandwritingEditor({
               pageIndex={pageIndex}
               onPageTextChange={(nextPageText) => replacePageText(pageIndex, nextPageText)}
               onFocus={() => {
-                onTypingFocus?.();
+                onPreviewEditingChange?.(true);
+              }}
+              onBlur={() => {
+                onPreviewEditingChange?.(false);
               }}
             />
           )}
@@ -425,7 +428,7 @@ export default function HandwritingEditor({
                 fontFamily={resolvedFontFamily}
                 pageWidth={layout.width}
                 pageHeight={layout.height}
-                onTypingFocus={onTypingFocus}
+                onPreviewEditingChange={onPreviewEditingChange}
                 onUpdate={(updates) => {
                   const nextFields = ps.textFields?.map((f) =>
                     f.id === field.id ? { ...f, ...updates } : f
@@ -496,7 +499,7 @@ export default function HandwritingEditor({
       getPageSettings,
       localText,
       onSettingsChange,
-      onTypingFocus,
+      onPreviewEditingChange,
       pageStartOffsets,
       pages,
       replacePageText,

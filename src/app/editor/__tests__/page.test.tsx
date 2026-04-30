@@ -7,15 +7,18 @@ import type { MobileEditorSheetMetrics, MobileSheetAnchor } from '@/lib/mobileEd
 
 type MockHandwritingEditorProps = {
   previewScale: number;
-  onTypingFocus?: () => void;
+  onPreviewEditingChange?: (isPreviewEditing: boolean) => void;
 };
 
 vi.mock('@/components/HandwritingEditor', () => ({
-  default: ({ previewScale, onTypingFocus }: MockHandwritingEditorProps) => (
+  default: ({ previewScale, onPreviewEditingChange }: MockHandwritingEditorProps) => (
     <div data-testid="handwriting-editor" data-preview-scale={previewScale}>
       Handwriting Editor
-      <button type="button" data-testid="typing-focus" onClick={onTypingFocus}>
+      <button type="button" data-testid="preview-editing-start" onClick={() => onPreviewEditingChange?.(true)}>
         Start typing
+      </button>
+      <button type="button" data-testid="preview-editing-stop" onClick={() => onPreviewEditingChange?.(false)}>
+        Stop typing
       </button>
     </div>
   ),
@@ -98,11 +101,29 @@ function mockMatchMedia(matches: boolean) {
   }));
 }
 
+function mockVisualViewport({ width, height, offsetTop = 0 }: { width: number; height: number; offsetTop?: number }) {
+  const visualViewport = {
+    width,
+    height,
+    offsetTop,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  };
+
+  Object.defineProperty(window, 'visualViewport', {
+    configurable: true,
+    value: visualViewport,
+  });
+
+  return visualViewport;
+}
+
 describe('Editor page', () => {
   beforeEach(() => {
     mockMatchMedia(false);
     Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 1280 });
     Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: 900 });
+    Object.defineProperty(window, 'visualViewport', { configurable: true, value: undefined });
   });
 
   it('renders the full editor shell on the dedicated editor route', () => {
@@ -162,7 +183,7 @@ describe('Editor page', () => {
     const previewScaleBeforeCollapse = getPreviewScale();
     const defaultPadding = previewScrollContainer.style.paddingBottom;
 
-    fireEvent.click(screen.getByTestId('typing-focus'));
+    fireEvent.click(screen.getByTestId('preview-editing-start'));
 
     await waitFor(() => {
       expect(screen.getByTestId('mobile-editor-bottom-sheet')).toHaveAttribute('data-anchor', 'peek');
@@ -181,6 +202,60 @@ describe('Editor page', () => {
 
     expect(getPreviewScale()).toBe(previewScaleBeforeCollapse);
     expect(previewScrollContainer.style.paddingBottom).toBe(defaultPadding);
+  });
+
+  it('replaces the control sheet inset with a keyboard scroll inset during preview editing without changing preview scale', async () => {
+    mockMatchMedia(true);
+    Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 390 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: 844 });
+    const visualViewport = mockVisualViewport({ width: 390, height: 844 });
+
+    render(<RootEditorPageClient />);
+
+    await screen.findByTestId('mobile-editor-bottom-sheet');
+
+    const getPreviewScale = () => Number(screen.getByTestId('handwriting-editor').getAttribute('data-preview-scale'));
+    const previewScrollContainer = screen.getByTestId('preview-scroll-container');
+    const parsePadding = () => Number.parseFloat(previewScrollContainer.style.paddingBottom);
+    const initialScale = getPreviewScale();
+
+    fireEvent.click(screen.getByTestId('preview-editing-start'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mobile-editor-bottom-sheet')).toHaveAttribute('data-anchor', 'peek');
+    });
+    const peekPadding = parsePadding();
+    expect(getPreviewScale()).toBe(initialScale);
+
+    visualViewport.height = 568;
+    fireEvent(window, new Event('resize'));
+
+    await waitFor(() => {
+      expect(parsePadding()).toBe(276);
+    });
+    expect(getPreviewScale()).toBe(initialScale);
+
+    visualViewport.height = 620;
+    fireEvent(window, new Event('resize'));
+
+    await waitFor(() => {
+      expect(parsePadding()).toBe(224);
+    });
+    expect(getPreviewScale()).toBe(initialScale);
+
+    fireEvent.click(screen.getByTestId('sheet-handle'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mobile-editor-bottom-sheet')).toHaveAttribute('data-anchor', 'peek');
+      expect(parsePadding()).toBe(224);
+    });
+
+    fireEvent.click(screen.getByTestId('preview-editing-stop'));
+
+    await waitFor(() => {
+      expect(parsePadding()).toBe(peekPadding);
+    });
+    expect(getPreviewScale()).toBe(initialScale);
   });
 
   it('updates preview bottom scroll space as sheet height changes without changing preview scale', async () => {
