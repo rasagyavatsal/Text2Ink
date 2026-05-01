@@ -12,6 +12,7 @@ import {
   MobileSheetAnchor,
   resolveMobileSheetSnapHeight,
 } from '@/lib/mobileEditorSheet';
+import { CHROME_LAYER_Z_INDEX } from '@/lib/designSystem';
 import Version from '@/components/Version';
 import { getEditorSidebarViews } from '@/lib/editorShell';
 import { SidebarTabStrip } from '@/components/patterns/EditorPatterns';
@@ -106,6 +107,7 @@ export default function MobileEditorBottomSheet({
       initialSnap={initialSnap}
       snapPoints={snapPoints}
       className="mobile-editor-sheet"
+      style={{ zIndex: CHROME_LAYER_Z_INDEX.controlSheet }}
       dragCloseThreshold={0}
       dragVelocityThreshold={850}
       onClose={handleClose}

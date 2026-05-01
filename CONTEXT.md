@@ -10,7 +10,15 @@ _Avoid_: Canvas area, page viewport
 
 **Control Sheet**:
 The mobile panel that exposes settings and export controls without replacing the Preview.
-_Avoid_: Drawer, toolbar
+_Avoid_: Bottom sheet, drawer, toolbar
+
+**Floating Surface**:
+A transient anchored surface such as a dropdown or popover that opens above the current editor controls.
+_Avoid_: Overlay, popup
+
+**Modal Dialog**:
+A blocking surface that takes priority over the rest of the editor until dismissed.
+_Avoid_: Popup, overlay
 
 **Bottom Obstruction**:
 Any mobile surface that covers the lower part of the Preview and therefore requires extra scroll space.
@@ -39,6 +47,8 @@ _Avoid_: Sheet editing, sidebar typing
 ## Relationships
 
 - A **Control Sheet** is a **Bottom Obstruction**
+- A **Floating Surface** may open from the **Control Sheet**
+- A **Modal Dialog** takes visual priority over a **Floating Surface** and the **Control Sheet**
 - A **Bottom Obstruction** requires a **Preview Scroll Inset** beneath the **Preview**
 - A **Control Sheet Inset** and a **Keyboard Scroll Inset** are both kinds of **Preview Scroll Inset**
 - A **Preview Scroll Inset** is sized from the current **Obstruction Height**
@@ -56,3 +66,5 @@ _Avoid_: Sheet editing, sidebar typing
 - "preview scroll" was ambiguous between auto-scrolling and adding extra scroll space — resolved: use **Keyboard Scroll Inset** for the extra scrollable space beneath the **Preview**.
 - "where typing happens" was ambiguous between the **Control Sheet** and the **Preview** — resolved: mobile keyboard-driven typing is **Preview Editing**.
 - "sheet interaction while typing" was ambiguous — resolved: when the mobile keyboard is open, the **Control Sheet** is not accessible until the keyboard closes.
+- "bottom sheet" was used to mean the **Control Sheet** — resolved: use **Control Sheet**.
+- "overlay" was ambiguous between a **Floating Surface**, a **Modal Dialog**, and a **Bottom Obstruction** — resolved: use the specific surface name.

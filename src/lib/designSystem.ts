@@ -88,9 +88,23 @@ type Palette = {
   layer: {
     header: number;
     sidebar: number;
-    overlay: number;
+    controlSheet: number;
+    floatingSurface: number;
+    modalDialog: number;
   };
 };
+
+export const CHROME_LAYER_VARS = {
+  controlSheet: '--t2i-layer-control-sheet',
+  floatingSurface: '--t2i-layer-floating-surface',
+  modalDialog: '--t2i-layer-modal-dialog',
+} as const;
+
+export const CHROME_LAYER_Z_INDEX = {
+  controlSheet: `var(${CHROME_LAYER_VARS.controlSheet})`,
+  floatingSurface: `var(${CHROME_LAYER_VARS.floatingSurface})`,
+  modalDialog: `var(${CHROME_LAYER_VARS.modalDialog})`,
+} as const;
 
 const shared = {
   color: {
@@ -150,7 +164,9 @@ const shared = {
   layer: {
     header: 30,
     sidebar: 20,
-    overlay: 50,
+    controlSheet: 40,
+    floatingSurface: 50,
+    modalDialog: 60,
   },
 } as const;
 
