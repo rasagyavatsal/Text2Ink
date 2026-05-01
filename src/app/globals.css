@@ -76,6 +76,9 @@
   --t2i-shadow-medium: 0 10px 24px rgba(17, 24, 39, 0.08);
   --t2i-motion-fast: 140ms ease;
   --t2i-motion-normal: 200ms ease;
+  --t2i-layer-control-sheet: 40;
+  --t2i-layer-floating-surface: 50;
+  --t2i-layer-modal-dialog: 60;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);

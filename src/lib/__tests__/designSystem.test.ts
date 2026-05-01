@@ -31,6 +31,15 @@ describe('design system token contract', () => {
     expect(dark.elevation.medium).not.toContain('15, 23, 42');
   });
 
+  it('keeps editor surface layers ordered and theme-independent', () => {
+    const light = resolveChromeTheme('light');
+    const dark = resolveChromeTheme('dark');
+
+    expect(light.layer.controlSheet).toBeLessThan(light.layer.floatingSurface);
+    expect(light.layer.floatingSurface).toBeLessThan(light.layer.modalDialog);
+    expect(dark.layer).toEqual(light.layer);
+  });
+
   it('changes chrome theme tokens without changing the document preview appearance', () => {
     const settings = {
       ...DEFAULT_SETTINGS,
