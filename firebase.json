@@ -45,16 +45,7 @@
           }
         ]
       }
-    ],
-    "rewrites": [
-      {
-        "source": "/api/feedback",
-        "function": "feedback"
-      }
     ]
-  },
-  "functions": {
-    "source": "functions"
   },
   "storage": {
     "rules": "storage.rules"

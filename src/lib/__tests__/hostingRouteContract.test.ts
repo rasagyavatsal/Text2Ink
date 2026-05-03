@@ -5,7 +5,12 @@ import { validateHostingRouteContract } from '../hostingRouteContract';
 function expectRouteContractToPass(
   contract: Parameters<typeof validateHostingRouteContract>[1],
 ) {
-  expect(validateHostingRouteContract(firebaseConfig.hosting, contract)).toEqual([]);
+  expect(
+    validateHostingRouteContract(
+      firebaseConfig.hosting as Parameters<typeof validateHostingRouteContract>[0],
+      contract,
+    ),
+  ).toEqual([]);
 }
 
 describe('Firebase hosting route contract', () => {
@@ -25,13 +30,11 @@ describe('Firebase hosting route contract', () => {
     });
   });
 
-  it('preserves the feedback function rewrite', () => {
+  it('keeps the removed feedback endpoint unsupported', () => {
     expectRouteContractToPass({
       publicRoutes: [],
-      functionRewrites: {
-        '/api/feedback': 'feedback',
-      },
-      unsupportedRoutes: [],
+      functionRewrites: {},
+      unsupportedRoutes: ['/api/feedback'],
     });
   });
 

@@ -22,14 +22,14 @@ describe('Contact page', () => {
       'href',
       'mailto:rasagyavatsal@outlook.com',
     );
-    expect(screen.queryByText(/send questions or product feedback by email/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/utility inbox/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/bug reports/i)).not.toBeInTheDocument();
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
     expect(screen.getByTestId('version')).toBeInTheDocument();
   });
 
-  it('keeps contact metadata canonicalized to the utility page', () => {
+  it('keeps contact metadata focused on contact and canonicalized to the utility page', () => {
+    expect(metadata.description).toBe('Have questions about Text2Ink? Reach out to us. We would love to hear from you!');
     expect(metadata.alternates?.canonical).toBe('https://text2ink.com/contact');
   });
 });

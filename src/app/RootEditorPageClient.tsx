@@ -394,8 +394,6 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       isPaginationComplete={isPaginationComplete}
       pageSettingsByPage={pageSettingsByPage}
       totalPages={totalPages}
-      currentPageIndex={currentPageIndex}
-      onCurrentPageChange={handleCurrentPageChange}
       onExportingChange={(isExporting) => {
         if (!isExporting) setExportPageIndex(null);
       }}
