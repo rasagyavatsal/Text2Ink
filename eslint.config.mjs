@@ -26,7 +26,6 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Generated artifacts.
     "coverage/**",
-    "functions/lib/**",
   ]),
 ]);
 

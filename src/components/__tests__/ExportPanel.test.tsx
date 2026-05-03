@@ -1,12 +1,8 @@
 import React from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import ExportPanel from '../ExportPanel';
 import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '@/lib/types';
-
-vi.mock('../FeedbackDialog', () => ({
-  default: () => null,
-}));
 
 describe('ExportPanel', () => {
   const props = {
@@ -16,8 +12,6 @@ describe('ExportPanel', () => {
     isPaginationComplete: true,
     pageSettingsByPage: [defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS)],
     totalPages: 1,
-    currentPageIndex: 0,
-    onCurrentPageChange: vi.fn(),
   };
 
   it('keeps export actions inside a minimal inspector section and explains disabled export', () => {

@@ -4,7 +4,7 @@ import SiteFooter from '@/components/patterns/SiteFooter';
 
 export const metadata: Metadata = {
   title: 'Contact Us',
-  description: 'Have questions or feedback about Text2Ink? Reach out to us. We would love to hear from you!',
+  description: 'Have questions about Text2Ink? Reach out to us. We would love to hear from you!',
   alternates: {
     canonical: 'https://text2ink.com/contact',
   },

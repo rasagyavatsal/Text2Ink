@@ -14,7 +14,6 @@ import { Download, FileImage, FileText, Loader2 } from 'lucide-react';
 import { HandwritingSettings, PageSettings, LineData } from '@/lib/types';
 import { DOM_EXPORT_SCALE, pageTextFromLines, renderDomPageToCanvas } from '@/lib/domExport';
 import { resolvePageLayout } from '@/lib/pageLayout';
-import FeedbackDialog from './FeedbackDialog';
 import { SectionCard, StatusCallout } from '@/components/patterns/EditorPatterns';
 
 interface ExportPanelProps {
@@ -24,8 +23,6 @@ interface ExportPanelProps {
   isPaginationComplete: boolean;
   pageSettingsByPage: PageSettings[];
   totalPages: number;
-  currentPageIndex: number;
-  onCurrentPageChange: (pageIndex: number) => void;
   onExportingChange?: (isExporting: boolean) => void;
   onExportPageIndexChange?: (pageIndex: number | null) => void;
 }
@@ -64,15 +61,12 @@ export default function ExportPanel({
   isPaginationComplete,
   pageSettingsByPage,
   totalPages,
-  currentPageIndex,
   onExportingChange,
   onExportPageIndexChange,
 }: ExportPanelProps) {
   const [format, setFormat] = useState<ExportFormat>('pdf');
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState<{ current: number; total: number } | null>(null);
-  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-  const originalPageIndexRef = useRef<number>(0);
   const cancelExportRef = useRef(false);
 
   const pagesRef = useRef<LineData[][]>(pages);
@@ -113,7 +107,6 @@ export default function ExportPanel({
     setIsExporting(true);
     onExportingChange?.(true);
     cancelExportRef.current = false;
-    originalPageIndexRef.current = currentPageIndex;
 
     // Trigger full pagination in the editor
     onExportPageIndexChange?.(0);
@@ -146,7 +139,6 @@ export default function ExportPanel({
       console.warn('Failed to verify font loading for export:', e);
     }
 
-    let success = false;
     try {
       const progressTotal = format === 'pdf' ? exportTotal + 1 : exportTotal;
       setExportProgress({ current: 0, total: progressTotal });
@@ -245,8 +237,6 @@ export default function ExportPanel({
           link.download = 'handwritten-document.pdf';
           link.click();
           URL.revokeObjectURL(url);
-          
-          success = true;
         }
 
         worker.postMessage({ type: 'cleanup' });
@@ -279,9 +269,6 @@ export default function ExportPanel({
           setExportProgress({ current: i + 1, total: progressTotal });
           await new Promise(resolve => setTimeout(resolve, 0));
         }
-        if (!cancelExportRef.current) {
-          success = true;
-        }
       }
     } catch (error) {
       console.error('Export failed:', error);
@@ -291,9 +278,6 @@ export default function ExportPanel({
       setIsExporting(false);
       setExportProgress(null);
       onExportingChange?.(false);
-      if (success) {
-        setIsFeedbackOpen(true);
-      }
     }
   };
 
@@ -404,10 +388,6 @@ export default function ExportPanel({
           </p>
         </div>
       </SectionCard>
-      <FeedbackDialog 
-        isOpen={isFeedbackOpen} 
-        onClose={() => setIsFeedbackOpen(false)} 
-      />
     </div>
   );
 }
