@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -14,7 +14,7 @@ import { Download, FileImage, FileText, Loader2 } from 'lucide-react';
 import { HandwritingSettings, PageSettings, LineData } from '@/lib/types';
 import { DOM_EXPORT_SCALE, pageTextFromLines, renderDomPageToCanvas } from '@/lib/domExport';
 import { resolvePageLayout } from '@/lib/pageLayout';
-import { SectionCard, StatusCallout } from '@/components/patterns/EditorPatterns';
+import { SectionCard } from '@/components/patterns/EditorPatterns';
 
 interface ExportPanelProps {
   hasContent: boolean;
@@ -68,6 +68,7 @@ export default function ExportPanel({
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState<{ current: number; total: number } | null>(null);
   const cancelExportRef = useRef(false);
+  const exportHelperTextId = useId();
 
   const pagesRef = useRef<LineData[][]>(pages);
   const isPaginationCompleteRef = useRef<boolean>(isPaginationComplete);
@@ -327,8 +328,11 @@ export default function ExportPanel({
           <Button
             onClick={exportPages}
             disabled={isExporting || !hasContent}
-            className={`w-full font-bold transition-all active:scale-95 h-11 ${
-              !hasContent ? 'bg-[var(--t2i-surface-panel-muted)] text-[var(--t2i-content-subtle)] hover:bg-[var(--t2i-surface-panel-muted)]' : 'bg-[var(--t2i-brand-primary)] hover:bg-[var(--t2i-brand-hover)] text-[var(--t2i-brand-on-primary)] shadow-none'
+            aria-describedby={!hasContent ? exportHelperTextId : undefined}
+            className={`h-11 w-full border font-bold shadow-none transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-100 ${
+              !hasContent
+                ? 'border-[var(--t2i-border-default)] bg-[var(--t2i-surface-panel)] text-[var(--t2i-content-muted)] hover:bg-[var(--t2i-surface-panel)]'
+                : 'border-transparent bg-[var(--t2i-brand-primary)] text-[var(--t2i-brand-on-primary)] hover:bg-[var(--t2i-brand-hover)]'
             }`}
           >
             {isExporting ? (
@@ -377,14 +381,17 @@ export default function ExportPanel({
             </div>
           )}
 
-          {!hasContent && (
-            <StatusCallout tone="warning">
-              Start typing to enable export
-            </StatusCallout>
-          )}
-
-          <p className="text-[10px] text-[var(--t2i-content-subtle)] text-center leading-relaxed">
-            {format === 'pdf' ? 'Single PDF' : 'Separate page images'}
+          <p
+            id={exportHelperTextId}
+            className={`text-center text-[10px] leading-relaxed ${
+              !hasContent ? 'text-[var(--t2i-content-muted)]' : 'text-[var(--t2i-content-subtle)]'
+            }`}
+          >
+            {!hasContent
+              ? 'Add text in the Preview to export.'
+              : format === 'pdf'
+                ? 'Single PDF'
+                : 'Separate page images'}
           </p>
         </div>
       </SectionCard>
