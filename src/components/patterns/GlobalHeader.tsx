@@ -38,7 +38,7 @@ const GlobalHeader = React.forwardRef<HTMLElement, GlobalHeaderProps>(function G
           className="group inline-flex items-center gap-2 rounded-full text-lg font-bold tracking-tight text-[var(--t2i-content-strong)] transition hover:text-[var(--t2i-brand-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--t2i-focus-ring)] sm:text-xl"
           aria-label="Text2Ink"
         >
-          <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-lg border border-[var(--t2i-border-subtle)] bg-[var(--t2i-surface-raised)]">
+          <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-lg">
             <Image src="/logo-without-background.png" alt="Text2Ink logo" width={32} height={32} className="h-7 w-7 object-contain" priority />
           </span>
           <span>Text2Ink</span>
