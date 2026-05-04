@@ -18,18 +18,21 @@ describe('Contact page', () => {
     expect(screen.getByRole('button', { name: /theme preference: system/i })).toBeInTheDocument();
     expect(screen.getByTestId('global-header-inner')).toHaveClass('max-w-full');
     expect(screen.getByRole('heading', { name: 'Contact' })).toBeInTheDocument();
+    expect(
+      screen.getByText('Questions, feedback, or bug reports? Feel free to reach out anytime.'),
+    ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /rasagyavatsal@outlook.com/i })).toHaveAttribute(
       'href',
       'mailto:rasagyavatsal@outlook.com',
     );
     expect(screen.queryByText(/utility inbox/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/bug reports/i)).not.toBeInTheDocument();
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
     expect(screen.getByTestId('version')).toBeInTheDocument();
   });
 
   it('keeps contact metadata focused on contact and canonicalized to the utility page', () => {
-    expect(metadata.description).toBe('Have questions about Text2Ink? Reach out to us. We would love to hear from you!');
+    expect(metadata.title).toBe('Contact');
+    expect(metadata.description).toBe('Questions, feedback, or bug reports? Reach out anytime by email.');
     expect(metadata.alternates?.canonical).toBe('https://text2ink.com/contact');
   });
 });
