@@ -14,12 +14,29 @@ describe('ExportPanel', () => {
     totalPages: 1,
   };
 
-  it('keeps export actions inside a minimal inspector section and explains disabled export', () => {
+  it('keeps export visible while disabled and explains how to unlock it', () => {
     render(<ExportPanel {...props} />);
 
+    const exportButton = screen.getByRole('button', { name: /export pdf/i });
+
     expect(screen.getByRole('heading', { name: /export/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /export pdf/i })).toBeDisabled();
-    expect(screen.getByRole('status')).toHaveTextContent(/start typing to enable export/i);
+    expect(screen.getByLabelText(/format/i)).toBeEnabled();
+    expect(exportButton).toBeDisabled();
+    expect(exportButton).toHaveAccessibleDescription(/add text in the preview to export/i);
+    expect(screen.getByText(/add text in the preview to export/i)).toBeInTheDocument();
+    expect(screen.queryByText(/single pdf/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
     expect(screen.queryByText(/monitor progress inside the sidebar/i)).not.toBeInTheDocument();
+  });
+
+  it('shows the format note once export is available', () => {
+    render(<ExportPanel {...props} hasContent />);
+
+    const exportButton = screen.getByRole('button', { name: /export pdf/i });
+
+    expect(exportButton).toBeEnabled();
+    expect(exportButton).not.toHaveAccessibleDescription();
+    expect(screen.getByText(/single pdf/i)).toBeInTheDocument();
+    expect(screen.queryByText(/add text in the preview to export/i)).not.toBeInTheDocument();
   });
 });
