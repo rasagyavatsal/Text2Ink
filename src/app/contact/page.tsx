@@ -3,8 +3,8 @@ import GlobalHeader from '@/components/patterns/GlobalHeader';
 import SiteFooter from '@/components/patterns/SiteFooter';
 
 export const metadata: Metadata = {
-  title: 'Contact Us',
-  description: 'Have questions about Text2Ink? Reach out to us. We would love to hear from you!',
+  title: 'Contact',
+  description: 'Questions, feedback, or bug reports? Reach out anytime by email.',
   alternates: {
     canonical: 'https://text2ink.com/contact',
   },
@@ -20,6 +20,9 @@ export default function ContactPage() {
           <h1 className="text-4xl font-bold tracking-tight text-[var(--t2i-content-strong)] sm:text-5xl">
             Contact
           </h1>
+          <p className="max-w-2xl text-base text-[var(--t2i-content-muted)] sm:text-lg">
+            Questions, feedback, or bug reports? Feel free to reach out anytime.
+          </p>
           <a
             href="mailto:rasagyavatsal@outlook.com"
             className="text-xl font-semibold text-[var(--t2i-brand-primary)] transition hover:text-[var(--t2i-brand-hover)] hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--t2i-focus-ring)] sm:text-2xl"
