@@ -44,6 +44,10 @@ _Avoid_: Guessed spacer, fixed keyboard height
 A typing interaction that happens directly on the Preview rather than inside the Control Sheet.
 _Avoid_: Sheet editing, sidebar typing
 
+**Preview–Export Layout Parity**:
+The exported page matches the text positions visible in the Preview within the same browser session.
+_Avoid_: Cross-device consistency, universal pixel parity
+
 ## Relationships
 
 - A **Control Sheet** is a **Bottom Obstruction**
@@ -55,6 +59,7 @@ _Avoid_: Sheet editing, sidebar typing
 - **Preview Editing** activates the **Keyboard Scroll Inset** when the mobile keyboard is open
 - While the mobile keyboard is open, the **Keyboard Scroll Inset** replaces the **Control Sheet Inset**
 - While the mobile keyboard is open, only the visible keyboard obstruction contributes to the **Keyboard Scroll Inset**; the hidden **Control Sheet** does not
+- **Preview–Export Layout Parity** is satisfied when export captures the same page composition the writer sees in the **Preview**
 
 ## Example dialogue
 
@@ -68,3 +73,4 @@ _Avoid_: Sheet editing, sidebar typing
 - "sheet interaction while typing" was ambiguous — resolved: when the mobile keyboard is open, the **Control Sheet** is not accessible until the keyboard closes.
 - "bottom sheet" was used to mean the **Control Sheet** — resolved: use **Control Sheet**.
 - "overlay" was ambiguous between a **Floating Surface**, a **Modal Dialog**, and a **Bottom Obstruction** — resolved: use the specific surface name.
+- "exactly same everywhere" was ambiguous between same-session **Preview–Export Layout Parity** and cross-device determinism — resolved: the requirement here is same-session **Preview–Export Layout Parity**.
