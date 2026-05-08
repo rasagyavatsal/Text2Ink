@@ -64,6 +64,23 @@ describe('domExport', () => {
     expect(page.querySelector('[data-export-layer="paper"]')).not.toBeNull();
     expect(page.querySelector('[data-export-layer="body"]')).not.toBeNull();
     expect(page.querySelector('[data-export-layer="text-fields"]')).not.toBeNull();
+    expect(page.dataset.printableMode).toBe('export');
+  });
+
+  it('exports the shared printable body node without editor-only affordances', () => {
+    const page = createExportPageElement({
+      pageIndex: 0,
+      pageText: 'Body text',
+      pageSettings: defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
+      settings: DEFAULT_SETTINGS,
+      fontFamily: 'Caveat',
+    });
+
+    const body = page.querySelector<HTMLElement>('[data-printable-layer="body"]');
+    expect(body?.dataset.exportLayer).toBe('body');
+    expect(body?.hasAttribute('contenteditable')).toBe(false);
+    expect(body?.hasAttribute('role')).toBe(false);
+    expect(body?.style.caretColor).toBe('');
   });
 
   it('marks the export subtree as isolated from app theme styles', () => {

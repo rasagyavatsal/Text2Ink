@@ -4,6 +4,7 @@ import React, { useLayoutEffect, useRef } from 'react';
 import { HandwritingSettings, PageSettings } from '@/lib/types';
 import { extractPlainTextFromContentEditable, normalizePastedPlainText } from '@/lib/domText';
 import { resolvePageLayout } from '@/lib/pageLayout';
+import { printableBodyStyle } from '@/lib/printablePage';
 
 interface BodyTextEditorProps {
   pageText: string;
@@ -59,8 +60,6 @@ export default function BodyTextEditor({
 
   void hasCustomBackground;
   const layout = resolvePageLayout({ settings, pageSettings, pageIndex });
-  const lineHeightPx = layout.lineSpacing;
-  const left = layout.writingBox.x;
 
   return (
     <div
@@ -70,20 +69,10 @@ export default function BodyTextEditor({
       role="textbox"
       aria-label="Handwriting body editor"
       spellCheck={false}
+      data-printable-layer="body"
       className="absolute outline-none"
       style={{
-        left: left * scale,
-        top: layout.writingBox.y * scale,
-        width: layout.writingBox.width * scale,
-        height: layout.writingBox.height * scale,
-        fontFamily,
-        fontSize: pageSettings.fontSize * scale,
-        lineHeight: `${lineHeightPx * scale}px`,
-        color: pageSettings.inkColor,
-        whiteSpace: 'break-spaces',
-        overflowWrap: 'break-word',
-        transform: pageSettings.lineTilt ? `rotate(${pageSettings.lineTilt}deg)` : undefined,
-        transformOrigin: 'top left',
+        ...printableBodyStyle({ pageSettings, fontFamily, layout, scale }),
         caretColor: pageSettings.inkColor,
       }}
       onInput={(event) => {
