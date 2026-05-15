@@ -102,6 +102,8 @@ interface SettingsPanelProps {
   isPaginationComplete: boolean;
   pages: LineData[][];
   onClearAll: () => void;
+  isExportLocked?: boolean;
+  exportLockMessage?: string;
 }
 
 export default function SettingsPanel({
@@ -118,6 +120,8 @@ export default function SettingsPanel({
   isPaginationComplete,
   pages,
   onClearAll,
+  isExportLocked = false,
+  exportLockMessage = 'Export in progress. Editing is temporarily disabled until capture finishes.',
 }: SettingsPanelProps) {
   const [customFontError, setCustomFontError] = useState<string | null>(null);
   const [lineDetecting, setLineDetecting] = useState(false);
@@ -162,18 +166,22 @@ export default function SettingsPanel({
   }, [paperPageIndex]);
 
   const handleNextFonts = () => {
+    if (isExportLocked) return;
     setFontPageIndex((prev) => (prev + 1) % totalFontPages);
   };
 
   const handlePrevFonts = () => {
+    if (isExportLocked) return;
     setFontPageIndex((prev) => (prev - 1 + totalFontPages) % totalFontPages);
   };
 
   const handleNextPapers = () => {
+    if (isExportLocked) return;
     setPaperPageIndex((prev) => (prev + 1) % totalPaperPages);
   };
 
   const handlePrevPapers = () => {
+    if (isExportLocked) return;
     setPaperPageIndex((prev) => (prev - 1 + totalPaperPages) % totalPaperPages);
   };
 
@@ -188,6 +196,7 @@ export default function SettingsPanel({
     key: K,
     value: HandwritingSettings[K]
   ) => {
+    if (isExportLocked) return;
     onSettingsChange({ ...settings, [key]: value });
   };
 
@@ -195,10 +204,12 @@ export default function SettingsPanel({
     key: K,
     value: PageSettings[K]
   ) => {
+    if (isExportLocked) return;
     onPageSettingsChange({ ...pageSettings, [key]: value });
   };
 
   const updateSettings = (patch: Partial<HandwritingSettings>) => {
+    if (isExportLocked) return;
     onSettingsChange({ ...settings, ...patch });
   };
 
@@ -211,6 +222,7 @@ export default function SettingsPanel({
   };
 
   const handleDetectLines = async () => {
+    if (isExportLocked) return;
     if (!currentBackground || lineDetecting) return;
     setLineDetectError(null);
     setLineDetectInfo(null);
@@ -250,6 +262,15 @@ export default function SettingsPanel({
 
   return (
     <div className="space-y-4 p-4">
+      {isExportLocked && (
+        <div
+          role="status"
+          className="rounded-xl border border-[var(--t2i-border-subtle)] bg-[var(--t2i-surface-panel-muted)] px-3 py-2 text-xs font-medium text-[var(--t2i-content-normal)]"
+        >
+          {exportLockMessage}
+        </div>
+      )}
+
       <SectionCard
         title={(
           <span className="flex items-center gap-2">
@@ -263,7 +284,11 @@ export default function SettingsPanel({
             <div className="flex items-center gap-1 rounded-lg bg-[var(--t2i-surface-panel-muted)] p-1">
               <button
                 type="button"
-                onClick={() => onPreviewScaleChange(Number((previewScale - 0.1).toFixed(2)))}
+                onClick={() => {
+                  if (isExportLocked) return;
+                  onPreviewScaleChange(Number((previewScale - 0.1).toFixed(2)));
+                }}
+                disabled={isExportLocked}
                 className="rounded-md p-2 text-[var(--t2i-content-muted)] transition-all hover:bg-[var(--t2i-surface-panel)] hover:text-[var(--t2i-brand-primary)] hover:shadow-sm"
               >
                 <Minus className="w-3.5 h-3.5" />
@@ -273,7 +298,11 @@ export default function SettingsPanel({
               </div>
               <button
                 type="button"
-                onClick={() => onPreviewScaleChange(Number((previewScale + 0.1).toFixed(2)))}
+                onClick={() => {
+                  if (isExportLocked) return;
+                  onPreviewScaleChange(Number((previewScale + 0.1).toFixed(2)));
+                }}
+                disabled={isExportLocked}
                 className="rounded-md p-2 text-[var(--t2i-content-muted)] transition-all hover:bg-[var(--t2i-surface-panel)] hover:text-[var(--t2i-brand-primary)] hover:shadow-sm"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -285,8 +314,11 @@ export default function SettingsPanel({
             <div className="flex items-center justify-between rounded-lg bg-[var(--t2i-surface-panel-muted)] p-1">
               <button
                 type="button"
-                onClick={() => onCurrentPageChange(Math.max(0, currentPageIndex - 1))}
-                disabled={currentPageIndex === 0}
+                onClick={() => {
+                  if (isExportLocked) return;
+                  onCurrentPageChange(Math.max(0, currentPageIndex - 1));
+                }}
+                disabled={isExportLocked || currentPageIndex === 0}
                 className="rounded-md p-2 text-[var(--t2i-content-muted)] transition-all hover:bg-[var(--t2i-surface-panel)] hover:text-[var(--t2i-brand-primary)] hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-30"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -296,14 +328,15 @@ export default function SettingsPanel({
               </div>
               <button
                 type="button"
-                onClick={() =>
+                onClick={() => {
+                  if (isExportLocked) return;
                   onCurrentPageChange(
                     isPaginationComplete
                       ? Math.min(pages.length - 1, currentPageIndex + 1)
                       : currentPageIndex + 1
-                  )
-                }
-                disabled={isPaginationComplete && currentPageIndex >= pages.length - 1}
+                  );
+                }}
+                disabled={isExportLocked || (isPaginationComplete && currentPageIndex >= pages.length - 1)}
                 className="rounded-md p-2 text-[var(--t2i-content-muted)] transition-all hover:bg-[var(--t2i-surface-panel)] hover:text-[var(--t2i-brand-primary)] hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-30"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -312,7 +345,11 @@ export default function SettingsPanel({
           </SettingRow>
 
           <button
-            onClick={onApplyToAllPages}
+            onClick={() => {
+              if (isExportLocked) return;
+              onApplyToAllPages?.();
+            }}
+            disabled={isExportLocked}
             className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-[var(--t2i-brand-soft)] border border-[var(--t2i-border-subtle)] rounded-xl text-xs font-bold text-[var(--t2i-brand-primary)] hover:bg-[var(--t2i-brand-soft)] transition-all active:scale-95"
           >
             <Wand2 className="w-3.5 h-3.5" />
@@ -322,6 +359,7 @@ export default function SettingsPanel({
           <div className="pt-2">
             <button
               onClick={() => {
+                if (isExportLocked) return;
                 const newField = {
                   id: crypto.randomUUID(),
                   text: '',
@@ -334,6 +372,7 @@ export default function SettingsPanel({
                 };
                 updatePageSetting('textFields', [...(pageSettings.textFields || []), newField]);
               }}
+              disabled={isExportLocked}
               className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-[var(--t2i-surface-panel-muted)] border border-[var(--t2i-border-subtle)] rounded-xl text-xs font-bold text-[var(--t2i-content-normal)] hover:bg-[var(--t2i-state-hover)] transition-all active:scale-95"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -962,7 +1001,11 @@ export default function SettingsPanel({
         )}
       >
         <button
-          onClick={onClearAll}
+          onClick={() => {
+            if (isExportLocked) return;
+            onClearAll();
+          }}
+          disabled={isExportLocked}
           className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-bold text-red-500 hover:bg-red-500/10 hover:text-red-600 transition-all active:scale-95 border border-red-500/20"
         >
           <Trash2 className="w-3.5 h-3.5" />

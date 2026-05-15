@@ -101,4 +101,33 @@ describe('BodyTextEditor', () => {
     fireEvent.compositionEnd(editor);
     expect(onPageTextChange).toHaveBeenCalledWith('あ');
   });
+
+  it('blocks document edits during export lock and explains why', () => {
+    const onPageTextChange = vi.fn();
+    const onBlockedEditAttempt = vi.fn();
+
+    render(
+      <BodyTextEditor
+        pageText="Hello"
+        pageSettings={pageSettings}
+        settings={DEFAULT_SETTINGS}
+        scale={1}
+        fontFamily="Caveat"
+        hasCustomBackground={false}
+        onPageTextChange={onPageTextChange}
+        isLocked
+        onBlockedEditAttempt={onBlockedEditAttempt}
+      />
+    );
+
+    const editor = screen.getByRole('textbox', { name: 'Handwriting body editor' });
+    expect(editor).toHaveAttribute('contenteditable', 'false');
+
+    fireEvent.mouseDown(editor);
+    editor.textContent = 'Blocked';
+    fireEvent.input(editor);
+
+    expect(onBlockedEditAttempt).toHaveBeenCalled();
+    expect(onPageTextChange).not.toHaveBeenCalled();
+  });
 });

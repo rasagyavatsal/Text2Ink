@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useId, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -12,9 +13,15 @@ import {
 } from '@/components/ui/select';
 import { Download, FileImage, FileText, Loader2 } from 'lucide-react';
 import { HandwritingSettings, PageSettings, LineData } from '@/lib/types';
-import { DOM_EXPORT_SCALE, pageTextFromLines, renderDomPageToCanvas } from '@/lib/domExport';
+import {
+  DOM_EXPORT_SCALE,
+  capturePageElementToCanvas,
+  pageTextFromLines,
+  settlePageElementForCapture,
+} from '@/lib/domExport';
 import { resolvePageLayout } from '@/lib/pageLayout';
 import { SectionCard } from '@/components/patterns/EditorPatterns';
+import PageContent from './PageContent';
 
 interface ExportPanelProps {
   hasContent: boolean;
@@ -34,6 +41,20 @@ type PdfWorkerMessage =
   | { type: 'pageAdded' }
   | { type: 'generated'; payload: ArrayBuffer }
   | { type: 'error'; payload: string };
+
+const HIDDEN_EXPORT_HOST_STYLE = {
+  all: 'initial',
+  position: 'fixed',
+  left: '-10000px',
+  top: '0',
+  display: 'block',
+  pointerEvents: 'none',
+  background: 'transparent',
+  border: '0',
+  margin: '0',
+  padding: '0',
+  boxSizing: 'border-box',
+} as const;
 
 const FONT_VARIABLES: Record<string, string> = {
   'caveat': '--font-caveat',
@@ -67,7 +88,15 @@ export default function ExportPanel({
   const [format, setFormat] = useState<ExportFormat>('pdf');
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState<{ current: number; total: number } | null>(null);
+  const [exportErrorMessage, setExportErrorMessage] = useState<string | null>(null);
+  const [renderedExportPage, setRenderedExportPage] = useState<{
+    pageIndex: number;
+    pageText: string;
+    pageSettings: PageSettings;
+    fontFamily: string;
+  } | null>(null);
   const cancelExportRef = useRef(false);
+  const hiddenPageRef = useRef<HTMLDivElement | null>(null);
   const exportHelperTextId = useId();
 
   const pagesRef = useRef<LineData[][]>(pages);
@@ -106,8 +135,9 @@ export default function ExportPanel({
 
   const exportPages = async () => {
     setIsExporting(true);
-    onExportingChange?.(true);
     cancelExportRef.current = false;
+    setExportErrorMessage(null);
+    let exportLockStarted = false;
 
     // Trigger full pagination in the editor
     onExportPageIndexChange?.(0);
@@ -125,22 +155,42 @@ export default function ExportPanel({
       return false;
     };
 
-    await waitForPagination();
+    const waitForHiddenPage = async () => {
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => resolve());
+      });
 
-    const currentPages = pagesRef.current;
-    const exportTotal = Math.max(1, currentPages.length);
-    
-    const resolvedFontFamily = getResolvedFontFamily();
+      const page = hiddenPageRef.current;
+      if (!page) {
+        throw new Error('Failed to prepare the export page.');
+      }
 
-    // Ensure fonts are loaded
-    try {
-      await document.fonts.ready;
-      await document.fonts.load(`${settings.fontSize}px ${resolvedFontFamily}`);
-    } catch (e) {
-      console.warn('Failed to verify font loading for export:', e);
-    }
+      return page;
+    };
 
     try {
+      const paginationSettled = await waitForPagination();
+      if (!paginationSettled) {
+        throw new Error('The document layout did not settle in time for export.');
+      }
+
+      const currentPages = pagesRef.current;
+      const exportTotal = Math.max(1, currentPages.length);
+      const resolvedFontFamily = getResolvedFontFamily();
+      onExportingChange?.(true);
+      exportLockStarted = true;
+
+      // Ensure fonts are loaded
+      try {
+        const fonts = document.fonts;
+        if (fonts) {
+          await fonts.ready;
+          await fonts.load(`${settings.fontSize}px ${resolvedFontFamily}`);
+        }
+      } catch (e) {
+        console.warn('Failed to verify font loading for export:', e);
+      }
+
       const progressTotal = format === 'pdf' ? exportTotal + 1 : exportTotal;
       setExportProgress({ current: 0, total: progressTotal });
 
@@ -193,13 +243,27 @@ export default function ExportPanel({
           const pageLines = currentPages[i] || [];
           const pageSettings = pageSettingsByPage[i] || pageSettingsByPage[0];
           const layout = resolvePageLayout({ settings, pageSettings, pageIndex: i });
+          const pageText = pageTextFromLines(pageLines);
+          flushSync(() => {
+            setRenderedExportPage({
+              pageIndex: i,
+              pageText,
+              pageSettings,
+              fontFamily: resolvedFontFamily,
+            });
+          });
 
-          const canvas = await renderDomPageToCanvas({
-            pageIndex: i,
-            pageText: pageTextFromLines(pageLines),
-            pageSettings,
-            settings,
+          const page = await waitForHiddenPage();
+
+          await settlePageElementForCapture(page, {
             fontFamily: resolvedFontFamily,
+            fontSize: pageSettings.fontSize,
+          });
+
+          const canvas = await capturePageElementToCanvas({
+            page,
+            width: layout.width,
+            height: layout.height,
             scale: DOM_EXPORT_SCALE,
           });
 
@@ -251,13 +315,28 @@ export default function ExportPanel({
           
           const pageLines = currentPages[i] || [];
           const pageSettings = pageSettingsByPage[i] || pageSettingsByPage[0];
+          const layout = resolvePageLayout({ settings, pageSettings, pageIndex: i });
+          const pageText = pageTextFromLines(pageLines);
+          flushSync(() => {
+            setRenderedExportPage({
+              pageIndex: i,
+              pageText,
+              pageSettings,
+              fontFamily: resolvedFontFamily,
+            });
+          });
 
-          const canvas = await renderDomPageToCanvas({
-            pageIndex: i,
-            pageText: pageTextFromLines(pageLines),
-            pageSettings,
-            settings,
+          const page = await waitForHiddenPage();
+
+          await settlePageElementForCapture(page, {
             fontFamily: resolvedFontFamily,
+            fontSize: pageSettings.fontSize,
+          });
+
+          const canvas = await capturePageElementToCanvas({
+            page,
+            width: layout.width,
+            height: layout.height,
             scale: DOM_EXPORT_SCALE,
           });
 
@@ -273,12 +352,19 @@ export default function ExportPanel({
       }
     } catch (error) {
       console.error('Export failed:', error);
-      alert('Export failed. Please try again.');
+      setExportErrorMessage(
+        error instanceof Error ? error.message : 'Export failed. Please try again.',
+      );
     } finally {
       onExportPageIndexChange?.(null);
+      flushSync(() => {
+        setRenderedExportPage(null);
+      });
       setIsExporting(false);
       setExportProgress(null);
-      onExportingChange?.(false);
+      if (exportLockStarted) {
+        onExportingChange?.(false);
+      }
     }
   };
 
@@ -393,8 +479,30 @@ export default function ExportPanel({
                 ? 'Single PDF'
                 : 'Separate page images'}
           </p>
+
+          {exportErrorMessage && (
+            <p role="alert" className="text-center text-[10px] leading-relaxed text-red-500">
+              {exportErrorMessage}
+            </p>
+          )}
         </div>
       </SectionCard>
+
+      <div aria-hidden="true" style={HIDDEN_EXPORT_HOST_STYLE}>
+        {renderedExportPage && (
+          <div ref={hiddenPageRef} style={{ all: 'initial', display: 'block' }}>
+            <PageContent
+              mode="export"
+              pageIndex={renderedExportPage.pageIndex}
+              pageText={renderedExportPage.pageText}
+              pageSettings={renderedExportPage.pageSettings}
+              settings={settings}
+              fontFamily={renderedExportPage.fontFamily}
+              scale={1}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -160,4 +160,23 @@ describe('SettingsPanel', () => {
     expect(screen.getByText('Custom Line Spacing')).toBeInTheDocument();
     expect(screen.getByText('Paper Color')).toBeInTheDocument();
   });
+
+  it('shows export lock guidance and blocks document-changing actions during export', () => {
+    render(
+      <SettingsPanel
+        {...defaultProps}
+        isExportLocked
+        exportLockMessage="Export in progress. Editing is temporarily disabled until capture finishes."
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Add Text Box/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Apply settings to all pages/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Clear Everything/i }));
+
+    expect(screen.getByText(/editing is temporarily disabled until capture finishes/i)).toBeInTheDocument();
+    expect(mockOnPageSettingsChange).not.toHaveBeenCalled();
+    expect(mockOnApplyToAllPages).not.toHaveBeenCalled();
+    expect(mockOnClearAll).not.toHaveBeenCalled();
+  });
 });

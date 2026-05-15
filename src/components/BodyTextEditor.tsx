@@ -16,6 +16,8 @@ interface BodyTextEditorProps {
   onPageTextChange: (text: string) => void;
   onFocus?: () => void;
   onBlur?: () => void;
+  isLocked?: boolean;
+  onBlockedEditAttempt?: () => void;
 }
 
 function insertTextAtSelection(text: string) {
@@ -44,6 +46,8 @@ export default function BodyTextEditor({
   onPageTextChange,
   onFocus,
   onBlur,
+  isLocked = false,
+  onBlockedEditAttempt,
 }: BodyTextEditorProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const isFocusedRef = useRef(false);
@@ -65,7 +69,7 @@ export default function BodyTextEditor({
   return (
     <div
       ref={ref}
-      contentEditable="plaintext-only"
+      contentEditable={isLocked ? false : 'plaintext-only'}
       suppressContentEditableWarning
       role="textbox"
       aria-label="Handwriting body editor"
@@ -87,29 +91,53 @@ export default function BodyTextEditor({
         caretColor: pageSettings.inkColor,
       }}
       onInput={(event) => {
+        if (isLocked) {
+          onBlockedEditAttempt?.();
+          return;
+        }
         if (isComposingRef.current) return;
         onPageTextChange(extractPlainTextFromContentEditable(event.currentTarget));
       }}
       onPaste={(event) => {
+        if (isLocked) {
+          event.preventDefault();
+          onBlockedEditAttempt?.();
+          return;
+        }
         event.preventDefault();
         const pasted = normalizePastedPlainText(event.clipboardData.getData('text/plain'));
         if (!insertTextAtSelection(pasted)) return;
         onPageTextChange(extractPlainTextFromContentEditable(event.currentTarget));
+      }}
+      onMouseDown={() => {
+        if (isLocked) {
+          onBlockedEditAttempt?.();
+        }
       }}
       onFocus={() => {
         isFocusedRef.current = true;
         onFocus?.();
       }}
       onCompositionStart={() => {
+        if (isLocked) {
+          onBlockedEditAttempt?.();
+          return;
+        }
         isComposingRef.current = true;
       }}
       onCompositionEnd={(event) => {
+        if (isLocked) {
+          onBlockedEditAttempt?.();
+          return;
+        }
         isComposingRef.current = false;
         onPageTextChange(extractPlainTextFromContentEditable(event.currentTarget));
       }}
       onBlur={(event) => {
         isFocusedRef.current = false;
-        onPageTextChange(extractPlainTextFromContentEditable(event.currentTarget));
+        if (!isLocked) {
+          onPageTextChange(extractPlainTextFromContentEditable(event.currentTarget));
+        }
         onBlur?.();
       }}
     />

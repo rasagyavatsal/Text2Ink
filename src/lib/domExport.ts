@@ -190,6 +190,52 @@ async function waitForImages(root: HTMLElement) {
   );
 }
 
+export async function settlePageElementForCapture(
+  page: HTMLElement,
+  opts: {
+    fontFamily?: string;
+    fontSize?: number;
+  } = {},
+) {
+  const fonts = typeof document !== 'undefined' ? document.fonts : undefined;
+  if (fonts) {
+    await fonts.ready;
+    if (opts.fontFamily && opts.fontSize) {
+      const loadedFonts = await fonts.load(`${opts.fontSize}px ${opts.fontFamily}`);
+      if (loadedFonts.length === 0) {
+        throw new Error(`The export font "${opts.fontFamily}" could not be loaded.`);
+      }
+    }
+  }
+
+  await waitForImages(page);
+}
+
+export async function capturePageElementToCanvas(opts: {
+  page: HTMLElement;
+  width: number;
+  height: number;
+  scale?: number;
+}): Promise<HTMLCanvasElement> {
+  const { page, width, height } = opts;
+  return await html2canvas(page, {
+    scale: opts.scale ?? DOM_EXPORT_SCALE,
+    backgroundColor: null,
+    useCORS: true,
+    logging: false,
+    width,
+    height,
+    windowWidth: width,
+    windowHeight: height,
+    onclone: (clonedDocument) => {
+      for (const node of [clonedDocument.documentElement, clonedDocument.body]) {
+        node.style.backgroundColor = 'transparent';
+        node.style.backgroundImage = 'none';
+      }
+    },
+  });
+}
+
 export async function renderDomPageToCanvas(opts: {
   pageIndex: number;
   pageText: string;
@@ -218,24 +264,15 @@ export async function renderDomPageToCanvas(opts: {
   document.body.appendChild(host);
 
   try {
-    await document.fonts?.ready;
-    await document.fonts?.load(`${opts.pageSettings.fontSize}px ${opts.fontFamily}`);
-    await waitForImages(page);
-    return await html2canvas(page, {
-      scale: opts.scale ?? DOM_EXPORT_SCALE,
-      backgroundColor: null,
-      useCORS: true,
-      logging: false,
+    await settlePageElementForCapture(page, {
+      fontFamily: opts.fontFamily,
+      fontSize: opts.pageSettings.fontSize,
+    });
+    return await capturePageElementToCanvas({
+      page,
       width: layout.width,
       height: layout.height,
-      windowWidth: layout.width,
-      windowHeight: layout.height,
-      onclone: (clonedDocument) => {
-        for (const node of [clonedDocument.documentElement, clonedDocument.body]) {
-          node.style.backgroundColor = 'transparent';
-          node.style.backgroundImage = 'none';
-        }
-      },
+      scale: opts.scale,
     });
   } finally {
     host.remove();

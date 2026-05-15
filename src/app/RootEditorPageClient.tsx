@@ -117,6 +117,7 @@ type RootEditorShellProps = {
 };
 
 function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
+  const exportLockMessage = 'Export in progress. Editing is temporarily disabled until capture finishes.';
   const [resolvedInitialState] = useState<EditorInitialState>(initialState);
   const [headerRef, headerHeight] = useElementHeight<HTMLElement>();
   const isMobileEditorLayout = useMediaQuery(MOBILE_EDITOR_MEDIA_QUERY);
@@ -131,6 +132,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
   const [pages, setPages] = useState<LineData[][]>([]);
   const [isPaginationComplete, setIsPaginationComplete] = useState(true);
   const [exportPageIndex, setExportPageIndex] = useState<number | null>(null);
+  const [isExportLocked, setIsExportLocked] = useState(false);
 
   const currentPageSettings = useMemo(
     () => pageSettingsByPage[currentPageIndex] ?? defaultPageSettingsFromHandwritingSettings(settings),
@@ -329,6 +331,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
         onApplyToAllPages={applyCurrentPageSettingsToAll}
         isMobileLayout={isMobileLayout}
         onPreviewEditingChange={onPreviewEditingChange}
+        isExportLocked={isExportLocked}
       />
     ),
     [
@@ -341,6 +344,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       handleRawPreviewScaleChange,
       handleSettingsChange,
       handleTotalPagesChange,
+      isExportLocked,
       pageSettingsByPage,
       settings,
       text,
@@ -369,16 +373,20 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
         isPaginationComplete={isPaginationComplete}
         pages={pages}
         onClearAll={handleClearAll}
+        isExportLocked={isExportLocked}
+        exportLockMessage={exportLockMessage}
       />
     ),
     [
       applyCurrentPageSettingsToAll,
       currentPageIndex,
       currentPageSettings,
+      exportLockMessage,
       handleClearAll,
       handleCurrentPageChange,
       handlePageSettingsChange,
       handleSettingsChange,
+      isExportLocked,
       isPaginationComplete,
       pages,
       settings,
@@ -395,6 +403,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       pageSettingsByPage={pageSettingsByPage}
       totalPages={totalPages}
       onExportingChange={(isExporting) => {
+        setIsExportLocked(isExporting);
         if (!isExporting) setExportPageIndex(null);
       }}
       onExportPageIndexChange={setExportPageIndex}

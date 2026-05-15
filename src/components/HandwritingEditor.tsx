@@ -12,11 +12,9 @@ import { paginateDom } from '@/lib/domPagination';
 import {
   calculatePageStartOffsets,
 } from '@/lib/editorHelpers';
-import CanvasPreview from './CanvasPreview';
-import TextField from './TextField/TextField';
-import BodyTextEditor from './BodyTextEditor';
 import { replaceSourceTextSlice } from '@/lib/domText';
 import { resolvePageLayout } from '@/lib/pageLayout';
+import PageContent from './PageContent';
 
 interface HandwritingEditorProps {
   text: string;
@@ -36,6 +34,8 @@ interface HandwritingEditorProps {
   onApplyToAllPages?: () => void;
   isMobileLayout?: boolean;
   onPreviewEditingChange?: (isPreviewEditing: boolean) => void;
+  isExportLocked?: boolean;
+  onBlockedEditAttempt?: () => void;
 }
 
 function useDebouncedCallback<TArgs extends unknown[]>(cb: (...args: TArgs) => void, delayMs: number) {
@@ -85,6 +85,8 @@ export default function HandwritingEditor({
   onApplyToAllPages,
   isMobileLayout = false,
   onPreviewEditingChange,
+  isExportLocked = false,
+  onBlockedEditAttempt,
 }: HandwritingEditorProps) {
   void onPreviewScaleChange;
   void onApplyToAllPages;
@@ -362,13 +364,11 @@ export default function HandwritingEditor({
 
   const renderPage = useCallback(
     (pageIndex: number, scale: number, isVisiblePreview: boolean) => {
-      const pageLines = pages[pageIndex] ?? [];
       const ps = getPageSettings(pageIndex);
       const layout = resolvePageLayout({ settings, pageSettings: ps, pageIndex });
       const currentStartOffset = pageStartOffsets[pageIndex] ?? 0;
       const currentEndOffset = pageStartOffsets[pageIndex + 1] ?? localText.length;
       const pageText = localText.slice(currentStartOffset, currentEndOffset);
-      const hasCustomBackground = !!getBackgroundForPage(pageIndex);
 
       return (
         <div
@@ -385,63 +385,20 @@ export default function HandwritingEditor({
           }}
           aria-label={`Page ${pageIndex + 1}`}
         >
-          <CanvasPreview
-            lines={pageLines}
+          <PageContent
+            pageIndex={pageIndex}
+            pageText={pageText}
             pageSettings={ps}
             settings={settings}
-            pageIndex={pageIndex}
-            previewScale={scale}
             fontFamily={resolvedFontFamily}
-            pageStartOffset={currentStartOffset}
-            renderBodyText={false}
+            scale={scale}
+            editable={isVisiblePreview}
+            isLocked={isVisiblePreview && isExportLocked}
+            onPageTextChange={(nextPageText) => replacePageText(pageIndex, nextPageText)}
+            onPageSettingsChange={onPageSettingsChange}
+            onPreviewEditingChange={onPreviewEditingChange}
+            onBlockedEditAttempt={onBlockedEditAttempt}
           />
-
-          {isVisiblePreview && (
-            <BodyTextEditor
-              pageText={pageText}
-              pageSettings={ps}
-              settings={settings}
-              scale={scale}
-              fontFamily={resolvedFontFamily}
-              hasCustomBackground={hasCustomBackground}
-              pageIndex={pageIndex}
-              onPageTextChange={(nextPageText) => replacePageText(pageIndex, nextPageText)}
-              onFocus={() => {
-                onPreviewEditingChange?.(true);
-              }}
-              onBlur={() => {
-                onPreviewEditingChange?.(false);
-              }}
-            />
-          )}
-
-          {isVisiblePreview && ps.textFields?.map((field) => (
-            <div
-              key={field.id}
-              onMouseDown={(e) => e.stopPropagation()}
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <TextField
-                field={field}
-                scale={scale}
-                fontFamily={resolvedFontFamily}
-                pageWidth={layout.width}
-                pageHeight={layout.height}
-                onPreviewEditingChange={onPreviewEditingChange}
-                onUpdate={(updates) => {
-                  const nextFields = ps.textFields?.map((f) =>
-                    f.id === field.id ? { ...f, ...updates } : f
-                  );
-                  onPageSettingsChange?.({ ...ps, textFields: nextFields });
-                }}
-                onDelete={() => {
-                  const nextFields = ps.textFields?.filter((f) => f.id !== field.id);
-                  onPageSettingsChange?.({ ...ps, textFields: nextFields });
-                }}
-              />
-            </div>
-          ))}
 
           {isVisiblePreview && layout.controls.showMarginControls && settings.paperStyle === 'ruled' && !getBackgroundForPage(pageIndex) && onSettingsChange && (
             <button
@@ -506,14 +463,26 @@ export default function HandwritingEditor({
       resolvedFontFamily,
       settings,
       onPageSettingsChange,
+      onBlockedEditAttempt,
+      isExportLocked,
     ]
   );
 
-  const visiblePage = pages.length > 0 ? renderPage(currentPageIndex, previewScale, true) : null;
+  const visiblePageIndices = useMemo(() => {
+    const start = Math.max(0, currentPageIndex - 1);
+    const end = Math.min(pages.length - 1, currentPageIndex + 1);
+    const indices: number[] = [];
+
+    for (let pageIndex = start; pageIndex <= end; pageIndex++) {
+      indices.push(pageIndex);
+    }
+
+    return indices;
+  }, [currentPageIndex, pages.length]);
 
   return (
     <div className={`flex flex-col items-center ${isMobileLayout ? 'gap-4 py-3' : 'gap-8 py-8'}`}>
-      {visiblePage}
+      {visiblePageIndices.map((pageIndex) => renderPage(pageIndex, previewScale, pageIndex === currentPageIndex))}
     </div>
   );
 }

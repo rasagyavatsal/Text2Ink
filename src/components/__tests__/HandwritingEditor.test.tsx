@@ -2,17 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import HandwritingEditor from '../HandwritingEditor';
-import type { CanvasPreviewProps } from '../CanvasPreview';
 import { DEFAULT_SETTINGS, HandwritingSettings } from '../../lib/types';
-
-vi.mock('../CanvasPreview', () => ({
-  default: (props: CanvasPreviewProps) => (
-    <div data-testid="canvas-preview">
-      <div data-testid="preview-lines">{props.lines.length}</div>
-      <div data-testid="preview-render-body">{String(props.renderBodyText)}</div>
-    </div>
-  ),
-}));
 
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
@@ -49,8 +39,8 @@ describe('HandwritingEditor DOM body editor', () => {
     await waitFor(() => expect(bodyEditor).toHaveTextContent('hello world'));
     expect(bodyEditor).toHaveAttribute('contenteditable', 'plaintext-only');
     expect(bodyEditor).toHaveAttribute('spellcheck', 'false');
+    expect(screen.getByLabelText('Page 1')).toBeInTheDocument();
     expect(screen.queryByLabelText('Handwriting text input')).toBeNull();
-    expect(screen.getByTestId('preview-render-body')).toHaveTextContent('false');
   });
 
   it('emits edited plain text through the document source text callback', async () => {
