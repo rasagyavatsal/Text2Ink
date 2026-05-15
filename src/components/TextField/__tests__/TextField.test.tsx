@@ -429,4 +429,36 @@ describe('TextField', () => {
     expect(onPreviewEditingChange).toHaveBeenNthCalledWith(1, true);
     expect(onPreviewEditingChange).toHaveBeenNthCalledWith(2, false);
   });
+
+  it('does not rewrite stored text-box dimensions when preview zoom changes', () => {
+    const stableField = {
+      ...mockField,
+      text: 'a',
+      width: 26.4,
+      height: 40.8,
+    };
+    const { rerender } = render(
+      <TextField
+        field={stableField}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={1}
+        fontFamily={fontFamily}
+      />
+    );
+
+    mockOnUpdate.mockClear();
+
+    rerender(
+      <TextField
+        field={stableField}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={2}
+        fontFamily={fontFamily}
+      />
+    );
+
+    expect(mockOnUpdate).not.toHaveBeenCalled();
+  });
 });

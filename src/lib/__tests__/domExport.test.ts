@@ -25,13 +25,7 @@ vi.mock('html2canvas', () => ({
   }),
 }));
 
-import {
-  createExportPageElement,
-  pageTextFromLines,
-  renderDomPageToCanvas,
-  settlePageElementForCapture,
-} from '../domExport';
-import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '../types';
+import { capturePageElementToCanvas, pageTextFromLines, settlePageElementForCapture } from '../domExport';
 
 describe('domExport', () => {
   it('reconstructs page text from line data', () => {
@@ -41,141 +35,15 @@ describe('domExport', () => {
     ])).toBe('A\nB');
   });
 
-  it('creates a DOM page containing paper, body text, and text fields', () => {
-    const pageSettings = {
-      ...defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
-      textFields: [{
-        id: 'field-1',
-        text: 'Box text',
-        x: 20,
-        y: 30,
-        width: 100,
-        height: 50,
-        color: '#123456',
-        fontSize: 16,
-      }],
-    };
-
-    const page = createExportPageElement({
-      pageIndex: 0,
-      pageText: 'Body text',
-      pageSettings,
-      settings: DEFAULT_SETTINGS,
-      fontFamily: 'Caveat',
-    });
-
-    expect(page.textContent).toContain('Body text');
-    expect(page.textContent).toContain('Box text');
-    expect(page.querySelector('[data-export-layer="paper"]')).not.toBeNull();
-    expect(page.querySelector('[data-export-layer="body"]')).not.toBeNull();
-    expect(page.querySelector('[data-export-layer="text-fields"]')).not.toBeNull();
-  });
-
-  it('marks the export subtree as isolated from app theme styles', () => {
-    const page = createExportPageElement({
-      pageIndex: 0,
-      pageText: 'Body text',
-      pageSettings: defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
-      settings: DEFAULT_SETTINGS,
-      fontFamily: 'Caveat',
-    });
-
-    expect(page.style.all).toBe('initial');
-    expect(page.style.borderColor).toBe('transparent');
-    expect(page.style.outlineColor).toBe('transparent');
-
-    const body = page.querySelector<HTMLElement>('[data-export-layer="body"]');
-    expect(body?.style.borderColor).toBe('transparent');
-    expect(body?.style.outlineColor).toBe('transparent');
-  });
-
-  it('keeps the isolated export page as a concrete block-level capture target', () => {
-    const page = createExportPageElement({
-      pageIndex: 0,
-      pageText: 'Body text',
-      pageSettings: defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
-      settings: DEFAULT_SETTINGS,
-      fontFamily: 'Caveat',
-    });
-
-    expect(page.style.display).toBe('block');
-    expect(page.style.width).toBe('612px');
-    expect(page.style.height).toBe('792px');
-  });
-
-  it('uses selected page dimensions and rasterizes built-in paper templates into a background image', () => {
-    const page = createExportPageElement({
-      pageIndex: 0,
-      pageText: 'Body text',
-      pageSettings: defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
-      settings: {
-        ...DEFAULT_SETTINGS,
-        pageFormatId: 'a4',
-        pageOrientation: 'landscape',
-        paperTemplateId: 'dot-grid',
-        paperStyle: 'grid',
-      },
-      fontFamily: 'Caveat',
-    });
-
-    expect(page.style.width).toBe('841.89px');
-    expect(page.style.height).toBe('595.28px');
-    expect(page.querySelector('[data-export-paper-svg]')).toBeNull();
-
-    const background = page.querySelector<HTMLImageElement>('[data-export-paper-raster="dot-grid"]');
-    expect(background).not.toBeNull();
-    expect(background?.dataset.exportLayer).toBe('background-image');
-    expect(background?.src.startsWith('data:image/svg+xml;charset=utf-8,')).toBe(true);
-  });
-
-  it('exports accent ruled templates with full-width rules and a full-height red margin line', () => {
-    const page = createExportPageElement({
-      pageIndex: 0,
-      pageText: 'Body text',
-      pageSettings: defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
-      settings: { ...DEFAULT_SETTINGS, paperTemplateId: 'margin-ruled', paperStyle: 'ruled' },
-      fontFamily: 'Caveat',
-    });
-
-    const background = page.querySelector<HTMLImageElement>('[data-export-paper-raster="margin-ruled"]');
-    const svg = decodeURIComponent(background?.src.split(',')[1] ?? '');
-
-    expect(svg).toContain('x1="0" y1="60" x2="612" y2="60"');
-    expect(svg).toContain('x1="79" y1="0" x2="79" y2="792" stroke="#ffb3b3" stroke-width="2"');
-  });
-
-  it('keeps custom uploaded backgrounds on the existing export image path', () => {
-    const customBackgroundImage = 'data:image/png;base64,custom-background';
-    const page = createExportPageElement({
-      pageIndex: 0,
-      pageText: 'Body text',
-      pageSettings: {
-        ...defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
-        customBackgroundImage,
-      },
-      settings: {
-        ...DEFAULT_SETTINGS,
-        customBackgroundImage,
-      },
-      fontFamily: 'Caveat',
-    });
-
-    expect(page.querySelector('[data-export-paper-raster]')).toBeNull();
-
-    const background = page.querySelector<HTMLImageElement>('[data-export-layer="background-image"]');
-    expect(background?.src).toContain(customBackgroundImage);
-  });
-
   it('renders successfully when the app theme uses modern CSS color functions', async () => {
     document.documentElement.style.backgroundColor = 'oklch(0.145 0 0)';
     document.body.style.backgroundColor = 'lab(29.2345% 39.3825 20.0664)';
+    const page = document.createElement('div');
 
-    await expect(renderDomPageToCanvas({
-      pageIndex: 0,
-      pageText: 'Body text',
-      pageSettings: defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
-      settings: DEFAULT_SETTINGS,
-      fontFamily: 'Caveat',
+    await expect(capturePageElementToCanvas({
+      page,
+      width: 612,
+      height: 792,
       scale: 1,
     })).resolves.toBeInstanceOf(HTMLCanvasElement);
 

@@ -24,11 +24,7 @@ export function generateFontFamilyName(fileName: string): string {
   return `Text2InkCustom-${safeBase || 'Font'}-${Date.now()}`;
 }
 
-export function processLineDetectionResult(
-  result: LineDetectionResult,
-  _pageSettings: PageSettings,
-  _settings: HandwritingSettings
-): { offset: number; spacing: number } {
+export function processLineDetectionResult(result: LineDetectionResult): { offset: number; spacing: number } {
   const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
   const detectedOffset = Math.round(result.lineOffset);
   const detectedSpacing = Math.round(result.lineSpacing);

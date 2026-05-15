@@ -5,6 +5,7 @@ import BodyTextEditor from './BodyTextEditor';
 import TextField from './TextField/TextField';
 import { rasterizePaperBackground } from '@/lib/paperBackgroundRasterizer';
 import { resolvePageLayout } from '@/lib/pageLayout';
+import { TEXT_FIELD_CONTENT_PADDING } from '@/lib/textFieldLayout';
 import type { HandwritingSettings, PageSettings } from '@/lib/types';
 
 type PageContentMode = 'preview' | 'export';
@@ -74,6 +75,7 @@ function staticTextFieldRootStyle(opts: {
   height: number;
   fontFamily: string;
   color: string;
+  pointerEvents?: 'auto' | 'none';
 }) {
   return {
     position: 'absolute',
@@ -83,7 +85,7 @@ function staticTextFieldRootStyle(opts: {
     height: `${opts.height}px`,
     fontFamily: opts.fontFamily,
     color: opts.color,
-    pointerEvents: 'none',
+    pointerEvents: opts.pointerEvents ?? 'none',
   } as const;
 }
 
@@ -216,8 +218,17 @@ export default function PageContent({
           <div
             key={field.id}
             data-page-layer="text-field"
-            onMouseDown={() => {
+            onMouseDown={(event) => {
               if (isLocked) {
+                event.preventDefault();
+                event.stopPropagation();
+                onBlockedEditAttempt?.();
+              }
+            }}
+            onPointerDown={(event) => {
+              if (isLocked) {
+                event.preventDefault();
+                event.stopPropagation();
                 onBlockedEditAttempt?.();
               }
             }}
@@ -228,6 +239,7 @@ export default function PageContent({
               height: field.height * scale,
               fontFamily,
               color: field.color,
+              pointerEvents: isLocked ? 'auto' : 'none',
             })}
           >
             <div
@@ -238,7 +250,7 @@ export default function PageContent({
                 height: '100%',
                 whiteSpace: 'pre-wrap',
                 overflowWrap: 'break-word',
-                padding: `${4 * scale}px`,
+                padding: `${TEXT_FIELD_CONTENT_PADDING * scale}px`,
                 fontSize: field.fontSize * scale,
                 lineHeight: 1.2,
               }}

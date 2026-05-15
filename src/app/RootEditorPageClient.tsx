@@ -214,15 +214,6 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
   }, []);
 
   useEffect(() => {
-    if (isExportLocked) return;
-    if (blockedEditAlertTimeoutRef.current !== null) {
-      window.clearTimeout(blockedEditAlertTimeoutRef.current);
-      blockedEditAlertTimeoutRef.current = null;
-    }
-    setShowBlockedEditAlert(false);
-  }, [isExportLocked]);
-
-  useEffect(() => {
     if (!persistState) return;
     if (typeof window === 'undefined') return;
 
@@ -342,6 +333,19 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
     }, 2500);
   }, [isExportLocked]);
 
+  const handleExportingChange = useCallback((isExporting: boolean) => {
+    setIsExportLocked(isExporting);
+    if (isExporting) return;
+
+    if (blockedEditAlertTimeoutRef.current !== null) {
+      window.clearTimeout(blockedEditAlertTimeoutRef.current);
+      blockedEditAlertTimeoutRef.current = null;
+    }
+
+    setShowBlockedEditAlert(false);
+    setExportPageIndex(null);
+  }, []);
+
   const renderPreview = useCallback(
     ({
       previewScale,
@@ -445,10 +449,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       paginationRevision={paginationRevision}
       pageSettingsByPage={pageSettingsByPage}
       totalPages={totalPages}
-      onExportingChange={(isExporting) => {
-        setIsExportLocked(isExporting);
-        if (!isExporting) setExportPageIndex(null);
-      }}
+      onExportingChange={handleExportingChange}
       onExportPageIndexChange={setExportPageIndex}
     />
   );

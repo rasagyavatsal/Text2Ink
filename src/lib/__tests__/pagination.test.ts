@@ -118,6 +118,7 @@ describe('pagination', () => {
       // The logic for ruledTextLeft changes maxWidth, but nextLineFrom uses it.
       // We can't easily see internal maxWidth here without mocking createMeasure.
       expect(resRuled.pages).toBeDefined();
+      expect(resBlank.pages).toBeDefined();
     });
     
     it('uses customLineSpacing when available', () => {

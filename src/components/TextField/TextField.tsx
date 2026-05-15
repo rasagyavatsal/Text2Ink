@@ -6,6 +6,7 @@ import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@/compon
 import { Slider } from '@/components/ui/slider';
 import { PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/pageConstants';
 import { createMeasure } from '@/lib/pagination';
+import { TEXT_FIELD_CONTENT_PADDING } from '@/lib/textFieldLayout';
 import { TextField as TextFieldType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -55,7 +56,7 @@ function calculateAutoFitTextBoxSize(
   pageHeight: number,
 ) {
   const measure = createMeasure(fontFamily, fontSize);
-  const padding = 12 / scale;
+  const padding = TEXT_FIELD_CONTENT_PADDING * 2;
   const availableWidth = Math.max(10, pageWidth - x);
   const availableHeight = Math.max(10, pageHeight - y);
   const maxContentWidth = Math.max(1, availableWidth - padding);
@@ -339,6 +340,7 @@ export default function TextField({
           fontSize: field.fontSize * scale,
           lineHeight: 1.2,
           pointerEvents: 'none',
+          padding: `${TEXT_FIELD_CONTENT_PADDING * scale}px`,
         }}
       >
         <div className="whitespace-pre-wrap break-words" style={{ opacity: isFocused ? 0 : 1 }}>
@@ -347,7 +349,7 @@ export default function TextField({
       </div>
 
       <textarea
-        className="absolute inset-0 w-full h-full bg-transparent border-none outline-none resize-none p-1 leading-tight overflow-hidden"
+        className="absolute inset-0 w-full h-full bg-transparent border-none outline-none resize-none leading-tight overflow-hidden"
         value={field.text}
         onChange={(e) => {
           const nextText = e.target.value;
@@ -386,6 +388,7 @@ export default function TextField({
           minHeight: 'inherit',
           whiteSpace: 'pre-wrap',
           overflowWrap: 'break-word',
+          padding: `${TEXT_FIELD_CONTENT_PADDING * scale}px`,
         }}
         placeholder=""
       />

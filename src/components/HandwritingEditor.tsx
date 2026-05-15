@@ -478,7 +478,6 @@ export default function HandwritingEditor({
       onSettingsChange,
       onPreviewEditingChange,
       pageStartOffsets,
-      pages,
       replacePageText,
       resolvedFontFamily,
       settings,

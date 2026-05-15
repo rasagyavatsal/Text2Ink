@@ -245,7 +245,7 @@ export default function SettingsPanel({
         return;
       }
 
-      const { offset, spacing } = processLineDetectionResult(result, pageSettings, settings);
+      const { offset, spacing } = processLineDetectionResult(result);
 
       onPageSettingsChange({
         ...pageSettings,
