@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import ExportPanel from '../ExportPanel';
@@ -36,6 +36,7 @@ describe('ExportPanel', () => {
     settings: DEFAULT_SETTINGS,
     pages: [[]],
     isPaginationComplete: true,
+    paginationRevision: 0,
     pageSettingsByPage: [defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS)],
     totalPages: 1,
   };
@@ -143,5 +144,47 @@ describe('ExportPanel', () => {
     expect(settlePageElementForCaptureMock).toHaveBeenCalledTimes(2);
     expect(onExportingChange).toHaveBeenNthCalledWith(1, true);
     expect(onExportingChange).toHaveBeenLastCalledWith(false);
+  });
+
+  it('waits for a fresh full-document pagination pass before capturing', async () => {
+    function ExportHarness() {
+      const [pages, setPages] = useState([
+        [{ text: 'Stale export page', lineIndex: 0, hasNewline: false }],
+      ]);
+      const [isPaginationComplete, setIsPaginationComplete] = useState(true);
+      const [paginationRevision, setPaginationRevision] = useState(0);
+
+      return (
+        <ExportPanel
+          {...props}
+          hasContent
+          pages={pages}
+          isPaginationComplete={isPaginationComplete}
+          paginationRevision={paginationRevision}
+          onExportPageIndexChange={(pageIndex) => {
+            if (pageIndex !== 0) return;
+
+            setIsPaginationComplete(false);
+            window.setTimeout(() => {
+              setPages([
+                [{ text: 'Fresh export page', lineIndex: 0, hasNewline: false }],
+              ]);
+              setPaginationRevision((value) => value + 1);
+              setIsPaginationComplete(true);
+            }, 0);
+          }}
+        />
+      );
+    }
+
+    render(<ExportHarness />);
+
+    fireEvent.click(screen.getByRole('button', { name: /export pdf/i }));
+
+    await waitFor(() => {
+      expect(capturePageElementToCanvasMock).toHaveBeenCalledTimes(1);
+    });
+
+    expect(captureSnapshots.at(-1)?.text).toContain('Fresh export page');
   });
 });

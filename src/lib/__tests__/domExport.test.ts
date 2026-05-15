@@ -25,7 +25,12 @@ vi.mock('html2canvas', () => ({
   }),
 }));
 
-import { createExportPageElement, pageTextFromLines, renderDomPageToCanvas } from '../domExport';
+import {
+  createExportPageElement,
+  pageTextFromLines,
+  renderDomPageToCanvas,
+  settlePageElementForCapture,
+} from '../domExport';
 import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '../types';
 
 describe('domExport', () => {
@@ -176,5 +181,16 @@ describe('domExport', () => {
 
     document.documentElement.style.backgroundColor = '';
     document.body.style.backgroundColor = '';
+  });
+
+  it('fails export settling when a page image is broken', async () => {
+    const page = document.createElement('div');
+    const brokenImage = document.createElement('img');
+    page.appendChild(brokenImage);
+
+    Object.defineProperty(brokenImage, 'complete', { configurable: true, get: () => true });
+    Object.defineProperty(brokenImage, 'naturalWidth', { configurable: true, get: () => 0 });
+
+    await expect(settlePageElementForCapture(page)).rejects.toThrow(/image/i);
   });
 });

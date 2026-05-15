@@ -177,17 +177,62 @@ export function createExportPageElement(opts: {
   return page;
 }
 
+function imageLoadError(img: HTMLImageElement) {
+  const imageType = img.dataset.exportLayer === 'background-image' ? 'background image' : 'image';
+  return new Error(`The export ${imageType} could not be loaded.`);
+}
+
+async function waitForImage(img: HTMLImageElement) {
+  if (img.complete) {
+    if (img.naturalWidth === 0) {
+      throw imageLoadError(img);
+    }
+    return;
+  }
+
+  if (img.dataset.exportPaperRaster) {
+    return;
+  }
+
+  if (typeof img.decode === 'function') {
+    try {
+      await img.decode();
+    } catch {
+      throw imageLoadError(img);
+    }
+
+    if (img.naturalWidth === 0) {
+      throw imageLoadError(img);
+    }
+    return;
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const handleLoad = () => {
+      cleanup();
+      if (img.naturalWidth === 0) {
+        reject(imageLoadError(img));
+        return;
+      }
+      resolve();
+    };
+    const handleError = () => {
+      cleanup();
+      reject(imageLoadError(img));
+    };
+    const cleanup = () => {
+      img.removeEventListener('load', handleLoad);
+      img.removeEventListener('error', handleError);
+    };
+
+    img.addEventListener('load', handleLoad, { once: true });
+    img.addEventListener('error', handleError, { once: true });
+  });
+}
+
 async function waitForImages(root: HTMLElement) {
   const images = Array.from(root.querySelectorAll('img'));
-  await Promise.all(
-    images.map((img) => {
-      if (img.complete) return Promise.resolve();
-      if (typeof img.decode === 'function') {
-        return img.decode().catch(() => undefined);
-      }
-      return Promise.resolve();
-    })
-  );
+  await Promise.all(images.map((img) => waitForImage(img)));
 }
 
 export async function settlePageElementForCapture(

@@ -28,6 +28,7 @@ interface ExportPanelProps {
   settings: HandwritingSettings;
   pages: LineData[][];
   isPaginationComplete: boolean;
+  paginationRevision: number;
   pageSettingsByPage: PageSettings[];
   totalPages: number;
   onExportingChange?: (isExporting: boolean) => void;
@@ -80,6 +81,7 @@ export default function ExportPanel({
   settings,
   pages,
   isPaginationComplete,
+  paginationRevision,
   pageSettingsByPage,
   totalPages,
   onExportingChange,
@@ -101,6 +103,7 @@ export default function ExportPanel({
 
   const pagesRef = useRef<LineData[][]>(pages);
   const isPaginationCompleteRef = useRef<boolean>(isPaginationComplete);
+  const paginationRevisionRef = useRef<number>(paginationRevision);
   const totalPagesRef = useRef<number>(totalPages);
 
   useEffect(() => {
@@ -110,6 +113,10 @@ export default function ExportPanel({
   useEffect(() => {
     isPaginationCompleteRef.current = isPaginationComplete;
   }, [isPaginationComplete]);
+
+  useEffect(() => {
+    paginationRevisionRef.current = paginationRevision;
+  }, [paginationRevision]);
 
   useEffect(() => {
     totalPagesRef.current = totalPages;
@@ -133,24 +140,35 @@ export default function ExportPanel({
     return value || 'cursive';
   };
 
+  const ensureResolvedFontFamilyIsReady = async (resolvedFontFamily: string) => {
+    const fonts = document.fonts;
+    if (!fonts) return;
+
+    await fonts.ready;
+    const loadedFonts = await fonts.load(`${settings.fontSize}px ${resolvedFontFamily}`);
+    if (loadedFonts.length === 0) {
+      throw new Error(`The export font "${resolvedFontFamily}" could not be loaded.`);
+    }
+  };
+
   const exportPages = async () => {
     setIsExporting(true);
     cancelExportRef.current = false;
     setExportErrorMessage(null);
     let exportLockStarted = false;
 
-    // Trigger full pagination in the editor
-    onExportPageIndexChange?.(0);
-    
-    // Wait for pagination to include ALL pages
-    const waitForPagination = async () => {
+    const waitForPagination = async (minimumRevision: number) => {
       const start = Date.now();
-      const timeout = 10000; // 10s timeout
+      const timeout = 10000;
       while (Date.now() - start < timeout) {
-        if (isPaginationCompleteRef.current && pagesRef.current.length >= totalPagesRef.current) {
+        if (
+          paginationRevisionRef.current >= minimumRevision &&
+          isPaginationCompleteRef.current &&
+          pagesRef.current.length >= totalPagesRef.current
+        ) {
           return true;
         }
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }
       return false;
     };
@@ -169,27 +187,23 @@ export default function ExportPanel({
     };
 
     try {
-      const paginationSettled = await waitForPagination();
+      const resolvedFontFamily = getResolvedFontFamily();
+      await ensureResolvedFontFamilyIsReady(resolvedFontFamily);
+
+      const requestedPaginationRevision = onExportPageIndexChange
+        ? paginationRevisionRef.current + 1
+        : paginationRevisionRef.current;
+      onExportPageIndexChange?.(0);
+
+      const paginationSettled = await waitForPagination(requestedPaginationRevision);
       if (!paginationSettled) {
         throw new Error('The document layout did not settle in time for export.');
       }
 
       const currentPages = pagesRef.current;
       const exportTotal = Math.max(1, currentPages.length);
-      const resolvedFontFamily = getResolvedFontFamily();
       onExportingChange?.(true);
       exportLockStarted = true;
-
-      // Ensure fonts are loaded
-      try {
-        const fonts = document.fonts;
-        if (fonts) {
-          await fonts.ready;
-          await fonts.load(`${settings.fontSize}px ${resolvedFontFamily}`);
-        }
-      } catch (e) {
-        console.warn('Failed to verify font loading for export:', e);
-      }
 
       const progressTotal = format === 'pdf' ? exportTotal + 1 : exportTotal;
       setExportProgress({ current: 0, total: progressTotal });

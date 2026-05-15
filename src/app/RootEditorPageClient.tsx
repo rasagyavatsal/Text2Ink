@@ -130,9 +130,12 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
   const [currentPageIndex, setCurrentPageIndex] = useState(resolvedInitialState.currentPageIndex);
   const [totalPages, setTotalPages] = useState(1);
   const [pages, setPages] = useState<LineData[][]>([]);
+  const [paginationRevision, setPaginationRevision] = useState(0);
   const [isPaginationComplete, setIsPaginationComplete] = useState(true);
   const [exportPageIndex, setExportPageIndex] = useState<number | null>(null);
   const [isExportLocked, setIsExportLocked] = useState(false);
+  const [showBlockedEditAlert, setShowBlockedEditAlert] = useState(false);
+  const blockedEditAlertTimeoutRef = useRef<number | null>(null);
 
   const currentPageSettings = useMemo(
     () => pageSettingsByPage[currentPageIndex] ?? defaultPageSettingsFromHandwritingSettings(settings),
@@ -201,6 +204,23 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
     settings,
     text,
   ]);
+
+  useEffect(() => {
+    return () => {
+      if (blockedEditAlertTimeoutRef.current !== null) {
+        window.clearTimeout(blockedEditAlertTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isExportLocked) return;
+    if (blockedEditAlertTimeoutRef.current !== null) {
+      window.clearTimeout(blockedEditAlertTimeoutRef.current);
+      blockedEditAlertTimeoutRef.current = null;
+    }
+    setShowBlockedEditAlert(false);
+  }, [isExportLocked]);
 
   useEffect(() => {
     if (!persistState) return;
@@ -303,6 +323,25 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
     [ensurePageSettingsLength],
   );
 
+  const handlePagesChange = useCallback((nextPages: LineData[][]) => {
+    setPages(nextPages);
+    setPaginationRevision((value) => value + 1);
+  }, []);
+
+  const handleBlockedEditAttempt = useCallback(() => {
+    if (!isExportLocked) return;
+
+    if (blockedEditAlertTimeoutRef.current !== null) {
+      window.clearTimeout(blockedEditAlertTimeoutRef.current);
+    }
+
+    setShowBlockedEditAlert(true);
+    blockedEditAlertTimeoutRef.current = window.setTimeout(() => {
+      setShowBlockedEditAlert(false);
+      blockedEditAlertTimeoutRef.current = null;
+    }, 2500);
+  }, [isExportLocked]);
+
   const renderPreview = useCallback(
     ({
       previewScale,
@@ -326,20 +365,23 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
         currentPageIndex={currentPageIndex}
         onCurrentPageChange={handleCurrentPageChange}
         onTotalPagesChange={handleTotalPagesChange}
-        onPagesChange={setPages}
+        onPagesChange={handlePagesChange}
         onPaginationCompleteChange={setIsPaginationComplete}
         onApplyToAllPages={applyCurrentPageSettingsToAll}
         isMobileLayout={isMobileLayout}
         onPreviewEditingChange={onPreviewEditingChange}
         isExportLocked={isExportLocked}
+        onBlockedEditAttempt={handleBlockedEditAttempt}
       />
     ),
     [
       applyCurrentPageSettingsToAll,
       currentPageIndex,
       exportPageIndex,
+      handleBlockedEditAttempt,
       handleCurrentPageChange,
       handleDesktopPreviewScaleChange,
+      handlePagesChange,
       handlePageSettingsChange,
       handleRawPreviewScaleChange,
       handleSettingsChange,
@@ -400,6 +442,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       settings={settings}
       pages={pages}
       isPaginationComplete={isPaginationComplete}
+      paginationRevision={paginationRevision}
       pageSettingsByPage={pageSettingsByPage}
       totalPages={totalPages}
       onExportingChange={(isExporting) => {
@@ -445,6 +488,17 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
   return (
     <div className="flex h-[100dvh] flex-col overflow-hidden bg-[var(--t2i-surface-app)] text-[var(--t2i-content-normal)]">
       <GlobalHeader ref={headerRef} action={{ href: '/contact', label: 'Contact', tone: 'ghost' }} />
+
+      {showBlockedEditAlert && (
+        <div className="pointer-events-none fixed left-1/2 top-20 z-50 -translate-x-1/2 px-4">
+          <div
+            role="alert"
+            className="rounded-xl border border-[var(--t2i-border-subtle)] bg-[var(--t2i-surface-panel)] px-4 py-2 text-sm font-medium text-[var(--t2i-content-normal)] shadow-lg"
+          >
+            {exportLockMessage}
+          </div>
+        </div>
+      )}
 
       <div className="flex min-h-0 flex-1 overflow-hidden bg-[var(--t2i-surface-app)]">
         {shellLayout.controlSurface === 'fixed-sidebar' ? (

@@ -284,11 +284,10 @@ export default function SettingsPanel({
             <div className="flex items-center gap-1 rounded-lg bg-[var(--t2i-surface-panel-muted)] p-1">
               <button
                 type="button"
+                aria-label="Decrease zoom"
                 onClick={() => {
-                  if (isExportLocked) return;
                   onPreviewScaleChange(Number((previewScale - 0.1).toFixed(2)));
                 }}
-                disabled={isExportLocked}
                 className="rounded-md p-2 text-[var(--t2i-content-muted)] transition-all hover:bg-[var(--t2i-surface-panel)] hover:text-[var(--t2i-brand-primary)] hover:shadow-sm"
               >
                 <Minus className="w-3.5 h-3.5" />
@@ -298,11 +297,10 @@ export default function SettingsPanel({
               </div>
               <button
                 type="button"
+                aria-label="Increase zoom"
                 onClick={() => {
-                  if (isExportLocked) return;
                   onPreviewScaleChange(Number((previewScale + 0.1).toFixed(2)));
                 }}
-                disabled={isExportLocked}
                 className="rounded-md p-2 text-[var(--t2i-content-muted)] transition-all hover:bg-[var(--t2i-surface-panel)] hover:text-[var(--t2i-brand-primary)] hover:shadow-sm"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -314,11 +312,11 @@ export default function SettingsPanel({
             <div className="flex items-center justify-between rounded-lg bg-[var(--t2i-surface-panel-muted)] p-1">
               <button
                 type="button"
+                aria-label="Previous page"
                 onClick={() => {
-                  if (isExportLocked) return;
                   onCurrentPageChange(Math.max(0, currentPageIndex - 1));
                 }}
-                disabled={isExportLocked || currentPageIndex === 0}
+                disabled={currentPageIndex === 0}
                 className="rounded-md p-2 text-[var(--t2i-content-muted)] transition-all hover:bg-[var(--t2i-surface-panel)] hover:text-[var(--t2i-brand-primary)] hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-30"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -328,15 +326,15 @@ export default function SettingsPanel({
               </div>
               <button
                 type="button"
+                aria-label="Next page"
                 onClick={() => {
-                  if (isExportLocked) return;
                   onCurrentPageChange(
                     isPaginationComplete
                       ? Math.min(pages.length - 1, currentPageIndex + 1)
                       : currentPageIndex + 1
                   );
                 }}
-                disabled={isExportLocked || (isPaginationComplete && currentPageIndex >= pages.length - 1)}
+                disabled={isPaginationComplete && currentPageIndex >= pages.length - 1}
                 className="rounded-md p-2 text-[var(--t2i-content-muted)] transition-all hover:bg-[var(--t2i-surface-panel)] hover:text-[var(--t2i-brand-primary)] hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-30"
               >
                 <ChevronRight className="w-4 h-4" />

@@ -5,6 +5,7 @@ import RootEditorPageClient from '../../RootEditorPageClient';
 
 type MockHandwritingEditorProps = {
   isExportLocked?: boolean;
+  onBlockedEditAttempt?: () => void;
 };
 
 type MockSettingsPanelProps = {
@@ -16,9 +17,12 @@ type MockExportPanelProps = {
 };
 
 vi.mock('@/components/HandwritingEditor', () => ({
-  default: ({ isExportLocked }: MockHandwritingEditorProps) => (
+  default: ({ isExportLocked, onBlockedEditAttempt }: MockHandwritingEditorProps) => (
     <div data-testid="handwriting-editor" data-export-locked={String(isExportLocked)}>
       Handwriting Editor
+      <button type="button" onClick={() => onBlockedEditAttempt?.()}>
+        Blocked edit attempt
+      </button>
     </div>
   ),
 }));
@@ -88,5 +92,17 @@ describe('Editor export lock wiring', () => {
     expect(screen.getByTestId('handwriting-editor')).toHaveAttribute('data-export-locked', 'false');
     fireEvent.click(screen.getByRole('tab', { name: /settings/i }));
     expect(screen.getByTestId('settings-panel')).toHaveAttribute('data-export-locked', 'false');
+  });
+
+  it('shows a clear explanation when an export-locked edit is attempted', () => {
+    render(<RootEditorPageClient />);
+
+    fireEvent.click(screen.getByRole('tab', { name: /export/i }));
+    fireEvent.click(screen.getByRole('button', { name: /start export/i }));
+    fireEvent.click(screen.getByRole('button', { name: /blocked edit attempt/i }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      /export in progress\. editing is temporarily disabled until capture finishes\./i,
+    );
   });
 });

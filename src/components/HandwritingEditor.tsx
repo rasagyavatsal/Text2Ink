@@ -325,6 +325,12 @@ export default function HandwritingEditor({
     const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
     const handleMove = (e: PointerEvent) => {
+      if (isExportLocked) {
+        onBlockedEditAttempt?.();
+        marginLinePointerIdRef.current = null;
+        setIsDraggingMarginLine(false);
+        return;
+      }
       if (marginLinePointerIdRef.current !== null && e.pointerId !== marginLinePointerIdRef.current) return;
       const { pageIndex, pageRect } = marginLineDragRef.current;
       if (!pageRect) return;
@@ -360,7 +366,7 @@ export default function HandwritingEditor({
       window.removeEventListener('pointerup', handleUp);
       window.removeEventListener('pointercancel', handleUp);
     };
-  }, [getPageSettings, isDraggingMarginLine, onSettingsChange, previewScale, settings]);
+  }, [getPageSettings, isDraggingMarginLine, isExportLocked, onBlockedEditAttempt, onSettingsChange, previewScale, settings]);
 
   const renderPage = useCallback(
     (pageIndex: number, scale: number, isVisiblePreview: boolean) => {
@@ -409,10 +415,16 @@ export default function HandwritingEditor({
                 top: ps.marginTop * scale,
                 width: 14 * scale,
                 height: (layout.height - ps.marginTop - ps.marginBottom) * scale,
-                cursor: 'col-resize',
+                cursor: isExportLocked ? 'not-allowed' : 'col-resize',
                 backgroundColor: 'transparent',
               }}
               onPointerDown={(e) => {
+                if (isExportLocked) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onBlockedEditAttempt?.();
+                  return;
+                }
                 e.preventDefault();
                 e.stopPropagation();
                 const pointerId = typeof e.pointerId === 'number' ? e.pointerId : null;
@@ -428,6 +440,13 @@ export default function HandwritingEditor({
                 };
               }}
               onKeyDown={(e) => {
+                if (isExportLocked) {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onBlockedEditAttempt?.();
+                  }
+                  return;
+                }
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
                   setIsDraggingMarginLine(true);
@@ -445,6 +464,7 @@ export default function HandwritingEditor({
               aria-valuemax={layout.width - (ps.marginLeft + ps.marginRight)}
               aria-valuenow={settings.ruledMarginLineOffset}
               aria-orientation="vertical"
+              aria-disabled={isExportLocked}
               tabIndex={0}
             />
           )}

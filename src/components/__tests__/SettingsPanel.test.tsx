@@ -179,4 +179,26 @@ describe('SettingsPanel', () => {
     expect(mockOnApplyToAllPages).not.toHaveBeenCalled();
     expect(mockOnClearAll).not.toHaveBeenCalled();
   });
+
+  it('keeps zoom and page navigation available during export lock for inspection', () => {
+    render(
+      <SettingsPanel
+        {...defaultProps}
+        currentPageIndex={1}
+        totalPages={3}
+        pages={[[], [], []] as any}
+        isExportLocked
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /decrease zoom/i }));
+    fireEvent.click(screen.getByRole('button', { name: /increase zoom/i }));
+    fireEvent.click(screen.getByRole('button', { name: /previous page/i }));
+    fireEvent.click(screen.getByRole('button', { name: /next page/i }));
+
+    expect(mockOnPreviewScaleChange).toHaveBeenNthCalledWith(1, 0.9);
+    expect(mockOnPreviewScaleChange).toHaveBeenNthCalledWith(2, 1.1);
+    expect(mockOnCurrentPageChange).toHaveBeenNthCalledWith(1, 0);
+    expect(mockOnCurrentPageChange).toHaveBeenNthCalledWith(2, 2);
+  });
 });
