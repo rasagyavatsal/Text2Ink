@@ -2,6 +2,27 @@ import html2canvas from 'html2canvas';
 import type { LineData } from './editorHelpers';
 
 export const DOM_EXPORT_SCALE = 4.1666666667;
+const TRANSPARENT_COLOR = 'rgba(0, 0, 0, 0)';
+const FALLBACK_TEXT_COLOR = '#000000';
+const UNSUPPORTED_COLOR_FUNCTIONS = ['lab(', 'oklab(', 'oklch('] as const;
+const TRANSPARENT_COLOR_PROPERTIES = [
+  'background-color',
+  'border-top-color',
+  'border-right-color',
+  'border-bottom-color',
+  'border-left-color',
+  'outline-color',
+  'caret-color',
+] as const;
+const TEXT_COLOR_PROPERTIES = [
+  'color',
+  'text-decoration-color',
+  '-webkit-text-stroke-color',
+  'fill',
+  'stroke',
+] as const;
+const SHADOW_PROPERTIES = ['box-shadow', 'text-shadow'] as const;
+const IMAGE_PROPERTIES = ['background-image', 'list-style-image'] as const;
 
 export function pageTextFromLines(lines: LineData[]): string {
   return lines.map((line) => line.text + (line.hasNewline ? '\n' : '')).join('');
@@ -61,6 +82,89 @@ async function waitForImages(root: HTMLElement) {
   await Promise.all(images.map((img) => waitForImage(img)));
 }
 
+function hasUnsupportedColorFunction(value: string) {
+  const normalized = value.toLowerCase();
+  return UNSUPPORTED_COLOR_FUNCTIONS.some((pattern) => normalized.includes(pattern));
+}
+
+function sanitizeCloneRoot(node: HTMLElement) {
+  node.style.all = 'initial';
+  node.style.display = 'block';
+  node.style.position = 'static';
+  node.style.margin = '0';
+  node.style.padding = '0';
+  node.style.border = '0';
+  node.style.background = 'transparent';
+  node.style.backgroundColor = 'transparent';
+  node.style.backgroundImage = 'none';
+  node.style.color = FALLBACK_TEXT_COLOR;
+  node.style.borderColor = TRANSPARENT_COLOR;
+  node.style.outlineColor = TRANSPARENT_COLOR;
+  node.style.caretColor = TRANSPARENT_COLOR;
+  node.style.boxSizing = 'border-box';
+}
+
+function sanitizeUnsupportedColorFunctions(node: HTMLElement) {
+  const win = node.ownerDocument.defaultView;
+  const computedStyle = win ? win.getComputedStyle(node) : null;
+
+  for (const property of TRANSPARENT_COLOR_PROPERTIES) {
+    const inlineValue = node.style.getPropertyValue(property);
+    const computedValue = computedStyle ? computedStyle.getPropertyValue(property) : '';
+    if (hasUnsupportedColorFunction(inlineValue) || hasUnsupportedColorFunction(computedValue)) {
+      node.style.setProperty(property, TRANSPARENT_COLOR, 'important');
+    }
+  }
+
+  for (const property of TEXT_COLOR_PROPERTIES) {
+    const inlineValue = node.style.getPropertyValue(property);
+    const computedValue = computedStyle ? computedStyle.getPropertyValue(property) : '';
+    if (hasUnsupportedColorFunction(inlineValue) || hasUnsupportedColorFunction(computedValue)) {
+      node.style.setProperty(property, FALLBACK_TEXT_COLOR, 'important');
+    }
+  }
+
+  for (const property of SHADOW_PROPERTIES) {
+    const inlineValue = node.style.getPropertyValue(property);
+    const computedValue = computedStyle ? computedStyle.getPropertyValue(property) : '';
+    if (hasUnsupportedColorFunction(inlineValue) || hasUnsupportedColorFunction(computedValue)) {
+      node.style.setProperty(property, 'none', 'important');
+    }
+  }
+
+  for (const property of IMAGE_PROPERTIES) {
+    const inlineValue = node.style.getPropertyValue(property);
+    const computedValue = computedStyle ? computedStyle.getPropertyValue(property) : '';
+    if (hasUnsupportedColorFunction(inlineValue) || hasUnsupportedColorFunction(computedValue)) {
+      node.style.setProperty(property, 'none', 'important');
+    }
+  }
+}
+
+function sanitizeCloneSubtree(root: HTMLElement) {
+  sanitizeUnsupportedColorFunctions(root);
+  for (const node of root.querySelectorAll<HTMLElement>('*')) {
+    sanitizeUnsupportedColorFunctions(node);
+  }
+}
+
+function isolateClonedPageForCapture(clonedDocument: Document, clonedPage?: HTMLElement) {
+  sanitizeCloneRoot(clonedDocument.documentElement);
+  sanitizeCloneRoot(clonedDocument.body);
+
+  if (!clonedPage || clonedPage.ownerDocument !== clonedDocument) {
+    return;
+  }
+
+  const container = clonedDocument.createElement('div');
+  sanitizeCloneRoot(container);
+  container.style.overflow = 'visible';
+
+  clonedDocument.body.replaceChildren(container);
+  container.appendChild(clonedPage);
+  sanitizeCloneSubtree(container);
+}
+
 export async function settlePageElementForCapture(
   page: HTMLElement,
   opts: {
@@ -98,11 +202,8 @@ export async function capturePageElementToCanvas(opts: {
     height,
     windowWidth: width,
     windowHeight: height,
-    onclone: (clonedDocument) => {
-      for (const node of [clonedDocument.documentElement, clonedDocument.body]) {
-        node.style.backgroundColor = 'transparent';
-        node.style.backgroundImage = 'none';
-      }
+    onclone: (clonedDocument, clonedPage) => {
+      isolateClonedPageForCapture(clonedDocument, clonedPage);
     },
   });
 }
