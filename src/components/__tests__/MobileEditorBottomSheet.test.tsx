@@ -58,4 +58,44 @@ describe('MobileEditorBottomSheet', () => {
     expect(html).not.toMatch(/bg-\[#E0A32A\]\/5/);
     expect(html).not.toMatch(/ring-\[#E0A32A\]/);
   });
+
+  it('uses theme-adaptive ring offset backgrounds for focus states', () => {
+    const { container } = render(
+      <MobileEditorBottomSheet
+        activePanel="settings"
+        anchor="default"
+        exportPanel={<div>Export</div>}
+        metrics={{
+          viewportHeight: 800,
+          viewportWidth: 400,
+          headerHeight: 60,
+          safeAreaBottom: 0,
+          minSheetHeight: 100,
+          defaultSheetHeight: 400,
+          maxSheetHeight: 700,
+        }}
+        settingsPanel={<div>Settings</div>}
+        onActivePanelChange={() => {}}
+        onAnchorChange={() => {}}
+        onHandlePress={() => {}}
+        onHeightChange={() => {}}
+      />
+    );
+    
+    // Any element with focus-visible:ring-offset-2 should also have focus-visible:ring-offset-background
+    const buttons = container.querySelectorAll('button');
+    buttons.forEach(button => {
+      if (button.className.includes('focus-visible:ring-offset-2')) {
+        expect(button.className).toContain('focus-visible:ring-offset-background');
+      }
+    });
+
+    // Also tabs should have focus visible states
+    const tabs = container.querySelectorAll('[role="tab"]');
+    tabs.forEach(tab => {
+      expect(tab.className).toContain('focus-visible:ring-offset-2');
+      expect(tab.className).toContain('focus-visible:ring-offset-background');
+      expect(tab.className).toContain('focus-visible:ring-brand-accent');
+    });
+  });
 });

@@ -119,7 +119,7 @@ export default function MobileEditorBottomSheet({
         <Sheet.Header className="mobile-editor-sheet__header bg-background">
           <button
             type="button"
-            className="flex min-h-10 w-full touch-none items-center justify-center rounded-t-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2"
+            className="flex min-h-10 w-full touch-none items-center justify-center rounded-t-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             aria-label={handleLabel}
             aria-expanded={anchor !== 'peek'}
             onClick={onHandlePress}
@@ -141,7 +141,7 @@ export default function MobileEditorBottomSheet({
                 aria-selected={activePanel === 'settings'}
                 onClick={() => onActivePanelChange('settings')}
                 className={cn(
-                  'flex-1 px-4 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-all',
+                  'flex-1 px-4 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                   activePanel === 'settings'
                     ? 'text-brand-accent border-b-2 border-brand-accent bg-brand-accent-soft'
                     : 'text-muted-foreground hover:text-brand-accent hover:bg-brand-accent-soft',
@@ -156,7 +156,7 @@ export default function MobileEditorBottomSheet({
                 aria-selected={activePanel === 'export'}
                 onClick={() => onActivePanelChange('export')}
                 className={cn(
-                  'flex-1 px-4 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-all',
+                  'flex-1 px-4 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                   activePanel === 'export'
                     ? 'text-brand-accent border-b-2 border-brand-accent bg-brand-accent-soft'
                     : 'text-muted-foreground hover:text-brand-accent hover:bg-brand-accent-soft',
