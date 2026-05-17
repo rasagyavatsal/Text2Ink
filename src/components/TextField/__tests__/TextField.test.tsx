@@ -462,4 +462,40 @@ describe('TextField', () => {
 
     expect(onTypingFocus).toHaveBeenCalled();
   });
+
+  it('uses semantic tokens for text-field chrome instead of hardcoded colors', () => {
+    const { container } = render(
+      <TextField
+        field={mockField}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+        randomness={randomness}
+      />
+    );
+    
+    // Unselected state
+    const rootDiv = container.firstChild as HTMLElement;
+    expect(rootDiv.className).not.toContain('border-gray-');
+    expect(rootDiv.className).not.toContain('border-[#E0A32A]');
+    // Unselected uses border-border or similar
+    // Actually, we just test that it doesn't have hardcoded colors
+    
+    // Select to reveal more controls
+    fireEvent.pointerDown(rootDiv);
+
+    // Selected state should use brand-accent
+    expect(rootDiv.className).toContain('border-brand-accent');
+
+    // Handles should not have hardcoded white or gray
+    const neHandle = screen.getByTestId('handle-ne').firstElementChild as HTMLElement;
+    expect(neHandle.className).not.toContain('bg-white');
+    expect(neHandle.className).not.toContain('border-gray-');
+    expect(neHandle.className).toContain('bg-background');
+
+    // Hover hit areas should not use blue
+    const nHandle = screen.getByTestId('handle-n');
+    expect(nHandle.className).not.toContain('bg-blue-');
+  });
 });
