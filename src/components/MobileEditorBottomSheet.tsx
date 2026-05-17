@@ -108,7 +108,7 @@ export default function MobileEditorBottomSheet({
       onSnap={updateHeightFromSnapIndex}
     >
       <Sheet.Container
-        className="mobile-editor-sheet__container border-t border-gray-200 bg-white shadow-2xl"
+        className="mobile-editor-sheet__container border-t border-border bg-background shadow-2xl"
         style={
           {
             '--mobile-editor-sheet-max-height': `${metrics.maxSheetHeight}px`,
@@ -116,25 +116,25 @@ export default function MobileEditorBottomSheet({
           } as React.CSSProperties
         }
       >
-        <Sheet.Header className="mobile-editor-sheet__header bg-white">
+        <Sheet.Header className="mobile-editor-sheet__header bg-background">
           <button
             type="button"
-            className="flex min-h-10 w-full touch-none items-center justify-center rounded-t-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E0A32A] focus-visible:ring-offset-2"
+            className="flex min-h-10 w-full touch-none items-center justify-center rounded-t-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2"
             aria-label={handleLabel}
             aria-expanded={anchor !== 'peek'}
             onClick={onHandlePress}
           >
-            <span className="h-1.5 w-14 rounded-full bg-gray-300" aria-hidden="true" />
+            <span className="h-1.5 w-14 rounded-full bg-border" aria-hidden="true" />
           </button>
         </Sheet.Header>
 
         <Sheet.Content
           disableDrag
-          className="min-h-0 bg-white"
+          className="min-h-0 bg-background"
           scrollClassName="mobile-editor-sheet__scroller"
         >
-          <div className="min-h-full bg-white">
-            <div className="sticky top-0 z-10 flex border-b border-gray-200 bg-white">
+          <div className="min-h-full bg-background">
+            <div className="sticky top-0 z-10 flex border-b border-border bg-background">
               <button
                 type="button"
                 role="tab"
@@ -143,8 +143,8 @@ export default function MobileEditorBottomSheet({
                 className={cn(
                   'flex-1 px-4 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-all',
                   activePanel === 'settings'
-                    ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/5'
-                    : 'text-gray-500 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5',
+                    ? 'text-brand-accent border-b-2 border-brand-accent bg-brand-accent-soft'
+                    : 'text-muted-foreground hover:text-brand-accent hover:bg-brand-accent-soft',
                 )}
               >
                 <Settings className="h-4 w-4" />
@@ -158,8 +158,8 @@ export default function MobileEditorBottomSheet({
                 className={cn(
                   'flex-1 px-4 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-all',
                   activePanel === 'export'
-                    ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/5'
-                    : 'text-gray-500 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5',
+                    ? 'text-brand-accent border-b-2 border-brand-accent bg-brand-accent-soft'
+                    : 'text-muted-foreground hover:text-brand-accent hover:bg-brand-accent-soft',
                 )}
               >
                 <Download className="h-4 w-4" />
@@ -171,7 +171,7 @@ export default function MobileEditorBottomSheet({
               {activePanel === 'settings' ? settingsPanel : exportPanel}
             </div>
 
-            <div className="border-t border-gray-100 bg-gray-50/70 px-4 py-3 text-center">
+            <div className="border-t border-border bg-muted/50 px-4 py-3 text-center">
               <Version />
             </div>
           </div>
