@@ -34,6 +34,10 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-accent-hover: var(--brand-accent-hover);
+  --color-brand-accent-foreground: var(--brand-accent-foreground);
+  --color-brand-accent-soft: var(--brand-accent-soft);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -77,6 +81,10 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --brand-accent: #E0A32A;
+  --brand-accent-hover: #c99225;
+  --brand-accent-foreground: #ffffff;
+  --brand-accent-soft: #E0A32A1A;
 }
 
 .dark {
@@ -111,6 +119,10 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --brand-accent: #E0A32A;
+  --brand-accent-hover: #c99225;
+  --brand-accent-foreground: #ffffff;
+  --brand-accent-soft: #E0A32A1A;
 }
 
 @layer base {

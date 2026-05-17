@@ -7,6 +7,7 @@ import SettingsPanel from '@/components/SettingsPanel';
 import ExportPanel from '@/components/ExportPanel';
 import Version from '@/components/Version';
 import MobileEditorBottomSheet from '@/components/MobileEditorBottomSheet';
+import ThemePicker from '@/components/ThemePicker';
 import {
   HandwritingSettings,
   DEFAULT_SETTINGS,
@@ -446,21 +447,24 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
 
   return (
     <div className="h-[100dvh] bg-white flex flex-col overflow-hidden">
-      <header ref={headerRef} className="border-b border-gray-200 shrink-0 bg-white" role="banner">
+      <header ref={headerRef} className="border-b border-border shrink-0 bg-background" role="banner">
         <div className="max-w-full mx-auto px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Link href="/" className="font-bold text-2xl sm:text-3xl font-dancing-script hover:opacity-80 transition-opacity">
-              <span className="text-[#E0A32A]">Text</span>
-              <span className="text-black">2</span>
-              <span className="text-[#E0A32A]">Ink</span>
+              <span className="text-brand-accent">Text</span>
+              <span className="text-foreground">2</span>
+              <span className="text-brand-accent">Ink</span>
             </Link>
           </div>
-          <Link
-            href="/contact"
-            className="text-gray-700 hover:text-[#E0A32A] font-medium transition-colors"
-          >
-            Contact
-          </Link>
+          <div className="flex items-center gap-4">
+            <ThemePicker />
+            <Link
+              href="/contact"
+              className="text-muted-foreground hover:text-brand-accent font-medium transition-colors"
+            >
+              Contact
+            </Link>
+          </div>
         </div>
       </header>
 
