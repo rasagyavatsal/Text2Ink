@@ -220,6 +220,28 @@ describe('TextField', () => {
     });
   });
 
+  it('renders committed text box lines from app-owned layout when not focused', () => {
+    const { container } = render(
+      <TextField
+        field={{ ...mockField, text: 'abcdefghij', x: 580, width: 30, height: 60, fontSize: 10 }}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+      />
+    );
+
+    const committedLines = Array.from(
+      container.querySelectorAll<HTMLElement>('[data-text-field-layer="committed-line"]'),
+    );
+
+    expect(committedLines.map((line) => line.textContent)).toEqual(['abc', 'def', 'ghi', 'j']);
+    expect(committedLines[0]).toHaveStyle({ top: '0px' });
+    expect(committedLines[1]).toHaveStyle({ top: '12px' });
+    expect(committedLines[2]).toHaveStyle({ top: '24px' });
+    expect(committedLines[3]).toHaveStyle({ top: '36px' });
+  });
+
   it.each([
     ['Enter', 'Enter'],
     ['Space', ' '],

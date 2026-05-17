@@ -1,7 +1,8 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import PageContent from '../PageContent';
+import TextField from '../TextField/TextField';
 import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '@/lib/types';
 import { resolvePageLayout } from '@/lib/pageLayout';
 
@@ -75,5 +76,58 @@ describe('PageContent', () => {
     fireEvent.mouseDown(lockedField!);
 
     expect(onBlockedEditAttempt).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps committed text box line layout aligned between preview and export while excluding export chrome', () => {
+    const field = {
+      id: 'field-1',
+      text: 'abcdefghij',
+      x: 580,
+      y: 100,
+      width: 30,
+      height: 60,
+      color: '#123456',
+      fontSize: 10,
+    };
+    const pageSettings = {
+      ...defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
+      textFields: [field],
+    };
+    const preview = render(
+      <TextField
+        field={field}
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+        scale={1}
+        fontFamily="Caveat"
+      />
+    );
+    const exportRender = render(
+      <PageContent
+        mode="export"
+        pageIndex={0}
+        pageText=""
+        pageSettings={pageSettings}
+        settings={DEFAULT_SETTINGS}
+        fontFamily="Caveat"
+        scale={1}
+      />
+    );
+
+    const previewLines = Array.from(
+      preview.container.querySelectorAll<HTMLElement>('[data-text-field-layer="committed-line"]'),
+    );
+    const exportLines = Array.from(
+      exportRender.container.querySelectorAll<HTMLElement>('[data-page-layer="text-field-line"]'),
+    );
+    const previewLineTexts = previewLines.map((line) => line.textContent);
+    const exportLineTexts = exportLines.map((line) => line.textContent);
+    const exportWithin = within(exportRender.container);
+
+    expect(previewLineTexts.length).toBeGreaterThan(1);
+    expect(previewLineTexts).toEqual(exportLineTexts);
+    expect(previewLines.map((line) => line.style.top)).toEqual(exportLines.map((line) => line.style.top));
+    expect(exportWithin.queryByLabelText('Move text box')).not.toBeInTheDocument();
+    expect(exportWithin.queryByLabelText('Text box settings')).not.toBeInTheDocument();
   });
 });

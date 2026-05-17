@@ -5,7 +5,16 @@ import ExportPanel from '../ExportPanel';
 import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '@/lib/types';
 
 const { capturePageElementToCanvasMock, captureSnapshots, settlePageElementForCaptureMock } = vi.hoisted(() => ({
-  captureSnapshots: [] as Array<{ mode: string | null; text: string; hostAll: string; pageAll: string; lineTexts: string[] }>,
+  captureSnapshots: [] as Array<{
+    mode: string | null;
+    text: string;
+    hostAll: string;
+    pageAll: string;
+    lineTexts: string[];
+    textFieldLineTexts: string[];
+    hasMoveControl: boolean;
+    hasSettingsControl: boolean;
+  }>,
   capturePageElementToCanvasMock: vi.fn(async ({ page }: { page: HTMLElement }) => {
     const renderedPage = page.querySelector<HTMLElement>('[data-page-content-mode]');
     captureSnapshots.push({
@@ -14,6 +23,9 @@ const { capturePageElementToCanvasMock, captureSnapshots, settlePageElementForCa
       hostAll: page.style.all,
       pageAll: renderedPage?.style.all ?? '',
       lineTexts: Array.from(page.querySelectorAll<HTMLElement>('[data-page-layer="body-line"]')).map((line) => line.textContent ?? ''),
+      textFieldLineTexts: Array.from(page.querySelectorAll<HTMLElement>('[data-page-layer="text-field-line"]')).map((line) => line.textContent ?? ''),
+      hasMoveControl: !!page.querySelector('[aria-label="Move text box"]'),
+      hasSettingsControl: !!page.querySelector('[aria-label="Text box settings"]'),
     });
     const canvas = document.createElement('canvas');
     canvas.toBlob = ((callback: BlobCallback) => callback(new Blob(['page']))) as HTMLCanvasElement['toBlob'];
@@ -191,5 +203,42 @@ describe('ExportPanel', () => {
     });
 
     expect(captureSnapshots.at(-1)?.text).toContain('Fresh export page');
+  });
+
+  it('captures committed text box content without editing chrome', async () => {
+    render(
+      <ExportPanel
+        {...props}
+        hasContent
+        pageSettingsByPage={[
+          {
+            ...defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
+            textFields: [
+              {
+                id: 'field-1',
+                text: 'abcdefghij',
+                x: 580,
+                y: 100,
+                width: 30,
+                height: 60,
+                color: '#123456',
+                fontSize: 10,
+              },
+            ],
+          },
+        ]}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /export pdf/i }));
+
+    await waitFor(() => {
+      expect(capturePageElementToCanvasMock).toHaveBeenCalledTimes(1);
+    });
+
+    expect(captureSnapshots[0].textFieldLineTexts.length).toBeGreaterThan(1);
+    expect(captureSnapshots[0].textFieldLineTexts.join('')).toBe('abcdefghij');
+    expect(captureSnapshots[0].hasMoveControl).toBe(false);
+    expect(captureSnapshots[0].hasSettingsControl).toBe(false);
   });
 });

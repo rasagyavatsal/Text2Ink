@@ -2,10 +2,10 @@
 
 import React, { useMemo } from 'react';
 import BodyTextEditor from './BodyTextEditor';
+import CommittedTextFieldContent from './TextField/CommittedTextFieldContent';
 import TextField from './TextField/TextField';
 import { rasterizePaperBackground } from '@/lib/paperBackgroundRasterizer';
 import { resolvePageLayout } from '@/lib/pageLayout';
-import { TEXT_FIELD_CONTENT_PADDING } from '@/lib/textFieldLayout';
 import type { HandwritingSettings, LineData, PageSettings } from '@/lib/types';
 
 type PageContentMode = 'preview' | 'export';
@@ -286,21 +286,12 @@ export default function PageContent({
               pointerEvents: isLocked ? 'auto' : 'none',
             })}
           >
-            <div
-              className={mode === 'preview' ? 'relative h-full w-full whitespace-pre-wrap break-words' : undefined}
-              style={{
-                position: 'relative',
-                width: '100%',
-                height: '100%',
-                whiteSpace: 'pre-wrap',
-                overflowWrap: 'break-word',
-                padding: `${TEXT_FIELD_CONTENT_PADDING * scale}px`,
-                fontSize: field.fontSize * scale,
-                lineHeight: 1.2,
-              }}
-            >
-              {field.text || '\u00a0'}
-            </div>
+            <CommittedTextFieldContent
+              field={field}
+              fontFamily={fontFamily}
+              scale={scale}
+              lineDataPageLayer="text-field-line"
+            />
           </div>
         );
       })}

@@ -5,10 +5,10 @@ import { Move, Settings, X } from 'lucide-react';
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
 import { PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/pageConstants';
-import { createMeasure } from '@/lib/pagination';
-import { TEXT_FIELD_CONTENT_PADDING } from '@/lib/textFieldLayout';
+import { calculateAutoFitTextFieldSize, TEXT_FIELD_CONTENT_PADDING } from '@/lib/textFieldLayout';
 import { TextField as TextFieldType } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import CommittedTextFieldContent from './CommittedTextFieldContent';
 
 interface TextFieldProps {
   field: TextFieldType;
@@ -23,54 +23,6 @@ interface TextFieldProps {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
-}
-
-function wrapLineToWidth(line: string, maxContentWidth: number, measure: (text: string) => number) {
-  if (line.length === 0) return [''];
-
-  const wrapped: string[] = [];
-  let current = '';
-
-  for (const char of line) {
-    const candidate = current + char;
-    if (current && measure(candidate) > maxContentWidth) {
-      wrapped.push(current);
-      current = char;
-    } else {
-      current = candidate;
-    }
-  }
-
-  wrapped.push(current);
-  return wrapped;
-}
-
-function calculateAutoFitTextBoxSize(
-  text: string,
-  fontSize: number,
-  fontFamily: string,
-  scale: number,
-  x: number,
-  y: number,
-  pageWidth: number,
-  pageHeight: number,
-) {
-  const measure = createMeasure(fontFamily, fontSize);
-  const padding = TEXT_FIELD_CONTENT_PADDING * 2;
-  const availableWidth = Math.max(10, pageWidth - x);
-  const availableHeight = Math.max(10, pageHeight - y);
-  const maxContentWidth = Math.max(1, availableWidth - padding);
-  const wrappedLines = text
-    .split('\n')
-    .flatMap((line) => wrapLineToWidth(line, maxContentWidth, measure));
-  const textWidth = Math.max(...wrappedLines.map((line) => measure(line)), 0);
-  const textHeight = wrappedLines.length * fontSize * 1.2;
-  const width = Math.min(availableWidth, Math.max(10, textWidth + padding));
-  const height = Math.max(10, textHeight + padding);
-
-  if (height > availableHeight) return null;
-
-  return { width, height };
 }
 
 export default function TextField({
@@ -97,8 +49,16 @@ export default function TextField({
   const showControls = isSelected || isFocused || isSettingsOpen || isDragging;
 
   const autoFitSize = useMemo(
-    () => calculateAutoFitTextBoxSize(field.text, field.fontSize, fontFamily, scale, field.x, field.y, pageWidth, pageHeight),
-    [field.fontSize, field.text, field.x, field.y, fontFamily, pageHeight, pageWidth, scale]
+    () => calculateAutoFitTextFieldSize({
+      text: field.text,
+      fontSize: field.fontSize,
+      fontFamily,
+      x: field.x,
+      y: field.y,
+      pageWidth,
+      pageHeight,
+    }),
+    [field.fontSize, field.text, field.x, field.y, fontFamily, pageHeight, pageWidth]
   );
 
   useLayoutEffect(() => {
@@ -289,16 +249,15 @@ export default function TextField({
                   max={72}
                   step={1}
                   onValueChange={([val]) => {
-                    const nextSize = calculateAutoFitTextBoxSize(
-                      field.text,
-                      val,
+                    const nextSize = calculateAutoFitTextFieldSize({
+                      text: field.text,
+                      fontSize: val,
                       fontFamily,
-                      scale,
-                      field.x,
-                      field.y,
+                      x: field.x,
+                      y: field.y,
                       pageWidth,
                       pageHeight,
-                    );
+                    });
                     if (!nextSize) return;
                     onUpdate({ fontSize: val, width: nextSize.width, height: nextSize.height });
                   }}
@@ -334,18 +293,12 @@ export default function TextField({
         </Popover>
       </div>
 
-      <div
-        className="relative w-full h-full p-1"
-        style={{
-          fontSize: field.fontSize * scale,
-          lineHeight: 1.2,
-          pointerEvents: 'none',
-          padding: `${TEXT_FIELD_CONTENT_PADDING * scale}px`,
-        }}
-      >
-        <div className="whitespace-pre-wrap break-words" style={{ opacity: isFocused ? 0 : 1 }}>
-          {field.text || '\u00a0'}
-        </div>
+      <div style={{ opacity: isFocused ? 0 : 1 }}>
+        <CommittedTextFieldContent
+          field={field}
+          fontFamily={fontFamily}
+          scale={scale}
+        />
       </div>
 
       <textarea
@@ -353,16 +306,15 @@ export default function TextField({
         value={field.text}
         onChange={(e) => {
           const nextText = e.target.value;
-          const nextSize = calculateAutoFitTextBoxSize(
-            nextText,
-            field.fontSize,
+          const nextSize = calculateAutoFitTextFieldSize({
+            text: nextText,
+            fontSize: field.fontSize,
             fontFamily,
-            scale,
-            field.x,
-            field.y,
+            x: field.x,
+            y: field.y,
             pageWidth,
             pageHeight,
-          );
+          });
           if (!nextSize) return;
           onUpdate({ text: nextText, width: nextSize.width, height: nextSize.height });
         }}
