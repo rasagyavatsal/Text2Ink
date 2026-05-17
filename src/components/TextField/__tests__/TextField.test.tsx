@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, render, fireEvent, screen, waitFor } from '@testing-library/react';
 import TextField from '../TextField';
 
 vi.mock('@/lib/pagination', () => ({
@@ -110,6 +110,42 @@ describe('TextField', () => {
     window.dispatchEvent(event);
   };
 
+  const focusWithSelection = (
+    editor: HTMLElement,
+    start: number,
+    end: number,
+  ) => {
+    act(() => {
+      fireEvent.focus(editor);
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      const textNode = editor.firstChild ?? editor.appendChild(document.createTextNode(editor.textContent ?? ''));
+      range.setStart(textNode, start);
+      range.setEnd(textNode, end);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.dispatchEvent(new Event('selectionchange'));
+    });
+  };
+
+  function TextFieldHarness({
+    initialField,
+  }: {
+    initialField: typeof mockField;
+  }) {
+    const [field, setField] = React.useState(initialField);
+
+    return (
+      <TextField
+        field={field}
+        onUpdate={(updates) => setField((current) => ({ ...current, ...updates }))}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+      />
+    );
+  }
+
   beforeEach(() => {
     mockOnUpdate.mockClear();
     mockOnDelete.mockClear();
@@ -138,8 +174,9 @@ describe('TextField', () => {
         fontFamily={fontFamily}
       />
     );
-    const textarea = screen.getByPlaceholderText('');
-    fireEvent.change(textarea, { target: { value: 'Updated Text' } });
+    const editor = screen.getByRole('textbox', { name: 'Text Box editor' });
+    editor.textContent = 'Updated Text';
+    fireEvent.input(editor);
     expect(mockOnUpdate).toHaveBeenCalledWith(expect.objectContaining({ text: 'Updated Text' }));
   });
 
@@ -242,6 +279,210 @@ describe('TextField', () => {
     expect(committedLines[3]).toHaveStyle({ top: '36px' });
   });
 
+  it('keeps visible text box Document Content in the Preview while the input bridge is focused', () => {
+    const { container } = render(
+      <TextField
+        field={{ ...mockField, text: 'abcdefghij', x: 580, width: 30, height: 60, fontSize: 10 }}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+      />
+    );
+
+    const editor = screen.getByRole('textbox', { name: 'Text Box editor' });
+    fireEvent.focus(editor);
+
+    const committedLines = Array.from(
+      container.querySelectorAll<HTMLElement>('[data-text-field-layer="committed-line"]'),
+    );
+
+    expect(committedLines.map((line) => line.textContent)).toEqual(['abc', 'def', 'ghi', 'j']);
+    expect(editor).toHaveAttribute('data-text-box-input-bridge', 'true');
+    expect(editor).toHaveStyle({ color: 'rgba(0, 0, 0, 0)' });
+    expect((editor as HTMLElement).style.caretColor).toBe('transparent');
+  });
+
+  it('keeps the text box input bridge underneath parity-rendered content and editing chrome', () => {
+    const { container } = render(
+      <TextField
+        field={{ ...mockField, text: 'abcdefghij', x: 580, width: 30, height: 60, fontSize: 10 }}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+      />
+    );
+
+    const editor = screen.getByRole('textbox', { name: 'Text Box editor' });
+    fireEvent.focus(editor);
+
+    const committedContent = container.querySelector('[data-text-field-layer="committed-content"]');
+    const editingChrome = container.querySelector('[data-text-field-layer="editing-chrome"]');
+
+    expect(editor.compareDocumentPosition(committedContent!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(editor.compareDocumentPosition(editingChrome!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(committedContent).toHaveStyle({ userSelect: 'none' });
+  });
+
+  it('matches the input bridge line height to text box layout so selection geometry stays aligned', () => {
+    render(
+      <TextField
+        field={{ ...mockField, text: 'abcdefghij', x: 580, width: 30, height: 60, fontSize: 10 }}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+      />
+    );
+
+    const editor = screen.getByRole('textbox', { name: 'Text Box editor' });
+    expect(editor).toHaveStyle({ lineHeight: '12px' });
+  });
+
+  it('renders a visible text box Caret during collapsed Preview selection', () => {
+    const { container } = render(
+      <TextField
+        field={{ ...mockField, text: 'abcdefghij', x: 580, width: 30, height: 60, fontSize: 10 }}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+      />
+    );
+
+    const editor = screen.getByRole('textbox', { name: 'Text Box editor' });
+    focusWithSelection(editor, 2, 2);
+
+    expect(container.querySelector('[data-text-field-layer="caret"]')).toBeInTheDocument();
+  });
+
+  it('renders text box Selection Highlight in the Preview while excluding native bridge selection paint', () => {
+    const { container } = render(
+      <TextField
+        field={{ ...mockField, text: 'abcdefghij', x: 580, width: 30, height: 60, fontSize: 10 }}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+      />
+    );
+
+    const editor = screen.getByRole('textbox', { name: 'Text Box editor' });
+    focusWithSelection(editor, 1, 4);
+
+    expect(container.querySelectorAll('[data-text-field-layer="selection-highlight"]').length).toBeGreaterThan(0);
+    expect((editor as HTMLElement).style.caretColor).toBe('transparent');
+  });
+
+  it('syncs custom Selection Highlight from document selection changes during text box drag selection', () => {
+    const { container } = render(
+      <TextField
+        field={{ ...mockField, text: 'abcdefghij', x: 580, width: 30, height: 60, fontSize: 10 }}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+      />
+    );
+
+    const editor = screen.getByRole('textbox', { name: 'Text Box editor' });
+    fireEvent.focus(editor);
+
+    act(() => {
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      const textNode = editor.firstChild!;
+      range.setStart(textNode, 1);
+      range.setEnd(textNode, 4);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.dispatchEvent(new Event('selectionchange'));
+    });
+
+    expect(container.querySelectorAll('[data-text-field-layer="selection-highlight"]').length).toBeGreaterThan(0);
+  });
+
+  it('copies multiline text box selections when native range endpoints land on line block elements', () => {
+    render(
+      <TextField
+        field={{ ...mockField, text: 'One\nTwo\nThree', width: 200, height: 100 }}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+      />
+    );
+
+    const editor = screen.getByRole('textbox', { name: 'Text Box editor' });
+    fireEvent.focus(editor);
+
+    act(() => {
+      editor.innerHTML = 'One<div>Two</div><div>Three</div>';
+      const [secondLine, thirdLine] = editor.querySelectorAll('div');
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(secondLine, 0);
+      range.setEnd(thirdLine, 1);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.dispatchEvent(new Event('selectionchange'));
+    });
+
+    const clipboardData = { setData: vi.fn() };
+    fireEvent.copy(editor, { clipboardData });
+
+    expect(clipboardData.setData).toHaveBeenCalledWith('text/plain', 'Two\nThree');
+  });
+
+  it('shows in-progress Composition Text in the Preview while the text box input bridge composes', async () => {
+    const { container } = render(
+      <TextFieldHarness
+        initialField={{ ...mockField, text: '', x: 580, width: 30, height: 60, fontSize: 10 }}
+      />
+    );
+
+    const editor = screen.getByRole('textbox', { name: 'Text Box editor' });
+    fireEvent.focus(editor);
+    act(() => {
+      editor.textContent = 'あ';
+      fireEvent.compositionStart(editor);
+      fireEvent.compositionUpdate(editor, { data: 'あ' });
+      fireEvent.input(editor);
+    });
+
+    await waitFor(() => {
+      const committedLines = Array.from(
+        container.querySelectorAll<HTMLElement>('[data-text-field-layer="committed-line"]'),
+      );
+      expect(committedLines.map((line) => line.textContent).join('')).toBe('あ');
+    });
+  });
+
+  it('keeps parity-rendered text box content in sync with undo and redo style input events', async () => {
+    const { container } = render(
+      <TextFieldHarness
+        initialField={{ ...mockField, text: 'hello', width: 200, height: 50 }}
+      />
+    );
+
+    const editor = screen.getByRole('textbox', { name: 'Text Box editor' });
+    fireEvent.focus(editor);
+    editor.textContent = 'hello there';
+    fireEvent.input(editor, { inputType: 'historyRedo' });
+
+    await waitFor(() => {
+      expect(container.querySelector('[data-text-field-layer="committed-content"]')).toHaveTextContent('hello there');
+    });
+
+    editor.textContent = 'hello';
+    fireEvent.input(editor, { inputType: 'historyUndo' });
+
+    await waitFor(() => {
+      expect(container.querySelector('[data-text-field-layer="committed-content"]')).toHaveTextContent('hello');
+    });
+  });
+
   it.each([
     ['Enter', 'Enter'],
     ['Space', ' '],
@@ -260,8 +501,8 @@ describe('TextField', () => {
       </div>
     );
 
-    const textarea = screen.getByPlaceholderText('');
-    fireEvent.keyDown(textarea, {
+    const editor = screen.getByRole('textbox', { name: 'Text Box editor' });
+    fireEvent.keyDown(editor, {
       key,
       code: key === 'Enter' ? 'Enter' : 'Space',
     });
@@ -269,7 +510,7 @@ describe('TextField', () => {
     expect(parentKeyDown).not.toHaveBeenCalled();
   });
 
-  it('disables spellcheck on the textarea', () => {
+  it('disables spellcheck on the input bridge', () => {
     render(
       <TextField
         field={mockField}
@@ -279,8 +520,8 @@ describe('TextField', () => {
         fontFamily={fontFamily}
       />
     );
-    const textarea = screen.getByPlaceholderText('');
-    expect(textarea.getAttribute('spellcheck')).toBe('false');
+    const editor = screen.getByRole('textbox', { name: 'Text Box editor' });
+    expect(editor.getAttribute('spellcheck')).toBe('false');
   });
 
   it('keeps an empty text box at its placed size without exposing resize handles', async () => {
@@ -444,9 +685,9 @@ describe('TextField', () => {
       />
     );
 
-    const textarea = screen.getByPlaceholderText('');
-    fireEvent.focus(textarea);
-    fireEvent.blur(textarea);
+    const editor = screen.getByRole('textbox', { name: 'Text Box editor' });
+    fireEvent.focus(editor);
+    fireEvent.blur(editor);
 
     expect(onPreviewEditingChange).toHaveBeenNthCalledWith(1, true);
     expect(onPreviewEditingChange).toHaveBeenNthCalledWith(2, false);

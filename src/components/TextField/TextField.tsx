@@ -1,11 +1,14 @@
 'use client';
 
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Move, Settings, X } from 'lucide-react';
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
+import { extractPlainTextFromContentEditable, normalizePastedPlainText } from '@/lib/domText';
+import { getSelectionOffsets, type PlainTextSelectionOffsets } from '@/lib/domSelection';
 import { PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/pageConstants';
-import { calculateAutoFitTextFieldSize, TEXT_FIELD_CONTENT_PADDING } from '@/lib/textFieldLayout';
+import { resolveTextFieldCaretRect, resolveTextFieldSelectionRects } from '@/lib/textFieldEditingChrome';
+import { calculateAutoFitTextFieldSize, TEXT_FIELD_CONTENT_PADDING, TEXT_FIELD_LINE_HEIGHT } from '@/lib/textFieldLayout';
 import { TextField as TextFieldType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import CommittedTextFieldContent from './CommittedTextFieldContent';
@@ -23,6 +26,41 @@ interface TextFieldProps {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+function insertTextAtSelection(text: string) {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return false;
+
+  const range = selection.getRangeAt(0);
+  range.deleteContents();
+  const node = document.createTextNode(text);
+  range.insertNode(node);
+  range.setStartAfter(node);
+  range.setEndAfter(node);
+  selection.removeAllRanges();
+  selection.addRange(range);
+  return true;
+}
+
+function selectedTextFromOffsets(text: string, selection: PlainTextSelectionOffsets | null) {
+  if (!selection) return '';
+  const start = Math.min(selection.anchor, selection.focus);
+  const end = Math.max(selection.anchor, selection.focus);
+  return text.slice(start, end);
+}
+
+function deleteSelectedRange() {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return false;
+
+  const range = selection.getRangeAt(0);
+  if (range.collapsed) return false;
+
+  range.deleteContents();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  return true;
 }
 
 export default function TextField({
@@ -44,8 +82,11 @@ export default function TextField({
   const rootRef = useRef<HTMLDivElement>(null);
   const activePointerIdRef = useRef<number | null>(null);
   const isDraggingRef = useRef(false);
+  const isFocusedRef = useRef(false);
   const settingsTriggerRef = useRef<HTMLButtonElement>(null);
   const previousAutoFitSizeRef = useRef<{ width: number; height: number } | null>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const [selection, setSelection] = useState<PlainTextSelectionOffsets | null>(null);
   const showControls = isSelected || isFocused || isSettingsOpen || isDragging;
 
   const autoFitSize = useMemo(
@@ -60,6 +101,74 @@ export default function TextField({
     }),
     [field.fontSize, field.text, field.x, field.y, fontFamily, pageHeight, pageWidth]
   );
+  const selectionRects = useMemo(() => {
+    if (!isFocused) return [];
+    return resolveTextFieldSelectionRects({
+      text: field.text,
+      fontSize: field.fontSize,
+      fontFamily,
+      width: field.width,
+      selection,
+    });
+  }, [field.fontSize, field.text, field.width, fontFamily, isFocused, selection]);
+  const caretRect = useMemo(() => {
+    if (!isFocused) return null;
+    return resolveTextFieldCaretRect({
+      text: field.text,
+      fontSize: field.fontSize,
+      fontFamily,
+      width: field.width,
+      selection,
+    });
+  }, [field.fontSize, field.text, field.width, fontFamily, isFocused, selection]);
+
+  const emitSelectionChange = useCallback((editor: HTMLElement | null) => {
+    if (!editor) return;
+    setSelection(getSelectionOffsets(editor));
+  }, []);
+
+  const syncBridgeValue = useCallback((editor: HTMLDivElement) => {
+    emitSelectionChange(editor);
+    const nextText = extractPlainTextFromContentEditable(editor);
+    const nextSize = calculateAutoFitTextFieldSize({
+      text: nextText,
+      fontSize: field.fontSize,
+      fontFamily,
+      x: field.x,
+      y: field.y,
+      pageWidth,
+      pageHeight,
+    });
+    if (!nextSize) return;
+
+    const updates: Partial<TextFieldType> = {};
+    if (nextText !== field.text) {
+      updates.text = nextText;
+    }
+    if (field.width !== nextSize.width) {
+      updates.width = nextSize.width;
+    }
+    if (field.height !== nextSize.height) {
+      updates.height = nextSize.height;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      onUpdate(updates);
+    }
+  }, [emitSelectionChange, field.fontSize, field.height, field.text, field.width, field.x, field.y, fontFamily, onUpdate, pageHeight, pageWidth]);
+
+  const scheduleBridgeSync = useCallback((editor: HTMLDivElement) => {
+    queueMicrotask(() => {
+      if (editorRef.current !== editor) return;
+      syncBridgeValue(editor);
+    });
+  }, [syncBridgeValue]);
+
+  const syncSelectionOnNextFrame = useCallback(() => {
+    queueMicrotask(() => {
+      emitSelectionChange(editorRef.current);
+    });
+  }, [emitSelectionChange]);
 
   useLayoutEffect(() => {
     if (isDragging || field.text === '' || !autoFitSize) return;
@@ -90,6 +199,27 @@ export default function TextField({
       onUpdate({ x: nextX, y: nextY });
     }
   }, [field.height, field.width, field.x, field.y, onUpdate, pageHeight, pageWidth]);
+
+  useLayoutEffect(() => {
+    const editor = editorRef.current;
+    if (!editor || isFocusedRef.current) return;
+    if (editor.textContent !== field.text) {
+      editor.textContent = field.text;
+    }
+  }, [field.text]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    const handleSelectionChange = () => {
+      const editor = editorRef.current;
+      if (!editor || !isFocusedRef.current) return;
+      emitSelectionChange(editor);
+    };
+
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => document.removeEventListener('selectionchange', handleSelectionChange);
+  }, [emitSelectionChange]);
 
   const handleSettingsOpenChange = (open: boolean) => {
     if (open && settingsTriggerRef.current) {
@@ -293,57 +423,125 @@ export default function TextField({
         </Popover>
       </div>
 
-      <div style={{ opacity: isFocused ? 0 : 1 }}>
-        <CommittedTextFieldContent
-          field={field}
-          fontFamily={fontFamily}
-          scale={scale}
-        />
-      </div>
-
-      <textarea
-        className="absolute inset-0 w-full h-full bg-transparent border-none outline-none resize-none leading-tight overflow-hidden"
-        value={field.text}
-        onChange={(e) => {
-          const nextText = e.target.value;
-          const nextSize = calculateAutoFitTextFieldSize({
-            text: nextText,
-            fontSize: field.fontSize,
-            fontFamily,
-            x: field.x,
-            y: field.y,
-            pageWidth,
-            pageHeight,
-          });
-          if (!nextSize) return;
-          onUpdate({ text: nextText, width: nextSize.width, height: nextSize.height });
-        }}
+      <div
+        ref={editorRef}
+        data-text-box-input-bridge="true"
+        contentEditable="plaintext-only"
+        suppressContentEditableWarning
+        role="textbox"
+        aria-label="Text Box editor"
+        spellCheck={false}
+        className="absolute inset-0 w-full h-full bg-transparent border-none outline-none overflow-hidden"
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.stopPropagation();
           }
         }}
-        onFocus={() => {
+        onInput={(e) => syncBridgeValue(e.currentTarget)}
+        onPaste={(e) => {
+          e.preventDefault();
+          const pasted = normalizePastedPlainText(e.clipboardData.getData('text/plain'));
+          if (!insertTextAtSelection(pasted)) return;
+          syncBridgeValue(e.currentTarget);
+        }}
+        onCopy={(e) => {
+          const currentText = extractPlainTextFromContentEditable(e.currentTarget);
+          const selectedText = selectedTextFromOffsets(currentText, getSelectionOffsets(e.currentTarget));
+          if (!selectedText) return;
+
+          e.preventDefault();
+          e.clipboardData.setData('text/plain', selectedText);
+        }}
+        onCut={(e) => {
+          const currentText = extractPlainTextFromContentEditable(e.currentTarget);
+          const selectedText = selectedTextFromOffsets(currentText, getSelectionOffsets(e.currentTarget));
+          if (!selectedText) return;
+
+          e.preventDefault();
+          e.clipboardData.setData('text/plain', selectedText);
+          if (!deleteSelectedRange()) return;
+          syncBridgeValue(e.currentTarget);
+        }}
+        onFocus={(e) => {
+          isFocusedRef.current = true;
           onPreviewEditingChange?.(true);
           setIsFocused(true);
           setIsSelected(true);
+          emitSelectionChange(e.currentTarget);
         }}
         onBlur={() => {
+          isFocusedRef.current = false;
           onPreviewEditingChange?.(false);
           setIsFocused(false);
+          setSelection(null);
         }}
-        spellCheck={false}
+        onKeyUp={syncSelectionOnNextFrame}
+        onMouseUp={syncSelectionOnNextFrame}
+        onCompositionStart={(e) => scheduleBridgeSync(e.currentTarget)}
+        onCompositionUpdate={(e) => scheduleBridgeSync(e.currentTarget)}
+        onCompositionEnd={(e) => syncBridgeValue(e.currentTarget)}
         style={{
           fontSize: field.fontSize * scale,
-          color: isFocused ? field.color : 'transparent',
-          caretColor: field.color,
-          minHeight: 'inherit',
-          whiteSpace: 'pre-wrap',
+          lineHeight: `${field.fontSize * TEXT_FIELD_LINE_HEIGHT * scale}px`,
+          color: 'transparent',
+          whiteSpace: 'break-spaces',
           overflowWrap: 'break-word',
+          caretColor: 'transparent',
+          WebkitTextFillColor: 'transparent',
+          backgroundColor: 'transparent',
+          minHeight: 'inherit',
           padding: `${TEXT_FIELD_CONTENT_PADDING * scale}px`,
         }}
-        placeholder=""
       />
+
+      <CommittedTextFieldContent
+        field={field}
+        fontFamily={fontFamily}
+        scale={scale}
+      />
+
+      {isFocused && (
+        <div
+          aria-hidden="true"
+          data-text-field-layer="editing-chrome"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+          }}
+        >
+          {selectionRects.map((rect, index) => (
+            <div
+              key={`${rect.top}-${rect.left}-${index}`}
+              data-text-field-layer="selection-highlight"
+              style={{
+                position: 'absolute',
+                left: TEXT_FIELD_CONTENT_PADDING * scale + rect.left * scale,
+                top: TEXT_FIELD_CONTENT_PADDING * scale + rect.top * scale,
+                width: rect.width * scale,
+                height: rect.height * scale,
+                backgroundColor: 'rgba(59, 130, 246, 0.22)',
+                borderRadius: 2,
+              }}
+            />
+          ))}
+
+          {caretRect && selection && selection.anchor === selection.focus && (
+            <div
+              data-text-field-layer="caret"
+              style={{
+                position: 'absolute',
+                left: TEXT_FIELD_CONTENT_PADDING * scale + caretRect.left * scale,
+                top: TEXT_FIELD_CONTENT_PADDING * scale + caretRect.top * scale,
+                width: 2,
+                height: caretRect.height * scale,
+                backgroundColor: field.color,
+                borderRadius: 999,
+              }}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }

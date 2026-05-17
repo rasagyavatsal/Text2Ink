@@ -30,7 +30,15 @@ export default function CommittedTextFieldContent({
   const contentWidth = Math.max(0, (field.width - TEXT_FIELD_CONTENT_PADDING * 2) * scale);
 
   return (
-    <div data-text-field-layer="committed-content" className="relative h-full w-full" style={{ pointerEvents: 'none' }}>
+    <div
+      data-text-field-layer="committed-content"
+      className="relative h-full w-full"
+      style={{
+        pointerEvents: 'none',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+      }}
+    >
       <div
         style={{
           position: 'absolute',

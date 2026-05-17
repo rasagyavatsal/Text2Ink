@@ -9,3 +9,13 @@
   color: transparent;
   -webkit-text-fill-color: transparent;
 }
+
+[data-text-box-input-bridge="true"] {
+  -webkit-text-fill-color: transparent;
+}
+
+[data-text-box-input-bridge="true"]::selection {
+  background: transparent;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}

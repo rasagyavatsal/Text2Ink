@@ -7,6 +7,10 @@ export const TEXT_FIELD_LINE_HEIGHT = 1.2;
 export interface TextFieldCommittedLine {
   text: string;
   top: number;
+  startOffset: number;
+  contentEndOffset: number;
+  endOffset: number;
+  hasNewline: boolean;
 }
 
 export interface TextFieldContentLayout {
@@ -36,11 +40,48 @@ function wrapLineToWidth(line: string, maxContentWidth: number, measure: (text: 
 }
 
 function wrapTextFieldText(text: string, maxContentWidth: number, measure: (text: string) => number) {
-  if (text.length === 0) return [''];
+  if (text.length === 0) {
+    return [{
+      text: '',
+      startOffset: 0,
+      contentEndOffset: 0,
+      endOffset: 0,
+      hasNewline: false,
+    }];
+  }
 
-  return text
-    .split('\n')
-    .flatMap((line) => wrapLineToWidth(line, maxContentWidth, measure));
+  const wrappedLines: Array<{
+    text: string;
+    startOffset: number;
+    contentEndOffset: number;
+    endOffset: number;
+    hasNewline: boolean;
+  }> = [];
+  const rawLines = text.split('\n');
+  let offset = 0;
+
+  rawLines.forEach((line, rawLineIndex) => {
+    const segments = wrapLineToWidth(line, maxContentWidth, measure);
+    const hasNewline = rawLineIndex < rawLines.length - 1;
+    let segmentOffset = offset;
+
+    segments.forEach((segment, segmentIndex) => {
+      const contentEndOffset = segmentOffset + segment.length;
+      const isLastSegment = segmentIndex === segments.length - 1;
+      wrappedLines.push({
+        text: segment,
+        startOffset: segmentOffset,
+        contentEndOffset,
+        endOffset: contentEndOffset + (isLastSegment && hasNewline ? 1 : 0),
+        hasNewline: isLastSegment && hasNewline,
+      });
+      segmentOffset = contentEndOffset;
+    });
+
+    offset = segmentOffset + (hasNewline ? 1 : 0);
+  });
+
+  return wrappedLines;
 }
 
 export function layoutTextFieldContent(opts: {
@@ -57,11 +98,15 @@ export function layoutTextFieldContent(opts: {
 
   return {
     lines: wrappedLines.map((line, index) => ({
-      text: line,
+      text: line.text,
       top: index * lineHeight,
+      startOffset: line.startOffset,
+      contentEndOffset: line.contentEndOffset,
+      endOffset: line.endOffset,
+      hasNewline: line.hasNewline,
     })),
     lineHeight,
-    textWidth: Math.max(...wrappedLines.map((line) => measure(line)), 0),
+    textWidth: Math.max(...wrappedLines.map((line) => measure(line.text)), 0),
   };
 }
 

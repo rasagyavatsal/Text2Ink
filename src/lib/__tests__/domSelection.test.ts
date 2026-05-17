@@ -23,6 +23,23 @@ describe('domSelection', () => {
     root.remove();
   });
 
+  it('maps multiline selections whose endpoints land on block line elements', () => {
+    const root = document.createElement('div');
+    root.innerHTML = 'One<div>Two</div><div>Three</div>';
+    document.body.appendChild(root);
+
+    const [secondLine, thirdLine] = root.querySelectorAll('div');
+    const selection = window.getSelection()!;
+    const range = document.createRange();
+    range.setStart(secondLine, 0);
+    range.setEnd(thirdLine, 1);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    expect(getSelectionOffsets(root)).toEqual({ anchor: 4, focus: 13 });
+    root.remove();
+  });
+
   it('restores selection from page-local plain text offsets', () => {
     const root = document.createElement('div');
     root.innerHTML = 'One<div>Two</div>';

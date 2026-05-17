@@ -23,6 +23,15 @@ function textLengthForNode(node: Node, currentOffset: number): number {
 }
 
 function offsetForNode(root: HTMLElement, target: Node, targetOffset: number): number {
+  if (target === root) {
+    let offset = 0;
+    const children = Array.from(root.childNodes).slice(0, targetOffset);
+    for (const child of children) {
+      offset += textLengthForNode(child, offset);
+    }
+    return offset;
+  }
+
   let offset = 0;
   let found = false;
 
@@ -33,6 +42,9 @@ function offsetForNode(root: HTMLElement, target: Node, targetOffset: number): n
       if (node.nodeType === Node.TEXT_NODE) {
         offset += Math.min(targetOffset, (node.textContent ?? '').length);
       } else {
+        if (node instanceof HTMLElement) {
+          offset += newlineBeforeElement(node, offset);
+        }
         const children = Array.from(node.childNodes).slice(0, targetOffset);
         for (const child of children) {
           offset += textLengthForNode(child, offset);

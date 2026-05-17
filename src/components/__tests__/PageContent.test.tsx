@@ -1,9 +1,9 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import PageContent from '../PageContent';
 import TextField from '../TextField/TextField';
-import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '@/lib/types';
+import { DEFAULT_SETTINGS, type PageSettings, defaultPageSettingsFromHandwritingSettings } from '@/lib/types';
 import { resolvePageLayout } from '@/lib/pageLayout';
 
 describe('PageContent', () => {
@@ -251,5 +251,82 @@ describe('PageContent', () => {
     expect(previewLines.map((line) => line.style.top)).toEqual(exportLines.map((line) => line.style.top));
     expect(exportWithin.queryByLabelText('Move text box')).not.toBeInTheDocument();
     expect(exportWithin.queryByLabelText('Text box settings')).not.toBeInTheDocument();
+  });
+
+  it('keeps active text box Document Content aligned between Preview editing and export while excluding editing chrome', async () => {
+    const field = {
+      id: 'field-1',
+      text: 'abcdefghij',
+      x: 580,
+      y: 100,
+      width: 30,
+      height: 60,
+      color: '#123456',
+      fontSize: 10,
+    };
+
+    function Harness() {
+      const [pageSettings, setPageSettings] = React.useState<PageSettings>({
+        ...defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
+        textFields: [field],
+      });
+
+      return (
+        <>
+          <PageContent
+            pageIndex={0}
+            pageText=""
+            pageSettings={pageSettings}
+            settings={DEFAULT_SETTINGS}
+            fontFamily="Caveat"
+            scale={1}
+            editable
+            onPageTextChange={vi.fn()}
+            onPageSettingsChange={(nextPageSettings) => setPageSettings(nextPageSettings)}
+          />
+          <PageContent
+            mode="export"
+            pageIndex={0}
+            pageText=""
+            pageSettings={pageSettings}
+            settings={DEFAULT_SETTINGS}
+            fontFamily="Caveat"
+            scale={1}
+          />
+        </>
+      );
+    }
+
+    const { container } = render(<Harness />);
+    const editor = screen.getByRole('textbox', { name: 'Text Box editor' });
+
+    act(() => {
+      fireEvent.focus(editor);
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      const textNode = editor.firstChild!;
+      range.setStart(textNode, 1);
+      range.setEnd(textNode, 4);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.dispatchEvent(new Event('selectionchange'));
+    });
+
+    const preview = container.querySelector('[data-page-content-mode="preview"]') as HTMLElement;
+    const exportRender = container.querySelector('[data-page-content-mode="export"]') as HTMLElement;
+
+    expect(preview.querySelector('[data-text-field-layer="selection-highlight"]')).toBeInTheDocument();
+    expect(exportRender.querySelector('[data-text-field-layer="selection-highlight"]')).not.toBeInTheDocument();
+    expect(exportRender.querySelector('[data-text-field-layer="caret"]')).not.toBeInTheDocument();
+    const previewLines = Array.from(
+      preview.querySelectorAll<HTMLElement>('[data-text-field-layer="committed-line"]'),
+    ).map((line) => line.textContent);
+    const exportLines = Array.from(
+      exportRender.querySelectorAll<HTMLElement>('[data-page-layer="text-field-line"]'),
+    ).map((line) => line.textContent);
+
+    expect(previewLines).toEqual(exportLines);
+    expect(within(exportRender).queryByLabelText('Move text box')).not.toBeInTheDocument();
+    expect(within(exportRender).queryByLabelText('Text box settings')).not.toBeInTheDocument();
   });
 });
