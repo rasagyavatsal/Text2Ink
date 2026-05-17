@@ -160,7 +160,9 @@ describe('ExportPanel', () => {
     expect(captureSnapshots[1].text).toContain('Second page');
     expect(settlePageElementForCaptureMock).toHaveBeenCalledTimes(2);
     expect(onExportingChange).toHaveBeenNthCalledWith(1, true);
-    expect(onExportingChange).toHaveBeenLastCalledWith(false);
+    await waitFor(() => {
+      expect(onExportingChange).toHaveBeenLastCalledWith(false);
+    });
   });
 
   it('waits for a fresh full-document pagination pass before capturing', async () => {

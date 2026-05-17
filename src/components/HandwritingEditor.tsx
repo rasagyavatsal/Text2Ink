@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useCallback, useMemo, useEffect, useState } from 'react';
+import type { PlainTextSelectionOffsets } from '@/lib/domSelection';
 import {
   HandwritingSettings,
   HANDWRITING_FONTS,
@@ -97,6 +98,7 @@ export default function HandwritingEditor({
   const [totalPages, setTotalPages] = useState(1);
   const latestPaginationRequestIdRef = useRef(0);
   const [isCurrentPageBodyEditing, setIsCurrentPageBodyEditing] = useState(false);
+  const [currentPageBodySelection, setCurrentPageBodySelection] = useState<PlainTextSelectionOffsets | null>(null);
   const [isDraggingMarginLine, setIsDraggingMarginLine] = useState(false);
   const marginLineDragRef = useRef({ pageIndex: 0, pageRect: null as DOMRect | null });
   const marginLinePointerIdRef = useRef<number | null>(null);
@@ -106,6 +108,7 @@ export default function HandwritingEditor({
 
   useEffect(() => {
     setIsCurrentPageBodyEditing(false);
+    setCurrentPageBodySelection(null);
   }, [currentPageIndex]);
 
   const debouncedPropagateText = useDebouncedCallback((nextText: string) => {
@@ -294,26 +297,16 @@ export default function HandwritingEditor({
     settings.ruledMarginLineOffset,
   ]);
 
-  const debouncedRequestPagination = useDebouncedCallback(requestPagination, 80);
-  const shouldDebouncePagination = isCurrentPageBodyEditing && exportingPageIndex === null;
-
   useEffect(() => {
-    if (shouldDebouncePagination) {
-      debouncedRequestPagination();
-      return;
-    }
     requestPagination();
   }, [
     currentPageIndex,
-    debouncedRequestPagination,
     desiredPageHasBackground,
     desiredPageSettings,
-    isCurrentPageBodyEditing,
     localText,
     exportingPageIndex,
     requestPagination,
     resolvedFontFamily,
-    shouldDebouncePagination,
     settings.lineHeight,
     settings.paperStyle,
     settings.ruledMarginLineOffset,
@@ -402,8 +395,6 @@ export default function HandwritingEditor({
       const currentStartOffset = pageStartOffsets[pageIndex] ?? 0;
       const currentEndOffset = pageStartOffsets[pageIndex + 1] ?? localText.length;
       const editorPageText = localText.slice(currentStartOffset, currentEndOffset);
-      const showCommittedBody = !isVisiblePreview || !isCurrentPageBodyEditing;
-      const bodyEditorVisible = !isVisiblePreview || isCurrentPageBodyEditing;
 
       return (
         <div
@@ -430,13 +421,21 @@ export default function HandwritingEditor({
             scale={scale}
             editable={isVisiblePreview}
             isLocked={isVisiblePreview && isExportLocked}
-            bodyEditorVisible={bodyEditorVisible}
-            showCommittedBody={showCommittedBody}
+            bodyEditorVisible={isVisiblePreview}
+            showCommittedBody
+            isBodyPreviewEditing={isVisiblePreview && isCurrentPageBodyEditing}
+            bodySelection={isVisiblePreview ? currentPageBodySelection : null}
             onPageTextChange={(nextPageText) => replacePageText(pageIndex, nextPageText)}
             onPageSettingsChange={onPageSettingsChange}
             onPreviewEditingChange={onPreviewEditingChange}
             onBodyPreviewEditingChange={(isPreviewEditing) => {
               setIsCurrentPageBodyEditing(isPreviewEditing);
+              if (!isPreviewEditing) {
+                setCurrentPageBodySelection(null);
+              }
+            }}
+            onBodySelectionChange={(selection) => {
+              setCurrentPageBodySelection(selection);
             }}
             onBlockedEditAttempt={onBlockedEditAttempt}
           />
@@ -510,6 +509,7 @@ export default function HandwritingEditor({
       getBackgroundForPage,
       getPageSettings,
       isCurrentPageBodyEditing,
+      currentPageBodySelection,
       pages,
       localText,
       onSettingsChange,

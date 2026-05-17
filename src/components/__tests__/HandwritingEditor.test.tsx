@@ -96,7 +96,7 @@ describe('HandwritingEditor DOM body editor', () => {
     expect(onPreviewEditingChange).toHaveBeenNthCalledWith(2, false);
   });
 
-  it('shows committed body lines on the current page until body preview editing starts', async () => {
+  it('keeps visible body lines on the Current Page during body Preview Editing', async () => {
     const originalResolvePageLayout = pageLayoutModule.resolvePageLayout;
     const resolvePageLayout = vi.spyOn(pageLayoutModule, 'resolvePageLayout');
     resolvePageLayout.mockImplementation((opts) => {
@@ -137,7 +137,7 @@ describe('HandwritingEditor DOM body editor', () => {
 
     await waitFor(() => {
       const page = screen.getByLabelText('Page 1');
-      expect(page.querySelectorAll('[data-page-layer="body-line"]')).toHaveLength(0);
+      expect(page.querySelectorAll('[data-page-layer="body-line"]')).toHaveLength(2);
     });
 
     resolvePageLayout.mockRestore();
@@ -184,5 +184,66 @@ describe('HandwritingEditor DOM body editor', () => {
     expect(onSettingsChange).not.toHaveBeenCalled();
 
     resolvePageLayout.mockRestore();
+  });
+
+  it('shows in-progress Composition Text in the Preview while the body input bridge composes', async () => {
+    render(
+      <HandwritingEditor
+        text=""
+        settings={settings}
+        onTextChange={vi.fn()}
+        onSettingsChange={vi.fn()}
+        pageSettingsByPage={[]}
+        previewScale={1}
+        onPreviewScaleChange={vi.fn()}
+        currentPageIndex={0}
+        onCurrentPageChange={vi.fn()}
+        onTotalPagesChange={vi.fn()}
+      />
+    );
+
+    const bodyEditor = await screen.findByRole('textbox', { name: 'Handwriting body editor' });
+    fireEvent.focus(bodyEditor);
+    fireEvent.compositionStart(bodyEditor);
+    bodyEditor.textContent = 'あ';
+    fireEvent.input(bodyEditor);
+
+    await waitFor(() => {
+      const page = screen.getByLabelText('Page 1');
+      expect(page).toHaveTextContent('あ');
+    });
+  });
+
+  it('keeps parity-rendered body content in sync with undo and redo style input events', async () => {
+    render(
+      <HandwritingEditor
+        text="hello"
+        settings={settings}
+        onTextChange={vi.fn()}
+        onSettingsChange={vi.fn()}
+        pageSettingsByPage={[]}
+        previewScale={1}
+        onPreviewScaleChange={vi.fn()}
+        currentPageIndex={0}
+        onCurrentPageChange={vi.fn()}
+        onTotalPagesChange={vi.fn()}
+      />
+    );
+
+    const bodyEditor = await screen.findByRole('textbox', { name: 'Handwriting body editor' });
+    fireEvent.focus(bodyEditor);
+    bodyEditor.textContent = 'hello there';
+    fireEvent.input(bodyEditor, { inputType: 'historyRedo' });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Page 1')).toHaveTextContent('hello there');
+    });
+
+    bodyEditor.textContent = 'hello';
+    fireEvent.input(bodyEditor, { inputType: 'historyUndo' });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Page 1')).toHaveTextContent('hello');
+    });
   });
 });

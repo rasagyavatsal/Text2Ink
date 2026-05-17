@@ -4,6 +4,12 @@ import React, { useMemo } from 'react';
 import BodyTextEditor from './BodyTextEditor';
 import CommittedTextFieldContent from './TextField/CommittedTextFieldContent';
 import TextField from './TextField/TextField';
+import {
+  resolveBodyCaretRect,
+  resolveBodySelectionRects,
+  type BodySelectionOffsets,
+} from '@/lib/bodyEditingChrome';
+import { createMeasure } from '@/lib/pagination';
 import { rasterizePaperBackground } from '@/lib/paperBackgroundRasterizer';
 import { resolvePageLayout } from '@/lib/pageLayout';
 import type { HandwritingSettings, LineData, PageSettings } from '@/lib/types';
@@ -23,10 +29,13 @@ export interface PageContentProps {
   isLocked?: boolean;
   bodyEditorVisible?: boolean;
   showCommittedBody?: boolean;
+  isBodyPreviewEditing?: boolean;
+  bodySelection?: BodySelectionOffsets | null;
   onPageTextChange?: (text: string) => void;
   onPageSettingsChange?: (pageSettings: PageSettings) => void;
   onPreviewEditingChange?: (isPreviewEditing: boolean) => void;
   onBodyPreviewEditingChange?: (isPreviewEditing: boolean) => void;
+  onBodySelectionChange?: (selection: BodySelectionOffsets | null) => void;
   onBlockedEditAttempt?: () => void;
 }
 
@@ -119,11 +128,14 @@ export default function PageContent({
   editable = false,
   isLocked = false,
   bodyEditorVisible = editable,
-  showCommittedBody = !editable,
+  showCommittedBody = true,
+  isBodyPreviewEditing = false,
+  bodySelection = null,
   onPageTextChange,
   onPageSettingsChange,
   onPreviewEditingChange,
   onBodyPreviewEditingChange,
+  onBodySelectionChange,
   onBlockedEditAttempt,
 }: PageContentProps) {
   const layout = resolvePageLayout({ settings, pageSettings, pageIndex });
@@ -131,6 +143,28 @@ export default function PageContent({
     () => layout.customBackgroundImage ?? rasterizePaperBackground(layout),
     [layout],
   );
+  const bodyMeasure = useMemo(
+    () => createMeasure(fontFamily, pageSettings.fontSize * scale),
+    [fontFamily, pageSettings.fontSize, scale],
+  );
+  const bodySelectionRects = useMemo(() => {
+    if (mode !== 'preview' || !editable || !isBodyPreviewEditing) return [];
+    return resolveBodySelectionRects({
+      lines: pageLines ?? [],
+      selection: bodySelection,
+      lineHeight: layout.lineSpacing * scale,
+      measure: bodyMeasure,
+    });
+  }, [bodyMeasure, bodySelection, editable, isBodyPreviewEditing, layout.lineSpacing, mode, pageLines, scale]);
+  const bodyCaretRect = useMemo(() => {
+    if (mode !== 'preview' || !editable || !isBodyPreviewEditing) return null;
+    return resolveBodyCaretRect({
+      lines: pageLines ?? [],
+      selection: bodySelection,
+      lineHeight: layout.lineSpacing * scale,
+      measure: bodyMeasure,
+    });
+  }, [bodyMeasure, bodySelection, editable, isBodyPreviewEditing, layout.lineSpacing, mode, pageLines, scale]);
 
   return (
     <div
@@ -182,6 +216,7 @@ export default function PageContent({
           pageIndex={pageIndex}
           isVisible={bodyEditorVisible}
           onPageTextChange={onPageTextChange ?? (() => {})}
+          onSelectionChange={onBodySelectionChange}
           onFocus={() => {
             onBodyPreviewEditingChange?.(true);
             onPreviewEditingChange?.(true);
@@ -224,6 +259,52 @@ export default function PageContent({
                 </div>
               ))
             : (pageText || '\u00a0')}
+        </div>
+      )}
+
+      {mode === 'preview' && editable && isBodyPreviewEditing && (
+        <div
+          aria-hidden="true"
+          data-page-layer="body-editing-chrome"
+          style={{
+            position: 'absolute',
+            left: layout.writingBox.x * scale,
+            top: layout.writingBox.y * scale,
+            width: layout.writingBox.width * scale,
+            height: layout.writingBox.height * scale,
+            pointerEvents: 'none',
+          }}
+        >
+          {bodySelectionRects.map((rect, index) => (
+            <div
+              key={`${rect.top}-${rect.left}-${index}`}
+              data-page-layer="body-selection-highlight"
+              style={{
+                position: 'absolute',
+                left: rect.left,
+                top: rect.top,
+                width: rect.width,
+                height: rect.height,
+                backgroundColor: 'rgba(59, 130, 246, 0.22)',
+                borderRadius: 2,
+              }}
+            />
+          ))}
+
+          {bodyCaretRect && bodySelection && bodySelection.anchor === bodySelection.focus && (
+            <div
+              data-page-layer="body-caret"
+              style={{
+                position: 'absolute',
+                left: bodyCaretRect.left,
+                top: bodyCaretRect.top,
+                width: 2,
+                height: bodyCaretRect.height,
+                backgroundColor: pageSettings.inkColor,
+                borderRadius: 999,
+              }}
+            />
+          )}
         </div>
       )}
 

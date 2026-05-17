@@ -1,1 +1,11 @@
 @import "tw-animate-css";
+
+[data-body-input-bridge="true"] {
+  -webkit-text-fill-color: transparent;
+}
+
+[data-body-input-bridge="true"]::selection {
+  background: transparent;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}

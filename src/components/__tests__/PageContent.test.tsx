@@ -39,6 +39,128 @@ describe('PageContent', () => {
     expect(bodyLines[1]).toHaveStyle({ top: `${layout.lineSpacing}px` });
   });
 
+  it('keeps visible body Document Content in the Preview while the body input bridge is focused', () => {
+    const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
+    const { container } = render(
+      <PageContent
+        pageIndex={0}
+        pageText={'Alpha Beta'}
+        pageLines={[
+          { text: 'Alpha ', lineIndex: 0, hasNewline: false },
+          { text: 'Beta', lineIndex: 1, hasNewline: false },
+        ]}
+        pageSettings={pageSettings}
+        settings={DEFAULT_SETTINGS}
+        fontFamily="Caveat"
+        scale={1}
+        editable
+        bodyEditorVisible
+        showCommittedBody
+        onPageTextChange={vi.fn()}
+      />
+    );
+
+    const editor = screen.getByRole('textbox', { name: 'Handwriting body editor' });
+    fireEvent.focus(editor);
+
+    const bodyLines = Array.from(container.querySelectorAll<HTMLElement>('[data-page-layer="body-line"]'));
+    expect(bodyLines).toHaveLength(2);
+    expect(editor).toHaveAttribute('data-body-input-bridge', 'true');
+    expect(editor).toHaveStyle({ color: 'rgba(0, 0, 0, 0)' });
+    expect((editor as HTMLElement).style.caretColor).toBe('transparent');
+  });
+
+  it('renders body editing chrome in the Preview and excludes it from export', () => {
+    const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
+    const preview = render(
+      <PageContent
+        pageIndex={0}
+        pageText={'Alpha Beta'}
+        pageLines={[
+          { text: 'Alpha ', lineIndex: 0, hasNewline: false },
+          { text: 'Beta', lineIndex: 1, hasNewline: false },
+        ]}
+        pageSettings={pageSettings}
+        settings={DEFAULT_SETTINGS}
+        fontFamily="Caveat"
+        scale={1}
+        editable
+        isBodyPreviewEditing
+        bodySelection={{ anchor: 0, focus: 7 }}
+        onPageTextChange={vi.fn()}
+      />
+    );
+    const exportRender = render(
+      <PageContent
+        mode="export"
+        pageIndex={0}
+        pageText={'Alpha Beta'}
+        pageLines={[
+          { text: 'Alpha ', lineIndex: 0, hasNewline: false },
+          { text: 'Beta', lineIndex: 1, hasNewline: false },
+        ]}
+        pageSettings={pageSettings}
+        settings={DEFAULT_SETTINGS}
+        fontFamily="Caveat"
+        scale={1}
+        isBodyPreviewEditing
+        bodySelection={{ anchor: 0, focus: 7 }}
+      />
+    );
+
+    expect(preview.container.querySelector('[data-page-layer="body-selection-highlight"]')).toBeInTheDocument();
+    expect(exportRender.container.querySelector('[data-page-layer="body-caret"]')).not.toBeInTheDocument();
+    expect(exportRender.container.querySelector('[data-page-layer="body-selection-highlight"]')).not.toBeInTheDocument();
+  });
+
+  it('renders a visible body Caret during collapsed Preview selection', () => {
+    const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
+    const { container } = render(
+      <PageContent
+        pageIndex={0}
+        pageText={'Alpha Beta'}
+        pageLines={[
+          { text: 'Alpha ', lineIndex: 0, hasNewline: false },
+          { text: 'Beta', lineIndex: 1, hasNewline: false },
+        ]}
+        pageSettings={pageSettings}
+        settings={DEFAULT_SETTINGS}
+        fontFamily="Caveat"
+        scale={1}
+        editable
+        isBodyPreviewEditing
+        bodySelection={{ anchor: 2, focus: 2 }}
+        onPageTextChange={vi.fn()}
+      />
+    );
+
+    expect(container.querySelector('[data-page-layer="body-caret"]')).toBeInTheDocument();
+  });
+
+  it('positions body editing chrome by page-local line order rather than document-global line indexes', () => {
+    const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
+    const { container } = render(
+      <PageContent
+        pageIndex={1}
+        pageText={'Alpha Beta'}
+        pageLines={[
+          { text: 'Alpha ', lineIndex: 18, hasNewline: false },
+          { text: 'Beta', lineIndex: 19, hasNewline: false },
+        ]}
+        pageSettings={pageSettings}
+        settings={DEFAULT_SETTINGS}
+        fontFamily="Caveat"
+        scale={1}
+        editable
+        isBodyPreviewEditing
+        bodySelection={{ anchor: 2, focus: 2 }}
+        onPageTextChange={vi.fn()}
+      />
+    );
+
+    expect(container.querySelector('[data-page-layer="body-caret"]')).toHaveStyle({ top: '0px' });
+  });
+
   it('keeps locked preview text fields hit-testable so export lock can be explained', () => {
     const onBlockedEditAttempt = vi.fn();
 
