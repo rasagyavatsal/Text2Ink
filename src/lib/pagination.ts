@@ -12,7 +12,6 @@ export type PaginationRequest = {
   renderAllPagesForExport: boolean;
   pageWidth: number;
   pageHeight: number;
-  hasAnyCustomBackground: boolean;
   settings: {
     lineHeight: number;
     paperStyle: 'blank' | 'lined' | 'ruled' | 'grid';
@@ -34,6 +33,7 @@ export type PaginationRequest = {
     lineSpacing?: number;
   }>;
   pageHasBackground: boolean[];
+  defaultPageHasBackground?: boolean;
   fontFamily: string;
 };
 
@@ -144,11 +144,11 @@ export function paginate(req: PaginationRequest): PaginationResponse {
 
   while (cursor < textLen) {
     const ps = req.pages[pageIndex] ?? req.pages[req.pages.length - 1];
-    const pageHasBackground = !!req.pageHasBackground[pageIndex];
+    const pageHasBackground = req.pageHasBackground[pageIndex] ?? req.defaultPageHasBackground ?? false;
 
     const contentHeight = ps.writingBox?.height ?? (req.pageHeight - ps.marginTop - ps.marginBottom);
     const ruledTextLeft = ps.writingBox?.x ?? (
-      req.settings.paperStyle === 'ruled' && !req.hasAnyCustomBackground
+      req.settings.paperStyle === 'ruled' && !pageHasBackground
         ? ps.marginLeft + req.settings.ruledMarginLineOffset + 10
         : ps.marginLeft
     );

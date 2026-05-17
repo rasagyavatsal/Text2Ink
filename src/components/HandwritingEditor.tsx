@@ -8,12 +8,12 @@ import {
   LineData,
   defaultPageSettingsFromHandwritingSettings,
 } from '@/lib/types';
-import { paginateDom } from '@/lib/domPagination';
 import {
   calculatePageStartOffsets,
 } from '@/lib/editorHelpers';
 import { replaceSourceTextSlice } from '@/lib/domText';
 import { resolvePageLayout } from '@/lib/pageLayout';
+import { paginate } from '@/lib/pagination';
 import PageContent from './PageContent';
 
 interface HandwritingEditorProps {
@@ -96,12 +96,17 @@ export default function HandwritingEditor({
   const [pages, setPages] = useState<LineData[][]>([[]]);
   const [totalPages, setTotalPages] = useState(1);
   const latestPaginationRequestIdRef = useRef(0);
+  const [isCurrentPageBodyEditing, setIsCurrentPageBodyEditing] = useState(false);
   const [isDraggingMarginLine, setIsDraggingMarginLine] = useState(false);
   const marginLineDragRef = useRef({ pageIndex: 0, pageRect: null as DOMRect | null });
   const marginLinePointerIdRef = useRef<number | null>(null);
   useEffect(() => {
     setLocalText(text);
   }, [text]);
+
+  useEffect(() => {
+    setIsCurrentPageBodyEditing(false);
+  }, [currentPageIndex]);
 
   const debouncedPropagateText = useDebouncedCallback((nextText: string) => {
     onTextChange(nextText);
@@ -166,9 +171,6 @@ export default function HandwritingEditor({
       settings.customBackgroundImages?.[pageIndex] ?? settings.customBackgroundImage,
     [settings.customBackgroundImages, settings.customBackgroundImage]
   );
-
-  const hasAnyCustomBackground =
-    (settings.customBackgroundImages?.length ?? 0) > 0 || !!settings.customBackgroundImage;
 
   const getPageSettings = useCallback(
     (pageIndex: number): PageSettings =>
@@ -246,11 +248,11 @@ export default function HandwritingEditor({
     return out;
   }, [currentPageIndex, getBackgroundForPage, pageSettingsByPage.length]);
 
-  const debouncedRequestPagination = useDebouncedCallback(() => {
+  const requestPagination = useCallback(() => {
     latestPaginationRequestIdRef.current += 1;
     const requestId = latestPaginationRequestIdRef.current;
 
-    const msg = paginateDom({
+    const msg = paginate({
       type: 'paginate',
       requestId,
       text: localText,
@@ -258,7 +260,6 @@ export default function HandwritingEditor({
       renderAllPagesForExport: exportingPageIndex !== null,
       pageWidth: currentLayout.width,
       pageHeight: currentLayout.height,
-      hasAnyCustomBackground,
       settings: {
         lineHeight: settings.lineHeight,
         paperStyle: settings.paperStyle,
@@ -266,6 +267,7 @@ export default function HandwritingEditor({
       },
       pages: desiredPageSettings,
       pageHasBackground: desiredPageHasBackground,
+      defaultPageHasBackground: !!settings.customBackgroundImage,
       fontFamily: resolvedFontFamily,
     });
 
@@ -275,19 +277,43 @@ export default function HandwritingEditor({
     onPagesChange?.(nextPages);
     onPaginationCompleteChange?.(msg.isPaginationComplete);
     setTotalPages(msg.totalPages);
-  }, 80);
+  }, [
+    currentLayout.height,
+    currentLayout.width,
+    currentPageIndex,
+    desiredPageHasBackground,
+    desiredPageSettings,
+    exportingPageIndex,
+    localText,
+    onPagesChange,
+    onPaginationCompleteChange,
+    resolvedFontFamily,
+    settings.customBackgroundImage,
+    settings.lineHeight,
+    settings.paperStyle,
+    settings.ruledMarginLineOffset,
+  ]);
+
+  const debouncedRequestPagination = useDebouncedCallback(requestPagination, 80);
+  const shouldDebouncePagination = isCurrentPageBodyEditing && exportingPageIndex === null;
 
   useEffect(() => {
-    debouncedRequestPagination();
+    if (shouldDebouncePagination) {
+      debouncedRequestPagination();
+      return;
+    }
+    requestPagination();
   }, [
     currentPageIndex,
     debouncedRequestPagination,
     desiredPageHasBackground,
     desiredPageSettings,
-    hasAnyCustomBackground,
+    isCurrentPageBodyEditing,
     localText,
     exportingPageIndex,
+    requestPagination,
     resolvedFontFamily,
+    shouldDebouncePagination,
     settings.lineHeight,
     settings.paperStyle,
     settings.ruledMarginLineOffset,
@@ -372,9 +398,12 @@ export default function HandwritingEditor({
     (pageIndex: number, scale: number, isVisiblePreview: boolean) => {
       const ps = getPageSettings(pageIndex);
       const layout = resolvePageLayout({ settings, pageSettings: ps, pageIndex });
+      const pageLines = pages[pageIndex] ?? [];
       const currentStartOffset = pageStartOffsets[pageIndex] ?? 0;
       const currentEndOffset = pageStartOffsets[pageIndex + 1] ?? localText.length;
-      const pageText = localText.slice(currentStartOffset, currentEndOffset);
+      const editorPageText = localText.slice(currentStartOffset, currentEndOffset);
+      const showCommittedBody = !isVisiblePreview || !isCurrentPageBodyEditing;
+      const bodyEditorVisible = !isVisiblePreview || isCurrentPageBodyEditing;
 
       return (
         <div
@@ -393,16 +422,22 @@ export default function HandwritingEditor({
         >
           <PageContent
             pageIndex={pageIndex}
-            pageText={pageText}
+            pageText={editorPageText}
+            pageLines={pageLines}
             pageSettings={ps}
             settings={settings}
             fontFamily={resolvedFontFamily}
             scale={scale}
             editable={isVisiblePreview}
             isLocked={isVisiblePreview && isExportLocked}
+            bodyEditorVisible={bodyEditorVisible}
+            showCommittedBody={showCommittedBody}
             onPageTextChange={(nextPageText) => replacePageText(pageIndex, nextPageText)}
             onPageSettingsChange={onPageSettingsChange}
             onPreviewEditingChange={onPreviewEditingChange}
+            onBodyPreviewEditingChange={(isPreviewEditing) => {
+              setIsCurrentPageBodyEditing(isPreviewEditing);
+            }}
             onBlockedEditAttempt={onBlockedEditAttempt}
           />
 
@@ -474,6 +509,8 @@ export default function HandwritingEditor({
     [
       getBackgroundForPage,
       getPageSettings,
+      isCurrentPageBodyEditing,
+      pages,
       localText,
       onSettingsChange,
       onPreviewEditingChange,

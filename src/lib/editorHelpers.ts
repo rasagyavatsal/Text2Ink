@@ -4,6 +4,10 @@ export type LineData = {
   hasNewline: boolean;
 };
 
+export function pageTextFromLines(lines: LineData[]): string {
+  return lines.map((line) => line.text + (line.hasNewline ? '\n' : '')).join('');
+}
+
 export function calculatePageStartOffsets(pages: LineData[][]): number[] {
   const offsets: number[] = [0];
   let total = 0;

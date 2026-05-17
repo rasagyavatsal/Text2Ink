@@ -39,7 +39,7 @@ export function linesFromPageSlice(
 
 function contentBoxFor(req: PaginationRequest, pageIndex: number) {
   const ps = req.pages[pageIndex] ?? req.pages[req.pages.length - 1];
-  const pageHasBackground = !!req.pageHasBackground[pageIndex];
+  const pageHasBackground = req.pageHasBackground[pageIndex] ?? req.defaultPageHasBackground ?? false;
   const left = ps.writingBox?.x ?? (
     req.settings.paperStyle === 'ruled' && !pageHasBackground
       ? ps.marginLeft + req.settings.ruledMarginLineOffset + 10

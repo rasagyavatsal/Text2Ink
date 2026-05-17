@@ -10,7 +10,6 @@ const request = (text: string, overrides: Partial<PaginationRequest> = {}): Pagi
   renderAllPagesForExport: true,
   pageWidth: 200,
   pageHeight: 120,
-  hasAnyCustomBackground: false,
   settings: {
     lineHeight: 1,
     paperStyle: 'blank',

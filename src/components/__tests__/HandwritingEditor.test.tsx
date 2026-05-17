@@ -17,6 +17,7 @@ describe('HandwritingEditor DOM body editor', () => {
   };
 
   beforeEach(() => {
+    vi.restoreAllMocks();
     vi.clearAllMocks();
   });
 
@@ -93,6 +94,53 @@ describe('HandwritingEditor DOM body editor', () => {
 
     expect(onPreviewEditingChange).toHaveBeenNthCalledWith(1, true);
     expect(onPreviewEditingChange).toHaveBeenNthCalledWith(2, false);
+  });
+
+  it('shows committed body lines on the current page until body preview editing starts', async () => {
+    const originalResolvePageLayout = pageLayoutModule.resolvePageLayout;
+    const resolvePageLayout = vi.spyOn(pageLayoutModule, 'resolvePageLayout');
+    resolvePageLayout.mockImplementation((opts) => {
+      const actual = originalResolvePageLayout(opts);
+      return {
+        ...actual,
+        writingBox: {
+          ...actual.writingBox,
+          width: 50,
+          height: 200,
+        },
+        lineSpacing: 20,
+      };
+    });
+
+    render(
+      <HandwritingEditor
+        text="abcdefghij"
+        settings={settings}
+        onTextChange={vi.fn()}
+        onSettingsChange={vi.fn()}
+        pageSettingsByPage={[]}
+        previewScale={1}
+        onPreviewScaleChange={vi.fn()}
+        currentPageIndex={0}
+        onCurrentPageChange={vi.fn()}
+        onTotalPagesChange={vi.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      const page = screen.getByLabelText('Page 1');
+      const bodyLines = page.querySelectorAll('[data-page-layer="body-line"]');
+      expect(bodyLines).toHaveLength(2);
+    });
+
+    fireEvent.focus(screen.getByRole('textbox', { name: 'Handwriting body editor' }));
+
+    await waitFor(() => {
+      const page = screen.getByLabelText('Page 1');
+      expect(page.querySelectorAll('[data-page-layer="body-line"]')).toHaveLength(0);
+    });
+
+    resolvePageLayout.mockRestore();
   });
 
   it('blocks ruled-margin dragging during export lock', async () => {

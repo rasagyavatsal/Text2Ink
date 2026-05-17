@@ -509,6 +509,7 @@ export default function ExportPanel({
               mode="export"
               pageIndex={renderedExportPage.pageIndex}
               pageText={renderedExportPage.pageText}
+              pageLines={pagesRef.current[renderedExportPage.pageIndex] ?? []}
               pageSettings={renderedExportPage.pageSettings}
               settings={settings}
               fontFamily={renderedExportPage.fontFamily}

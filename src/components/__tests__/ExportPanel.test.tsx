@@ -5,7 +5,7 @@ import ExportPanel from '../ExportPanel';
 import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '@/lib/types';
 
 const { capturePageElementToCanvasMock, captureSnapshots, settlePageElementForCaptureMock } = vi.hoisted(() => ({
-  captureSnapshots: [] as Array<{ mode: string | null; text: string; hostAll: string; pageAll: string }>,
+  captureSnapshots: [] as Array<{ mode: string | null; text: string; hostAll: string; pageAll: string; lineTexts: string[] }>,
   capturePageElementToCanvasMock: vi.fn(async ({ page }: { page: HTMLElement }) => {
     const renderedPage = page.querySelector<HTMLElement>('[data-page-content-mode]');
     captureSnapshots.push({
@@ -13,6 +13,7 @@ const { capturePageElementToCanvasMock, captureSnapshots, settlePageElementForCa
       text: page.textContent ?? '',
       hostAll: page.style.all,
       pageAll: renderedPage?.style.all ?? '',
+      lineTexts: Array.from(page.querySelectorAll<HTMLElement>('[data-page-layer="body-line"]')).map((line) => line.textContent ?? ''),
     });
     const canvas = document.createElement('canvas');
     canvas.toBlob = ((callback: BlobCallback) => callback(new Blob(['page']))) as HTMLCanvasElement['toBlob'];
@@ -110,11 +111,14 @@ describe('ExportPanel', () => {
     const onExportingChange = vi.fn();
 
     render(
-      <ExportPanel
-        {...props}
-        hasContent
-        pages={[
-          [{ text: 'First page', lineIndex: 0, hasNewline: false }],
+        <ExportPanel
+          {...props}
+          hasContent
+          pages={[
+          [
+            { text: 'First ', lineIndex: 0, hasNewline: false },
+            { text: 'page', lineIndex: 1, hasNewline: false },
+          ],
           [{ text: 'Second page', lineIndex: 1, hasNewline: false }],
         ]}
         pageSettingsByPage={[
@@ -140,6 +144,7 @@ describe('ExportPanel', () => {
     expect(captureSnapshots[0].pageAll).toBe('initial');
     expect(captureSnapshots[1].pageAll).toBe('initial');
     expect(captureSnapshots[0].text).toContain('First page');
+    expect(captureSnapshots[0].lineTexts).toEqual(['First ', 'page']);
     expect(captureSnapshots[1].text).toContain('Second page');
     expect(settlePageElementForCaptureMock).toHaveBeenCalledTimes(2);
     expect(onExportingChange).toHaveBeenNthCalledWith(1, true);

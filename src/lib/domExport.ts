@@ -1,5 +1,5 @@
 import html2canvas from 'html2canvas';
-import type { LineData } from './editorHelpers';
+import { pageTextFromLines } from './editorHelpers';
 
 export const DOM_EXPORT_SCALE = 4.1666666667;
 const TRANSPARENT_COLOR = 'rgba(0, 0, 0, 0)';
@@ -24,9 +24,7 @@ const TEXT_COLOR_PROPERTIES = [
 const SHADOW_PROPERTIES = ['box-shadow', 'text-shadow'] as const;
 const IMAGE_PROPERTIES = ['background-image', 'list-style-image'] as const;
 
-export function pageTextFromLines(lines: LineData[]): string {
-  return lines.map((line) => line.text + (line.hasNewline ? '\n' : '')).join('');
-}
+export { pageTextFromLines };
 
 function imageLoadError(img: HTMLImageElement) {
   const imageType = img.dataset.exportLayer === 'background-image' ? 'background image' : 'image';

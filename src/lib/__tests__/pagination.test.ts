@@ -10,7 +10,6 @@ describe('pagination', () => {
     renderAllPagesForExport: false,
     pageWidth: 800,
     pageHeight: 1000,
-    hasAnyCustomBackground: false,
     settings: {
       lineHeight: 1.5,
       paperStyle: 'lined',
@@ -131,6 +130,21 @@ describe('pagination', () => {
       
       // contentHeight = 900. linesPerPage = 900 / 100 = 9.
       expect(res.pages[0].length).toBe(9);
+    });
+
+    it('keeps background-driven line spacing on later pages when the background applies globally', () => {
+      const res = paginate({
+        ...defaultReq,
+        text: Array(25).fill('line').join('\n'),
+        renderAllPagesForExport: true,
+        pages: [{ ...defaultReq.pages[0], customLineSpacing: 100 }],
+        pageHasBackground: [true],
+        defaultPageHasBackground: true,
+      });
+
+      expect(res.pages[0].length).toBe(9);
+      expect(res.pages[1].length).toBe(9);
+      expect(res.totalPages).toBe(3);
     });
   });
 });

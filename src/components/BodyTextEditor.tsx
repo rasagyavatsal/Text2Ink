@@ -13,6 +13,7 @@ interface BodyTextEditorProps {
   fontFamily: string;
   hasCustomBackground: boolean;
   pageIndex?: number;
+  isVisible?: boolean;
   onPageTextChange: (text: string) => void;
   onFocus?: () => void;
   onBlur?: () => void;
@@ -43,6 +44,7 @@ export default function BodyTextEditor({
   fontFamily,
   hasCustomBackground,
   pageIndex = 0,
+  isVisible = true,
   onPageTextChange,
   onFocus,
   onBlur,
@@ -89,6 +91,7 @@ export default function BodyTextEditor({
         transform: pageSettings.lineTilt ? `rotate(${pageSettings.lineTilt}deg)` : undefined,
         transformOrigin: 'top left',
         caretColor: pageSettings.inkColor,
+        opacity: isVisible ? 1 : 0,
       }}
       onInput={(event) => {
         if (isLocked) {

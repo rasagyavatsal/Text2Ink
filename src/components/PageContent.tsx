@@ -6,7 +6,7 @@ import TextField from './TextField/TextField';
 import { rasterizePaperBackground } from '@/lib/paperBackgroundRasterizer';
 import { resolvePageLayout } from '@/lib/pageLayout';
 import { TEXT_FIELD_CONTENT_PADDING } from '@/lib/textFieldLayout';
-import type { HandwritingSettings, PageSettings } from '@/lib/types';
+import type { HandwritingSettings, LineData, PageSettings } from '@/lib/types';
 
 type PageContentMode = 'preview' | 'export';
 
@@ -14,15 +14,19 @@ export interface PageContentProps {
   mode?: PageContentMode;
   pageIndex: number;
   pageText: string;
+  pageLines?: LineData[];
   pageSettings: PageSettings;
   settings: HandwritingSettings;
   fontFamily: string;
   scale: number;
   editable?: boolean;
   isLocked?: boolean;
+  bodyEditorVisible?: boolean;
+  showCommittedBody?: boolean;
   onPageTextChange?: (text: string) => void;
   onPageSettingsChange?: (pageSettings: PageSettings) => void;
   onPreviewEditingChange?: (isPreviewEditing: boolean) => void;
+  onBodyPreviewEditingChange?: (isPreviewEditing: boolean) => void;
   onBlockedEditAttempt?: () => void;
 }
 
@@ -68,6 +72,20 @@ function staticBodyStyle(opts: {
   } as const;
 }
 
+function staticBodyLineStyle(opts: {
+  top: number;
+  height: number;
+}) {
+  return {
+    position: 'absolute',
+    left: '0',
+    top: `${opts.top}px`,
+    width: '100%',
+    height: `${opts.height}px`,
+    whiteSpace: 'pre',
+  } as const;
+}
+
 function staticTextFieldRootStyle(opts: {
   left: number;
   top: number;
@@ -93,15 +111,19 @@ export default function PageContent({
   mode = 'preview',
   pageIndex,
   pageText,
+  pageLines,
   pageSettings,
   settings,
   fontFamily,
   scale,
   editable = false,
   isLocked = false,
+  bodyEditorVisible = editable,
+  showCommittedBody = !editable,
   onPageTextChange,
   onPageSettingsChange,
   onPreviewEditingChange,
+  onBodyPreviewEditingChange,
   onBlockedEditAttempt,
 }: PageContentProps) {
   const layout = resolvePageLayout({ settings, pageSettings, pageIndex });
@@ -149,7 +171,7 @@ export default function PageContent({
         />
       )}
 
-      {editable ? (
+      {editable && (
         <BodyTextEditor
           pageText={pageText}
           pageSettings={pageSettings}
@@ -158,13 +180,22 @@ export default function PageContent({
           fontFamily={fontFamily}
           hasCustomBackground={!!layout.customBackgroundImage}
           pageIndex={pageIndex}
+          isVisible={bodyEditorVisible}
           onPageTextChange={onPageTextChange ?? (() => {})}
-          onFocus={() => onPreviewEditingChange?.(true)}
-          onBlur={() => onPreviewEditingChange?.(false)}
+          onFocus={() => {
+            onBodyPreviewEditingChange?.(true);
+            onPreviewEditingChange?.(true);
+          }}
+          onBlur={() => {
+            onBodyPreviewEditingChange?.(false);
+            onPreviewEditingChange?.(false);
+          }}
           isLocked={isLocked}
           onBlockedEditAttempt={onBlockedEditAttempt}
         />
-      ) : (
+      )}
+
+      {(showCommittedBody || !editable) && (
         <div
           data-page-layer="body"
           style={staticBodyStyle({
@@ -179,7 +210,20 @@ export default function PageContent({
             lineTilt: pageSettings.lineTilt,
           })}
         >
-          {pageText || '\u00a0'}
+          {pageLines?.length
+            ? pageLines.map((line, lineIndex) => (
+                <div
+                  key={`${line.lineIndex}-${lineIndex}`}
+                  data-page-layer="body-line"
+                  style={staticBodyLineStyle({
+                    top: lineIndex * layout.lineSpacing * scale,
+                    height: layout.lineSpacing * scale,
+                  })}
+                >
+                  {line.text || '\u00a0'}
+                </div>
+              ))
+            : (pageText || '\u00a0')}
         </div>
       )}
 
