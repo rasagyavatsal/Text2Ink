@@ -205,7 +205,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
       ref={rootRef}
       className={cn(
         "absolute border border-dotted group",
-        showControls ? "border-[#E0A32A]" : "border-gray-400"
+        showControls ? "border-brand-accent" : "border-border"
       )}
       onPointerDown={() => {
         setIsSelected(true);
@@ -232,49 +232,49 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
           className="absolute -top-5 -left-5 size-11 pointer-events-auto cursor-nwse-resize touch-none flex items-center justify-center"
           onPointerDown={(e) => handleResizeStart(e, 'nw')}
         >
-          <span className="h-3 w-3 rounded-sm border border-gray-400 bg-white shadow-sm" />
+          <span className="h-3 w-3 rounded-sm border border-border bg-background shadow-sm" />
         </div>
         <div
           data-testid="handle-ne"
           className="absolute -top-5 -right-5 size-11 pointer-events-auto cursor-nesw-resize touch-none flex items-center justify-center"
           onPointerDown={(e) => handleResizeStart(e, 'ne')}
         >
-          <span className="h-3 w-3 rounded-sm border border-gray-400 bg-white shadow-sm" />
+          <span className="h-3 w-3 rounded-sm border border-border bg-background shadow-sm" />
         </div>
         <div
           data-testid="handle-sw"
           className="absolute -bottom-5 -left-5 size-11 pointer-events-auto cursor-nesw-resize touch-none flex items-center justify-center"
           onPointerDown={(e) => handleResizeStart(e, 'sw')}
         >
-          <span className="h-3 w-3 rounded-sm border border-gray-400 bg-white shadow-sm" />
+          <span className="h-3 w-3 rounded-sm border border-border bg-background shadow-sm" />
         </div>
         <div
           data-testid="handle-se"
           className="absolute -bottom-5 -right-5 size-11 pointer-events-auto cursor-nwse-resize touch-none flex items-center justify-center"
           onPointerDown={(e) => handleResizeStart(e, 'se')}
         >
-          <span className="h-3 w-3 rounded-sm border border-gray-400 bg-white shadow-sm" />
+          <span className="h-3 w-3 rounded-sm border border-border bg-background shadow-sm" />
         </div>
 
         {/* Sides */}
         <div
           data-testid="handle-n"
-          className="absolute -top-5 left-3 right-3 h-11 pointer-events-auto cursor-ns-resize touch-none hover:bg-blue-400/20 transition-colors"
+          className="absolute -top-5 left-3 right-3 h-11 pointer-events-auto cursor-ns-resize touch-none hover:bg-brand-accent-soft transition-colors"
           onPointerDown={(e) => handleResizeStart(e, 'n')}
         />
         <div
           data-testid="handle-s"
-          className="absolute -bottom-5 left-3 right-3 h-11 pointer-events-auto cursor-ns-resize touch-none hover:bg-blue-400/20 transition-colors"
+          className="absolute -bottom-5 left-3 right-3 h-11 pointer-events-auto cursor-ns-resize touch-none hover:bg-brand-accent-soft transition-colors"
           onPointerDown={(e) => handleResizeStart(e, 's')}
         />
         <div
           data-testid="handle-w"
-          className="absolute -left-5 top-3 bottom-3 w-11 pointer-events-auto cursor-ew-resize touch-none hover:bg-blue-400/20 transition-colors"
+          className="absolute -left-5 top-3 bottom-3 w-11 pointer-events-auto cursor-ew-resize touch-none hover:bg-brand-accent-soft transition-colors"
           onPointerDown={(e) => handleResizeStart(e, 'w')}
         />
         <div
           data-testid="handle-e"
-          className="absolute -right-5 top-3 bottom-3 w-11 pointer-events-auto cursor-ew-resize touch-none hover:bg-blue-400/20 transition-colors"
+          className="absolute -right-5 top-3 bottom-3 w-11 pointer-events-auto cursor-ew-resize touch-none hover:bg-brand-accent-soft transition-colors"
           onPointerDown={(e) => handleResizeStart(e, 'e')}
         />
       </div>
@@ -289,7 +289,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
         <button
           type="button"
           aria-label="Move text box"
-          className="size-11 bg-white border shadow-sm rounded-full cursor-move hover:bg-gray-50 text-gray-500 touch-none flex items-center justify-center"
+          className="size-11 bg-background border-border border shadow-sm rounded-full cursor-move hover:bg-muted text-muted-foreground touch-none flex items-center justify-center"
           onPointerDown={handleDragPointerDown}
         >
           <Move size={16} />
@@ -309,7 +309,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
               ref={settingsTriggerRef}
               type="button"
               aria-label="Text box settings"
-              className="size-11 bg-white border shadow-sm rounded-full hover:bg-gray-50 text-gray-500 flex items-center justify-center"
+              className="size-11 bg-background border-border border shadow-sm rounded-full hover:bg-muted text-muted-foreground flex items-center justify-center"
             >
               <Settings size={16} />
             </button>
@@ -326,13 +326,13 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
               }}
             />
           )}
-          <PopoverContent className="w-48 p-4 shadow-xl border-gray-100">
+          <PopoverContent className="w-48 p-4 shadow-xl border-border">
             <div className="space-y-5">
               {/* Font Size Section */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Font Size</label>
-                  <span className="text-[10px] font-mono font-bold text-gray-600">{field.fontSize}px</span>
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Font Size</label>
+                  <span className="text-[10px] font-mono font-bold text-foreground">{field.fontSize}px</span>
                 </div>
                 <Slider
                   value={[field.fontSize]}
@@ -345,23 +345,23 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
 
               {/* Color Picker Section */}
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Text Color</label>
-                <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg border border-gray-100">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Text Color</label>
+                <div className="flex items-center gap-3 p-2 bg-muted rounded-lg border border-border">
                   <input
                     type="color"
                     value={field.color}
                     onChange={(e) => onUpdate({ color: e.target.value })}
                     className="w-8 h-8 rounded-md cursor-pointer border-0 p-0 bg-transparent shadow-sm"
                   />
-                  <span className="text-[10px] font-mono font-bold text-gray-600 uppercase">
+                  <span className="text-[10px] font-mono font-bold text-foreground uppercase">
                     {field.color}
                   </span>
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-gray-100">
+              <div className="pt-2 border-t border-border">
                 <button
-                  className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-[10px] font-bold text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors uppercase tracking-widest"
+                  className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-[10px] font-bold text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors uppercase tracking-widest"
                   onClick={onDelete}
                 >
                   <X size={12} />
