@@ -126,6 +126,23 @@ describe('Root editor page', () => {
     expect(metadata.openGraph?.url).toBe('https://text2ink.com/');
   });
 
+  it('uses semantic theme tokens instead of hardcoded colors', () => {
+    const { container } = render(<RootEditorPageClient />);
+    const html = container.innerHTML;
+    
+    // Forbidden hardcoded classes
+    expect(html).not.toMatch(/bg-white/);
+    expect(html).not.toMatch(/bg-gray-100/);
+    expect(html).not.toMatch(/bg-gray-50\/50/);
+    expect(html).not.toMatch(/border-gray-200/);
+    expect(html).not.toMatch(/border-gray-100/);
+    expect(html).not.toMatch(/text-gray-500/);
+    expect(html).not.toMatch(/text-gray-400/);
+    expect(html).not.toMatch(/text-\[#E0A32A\]/);
+    expect(html).not.toMatch(/border-\[#E0A32A\]/);
+    expect(html).not.toMatch(/bg-\[#E0A32A\]\/5/);
+  });
+
   it('keeps preview scale stable when the mobile sheet collapses and reopens', async () => {
     mockMatchMedia(true);
     Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 390 });

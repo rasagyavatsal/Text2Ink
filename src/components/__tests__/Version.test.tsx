@@ -13,7 +13,7 @@ describe('Version', () => {
   it('has the correct CSS classes', () => {
     render(<Version />);
     const versionElement = screen.getByTestId('version');
-    expect(versionElement).toHaveClass('text-gray-400');
+    expect(versionElement).toHaveClass('text-muted-foreground');
     expect(versionElement).toHaveClass('font-mono');
   });
 });

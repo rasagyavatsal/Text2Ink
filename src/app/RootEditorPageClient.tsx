@@ -446,7 +446,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
   );
 
   return (
-    <div className="h-[100dvh] bg-white flex flex-col overflow-hidden">
+    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
       <header ref={headerRef} className="border-b border-border shrink-0 bg-background" role="banner">
         <div className="max-w-full mx-auto px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -468,18 +468,18 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
         </div>
       </header>
 
-      <div className="flex-1 flex min-h-0 bg-gray-100 overflow-hidden">
+      <div className="flex-1 flex min-h-0 bg-muted overflow-hidden">
         {!isMobileEditorLayout && (
           <>
             <div
-              className={`hidden xl:flex bg-white border-r border-gray-200 flex-col min-h-0 transition-all duration-300 ${sidebarOpen ? 'w-96' : 'w-0'} overflow-hidden`}
+              className={`hidden xl:flex bg-background border-r border-border flex-col min-h-0 transition-all duration-300 ${sidebarOpen ? 'w-96' : 'w-0'} overflow-hidden`}
             >
-              <div className="flex border-b border-gray-200 shrink-0">
+              <div className="flex border-b border-border shrink-0">
                 <button
                   onClick={() => setActivePanel('settings')}
                   className={`flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${activePanel === 'settings'
-                    ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/5'
-                    : 'text-gray-500 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
+                    ? 'text-brand-accent border-b-2 border-brand-accent bg-brand-accent-soft'
+                    : 'text-muted-foreground hover:text-brand-accent hover:bg-brand-accent-soft'
                   }`}
                 >
                   <Settings className="w-4 h-4" />
@@ -488,8 +488,8 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
                 <button
                   onClick={() => setActivePanel('export')}
                   className={`flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${activePanel === 'export'
-                    ? 'text-[#E0A32A] border-b-2 border-[#E0A32A] bg-[#E0A32A]/5'
-                    : 'text-gray-500 hover:text-[#E0A32A] hover:bg-[#E0A32A]/5'
+                    ? 'text-brand-accent border-b-2 border-brand-accent bg-brand-accent-soft'
+                    : 'text-muted-foreground hover:text-brand-accent hover:bg-brand-accent-soft'
                   }`}
                 >
                   <Download className="w-4 h-4" />
@@ -497,23 +497,23 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
                 </button>
               </div>
 
-              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-white">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-background">
                 {activePanel === 'settings' ? settingsPanel : exportPanel}
               </div>
-              <div className="shrink-0 py-2 px-4 border-t border-gray-100 flex justify-center bg-gray-50/50">
+              <div className="shrink-0 py-2 px-4 border-t border-border flex justify-center bg-muted/50">
                 <Version />
               </div>
             </div>
 
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className={`hidden xl:block fixed top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 rounded-r-xl p-3 shadow-xl hover:shadow-2xl transition-all duration-300 group ${sidebarOpen ? 'left-[384px]' : 'left-0'}`}
+              className={`hidden xl:block fixed top-1/2 -translate-y-1/2 z-10 bg-background border border-border rounded-r-xl p-3 shadow-xl hover:shadow-2xl transition-all duration-300 group ${sidebarOpen ? 'left-[384px]' : 'left-0'}`}
               aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
             >
               {sidebarOpen ? (
-                <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:text-[#E0A32A] transition-colors" />
+                <ChevronLeft className="w-5 h-5 text-muted-foreground group-hover:text-brand-accent transition-colors" />
               ) : (
-                <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[#E0A32A] transition-colors" />
+                <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-brand-accent transition-colors" />
               )}
             </button>
           </>
@@ -521,7 +521,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
 
         <div
           data-testid="preview-scroll-container"
-          className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-gray-100"
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-muted"
           style={isMobileEditorLayout ? { paddingBottom: effectiveMobileSheetHeight } : undefined}
         >
           <div className={`min-h-full flex justify-center ${isMobileEditorLayout ? 'px-4 py-3' : 'py-12 px-6'}`}>
