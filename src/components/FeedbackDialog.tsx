@@ -117,7 +117,7 @@ export default function FeedbackDialog({ isOpen, onClose }: FeedbackDialogProps)
                         className={cn(
                           "h-8 w-8 transition-colors",
                           (hoveredRating || rating) >= star
-                            ? "fill-yellow-400 text-yellow-400"
+                            ? "fill-brand-accent text-brand-accent"
                             : "text-muted-foreground"
                         )}
                       />
