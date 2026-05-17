@@ -3,6 +3,7 @@ import NextImage from 'next/image';
 import { Mail } from 'lucide-react';
 import { Metadata } from 'next';
 import Version from '@/components/Version';
+import ThemePicker from '@/components/ThemePicker';
 
 export const metadata: Metadata = {
   title: 'Contact Us',
