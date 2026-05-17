@@ -93,4 +93,19 @@ describe('FeedbackDialog', () => {
     expect(improvementTextarea.getAttribute('spellcheck')).toBe('false');
     expect(featureTextarea.getAttribute('spellcheck')).toBe('false');
   });
+  it('uses semantic tokens instead of hardcoded hex and palette values', () => {
+    const onClose = vi.fn();
+    render(<FeedbackDialog isOpen={true} onClose={onClose} />);
+    
+    // Click a star to trigger active styling
+    const stars = screen.getAllByRole('button').filter(b => b.querySelector('svg'));
+    fireEvent.click(stars[2]);
+
+    // Check render
+    const html = document.body.innerHTML;
+    expect(html).not.toMatch(/fill-yellow-400/);
+    expect(html).not.toMatch(/text-yellow-400/);
+    expect(html).not.toMatch(/bg-green-100/);
+    expect(html).not.toMatch(/text-green-600/);
+  });
 });
