@@ -103,4 +103,21 @@ describe('SettingsPanel', () => {
     const textFieldHeading = headings.find(h => h.textContent === 'Text Fields');
     expect(textFieldHeading).toBeUndefined();
   });
+
+  it('uses semantic tokens instead of hardcoded gray/white/hex colors', () => {
+    const { container } = render(<SettingsPanel {...defaultProps} />);
+    
+    // Select elements that still use hardcoded classes we want to eliminate
+    // Note: We're looking for common hardcoded classes mentioned in the issue
+    const hardcodedElements = container.querySelectorAll(
+      '.bg-gray-100, .bg-white, .text-gray-400, .text-gray-500, .text-gray-700, .border-gray-200, .bg-\\[\\#E0A32A\\], .text-\\[\\#E0A32A\\]'
+    );
+    
+    if (hardcodedElements.length > 0) {
+      hardcodedElements.forEach(el => console.log(el.outerHTML));
+    }
+    
+    // The test should fail initially because these classes exist
+    expect(hardcodedElements.length).toBe(0);
+  });
 });
