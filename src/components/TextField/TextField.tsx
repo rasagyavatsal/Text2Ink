@@ -331,8 +331,8 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
               {/* Font Size Section */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Font Size</label>
-                  <span className="text-[10px] font-mono font-bold text-foreground">{field.fontSize}px</span>
+                  <label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Font Size</label>
+                  <span className="text-label font-mono font-bold text-foreground">{field.fontSize}px</span>
                 </div>
                 <Slider
                   value={[field.fontSize]}
@@ -345,7 +345,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
 
               {/* Color Picker Section */}
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Text Color</label>
+                <label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Text Color</label>
                 <div className="flex items-center gap-3 p-2 bg-muted rounded-lg border border-border">
                   <input
                     type="color"
@@ -353,7 +353,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
                     onChange={(e) => onUpdate({ color: e.target.value })}
                     className="w-8 h-8 rounded-md cursor-pointer border-0 p-0 bg-transparent shadow-sm"
                   />
-                  <span className="text-[10px] font-mono font-bold text-foreground uppercase">
+                  <span className="text-label font-mono font-bold text-foreground uppercase">
                     {field.color}
                   </span>
                 </div>
@@ -361,7 +361,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
 
               <div className="pt-2 border-t border-border">
                 <button
-                  className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-[10px] font-bold text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors uppercase tracking-widest"
+                  className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-label font-bold text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors uppercase tracking-widest"
                   onClick={onDelete}
                 >
                   <X size={12} />

@@ -20,7 +20,7 @@ export default function WorkspaceShell({
     <div className="relative h-[100dvh] overflow-hidden bg-background">
       <div
         className={cn(
-          "fixed inset-x-0 top-0 z-20 transition-transform xl:left-96",
+          "fixed inset-x-0 top-0 z-20 transition-transform xl:left-panel",
           !isMobileTopControlsVisible && "hidden xl:block"
         )}
       >
@@ -28,7 +28,7 @@ export default function WorkspaceShell({
       </div>
 
       <div className="flex h-full min-h-0 box-border overflow-hidden bg-muted">
-        <aside className="hidden xl:flex flex-col w-96 shrink-0 bg-background border-r border-border overflow-y-auto overscroll-contain">
+        <aside className="hidden xl:flex flex-col w-panel shrink-0 bg-background border-r border-border overflow-y-auto overscroll-contain">
           {settings}
         </aside>
 
