@@ -65,13 +65,32 @@ describe('SettingsPanel', () => {
 
   it('renders the General section with "Add Text Box" button', () => {
     render(<SettingsPanel {...defaultProps} />);
-    
+
+    const homeLink = screen.getByRole('link', { name: /text2ink home/i });
+    const logo = screen.getByAltText(/text2ink logo/i);
+
+    expect(homeLink).toBeInTheDocument();
+    expect(homeLink.className).toContain('h-16');
+    expect(homeLink.className).toContain('w-16');
+    expect(homeLink.className).not.toContain('ring-border');
+    expect(logo).toBeInTheDocument();
+    expect(logo.className).toContain('h-14');
+    expect(logo.className).toContain('w-14');
+    expect(screen.queryByText(/editor controls/i)).not.toBeInTheDocument();
+
     // Check if General heading exists
     expect(screen.getByText('General')).toBeInTheDocument();
-    
+
     // Check if "Add Text Box" button is in the document
     const addTextBoxButton = screen.getByRole('button', { name: /Add Text Box/i });
     expect(addTextBoxButton).toBeInTheDocument();
+  });
+
+  it('can hide the home logo link', () => {
+    render(<SettingsPanel {...defaultProps} showHomeLink={false} />);
+
+    expect(screen.queryByRole('link', { name: /text2ink home/i })).not.toBeInTheDocument();
+    expect(screen.queryByAltText(/text2ink logo/i)).not.toBeInTheDocument();
   });
 
   it('calls onPageSettingsChange when "Add Text Box" is clicked', () => {

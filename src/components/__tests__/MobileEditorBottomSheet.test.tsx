@@ -1,11 +1,16 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, waitFor } from '@testing-library/react';
 import React from 'react';
 import MobileEditorBottomSheet from '../MobileEditorBottomSheet';
+import { createMobileSheetSnapPoints, getMobileSheetAnchorSnapIndex } from '@/lib/mobileEditorSheet';
+
+const { sheetMock } = vi.hoisted(() => ({
+  sheetMock: vi.fn(({ children }: { children: React.ReactNode }) => children),
+}));
 
 vi.mock('react-modal-sheet', () => ({
   Sheet: Object.assign(
-    ({ children }: { children: React.ReactNode }) => <div data-testid="sheet">{children}</div>,
+    sheetMock,
     {
       Container: ({ children, className }: any) => <div className={className}>{children}</div>,
       Header: ({ children, className }: any) => <div className={className}>{children}</div>,
@@ -19,23 +24,24 @@ vi.mock('@/components/Version', () => ({
 }));
 
 describe('MobileEditorBottomSheet', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('uses semantic theme tokens instead of hardcoded colors', () => {
     const { container } = render(
       <MobileEditorBottomSheet
-        activePanel="settings"
         anchor="default"
-        exportPanel={<div>Export</div>}
         metrics={{
           viewportHeight: 800,
           viewportWidth: 400,
           headerHeight: 60,
-          safeAreaBottom: 0,
           minSheetHeight: 100,
           defaultSheetHeight: 400,
           maxSheetHeight: 700,
+          minPreviewHeight: 200,
         }}
         settingsPanel={<div>Settings</div>}
-        onActivePanelChange={() => {}}
         onAnchorChange={() => {}}
         onHandlePress={() => {}}
         onHeightChange={() => {}}
@@ -62,20 +68,17 @@ describe('MobileEditorBottomSheet', () => {
   it('uses theme-adaptive ring offset backgrounds for focus states', () => {
     const { container } = render(
       <MobileEditorBottomSheet
-        activePanel="settings"
         anchor="default"
-        exportPanel={<div>Export</div>}
         metrics={{
           viewportHeight: 800,
           viewportWidth: 400,
           headerHeight: 60,
-          safeAreaBottom: 0,
           minSheetHeight: 100,
           defaultSheetHeight: 400,
           maxSheetHeight: 700,
+          minPreviewHeight: 200,
         }}
         settingsPanel={<div>Settings</div>}
-        onActivePanelChange={() => {}}
         onAnchorChange={() => {}}
         onHandlePress={() => {}}
         onHeightChange={() => {}}
@@ -89,13 +92,39 @@ describe('MobileEditorBottomSheet', () => {
         expect(button.className).toContain('focus-visible:ring-offset-background');
       }
     });
+  });
 
-    // Also tabs should have focus visible states
-    const tabs = container.querySelectorAll('[role="tab"]');
-    tabs.forEach(tab => {
-      expect(tab.className).toContain('focus-visible:ring-offset-2');
-      expect(tab.className).toContain('focus-visible:ring-offset-background');
-      expect(tab.className).toContain('focus-visible:ring-brand-accent');
+  it('starts at the peek anchor instead of the default anchor', async () => {
+    const onHeightChange = vi.fn();
+    const metrics = {
+      viewportHeight: 800,
+      viewportWidth: 400,
+      headerHeight: 60,
+      minSheetHeight: 100,
+      defaultSheetHeight: 400,
+      maxSheetHeight: 700,
+      minPreviewHeight: 200,
+    };
+
+    render(
+      <MobileEditorBottomSheet
+        anchor="peek"
+        metrics={metrics}
+        settingsPanel={<div>Settings</div>}
+        onAnchorChange={() => {}}
+        onHandlePress={() => {}}
+        onHeightChange={onHeightChange}
+      />
+    );
+
+    const sheetProps = sheetMock.mock.calls[0]?.[0];
+    const snapPoints = createMobileSheetSnapPoints(metrics);
+
+    expect(sheetProps.initialSnap).toBe(getMobileSheetAnchorSnapIndex('peek', snapPoints, metrics));
+
+    await waitFor(() => {
+      expect(onHeightChange).toHaveBeenCalledWith(metrics.minSheetHeight);
     });
+    expect(onHeightChange).not.toHaveBeenCalledWith(metrics.defaultSheetHeight);
   });
 });

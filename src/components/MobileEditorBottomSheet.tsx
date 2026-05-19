@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Sheet, type SheetRef } from 'react-modal-sheet';
-import { Download, Settings } from 'lucide-react';
 import {
   classifyMobileSheetAnchor,
   createMobileSheetSnapPoints,
@@ -12,28 +11,21 @@ import {
   MobileSheetAnchor,
   resolveMobileSheetSnapHeight,
 } from '@/lib/mobileEditorSheet';
-import { cn } from '@/lib/utils';
 import Version from '@/components/Version';
 
 interface MobileEditorBottomSheetProps {
-  activePanel: 'settings' | 'export';
   anchor: MobileSheetAnchor;
-  exportPanel: React.ReactNode;
   metrics: MobileEditorSheetMetrics;
   settingsPanel: React.ReactNode;
-  onActivePanelChange: (panel: 'settings' | 'export') => void;
   onAnchorChange: (anchor: MobileSheetAnchor) => void;
   onHandlePress: () => void;
   onHeightChange: (height: number) => void;
 }
 
 export default function MobileEditorBottomSheet({
-  activePanel,
   anchor,
-  exportPanel,
   metrics,
   settingsPanel,
-  onActivePanelChange,
   onAnchorChange,
   onHandlePress,
   onHeightChange,
@@ -42,8 +34,8 @@ export default function MobileEditorBottomSheet({
   const observedAnchorRef = useRef<MobileSheetAnchor | null>(null);
   const snapPoints = useMemo(() => createMobileSheetSnapPoints(metrics), [metrics]);
   const initialSnap = useMemo(
-    () => getMobileSheetAnchorSnapIndex('default', snapPoints, metrics),
-    [metrics, snapPoints],
+    () => getMobileSheetAnchorSnapIndex(anchor, snapPoints, metrics),
+    [anchor, metrics, snapPoints],
   );
 
   const updateHeightFromSnapIndex = useCallback(
@@ -69,11 +61,6 @@ export default function MobileEditorBottomSheet({
     sheetRef.current?.snapTo(index);
     onHeightChange(height);
   }, [anchor, metrics, onHeightChange, snapPoints]);
-
-  useEffect(() => {
-    const clampedHeight = Math.min(metrics.maxSheetHeight, Math.max(metrics.minSheetHeight, metrics.defaultSheetHeight));
-    onHeightChange(clampedHeight);
-  }, [metrics.defaultSheetHeight, metrics.maxSheetHeight, metrics.minSheetHeight, onHeightChange]);
 
   const handleDrag = useCallback(() => {
     const sheet = sheetRef.current;
@@ -134,41 +121,8 @@ export default function MobileEditorBottomSheet({
           scrollClassName="mobile-editor-sheet__scroller"
         >
           <div className="min-h-full bg-background">
-            <div className="sticky top-0 z-10 flex border-b border-border bg-background">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activePanel === 'settings'}
-                onClick={() => onActivePanelChange('settings')}
-                className={cn(
-                  'flex-1 px-4 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                  activePanel === 'settings'
-                    ? 'text-brand-accent border-b-2 border-brand-accent bg-brand-accent-soft'
-                    : 'text-muted-foreground hover:text-brand-accent hover:bg-brand-accent-soft',
-                )}
-              >
-                <Settings className="h-4 w-4" />
-                Settings
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activePanel === 'export'}
-                onClick={() => onActivePanelChange('export')}
-                className={cn(
-                  'flex-1 px-4 py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                  activePanel === 'export'
-                    ? 'text-brand-accent border-b-2 border-brand-accent bg-brand-accent-soft'
-                    : 'text-muted-foreground hover:text-brand-accent hover:bg-brand-accent-soft',
-                )}
-              >
-                <Download className="h-4 w-4" />
-                Export
-              </button>
-            </div>
-
-            <div role="tabpanel" className="min-h-0">
-              {activePanel === 'settings' ? settingsPanel : exportPanel}
+            <div className="min-h-0">
+              {settingsPanel}
             </div>
 
             <div className="border-t border-border bg-muted/50 px-4 py-3 text-center">

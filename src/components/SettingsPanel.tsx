@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import NextImage from 'next/image';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
@@ -109,6 +110,7 @@ interface SettingsPanelProps {
   isPaginationComplete: boolean;
   pages: LineData[][];
   onClearAll: () => void;
+  showHomeLink?: boolean;
 }
 
 export default function SettingsPanel({
@@ -125,6 +127,7 @@ export default function SettingsPanel({
   isPaginationComplete,
   pages,
   onClearAll,
+  showHomeLink = true,
 }: SettingsPanelProps) {
   const [customFontError, setCustomFontError] = useState<string | null>(null);
   const [lineDetecting, setLineDetecting] = useState(false);
@@ -239,6 +242,24 @@ export default function SettingsPanel({
 
   return (
     <div className="p-6 space-y-8">
+      {showHomeLink ? (
+        <div className="flex items-center">
+          <Link
+            href="/"
+            aria-label="Text2Ink home"
+            className="flex h-16 w-16 items-center justify-center transition-transform hover:scale-[1.03]"
+          >
+            <NextImage
+              src="/logo-without-background.png"
+              alt="Text2Ink logo"
+              width={56}
+              height={56}
+              className="h-14 w-14 object-contain"
+            />
+          </Link>
+        </div>
+      ) : null}
+
       {/* General Controls Section */}
       <div>
         <div className="flex items-center gap-2 mb-5">

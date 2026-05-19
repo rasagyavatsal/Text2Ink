@@ -82,6 +82,7 @@ _Avoid_: raw hex values, one-off spacing, direct palette literals, hardcoded com
 - The contact page keeps its standard in-flow header instead of switching to fixed **Page-Level Top Controls**
 - The contact page uses the **Standard Page Shell**
 - On desktop, the editor uses a **Persistent Settings Panel** instead of a collapsible sidebar
+- On desktop, the editor's home link lives at the top of the **Persistent Settings Panel** instead of the **Page-Level Top Controls**
 - Export on the editor page happens through the **Export Modal** instead of a sidebar tab
 - The contact page uses the **Inquiry Form** instead of a feedback flow or mailto-only contact pattern
 - The **Inquiry Form** requires a topic so incoming messages are categorized before follow-up
@@ -107,6 +108,7 @@ _Avoid_: raw hex values, one-off spacing, direct palette literals, hardcoded com
 - On mobile, settings live in the **Controls Sheet** instead of a persistent panel
 - On mobile, the **Controls Sheet** is settings-only and does not contain export controls
 - On mobile, the **Controls Sheet** starts in its minimized state on first load
+- On mobile, the editor's home link stays in the **Page-Level Top Controls** so navigation remains visible while the **Controls Sheet** is minimized
 - On mobile, the **Page-Level Top Controls** stay visible while the **Controls Sheet** is minimized and hide once the sheet is opened
 - **Design Tokens** define both layout and visual styling across the entire codebase
 - The codebase uses a two-layer **Design Tokens** system with primitive tokens and semantic tokens
@@ -150,6 +152,9 @@ _Avoid_: raw hex values, one-off spacing, direct palette literals, hardcoded com
 >
 > **Dev:** "Should the mobile sheet start open when the editor first loads?"
 > **Domain expert:** "No. The **Controls Sheet** starts minimized so the **Page-Level Top Controls** remain available on entry."
+>
+> **Dev:** "Where should the editor home link live after the shell split?"
+> **Domain expert:** "On desktop it lives at the top of the **Persistent Settings Panel**, but on mobile it stays in the **Page-Level Top Controls** so navigation stays visible while the sheet is minimized."
 >
 > **Dev:** "Can the **Export Modal** be dismissed while export is running?"
 > **Domain expert:** "No. It stays open until export finishes or the user explicitly cancels export."

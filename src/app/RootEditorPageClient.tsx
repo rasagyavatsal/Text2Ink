@@ -1,13 +1,16 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import NextImage from 'next/image';
 import Link from 'next/link';
 import HandwritingEditor from '@/components/HandwritingEditor';
 import SettingsPanel from '@/components/SettingsPanel';
-import ExportPanel from '@/components/ExportPanel';
+import ExportModal from '@/components/ExportModal';
 import Version from '@/components/Version';
 import MobileEditorBottomSheet from '@/components/MobileEditorBottomSheet';
 import ThemePicker from '@/components/ThemePicker';
+import WorkspaceShell from '@/components/patterns/WorkspaceShell';
+import { Button } from '@/components/ui/button';
 import {
   HandwritingSettings,
   DEFAULT_SETTINGS,
@@ -28,17 +31,14 @@ import {
   MobileSheetAnchor,
   PREVIEW_MAX_SCALE,
 } from '@/lib/mobileEditorSheet';
-import { Settings, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Download } from 'lucide-react';
 
 const MemoSettingsPanel = React.memo(SettingsPanel);
-const MemoExportPanel = React.memo(ExportPanel);
 
 type EditorInitialState = {
   text: string;
   settings: HandwritingSettings;
   pageSettingsByPage: PageSettings[];
-  activePanel: 'settings' | 'export';
-  sidebarOpen: boolean;
   previewScale: number;
   currentPageIndex: number;
 };
@@ -47,8 +47,6 @@ const DEFAULT_INITIAL_STATE: EditorInitialState = {
   text: '',
   settings: DEFAULT_SETTINGS,
   pageSettingsByPage: [defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS)],
-  activePanel: 'settings',
-  sidebarOpen: true,
   previewScale: 1,
   currentPageIndex: 0,
 };
@@ -64,8 +62,6 @@ const getInitialEditorState = (): EditorInitialState => {
       persisted.pageSettingsByPage.length > 0
         ? persisted.pageSettingsByPage
         : [defaultPageSettingsFromHandwritingSettings(persisted.settings)],
-    activePanel: persisted.ui.activePanel,
-    sidebarOpen: persisted.ui.sidebarOpen,
     previewScale: persisted.ui.previewScale,
     currentPageIndex: persisted.ui.currentPageIndex,
   };
@@ -141,30 +137,6 @@ function useMediaQuery(query: string) {
   return matches;
 }
 
-function useElementHeight<T extends HTMLElement>() {
-  const ref = useRef<T | null>(null);
-  const [height, setHeight] = useState(0);
-
-  useEffect(() => {
-    const element = ref.current;
-    if (!element || typeof window === 'undefined') return;
-
-    const update = () => setHeight(Math.round(element.getBoundingClientRect().height));
-    update();
-
-    if (typeof ResizeObserver === 'undefined') {
-      window.addEventListener('resize', update);
-      return () => window.removeEventListener('resize', update);
-    }
-
-    const observer = new ResizeObserver(update);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-
-  return [ref, height] as const;
-}
-
 function blurActiveTextInput() {
   if (typeof document === 'undefined') return;
 
@@ -186,22 +158,26 @@ type RootEditorShellProps = {
 
 function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
   const [resolvedInitialState] = useState<EditorInitialState>(initialState);
-  const [headerRef, headerHeight] = useElementHeight<HTMLElement>();
   const viewportSize = useViewportSize();
   const isMobileEditorLayout = useMediaQuery(MOBILE_EDITOR_MEDIA_QUERY);
+
+  // We set header height to a constant or measure it. We'll use a fixed value to prevent jumpiness on load.
+  // Real header height is typically ~68px on desktop, ~60px on mobile
+  const headerHeight = isMobileEditorLayout ? 60 : 68;
 
   const [text, setText] = useState(resolvedInitialState.text);
   const [settings, setSettings] = useState<HandwritingSettings>(resolvedInitialState.settings);
   const [pageSettingsByPage, setPageSettingsByPage] = useState<PageSettings[]>(resolvedInitialState.pageSettingsByPage);
-  const [activePanel, setActivePanel] = useState<'settings' | 'export'>(resolvedInitialState.activePanel);
-  const [sidebarOpen, setSidebarOpen] = useState(resolvedInitialState.sidebarOpen);
   const [previewScale, setPreviewScale] = useState(resolvedInitialState.previewScale);
   const [currentPageIndex, setCurrentPageIndex] = useState(resolvedInitialState.currentPageIndex);
   const [totalPages, setTotalPages] = useState(1);
   const [pages, setPages] = useState<LineData[][]>([]);
   const [isPaginationComplete, setIsPaginationComplete] = useState(true);
+  
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportPageIndex, setExportPageIndex] = useState<number | null>(null);
-  const [mobileSheetAnchor, setMobileSheetAnchor] = useState<MobileSheetAnchor>('default');
+  
+  const [mobileSheetAnchor, setMobileSheetAnchor] = useState<MobileSheetAnchor>('peek');
   const [mobileSheetHeight, setMobileSheetHeight] = useState<number | null>(null);
 
   const mobileSheetMetrics = useMemo(
@@ -261,8 +237,8 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
         settings,
         pageSettingsByPage,
         ui: {
-          activePanel,
-          sidebarOpen,
+          activePanel: 'settings', // Legacy support
+          sidebarOpen: true, // Legacy support
           previewScale,
           currentPageIndex,
           editorMode: 'write',
@@ -273,13 +249,11 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
     const timeout = window.setTimeout(save, 400);
     return () => window.clearTimeout(timeout);
   }, [
-    activePanel,
     currentPageIndex,
     pageSettingsByPage,
     persistState,
     previewScale,
     settings,
-    sidebarOpen,
     text,
   ]);
 
@@ -293,8 +267,8 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
         settings,
         pageSettingsByPage,
         ui: {
-          activePanel,
-          sidebarOpen,
+          activePanel: 'settings',
+          sidebarOpen: true,
           previewScale,
           currentPageIndex,
           editorMode: 'write',
@@ -305,13 +279,11 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
     window.addEventListener('beforeunload', handleUnload);
     return () => window.removeEventListener('beforeunload', handleUnload);
   }, [
-    activePanel,
     currentPageIndex,
     pageSettingsByPage,
     persistState,
     previewScale,
     settings,
-    sidebarOpen,
     text,
   ]);
 
@@ -410,7 +382,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
     [ensurePageSettingsLength],
   );
 
-  const settingsPanel = (
+  const desktopSettingsPanel = (
     <MemoSettingsPanel
       settings={settings}
       onSettingsChange={handleSettingsChange}
@@ -425,143 +397,137 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       isPaginationComplete={isPaginationComplete}
       pages={pages}
       onClearAll={handleClearAll}
+      showHomeLink
     />
   );
 
-  const exportPanel = (
-    <MemoExportPanel
-      hasContent={text.trim().length > 0}
+  const mobileSettingsPanel = (
+    <MemoSettingsPanel
       settings={settings}
-      pages={pages}
-      isPaginationComplete={isPaginationComplete}
-      pageSettingsByPage={pageSettingsByPage}
-      totalPages={totalPages}
+      onSettingsChange={handleSettingsChange}
+      pageSettings={currentPageSettings}
+      onPageSettingsChange={handlePageSettingsChange}
       currentPageIndex={currentPageIndex}
+      onApplyToAllPages={applyCurrentPageSettingsToAll}
+      previewScale={effectivePreviewScale}
+      onPreviewScaleChange={handlePreviewScaleChange}
       onCurrentPageChange={handleCurrentPageChange}
-      onExportingChange={(isExporting) => {
-        if (!isExporting) setExportPageIndex(null);
-      }}
-      onExportPageIndexChange={setExportPageIndex}
+      totalPages={totalPages}
+      isPaginationComplete={isPaginationComplete}
+      pages={pages}
+      onClearAll={handleClearAll}
+      showHomeLink={false}
     />
   );
+
+  const topControls = (
+    <div
+      className={`max-w-full mx-auto px-4 py-3 sm:px-6 sm:py-4 flex items-center ${
+        isMobileEditorLayout ? 'justify-between' : 'justify-end'
+      }`}
+    >
+      {isMobileEditorLayout ? (
+        <Link
+          href="/"
+          aria-label="Text2Ink home"
+          className="flex h-11 w-11 items-center justify-center transition-transform hover:scale-[1.03]"
+        >
+          <NextImage
+            src="/logo-without-background.png"
+            alt="Text2Ink logo"
+            width={40}
+            height={40}
+            className="h-9 w-9 object-contain"
+          />
+        </Link>
+      ) : null}
+      <div className="flex items-center gap-2 sm:gap-4">
+        <ThemePicker />
+        <Button variant="outline" size="sm" onClick={() => setIsExportModalOpen(true)} className="h-9">
+          <Download className="w-4 h-4 mr-2" />
+          Export
+        </Button>
+        <Link
+          href="/contact"
+          className="text-sm text-muted-foreground hover:text-brand-accent font-medium transition-colors"
+        >
+          Contact
+        </Link>
+      </div>
+    </div>
+  );
+
+  const canvas = (
+    <div
+      data-testid="preview-scroll-container"
+      className="absolute inset-x-0 bottom-0 overflow-y-auto overscroll-contain bg-muted"
+      style={
+        isMobileEditorLayout
+          ? { top: headerHeight, paddingBottom: effectiveMobileSheetHeight }
+          : { top: headerHeight }
+      }
+    >
+      <div className={`min-h-full flex justify-center ${isMobileEditorLayout ? 'px-4 py-3' : 'py-12 px-6'}`}>
+        <HandwritingEditor
+          text={text}
+          onTextChange={setText}
+          settings={settings}
+          onSettingsChange={handleSettingsChange}
+          pageSettingsByPage={pageSettingsByPage}
+          onPageSettingsChange={handlePageSettingsChange}
+          exportingPageIndex={exportPageIndex}
+          previewScale={effectivePreviewScale}
+          onPreviewScaleChange={handlePreviewScaleChange}
+          currentPageIndex={currentPageIndex}
+          onCurrentPageChange={handleCurrentPageChange}
+          onTotalPagesChange={handleTotalPagesChange}
+          onPagesChange={setPages}
+          onPaginationCompleteChange={setIsPaginationComplete}
+          onApplyToAllPages={applyCurrentPageSettingsToAll}
+          isMobileLayout={isMobileEditorLayout}
+          onTypingFocus={handleEditorTypingFocus}
+        />
+      </div>
+    </div>
+  );
+
+  const mobileControlsSheet = isMobileEditorLayout ? (
+    <MobileEditorBottomSheet
+      anchor={mobileSheetAnchor}
+      metrics={mobileSheetMetrics}
+      settingsPanel={mobileSettingsPanel}
+      onAnchorChange={setMobileSheetAnchor}
+      onHandlePress={handleMobileSheetHandlePress}
+      onHeightChange={handleMobileSheetHeightChange}
+    />
+  ) : null;
 
   return (
-    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
-      <header ref={headerRef} className="border-b border-border shrink-0 bg-background" role="banner">
-        <div className="max-w-full mx-auto px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Link href="/" className="font-bold text-2xl sm:text-3xl font-dancing-script hover:opacity-80 transition-opacity">
-              <span className="text-brand-accent">Text</span>
-              <span className="text-foreground">2</span>
-              <span className="text-brand-accent">Ink</span>
-            </Link>
-          </div>
-          <div className="flex items-center gap-4">
-            <ThemePicker />
-            <Link
-              href="/contact"
-              className="text-muted-foreground hover:text-brand-accent font-medium transition-colors"
-            >
-              Contact
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <div className="flex-1 flex min-h-0 bg-muted overflow-hidden">
-        {!isMobileEditorLayout && (
-          <>
-            <div
-              className={`hidden xl:flex bg-background border-r border-border flex-col min-h-0 transition-all duration-300 ${sidebarOpen ? 'w-96' : 'w-0'} overflow-hidden`}
-            >
-              <div className="flex border-b border-border shrink-0">
-                <button
-                  onClick={() => setActivePanel('settings')}
-                  className={`flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${activePanel === 'settings'
-                    ? 'text-brand-accent border-b-2 border-brand-accent bg-brand-accent-soft'
-                    : 'text-muted-foreground hover:text-brand-accent hover:bg-brand-accent-soft'
-                  }`}
-                >
-                  <Settings className="w-4 h-4" />
-                  Settings
-                </button>
-                <button
-                  onClick={() => setActivePanel('export')}
-                  className={`flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center gap-2 transition-all ${activePanel === 'export'
-                    ? 'text-brand-accent border-b-2 border-brand-accent bg-brand-accent-soft'
-                    : 'text-muted-foreground hover:text-brand-accent hover:bg-brand-accent-soft'
-                  }`}
-                >
-                  <Download className="w-4 h-4" />
-                  Export
-                </button>
-              </div>
-
-              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-background">
-                {activePanel === 'settings' ? settingsPanel : exportPanel}
-              </div>
-              <div className="shrink-0 py-2 px-4 border-t border-border flex justify-center bg-muted/50">
-                <Version />
-              </div>
-            </div>
-
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className={`hidden xl:block fixed top-1/2 -translate-y-1/2 z-10 bg-background border border-border rounded-r-xl p-3 shadow-xl hover:shadow-2xl transition-all duration-300 group ${sidebarOpen ? 'left-[384px]' : 'left-0'}`}
-              aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
-            >
-              {sidebarOpen ? (
-                <ChevronLeft className="w-5 h-5 text-muted-foreground group-hover:text-brand-accent transition-colors" />
-              ) : (
-                <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-brand-accent transition-colors" />
-              )}
-            </button>
-          </>
-        )}
-
-        <div
-          data-testid="preview-scroll-container"
-          className="flex-1 min-h-0 overflow-y-auto overscroll-contain bg-muted"
-          style={isMobileEditorLayout ? { paddingBottom: effectiveMobileSheetHeight } : undefined}
-        >
-          <div className={`min-h-full flex justify-center ${isMobileEditorLayout ? 'px-4 py-3' : 'py-12 px-6'}`}>
-            <HandwritingEditor
-              text={text}
-              onTextChange={setText}
-              settings={settings}
-              onSettingsChange={handleSettingsChange}
-              pageSettingsByPage={pageSettingsByPage}
-              onPageSettingsChange={handlePageSettingsChange}
-              exportingPageIndex={exportPageIndex}
-              previewScale={effectivePreviewScale}
-              onPreviewScaleChange={handlePreviewScaleChange}
-              currentPageIndex={currentPageIndex}
-              onCurrentPageChange={handleCurrentPageChange}
-              onTotalPagesChange={handleTotalPagesChange}
-              onPagesChange={setPages}
-              onPaginationCompleteChange={setIsPaginationComplete}
-              onApplyToAllPages={applyCurrentPageSettingsToAll}
-              isMobileLayout={isMobileEditorLayout}
-              onTypingFocus={handleEditorTypingFocus}
-            />
-          </div>
-        </div>
-      </div>
-
-      {isMobileEditorLayout && (
-        <MobileEditorBottomSheet
-          activePanel={activePanel}
-          anchor={mobileSheetAnchor}
-          metrics={mobileSheetMetrics}
-          settingsPanel={settingsPanel}
-          exportPanel={exportPanel}
-          onActivePanelChange={setActivePanel}
-          onAnchorChange={setMobileSheetAnchor}
-          onHandlePress={handleMobileSheetHandlePress}
-          onHeightChange={handleMobileSheetHeightChange}
-        />
-      )}
-    </div>
+    <>
+      <WorkspaceShell
+        topControls={topControls}
+        settings={<div className="flex-1 min-h-0">{desktopSettingsPanel}<div className="shrink-0 py-2 px-4 border-t border-border flex justify-center bg-muted/50"><Version /></div></div>}
+        canvas={canvas}
+        mobileControlsSheet={mobileControlsSheet}
+        isMobileTopControlsVisible={!isMobileEditorLayout || mobileSheetAnchor === 'peek'}
+      />
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        hasContent={text.trim().length > 0}
+        settings={settings}
+        pages={pages}
+        isPaginationComplete={isPaginationComplete}
+        pageSettingsByPage={pageSettingsByPage}
+        totalPages={totalPages}
+        currentPageIndex={currentPageIndex}
+        onCurrentPageChange={handleCurrentPageChange}
+        onExportingChange={(isExporting) => {
+          if (!isExporting) setExportPageIndex(null);
+        }}
+        onExportPageIndexChange={setExportPageIndex}
+      />
+    </>
   );
 }
 
