@@ -5,6 +5,10 @@ import RootEditorPageClient from '../RootEditorPageClient';
 import { metadata } from '../page';
 import type { MobileEditorSheetMetrics, MobileSheetAnchor } from '@/lib/mobileEditorSheet';
 
+vi.mock('next/image', () => ({
+  default: (props: any) => <img {...props} />,
+}));
+
 type MockHandwritingEditorProps = {
   previewScale: number;
   onTypingFocus?: () => void;
@@ -34,9 +38,7 @@ vi.mock('@/components/Version', () => ({
 }));
 
 type MockMobileEditorBottomSheetProps = {
-  activePanel: 'settings' | 'export';
   anchor: MobileSheetAnchor;
-  exportPanel: ReactNode;
   metrics: MobileEditorSheetMetrics;
   onHandlePress: () => void;
   onHeightChange: (height: number) => void;
@@ -45,9 +47,7 @@ type MockMobileEditorBottomSheetProps = {
 
 vi.mock('@/components/MobileEditorBottomSheet', () => ({
   default: function MockMobileEditorBottomSheet({
-    activePanel,
     anchor,
-    exportPanel,
     metrics,
     onHandlePress,
     onHeightChange,
@@ -74,7 +74,7 @@ vi.mock('@/components/MobileEditorBottomSheet', () => ({
         <button type="button" data-testid="sheet-drag-peek" onClick={() => onHeightChange(metrics.minSheetHeight)}>
           Drag to peek
         </button>
-        {activePanel === 'settings' ? settingsPanel : exportPanel}
+        {settingsPanel}
       </div>
     );
   },
@@ -109,8 +109,32 @@ describe('Root editor page', () => {
     render(<RootEditorPageClient />);
 
     expect(screen.getByRole('link', { name: /contact/i })).toHaveAttribute('href', '/contact');
+    expect(screen.queryByRole('link', { name: /text2ink home/i })).not.toBeInTheDocument();
     expect(screen.getByTestId('settings-panel')).toBeInTheDocument();
     expect(screen.getByTestId('handwriting-editor')).toBeInTheDocument();
+  });
+
+  it('keeps page-level top controls out of a banner on the editor route', () => {
+    const { container } = render(<RootEditorPageClient />);
+
+    expect(screen.getByRole('link', { name: /contact/i })).toBeInTheDocument();
+    expect(screen.queryByRole('banner')).not.toBeInTheDocument();
+    expect(container.querySelector('header')).not.toBeInTheDocument();
+  });
+
+  it('keeps the home logo in mobile page-level top controls', async () => {
+    mockMatchMedia(true);
+    Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 390 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: 844 });
+
+    render(<RootEditorPageClient />);
+
+    const homeLink = await screen.findByRole('link', { name: /text2ink home/i });
+
+    expect(homeLink).toHaveAttribute('href', '/');
+    expect(homeLink.className).not.toContain('ring-border');
+    expect(homeLink.className).not.toContain('bg-background/90');
+    expect(screen.getByAltText(/text2ink logo/i)).toBeInTheDocument();
   });
 
   it('removes legacy landing and mobile-blocker copy from root route', () => {
@@ -143,7 +167,7 @@ describe('Root editor page', () => {
     expect(html).not.toMatch(/bg-\[#E0A32A\]\/5/);
   });
 
-  it('keeps preview scale stable when the mobile sheet collapses and reopens', async () => {
+  it('keeps preview scale stable when the mobile sheet expands and collapses', async () => {
     mockMatchMedia(true);
     Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 390 });
     Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: 844 });
@@ -154,29 +178,29 @@ describe('Root editor page', () => {
     const getPreviewScale = () => Number(screen.getByTestId('handwriting-editor').getAttribute('data-preview-scale'));
     const previewScrollContainer = screen.getByTestId('preview-scroll-container');
 
-    expect(sheet).toHaveAttribute('data-anchor', 'default');
-    const previewScaleBeforeCollapse = getPreviewScale();
-    const defaultPadding = previewScrollContainer.style.paddingBottom;
-
-    fireEvent.click(screen.getByTestId('typing-focus'));
-
-    await waitFor(() => {
-      expect(screen.getByTestId('mobile-editor-bottom-sheet')).toHaveAttribute('data-anchor', 'peek');
-    });
-    const previewScaleAfterCollapse = getPreviewScale();
-    const collapsedPadding = previewScrollContainer.style.paddingBottom;
-
-    expect(previewScaleAfterCollapse).toBe(previewScaleBeforeCollapse);
-    expect(collapsedPadding).not.toBe(defaultPadding);
+    expect(sheet).toHaveAttribute('data-anchor', 'peek');
+    const previewScaleInitial = getPreviewScale();
+    const peekPadding = previewScrollContainer.style.paddingBottom;
 
     fireEvent.click(screen.getByTestId('sheet-handle'));
 
     await waitFor(() => {
       expect(screen.getByTestId('mobile-editor-bottom-sheet')).toHaveAttribute('data-anchor', 'default');
     });
+    const previewScaleExpanded = getPreviewScale();
+    const expandedPadding = previewScrollContainer.style.paddingBottom;
 
-    expect(getPreviewScale()).toBe(previewScaleBeforeCollapse);
-    expect(previewScrollContainer.style.paddingBottom).toBe(defaultPadding);
+    expect(previewScaleExpanded).toBe(previewScaleInitial);
+    expect(expandedPadding).not.toBe(peekPadding);
+
+    fireEvent.click(screen.getByTestId('typing-focus'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mobile-editor-bottom-sheet')).toHaveAttribute('data-anchor', 'peek');
+    });
+
+    expect(getPreviewScale()).toBe(previewScaleInitial);
+    expect(previewScrollContainer.style.paddingBottom).toBe(peekPadding);
   });
 
   it('updates preview bottom scroll space as sheet height changes without changing preview scale', async () => {

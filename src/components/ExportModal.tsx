@@ -10,12 +10,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Download, FileImage, FileText, Loader2 } from 'lucide-react';
+import { Download, FileImage, FileText, Loader2, CheckCircle2 } from 'lucide-react';
 import { HandwritingSettings, PageSettings, LineData } from '@/lib/types';
 import { renderPageToCanvas } from '@/lib/canvasRenderer';
-import FeedbackDialog from './FeedbackDialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 
-interface ExportPanelProps {
+interface ExportModalProps {
+  isOpen: boolean;
+  onClose: () => void;
   hasContent: boolean;
   settings: HandwritingSettings;
   pages: LineData[][];
@@ -42,7 +50,9 @@ const FONT_VARIABLES: Record<string, string> = {
   'homemade-apple': '--font-homemade-apple',
 };
 
-export default function ExportPanel({
+export default function ExportModal({
+  isOpen,
+  onClose,
   hasContent,
   settings,
   pages,
@@ -52,11 +62,11 @@ export default function ExportPanel({
   currentPageIndex,
   onExportingChange,
   onExportPageIndexChange,
-}: ExportPanelProps) {
+}: ExportModalProps) {
   const [format, setFormat] = useState<ExportFormat>('pdf');
   const [isExporting, setIsExporting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [exportProgress, setExportProgress] = useState<{ current: number; total: number } | null>(null);
-  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const originalPageIndexRef = useRef<number>(0);
   const cancelExportRef = useRef(false);
 
@@ -82,6 +92,16 @@ export default function ExportPanel({
     };
   }, []);
 
+  // Reset success state when reopening modal
+  useEffect(() => {
+    if (isOpen) {
+      setIsSuccess(false);
+      setIsExporting(false);
+      setExportProgress(null);
+      cancelExportRef.current = false;
+    }
+  }, [isOpen]);
+
   const getResolvedFontFamily = () => {
     if (settings.fontFamily === 'custom' && settings.customFont) {
       return `"${settings.customFont.family}", cursive`;
@@ -94,8 +114,21 @@ export default function ExportPanel({
     return value || 'cursive';
   };
 
+  const handleInteractOutside = (e: Event) => {
+    if (isExporting) {
+      e.preventDefault();
+    }
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open && !isExporting) {
+      onClose();
+    }
+  };
+
   const exportPages = async () => {
     setIsExporting(true);
+    setIsSuccess(false);
     onExportingChange?.(true);
     cancelExportRef.current = false;
     originalPageIndexRef.current = currentPageIndex;
@@ -147,7 +180,7 @@ export default function ExportPanel({
         });
 
         const waitMessage = (type: string) => 
-          new Promise<any>((resolve, reject) => {
+          new Promise<unknown>((resolve, reject) => {
             const handler = (ev: MessageEvent) => {
               if (ev.data.type === type) {
                 worker.removeEventListener('message', handler);
@@ -188,7 +221,6 @@ export default function ExportPanel({
             fontFamily: resolvedFontFamily,
           });
 
-          // Optimization: Use toBlob instead of toDataURL to avoid Base64 overhead
           const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
           if (!blob) throw new Error('Failed to create page image');
           const arrayBuffer = await blob.arrayBuffer();
@@ -207,12 +239,11 @@ export default function ExportPanel({
         }
 
         if (!cancelExportRef.current) {
-          // Final progress step: PDF Generation
           setExportProgress({ current: exportTotal, total: progressTotal });
           worker.postMessage({ type: 'generate' });
           const pdfBuffer = await waitMessage('generated');
           
-          const blob = new Blob([pdfBuffer], { type: 'application/pdf' });
+          const blob = new Blob([pdfBuffer as ArrayBuffer], { type: 'application/pdf' });
           const url = URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
@@ -267,122 +298,138 @@ export default function ExportPanel({
       setExportProgress(null);
       onExportingChange?.(false);
       if (success) {
-        setIsFeedbackOpen(true);
+        setIsSuccess(true);
       }
     }
   };
 
   return (
-    <div className="p-6 space-y-8">
-      <div>
-        <div className="flex items-center gap-2 mb-5">
-          <Download className="w-5 h-5 text-brand-accent" />
-          <h3 className="font-semibold text-lg">Export Options</h3>
-        </div>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent 
+        className="sm:max-w-md"
+        onInteractOutside={handleInteractOutside}
+        onEscapeKeyDown={handleInteractOutside}
+      >
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Download className="w-5 h-5 text-brand-accent" />
+            Export Document
+          </DialogTitle>
+          <DialogDescription>
+            Download your handwritten pages as a single PDF or individual images.
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="space-y-6">
-          <div className="flex flex-col gap-2">
-            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest" htmlFor="export-format">Format</Label>
-            <Select
-              value={format}
-              onValueChange={(value) => setFormat(value as ExportFormat)}
-            >
-              <SelectTrigger id="export-format" className="bg-muted border-none h-9 text-sm">
-                <SelectValue placeholder="Select format" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pdf">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    PDF Document
-                  </div>
-                </SelectItem>
-                <SelectItem value="png">
-                  <div className="flex items-center gap-2">
-                    <FileImage className="w-4 h-4" />
-                    PNG Image
-                  </div>
-                </SelectItem>
-                <SelectItem value="jpg">
-                  <div className="flex items-center gap-2">
-                    <FileImage className="w-4 h-4" />
-                    JPG Image
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
+        {isSuccess ? (
+          <div className="flex flex-col items-center justify-center py-6 space-y-4">
+            <CheckCircle2 className="w-12 h-12 text-green-500" />
+            <p className="font-medium text-center">Export completed successfully!</p>
+            <Button onClick={onClose} className="mt-4 bg-brand-accent hover:bg-brand-accent-hover text-brand-accent-foreground">
+              Close
+            </Button>
           </div>
-
-          <Button
-            onClick={exportPages}
-            disabled={isExporting || !hasContent}
-            className={`w-full font-bold transition-all active:scale-95 h-11 ${
-              !hasContent ? 'bg-muted text-muted-foreground hover:bg-muted' : 'bg-brand-accent hover:bg-brand-accent-hover text-brand-accent-foreground shadow-sm'
-            }`}
-          >
-            {isExporting ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Exporting...
-              </>
-            ) : (
-              <>
-                <Download className="w-4 h-4 mr-2" />
-                Export {format.toUpperCase()}
-              </>
-            )}
-          </Button>
-
-          {isExporting && exportProgress && (
-            <div className="space-y-4 p-3 bg-muted rounded-lg">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                  {format === 'pdf' && exportProgress.current >= exportProgress.total - 1
-                    ? 'Finalizing PDF...'
-                    : `Page ${Math.min(exportProgress.total, exportProgress.current + 1)} / ${exportProgress.total}`}
-                </span>
-                <span className="text-[10px] font-bold text-foreground bg-background px-1.5 py-0.5 rounded shadow-sm">
-                  {Math.round((exportProgress.current / exportProgress.total) * 100)}%
-                </span>
-              </div>
-              <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
-                <div
-                  className="h-full bg-brand-accent transition-all duration-300"
-                  style={{
-                    width: `${Math.round((exportProgress.current / exportProgress.total) * 100)}%`,
-                  }}
-                />
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full h-8 text-[10px] font-bold text-destructive hover:text-destructive/80 hover:bg-background/50 uppercase tracking-widest"
-                onClick={() => {
-                  cancelExportRef.current = true;
-                }}
+        ) : (
+          <div className="space-y-6 py-4">
+            <div className="flex flex-col gap-2">
+              <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest" htmlFor="export-format">Format</Label>
+              <Select
+                value={format}
+                onValueChange={(value) => setFormat(value as ExportFormat)}
+                disabled={isExporting}
               >
-                Cancel Export
-              </Button>
+                <SelectTrigger id="export-format" className="bg-muted border-none h-11 text-sm">
+                  <SelectValue placeholder="Select format" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pdf">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4" />
+                      PDF Document
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="png">
+                    <div className="flex items-center gap-2">
+                      <FileImage className="w-4 h-4" />
+                      PNG Image
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="jpg">
+                    <div className="flex items-center gap-2">
+                      <FileImage className="w-4 h-4" />
+                      JPG Image
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          )}
 
-          {!hasContent && (
-            <p className="text-[10px] font-bold text-brand-accent/60 text-center uppercase tracking-wider">
-              Start typing to enable export
+            <Button
+              onClick={exportPages}
+              disabled={isExporting || !hasContent}
+              className={`w-full font-bold transition-all active:scale-95 h-11 ${
+                !hasContent ? 'bg-muted text-muted-foreground hover:bg-muted' : 'bg-brand-accent hover:bg-brand-accent-hover text-brand-accent-foreground shadow-sm'
+              }`}
+            >
+              {isExporting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 mr-2" />
+                  Export {format.toUpperCase()}
+                </>
+              )}
+            </Button>
+
+            {isExporting && exportProgress && (
+              <div className="space-y-4 p-3 bg-muted rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                    {format === 'pdf' && exportProgress.current >= exportProgress.total - 1
+                      ? 'Finalizing PDF...'
+                      : `Page ${Math.min(exportProgress.total, exportProgress.current + 1)} / ${exportProgress.total}`}
+                  </span>
+                  <span className="text-[10px] font-bold text-foreground bg-background px-1.5 py-0.5 rounded shadow-sm">
+                    {Math.round((exportProgress.current / exportProgress.total) * 100)}%
+                  </span>
+                </div>
+                <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                  <div
+                    className="h-full bg-brand-accent transition-all duration-300"
+                    style={{
+                      width: `${Math.round((exportProgress.current / exportProgress.total) * 100)}%`,
+                    }}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full h-8 text-[10px] font-bold text-destructive hover:text-destructive/80 hover:bg-background/50 uppercase tracking-widest"
+                  onClick={() => {
+                    cancelExportRef.current = true;
+                  }}
+                >
+                  Cancel Export
+                </Button>
+              </div>
+            )}
+
+            {!hasContent && (
+              <p className="text-[10px] font-bold text-brand-accent/60 text-center uppercase tracking-wider">
+                Start typing to enable export
+              </p>
+            )}
+
+            <p className="text-[10px] text-muted-foreground text-center leading-relaxed italic">
+              {format === 'pdf'
+                ? 'All pages will be combined into a single PDF'
+                : 'Each page will be downloaded as a separate image'}
             </p>
-          )}
-
-          <p className="text-[10px] text-muted-foreground text-center leading-relaxed italic">
-            {format === 'pdf'
-              ? 'All pages will be combined into a single PDF'
-              : 'Each page will be downloaded as a separate image'}
-          </p>
-        </div>
-      </div>
-      <FeedbackDialog 
-        isOpen={isFeedbackOpen} 
-        onClose={() => setIsFeedbackOpen(false)} 
-      />
-    </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
