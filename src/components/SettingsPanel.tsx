@@ -87,7 +87,7 @@ const FontCard = ({
         AaBb
       </div>
       <span className={cn(
-        "text-[10px] font-bold truncate w-full text-center px-1 uppercase tracking-tight",
+        "text-label font-bold truncate w-full text-center px-1 uppercase tracking-tight",
         isSelected ? "text-brand-accent-foreground" : "text-muted-foreground"
       )}>
         {font.name}
@@ -270,7 +270,7 @@ export default function SettingsPanel({
         <div className="space-y-6">
           <div className="grid grid-cols-1 gap-4">
             <div className="flex flex-col gap-2">
-              <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Zoom</Label>
+              <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Zoom</Label>
               <div className="flex items-center gap-1 bg-muted p-1 rounded-lg">
                 <button
                   onClick={() => onPreviewScaleChange(Number((previewScale - 0.1).toFixed(2)))}
@@ -292,7 +292,7 @@ export default function SettingsPanel({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Page Navigation</Label>
+            <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Page Navigation</Label>
             <div className="flex items-center justify-between bg-muted p-1 rounded-lg">
               <button
                 onClick={() => onCurrentPageChange(Math.max(0, currentPageIndex - 1))}
@@ -348,7 +348,7 @@ export default function SettingsPanel({
               <Plus className="w-3.5 h-3.5" />
               Add Text Box
             </button>
-            <p className="text-[10px] text-muted-foreground mt-2 text-center italic">
+            <p className="text-label text-muted-foreground mt-2 text-center italic">
               Add draggable text boxes for dates, names, or signatures.
             </p>
           </div>
@@ -366,10 +366,10 @@ export default function SettingsPanel({
         <div className="space-y-6">
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Fonts</Label>
+              <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Fonts</Label>
               <Dialog>
                 <DialogTrigger asChild>
-                  <button className="text-[10px] font-bold text-brand-accent hover:underline transition-colors">See all</button>
+                  <button className="text-label font-bold text-brand-accent hover:underline transition-colors">See all</button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl bg-background border-border text-foreground p-0 overflow-hidden sm:rounded-2xl shadow-xl">
                   <DialogHeader className="p-6 border-b border-border">
@@ -440,7 +440,7 @@ export default function SettingsPanel({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Custom Font</Label>
+            <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Custom Font</Label>
             <div className="grid grid-cols-2 gap-3">
               {settings.customFont ? (
                 <div className="relative group">
@@ -525,17 +525,17 @@ export default function SettingsPanel({
               )}
 
               {customFontError && (
-                <p className="text-[10px] font-bold text-destructive uppercase">{customFontError}</p>
+                <p className="text-label font-bold text-destructive uppercase">{customFontError}</p>
               )}
             </div>
-            <p className="text-[10px] text-muted-foreground leading-relaxed italic">
+            <p className="text-label text-muted-foreground leading-relaxed italic">
               Upload a custom handwriting font (.ttf or .otf).
             </p>
           </div>
 
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center">
-              <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Font Size</Label>
+              <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Font Size</Label>
               <div className="text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-md">
                 {pageSettings.fontSize}px
               </div>
@@ -552,7 +552,7 @@ export default function SettingsPanel({
           {!hasCustomBackground && (
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Line Height</Label>
+                <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Line Height</Label>
                 <div className="text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-md">
                   {settings.lineHeight.toFixed(1)}
                 </div>
@@ -569,7 +569,7 @@ export default function SettingsPanel({
 
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center">
-              <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Line Tilt</Label>
+              <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Line Tilt</Label>
               <div className="text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-md">
                 {pageSettings.lineTilt}°
               </div>
@@ -595,7 +595,7 @@ export default function SettingsPanel({
 
         <div className="space-y-6">
           <div className="flex flex-col gap-2">
-            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest" htmlFor="paper-style">Paper Style</Label>
+            <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest" htmlFor="paper-style">Paper Style</Label>
             <Select
               value={settings.paperStyle}
               onValueChange={(value) =>
@@ -618,8 +618,8 @@ export default function SettingsPanel({
           <div className="grid grid-cols-2 gap-x-4 gap-y-6">
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Top Margin</Label>
-                <span className="text-[10px] font-bold text-muted-foreground">
+                <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Top Margin</Label>
+                <span className="text-label font-bold text-muted-foreground">
                   {pageSettings.marginTop}px
                 </span>
               </div>
@@ -634,8 +634,8 @@ export default function SettingsPanel({
 
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Bottom Margin</Label>
-                <span className="text-[10px] font-bold text-muted-foreground">
+                <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Bottom Margin</Label>
+                <span className="text-label font-bold text-muted-foreground">
                   {pageSettings.marginBottom}px
                 </span>
               </div>
@@ -650,8 +650,8 @@ export default function SettingsPanel({
 
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Left Margin</Label>
-                <span className="text-[10px] font-bold text-muted-foreground">
+                <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Left Margin</Label>
+                <span className="text-label font-bold text-muted-foreground">
                   {pageSettings.marginLeft}px
                 </span>
               </div>
@@ -666,8 +666,8 @@ export default function SettingsPanel({
 
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Right Margin</Label>
-                <span className="text-[10px] font-bold text-muted-foreground">
+                <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Right Margin</Label>
+                <span className="text-label font-bold text-muted-foreground">
                   {pageSettings.marginRight}px
                 </span>
               </div>
@@ -684,7 +684,7 @@ export default function SettingsPanel({
           {settings.paperStyle === 'ruled' && (
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Margin Line Offset</Label>
+                <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Margin Line Offset</Label>
                 <div className="text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-md">
                   {settings.ruledMarginLineOffset}px
                 </div>
@@ -700,7 +700,7 @@ export default function SettingsPanel({
           )}
 
           <div className="flex flex-col gap-2">
-            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Custom Background Image</Label>
+            <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Custom Background Image</Label>
             <div className="space-y-3">
               {effectiveBackgroundImages.length > 0 && (
                 <div className="space-y-2">
@@ -741,7 +741,7 @@ export default function SettingsPanel({
                         customBackgroundImage: null,
                       })
                     }
-                    className="text-[10px] font-bold text-destructive uppercase tracking-wider hover:underline"
+                    className="text-label font-bold text-destructive uppercase tracking-wider hover:underline"
                   >
                     Remove all
                   </button>
@@ -750,7 +750,7 @@ export default function SettingsPanel({
 
               <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-brand-accent hover:bg-muted/50 transition-colors">
                 <Upload className="w-5 h-5 text-muted-foreground mb-1" />
-                <span className="text-[10px] font-bold text-muted-foreground uppercase">Upload PNG or JPG</span>
+                <span className="text-label font-bold text-muted-foreground uppercase">Upload PNG or JPG</span>
                 <input
                   type="file"
                   multiple
@@ -773,7 +773,7 @@ export default function SettingsPanel({
                   }}
                 />
               </label>
-              <p className="text-[10px] text-muted-foreground text-center italic">
+              <p className="text-label text-muted-foreground text-center italic">
                 Image will be used as page background
               </p>
             </div>
@@ -783,29 +783,29 @@ export default function SettingsPanel({
             <div className="space-y-6 pt-2">
               <div className="flex flex-col gap-2 p-3 bg-muted rounded-lg">
                 <div className="flex items-center justify-between">
-                  <Label className="text-[10px] font-bold text-brand-accent uppercase tracking-widest">Auto-Detect Lines</Label>
+                  <Label className="text-label font-bold text-brand-accent uppercase tracking-widest">Auto-Detect Lines</Label>
                   <button
                     type="button"
                     onClick={handleDetectLines}
                     disabled={!currentBackground || lineDetecting}
-                    className="text-[10px] font-bold bg-brand-accent text-brand-accent-foreground px-3 py-1.5 rounded-md hover:bg-brand-accent-hover disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                    className="text-label font-bold bg-brand-accent text-brand-accent-foreground px-3 py-1.5 rounded-md hover:bg-brand-accent-hover disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                   >
                     {lineDetecting ? 'Detecting...' : 'Detect Lines'}
                   </button>
                 </div>
                 {lineDetectInfo && (
-                  <p className="text-[10px] font-bold text-green-600 bg-background/50 px-2 py-1 rounded">
+                  <p className="text-label font-bold text-green-600 bg-background/50 px-2 py-1 rounded">
                     ✓ Applied offset {lineDetectInfo.offset}px and spacing {lineDetectInfo.spacing}px.
                   </p>
                 )}
                 {lineDetectError && (
-                  <p className="text-[10px] font-bold text-destructive bg-background/50 px-2 py-1 rounded">{lineDetectError}</p>
+                  <p className="text-label font-bold text-destructive bg-background/50 px-2 py-1 rounded">{lineDetectError}</p>
                 )}
               </div>
 
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between items-center">
-                  <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Line Offset (Y Position)</Label>
+                  <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Line Offset (Y Position)</Label>
                   <div className="text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-md">
                     {pageSettings.customLineOffset}px
                   </div>
@@ -821,12 +821,12 @@ export default function SettingsPanel({
 
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between items-center">
-                  <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Custom Line Spacing</Label>
+                  <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Custom Line Spacing</Label>
                   <div className="flex items-center gap-2">
                     {pageSettings.customLineSpacing !== null && (
                       <button
                         onClick={() => updatePageSetting('customLineSpacing', null)}
-                        className="text-[10px] font-bold text-brand-accent uppercase tracking-wider hover:underline"
+                        className="text-label font-bold text-brand-accent uppercase tracking-wider hover:underline"
                       >
                         Reset
                       </button>
@@ -859,7 +859,7 @@ export default function SettingsPanel({
 
         <div className="space-y-6">
           <div className="flex flex-col gap-2">
-            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Ink Color</Label>
+            <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Ink Color</Label>
             <div className="flex items-center gap-3 p-1.5 bg-muted rounded-lg">
               <input
                 type="color"
@@ -874,7 +874,7 @@ export default function SettingsPanel({
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Paper Color</Label>
+            <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Paper Color</Label>
             <div className="flex flex-wrap gap-2 p-1.5 bg-muted rounded-lg">
               {PAPER_COLORS.map((color) => (
                 <button
@@ -893,7 +893,7 @@ export default function SettingsPanel({
 
           {settings.paperStyle !== 'blank' && (
             <div className="flex flex-col gap-2">
-              <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Line Color</Label>
+              <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Line Color</Label>
               <div className="flex items-center gap-3 p-1.5 bg-muted rounded-lg">
                 <input
                   type="color"
@@ -920,7 +920,7 @@ export default function SettingsPanel({
 
         <div className="space-y-6">
           <div className="flex items-center justify-between p-2 bg-muted rounded-lg">
-            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest" htmlFor="randomness-toggle">Enable Randomness</Label>
+            <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest" htmlFor="randomness-toggle">Enable Randomness</Label>
             <Switch
               id="randomness-toggle"
               checked={settings.randomness.enabled}
@@ -932,7 +932,7 @@ export default function SettingsPanel({
             <div className="space-y-6 pt-2">
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between items-center">
-                  <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Letter Spacing Variation</Label>
+                  <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Letter Spacing Variation</Label>
                   <div className="text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-md">
                     {settings.randomness.spacing.toFixed(1)}
                   </div>
@@ -948,7 +948,7 @@ export default function SettingsPanel({
 
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between items-center">
-                  <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Baseline Variation</Label>
+                  <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Baseline Variation</Label>
                   <div className="text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-md">
                     {settings.randomness.baseline.toFixed(1)}
                   </div>
@@ -964,7 +964,7 @@ export default function SettingsPanel({
 
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between items-center">
-                  <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Rotation Variation</Label>
+                  <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Rotation Variation</Label>
                   <div className="text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-md">
                     {settings.randomness.rotation.toFixed(1)}°
                   </div>

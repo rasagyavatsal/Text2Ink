@@ -13,7 +13,7 @@ export default function ThemePicker() {
   }, []);
 
   if (!mounted) {
-    return <div className="h-[34px] w-[100px] bg-muted rounded-lg animate-pulse" />;
+    return <div className="h-control-md w-[6.25rem] bg-muted rounded-lg animate-pulse" />;
   }
 
   return (

@@ -2,8 +2,29 @@ import { PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/pageConstants';
 
 export type MobileSheetAnchor = 'peek' | 'default' | 'expanded';
 
+const DEFAULT_DESKTOP_BREAKPOINT_PX = 1280;
+
+function readCssPixelToken(property: string, fallback: number): number {
+  if (typeof window === 'undefined') return fallback;
+  const value = window
+    .getComputedStyle(document.documentElement)
+    .getPropertyValue(property)
+    .trim();
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+export function getDesktopBreakpointPx(): number {
+  return readCssPixelToken('--metric-desktop-breakpoint', DEFAULT_DESKTOP_BREAKPOINT_PX);
+}
+
+export function getMobileEditorMediaQuery(): string {
+  return `(max-width: ${getDesktopBreakpointPx() - 1}px)`;
+}
+
+/** @deprecated Use getDesktopBreakpointPx() for token-based values */
 export const MOBILE_EDITOR_MEDIA_QUERY = '(max-width: 1279px)';
-export const MOBILE_EDITOR_DESKTOP_BREAKPOINT_PX = 1280;
+
 export const MOBILE_SHEET_HANDLE_HEIGHT = 40;
 export const MOBILE_PREVIEW_HORIZONTAL_PADDING = 32;
 export const MOBILE_PREVIEW_VERTICAL_PADDING = 24;

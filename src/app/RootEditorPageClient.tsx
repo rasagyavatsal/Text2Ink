@@ -84,6 +84,17 @@ function readSafeAreaBottom() {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function readCssPixelToken(property: string, fallback: number): number {
+  if (typeof window === 'undefined') return fallback;
+
+  const value = window
+    .getComputedStyle(document.documentElement)
+    .getPropertyValue(property)
+    .trim();
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 function readViewportSize() {
   if (typeof window === 'undefined') return DEFAULT_VIEWPORT_SIZE;
   const visualViewport = window.visualViewport;
@@ -161,9 +172,10 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
   const viewportSize = useViewportSize();
   const isMobileEditorLayout = useMediaQuery(MOBILE_EDITOR_MEDIA_QUERY);
 
-  // We set header height to a constant or measure it. We'll use a fixed value to prevent jumpiness on load.
-  // Real header height is typically ~68px on desktop, ~60px on mobile
-  const headerHeight = isMobileEditorLayout ? 60 : 68;
+  // Header height comes from design tokens to stay in sync with the CSS system.
+  const headerHeight = isMobileEditorLayout
+    ? readCssPixelToken('--metric-header-height-mobile', 60)
+    : readCssPixelToken('--metric-header-height-desktop', 68);
 
   const [text, setText] = useState(resolvedInitialState.text);
   const [settings, setSettings] = useState<HandwritingSettings>(resolvedInitialState.settings);

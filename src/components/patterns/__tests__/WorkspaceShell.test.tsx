@@ -21,7 +21,7 @@ describe('WorkspaceShell', () => {
     const topControlsLayer = shell?.querySelector('.fixed');
     const workspaceLane = shell?.querySelector('.flex.h-full');
 
-    expect(topControlsLayer?.className).toContain('xl:left-96');
+    expect(topControlsLayer?.className).toContain('xl:left-panel');
     expect(workspaceLane?.className).not.toContain('pt-[60px]');
     expect(workspaceLane?.className).not.toContain('xl:pt-[68px]');
   });
