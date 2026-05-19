@@ -1,48 +1,54 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import ContactPage from '../page';
-import { useTheme } from 'next-themes';
+import { describe, it, expect, vi } from "vitest"
+import { render, screen } from "@testing-library/react"
+import ContactPage from "../page"
 
-vi.mock('next-themes', () => ({
-  useTheme: vi.fn(),
-}));
+vi.mock("@/components/InquiryForm", () => ({
+  InquiryForm: () => <div data-testid="inquiry-form">Inquiry Form Mock</div>,
+}))
 
-describe('ContactPage', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    (useTheme as any).mockReturnValue({
-      theme: 'system',
-      setTheme: vi.fn(),
-      themes: ['light', 'dark', 'system'],
-    });
-  });
+describe("ContactPage", () => {
+  it("renders the sparse header with Text2Ink on the left", () => {
+    render(<ContactPage />)
+    const header = screen.getByRole("banner")
+    expect(header).toBeInTheDocument()
+    // Text2Ink is split across spans: Text, 2, Ink
+    expect(screen.getByText("Text")).toBeInTheDocument()
+    expect(screen.getByText("2")).toBeInTheDocument()
+    expect(screen.getByText("Ink")).toBeInTheDocument()
+  })
 
-  it('renders contact email and a single editor return action', () => {
-    render(<ContactPage />);
+  it("renders ThemePicker and Back to Editor in the header", () => {
+    render(<ContactPage />)
+    expect(screen.getByRole("group", { name: /theme preference/i })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: /back to editor/i })).toBeInTheDocument()
+  })
 
-    expect(screen.getByText(/get in touch/i)).toBeInTheDocument();
-    expect(screen.getByText(/rasagyavatsal@outlook.com/i)).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: /back to editor/i })).toHaveLength(1);
-    expect(screen.getByRole('link', { name: /back to editor/i })).toHaveAttribute('href', '/');
-    expect(screen.queryByRole('link', { name: /back to home/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /open editor/i })).not.toBeInTheDocument();
-  });
+  it("renders the InquiryForm", () => {
+    render(<ContactPage />)
+    expect(screen.getByTestId("inquiry-form")).toBeInTheDocument()
+  })
 
-  it('renders the ThemePicker in the header', () => {
-    render(<ContactPage />);
-    expect(screen.getByRole('group', { name: /theme preference/i })).toBeInTheDocument();
-  });
+  it("displays the correct fallback email", () => {
+    render(<ContactPage />)
+    const emailLinks = screen.getAllByText("rasagyavatsal16@gmail.com")
+    expect(emailLinks.length).toBeGreaterThanOrEqual(1)
+    expect(screen.queryByText("rasagyavatsal@outlook.com")).not.toBeInTheDocument()
+  })
 
-  it('uses semantic design tokens instead of hardcoded colors', () => {
-    const { container } = render(<ContactPage />);
-    const html = container.innerHTML;
-    
-    expect(html).not.toMatch(/bg-white/);
-    expect(html).not.toMatch(/bg-gray-/);
-    expect(html).not.toMatch(/text-gray-/);
-    expect(html).not.toMatch(/text-black/);
-    expect(html).not.toMatch(/border-gray-/);
-    expect(html).not.toMatch(/#E0A32A/);
-    expect(html).not.toMatch(/#c99225/);
-  });
-});
+  it("renders Email me heading", () => {
+    render(<ContactPage />)
+    expect(screen.getByText("Email me")).toBeInTheDocument()
+  })
+
+  it("has the inquiry split layout structure on desktop", () => {
+    const { container } = render(<ContactPage />)
+    const splitLayout = container.querySelector(".lg\\:grid-cols-2")
+    expect(splitLayout).toBeInTheDocument()
+  })
+
+  it("renders the footer with copyright", () => {
+    render(<ContactPage />)
+    expect(screen.getByRole("contentinfo")).toBeInTheDocument()
+    expect(screen.getByText(/text2ink.*all rights reserved/i)).toBeInTheDocument()
+  })
+})
