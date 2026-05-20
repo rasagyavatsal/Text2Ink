@@ -31,7 +31,7 @@ export default function ContactPage() {
         />
       }
       content={
-        <div className="max-w-5xl mx-auto">
+        <div className="w-full">
           {/* Inquiry Split Layout — desktop: two columns, mobile: stacked */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
             {/* Left: Email info */}
@@ -45,7 +45,7 @@ export default function ContactPage() {
               </p>
               <a
                 href="mailto:rasagyavatsal16@gmail.com"
-                className="text-brand-accent hover:text-brand-accent-hover font-medium transition-colors"
+                className="hidden lg:block text-brand-accent hover:text-brand-accent-hover font-medium transition-colors"
               >
                 rasagyavatsal16@gmail.com
               </a>
@@ -54,19 +54,19 @@ export default function ContactPage() {
             {/* Right: Inquiry form */}
             <div>
               <InquiryForm />
-            </div>
 
-            {/* Mobile-only fallback email below form */}
-            <div className="lg:hidden">
-              <p className="text-sm text-muted-foreground">
-                Or email directly:{" "}
-                <a
-                  href="mailto:rasagyavatsal16@gmail.com"
-                  className="text-brand-accent hover:text-brand-accent-hover font-medium transition-colors"
-                >
-                  rasagyavatsal16@gmail.com
-                </a>
-              </p>
+              {/* Mobile-only fallback email below form */}
+              <div className="lg:hidden mt-6">
+                <p className="text-sm text-muted-foreground">
+                  Or email directly:{" "}
+                  <a
+                    href="mailto:rasagyavatsal16@gmail.com"
+                    className="text-brand-accent hover:text-brand-accent-hover font-medium transition-colors"
+                  >
+                    rasagyavatsal16@gmail.com
+                  </a>
+                </p>
+              </div>
             </div>
           </div>
         </div>

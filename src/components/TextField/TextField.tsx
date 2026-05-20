@@ -5,6 +5,7 @@ import { Move, X, Settings } from 'lucide-react';
 import { TextField as TextFieldType, HandwritingSettings } from '@/lib/types';
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
+import { Button } from '@/components/ui/button';
 import { calculateRandomStyle } from '@/lib/editorHelpers';
 import { createMeasure } from '@/lib/pagination';
 import { cn } from '@/lib/utils';
@@ -204,8 +205,8 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
     <div
       ref={rootRef}
       className={cn(
-        "absolute border border-dotted group",
-        showControls ? "border-brand-accent" : "border-border"
+        "absolute border border-dashed group transition-colors",
+        showControls ? "border-brand-accent/60" : "border-border/60 hover:border-brand-accent/30"
       )}
       onPointerDown={() => {
         setIsSelected(true);
@@ -232,49 +233,49 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
           className="absolute -top-5 -left-5 size-11 pointer-events-auto cursor-nwse-resize touch-none flex items-center justify-center"
           onPointerDown={(e) => handleResizeStart(e, 'nw')}
         >
-          <span className="h-3 w-3 rounded-sm border border-border bg-background shadow-sm" />
+          <span className="h-2 w-2 rounded-full border border-brand-accent bg-background shadow-sm transition-transform hover:scale-125" />
         </div>
         <div
           data-testid="handle-ne"
           className="absolute -top-5 -right-5 size-11 pointer-events-auto cursor-nesw-resize touch-none flex items-center justify-center"
           onPointerDown={(e) => handleResizeStart(e, 'ne')}
         >
-          <span className="h-3 w-3 rounded-sm border border-border bg-background shadow-sm" />
+          <span className="h-2 w-2 rounded-full border border-brand-accent bg-background shadow-sm transition-transform hover:scale-125" />
         </div>
         <div
           data-testid="handle-sw"
           className="absolute -bottom-5 -left-5 size-11 pointer-events-auto cursor-nesw-resize touch-none flex items-center justify-center"
           onPointerDown={(e) => handleResizeStart(e, 'sw')}
         >
-          <span className="h-3 w-3 rounded-sm border border-border bg-background shadow-sm" />
+          <span className="h-2 w-2 rounded-full border border-brand-accent bg-background shadow-sm transition-transform hover:scale-125" />
         </div>
         <div
           data-testid="handle-se"
           className="absolute -bottom-5 -right-5 size-11 pointer-events-auto cursor-nwse-resize touch-none flex items-center justify-center"
           onPointerDown={(e) => handleResizeStart(e, 'se')}
         >
-          <span className="h-3 w-3 rounded-sm border border-border bg-background shadow-sm" />
+          <span className="h-2 w-2 rounded-full border border-brand-accent bg-background shadow-sm transition-transform hover:scale-125" />
         </div>
 
         {/* Sides */}
         <div
           data-testid="handle-n"
-          className="absolute -top-5 left-3 right-3 h-11 pointer-events-auto cursor-ns-resize touch-none hover:bg-brand-accent-soft transition-colors"
+          className="absolute -top-5 left-3 right-3 h-11 pointer-events-auto cursor-ns-resize touch-none"
           onPointerDown={(e) => handleResizeStart(e, 'n')}
         />
         <div
           data-testid="handle-s"
-          className="absolute -bottom-5 left-3 right-3 h-11 pointer-events-auto cursor-ns-resize touch-none hover:bg-brand-accent-soft transition-colors"
+          className="absolute -bottom-5 left-3 right-3 h-11 pointer-events-auto cursor-ns-resize touch-none"
           onPointerDown={(e) => handleResizeStart(e, 's')}
         />
         <div
           data-testid="handle-w"
-          className="absolute -left-5 top-3 bottom-3 w-11 pointer-events-auto cursor-ew-resize touch-none hover:bg-brand-accent-soft transition-colors"
+          className="absolute -left-5 top-3 bottom-3 w-11 pointer-events-auto cursor-ew-resize touch-none"
           onPointerDown={(e) => handleResizeStart(e, 'w')}
         />
         <div
           data-testid="handle-e"
-          className="absolute -right-5 top-3 bottom-3 w-11 pointer-events-auto cursor-ew-resize touch-none hover:bg-brand-accent-soft transition-colors"
+          className="absolute -right-5 top-3 bottom-3 w-11 pointer-events-auto cursor-ew-resize touch-none"
           onPointerDown={(e) => handleResizeStart(e, 'e')}
         />
       </div>
@@ -282,37 +283,41 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
       {/* Top Left Icons */}
       <div
         className={cn(
-          "absolute -top-5 -left-5 flex items-center z-10 transition-opacity",
+          "absolute -top-4 -left-4 flex items-center z-10 transition-opacity",
           showControls ? "opacity-100" : "opacity-0 xl:group-hover:opacity-100"
         )}
       >
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="icon-sm"
           aria-label="Move text box"
-          className="size-11 bg-background border-border border shadow-sm rounded-full cursor-move hover:bg-muted text-muted-foreground touch-none flex items-center justify-center"
+          className="rounded-full cursor-move bg-background shadow-sm text-muted-foreground touch-none"
           onPointerDown={handleDragPointerDown}
         >
-          <Move size={16} />
-        </button>
+          <Move className="size-3.5" />
+        </Button>
       </div>
 
       {/* Top Right Icons - Consolidated Settings */}
       <div
         className={cn(
-          "absolute -top-5 -right-5 z-10 transition-opacity",
+          "absolute -top-4 -right-4 z-10 transition-opacity",
           showControls ? "opacity-100" : "opacity-0 xl:group-hover:opacity-100"
         )}
       >
         <Popover open={isSettingsOpen} onOpenChange={handleSettingsOpenChange}>
           <PopoverTrigger asChild>
-            <button
+            <Button
               ref={settingsTriggerRef}
               type="button"
+              variant="outline"
+              size="icon-sm"
               aria-label="Text box settings"
-              className="size-11 bg-background border-border border shadow-sm rounded-full hover:bg-muted text-muted-foreground flex items-center justify-center"
+              className="rounded-full bg-background shadow-sm text-muted-foreground"
             >
-              <Settings size={16} />
-            </button>
+              <Settings className="size-3.5" />
+            </Button>
           </PopoverTrigger>
           {settingsAnchorPoint && (
             <PopoverAnchor
@@ -360,13 +365,14 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
               </div>
 
               <div className="pt-2 border-t border-border">
-                <button
+                <Button
+                  variant="ghost"
                   className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-label font-bold text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors uppercase tracking-widest"
                   onClick={onDelete}
                 >
-                  <X size={12} />
+                  <X className="size-3" />
                   Delete Box
-                </button>
+                </Button>
               </div>
             </div>
           </PopoverContent>

@@ -17,6 +17,7 @@ vi.mock('lucide-react', () => {
     FileText: MockIcon,
     Loader2: MockIcon,
     CheckCircle2: MockIcon,
+    AlertCircle: MockIcon,
     X: MockIcon,
     ChevronDownIcon: MockIcon,
     ChevronUpIcon: MockIcon,
@@ -89,5 +90,56 @@ describe('ExportModal', () => {
     const checkIcon = screen.getByTestId('icon-w-12 h-12 text-success');
     expect(checkIcon).toBeInTheDocument();
     expect(screen.queryByTestId('icon-w-12 h-12 text-green-500')).not.toBeInTheDocument();
+  });
+
+  it('renders custom error state when export fails, retry clears it and does not call window.alert', async () => {
+    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    
+    // Force canvas.toDataURL to throw an error by mocking canvas.toDataURL
+    const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
+    HTMLCanvasElement.prototype.toDataURL = vi.fn().mockImplementation(() => {
+      throw new Error('Canvas rendering error');
+    });
+
+    render(<ExportModal {...defaultProps} />);
+    
+    // Switch to PNG to trigger standard rendering flow
+    const selectTrigger = screen.getByRole('combobox');
+    fireEvent.click(selectTrigger);
+    
+    const pngOption = await screen.findByText(/png image/i);
+    fireEvent.click(pngOption);
+    
+    // Click Export
+    const exportButton = screen.getByRole('button', { name: /export png/i });
+    fireEvent.click(exportButton);
+    
+    // Wait for error state to render
+    await waitFor(() => {
+      expect(screen.getByText('Export failed')).toBeInTheDocument();
+      expect(screen.getByText('Canvas rendering error')).toBeInTheDocument();
+    });
+    
+    // Confirm window.alert was NOT called
+    expect(alertMock).not.toHaveBeenCalled();
+    
+    // Verify custom buttons (Cancel/Retry) are present
+    const retryButton = screen.getByRole('button', { name: /retry/i });
+    const cancelButton = screen.getByRole('button', { name: /cancel/i });
+    expect(retryButton).toBeInTheDocument();
+    expect(cancelButton).toBeInTheDocument();
+    
+    // Reset canvas toDataURL mock to pass next time
+    HTMLCanvasElement.prototype.toDataURL = originalToDataURL;
+    
+    // Click Retry
+    fireEvent.click(retryButton);
+    
+    // Wait for success
+    await waitFor(() => {
+      expect(screen.getByText('Export completed successfully!')).toBeInTheDocument();
+    });
+    
+    alertMock.mockRestore();
   });
 });

@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Download, FileImage, FileText, Loader2, CheckCircle2 } from 'lucide-react';
+import { Download, FileImage, FileText, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { HandwritingSettings, PageSettings, LineData } from '@/lib/types';
 import { renderPageToCanvas } from '@/lib/canvasRenderer';
 import {
@@ -66,6 +66,7 @@ export default function ExportModal({
   const [format, setFormat] = useState<ExportFormat>('pdf');
   const [isExporting, setIsExporting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   const [exportProgress, setExportProgress] = useState<{ current: number; total: number } | null>(null);
   const originalPageIndexRef = useRef<number>(0);
   const cancelExportRef = useRef(false);
@@ -99,6 +100,7 @@ export default function ExportModal({
       setIsExporting(false);
       setExportProgress(null);
       cancelExportRef.current = false;
+      setExportError(null);
     }
   }, [isOpen]);
 
@@ -127,6 +129,7 @@ export default function ExportModal({
   };
 
   const exportPages = async () => {
+    setExportError(null);
     setIsExporting(true);
     setIsSuccess(false);
     onExportingChange?.(true);
@@ -291,7 +294,7 @@ export default function ExportModal({
       }
     } catch (error) {
       console.error('Export failed:', error);
-      alert('Export failed. Please try again.');
+      setExportError(error instanceof Error ? error.message : 'Export failed. Please try again.');
     } finally {
       onExportPageIndexChange?.(null);
       setIsExporting(false);
@@ -327,6 +330,22 @@ export default function ExportModal({
             <Button variant="brand" onClick={onClose} className="mt-4">
               Close
             </Button>
+          </div>
+        ) : exportError ? (
+          <div className="flex flex-col items-center justify-center py-6 space-y-4">
+            <AlertCircle className="w-12 h-12 text-destructive animate-in fade-in zoom-in duration-300" />
+            <p className="font-medium text-center text-destructive">Export failed</p>
+            <p className="text-sm text-muted-foreground text-center px-4 max-w-sm">
+              {exportError}
+            </p>
+            <div className="flex gap-3 mt-4 w-full justify-center">
+              <Button variant="outline" onClick={() => setExportError(null)}>
+                Cancel
+              </Button>
+              <Button variant="brand" onClick={exportPages}>
+                Retry
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="space-y-6 py-4">

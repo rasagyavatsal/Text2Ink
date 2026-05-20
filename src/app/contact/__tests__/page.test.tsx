@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { render, screen, within } from "@testing-library/react"
 import ContactPage from "../page"
 
 vi.mock("@/components/InquiryForm", () => ({
@@ -16,9 +16,9 @@ describe("ContactPage", () => {
     const header = screen.getByRole("banner")
     expect(header).toBeInTheDocument()
     // Text2Ink is split across spans: Text, 2, Ink
-    expect(screen.getByText("Text")).toBeInTheDocument()
-    expect(screen.getByText("2")).toBeInTheDocument()
-    expect(screen.getByText("Ink")).toBeInTheDocument()
+    expect(within(header).getByText("Text")).toBeInTheDocument()
+    expect(within(header).getByText("2")).toBeInTheDocument()
+    expect(within(header).getByText("Ink")).toBeInTheDocument()
   })
 
   it("renders ThemePicker and Back to Editor in the header", () => {

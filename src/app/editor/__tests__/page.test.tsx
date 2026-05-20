@@ -26,7 +26,14 @@ vi.mock('@/components/HandwritingEditor', () => ({
 }));
 
 vi.mock('@/components/SettingsPanel', () => ({
-  default: () => <div data-testid="settings-panel">Settings panel</div>,
+  default: ({ onClearAll }: { onClearAll: () => void }) => (
+    <div data-testid="settings-panel">
+      Settings panel
+      <button type="button" data-testid="clear-all-trigger" onClick={onClearAll}>
+        Mock Clear All
+      </button>
+    </div>
+  ),
 }));
 
 vi.mock('@/components/ExportPanel', () => ({
@@ -232,5 +239,44 @@ describe('Root editor page', () => {
       expect(parsePadding()).toBeLessThan(expandedPadding);
     });
     expect(getPreviewScale()).toBe(initialScale);
+  });
+
+  it('opens custom confirmation dialog when clear all is triggered and resets state on confirm', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm');
+    render(<RootEditorPageClient />);
+
+    // Click the Mock Clear All button inside mocked SettingsPanel
+    const clearAllTrigger = screen.getByTestId('clear-all-trigger');
+    fireEvent.click(clearAllTrigger);
+
+    // Verify custom Dialog is opened
+    expect(await screen.findByText('Clear Everything')).toBeInTheDocument();
+    expect(screen.getByText(/Are you sure you want to remove all text/i)).toBeInTheDocument();
+
+    // Verify window.confirm was not called
+    expect(confirmSpy).not.toHaveBeenCalled();
+
+    // Verify Cancel and Clear buttons exist
+    const cancelButton = screen.getByRole('button', { name: /cancel/i });
+    const clearButton = screen.getByRole('button', { name: /clear/i });
+    expect(cancelButton).toBeInTheDocument();
+    expect(clearButton).toBeInTheDocument();
+
+    // Clicking cancel closes the dialog
+    fireEvent.click(cancelButton);
+    await waitFor(() => {
+      expect(screen.queryByText('Clear Everything')).not.toBeInTheDocument();
+    });
+
+    // Reopen and click clear to verify
+    fireEvent.click(clearAllTrigger);
+    const clearButtonSecond = await screen.findByRole('button', { name: /clear/i });
+    fireEvent.click(clearButtonSecond);
+
+    await waitFor(() => {
+      expect(screen.queryByText('Clear Everything')).not.toBeInTheDocument();
+    });
+
+    confirmSpy.mockRestore();
   });
 });

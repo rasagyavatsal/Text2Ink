@@ -384,7 +384,7 @@ export default function SettingsPanel({
               <Label className="label-text">Fonts</Label>
               <Dialog>
                 <DialogTrigger asChild>
-                  <button className="text-label font-bold text-brand-accent hover:underline transition-colors">See all</button>
+                  <Button variant="link" className="text-label font-bold text-brand-accent p-0 h-auto">See all</Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl bg-background border-border text-foreground p-0 overflow-hidden sm:rounded-2xl shadow-xl">
                   <DialogHeader className="p-6 border-b border-border">
@@ -557,7 +557,7 @@ export default function SettingsPanel({
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center">
               <Label className="label-text">Font Size</Label>
-              <div className="text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-md">
+              <div className="text-label font-bold text-foreground bg-muted px-2 py-0.5 rounded-md uppercase tracking-tight">
                 {pageSettings.fontSize}px
               </div>
             </div>
@@ -574,7 +574,7 @@ export default function SettingsPanel({
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <Label className="label-text">Line Height</Label>
-                <div className="text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-md">
+                <div className="text-label font-bold text-foreground bg-muted px-2 py-0.5 rounded-md uppercase tracking-tight">
                   {settings.lineHeight.toFixed(1)}
                 </div>
               </div>
@@ -591,7 +591,7 @@ export default function SettingsPanel({
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center">
               <Label className="label-text">Line Tilt</Label>
-              <div className="text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-md">
+              <div className="text-label font-bold text-foreground bg-muted px-2 py-0.5 rounded-md uppercase tracking-tight">
                 {pageSettings.lineTilt}°
               </div>
             </div>
@@ -623,7 +623,7 @@ export default function SettingsPanel({
                 updateSetting('paperStyle', value as HandwritingSettings['paperStyle'])
               }
             >
-              <SelectTrigger id="paper-style" className="bg-muted border-none h-9 text-sm">
+              <SelectTrigger id="paper-style" size="sm" className="w-full">
                 <SelectValue placeholder="Select paper style" />
               </SelectTrigger>
               <SelectContent>
@@ -640,9 +640,9 @@ export default function SettingsPanel({
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <Label className="label-text">Top Margin</Label>
-                <span className="text-label font-bold text-muted-foreground">
+                <div className="text-label font-bold text-foreground bg-muted px-2 py-0.5 rounded-md uppercase tracking-tight">
                   {pageSettings.marginTop}px
-                </span>
+                </div>
               </div>
               <Slider
                 value={[pageSettings.marginTop]}
@@ -656,9 +656,9 @@ export default function SettingsPanel({
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <Label className="label-text">Bottom Margin</Label>
-                <span className="text-label font-bold text-muted-foreground">
+                <div className="text-label font-bold text-foreground bg-muted px-2 py-0.5 rounded-md uppercase tracking-tight">
                   {pageSettings.marginBottom}px
-                </span>
+                </div>
               </div>
               <Slider
                 value={[pageSettings.marginBottom]}
@@ -672,9 +672,9 @@ export default function SettingsPanel({
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <Label className="label-text">Left Margin</Label>
-                <span className="text-label font-bold text-muted-foreground">
+                <div className="text-label font-bold text-foreground bg-muted px-2 py-0.5 rounded-md uppercase tracking-tight">
                   {pageSettings.marginLeft}px
-                </span>
+                </div>
               </div>
               <Slider
                 value={[pageSettings.marginLeft]}
@@ -688,9 +688,9 @@ export default function SettingsPanel({
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <Label className="label-text">Right Margin</Label>
-                <span className="text-label font-bold text-muted-foreground">
+                <div className="text-label font-bold text-foreground bg-muted px-2 py-0.5 rounded-md uppercase tracking-tight">
                   {pageSettings.marginRight}px
-                </span>
+                </div>
               </div>
               <Slider
                 value={[pageSettings.marginRight]}
@@ -706,7 +706,7 @@ export default function SettingsPanel({
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <Label className="label-text">Margin Line Offset</Label>
-                <div className="text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-md">
+                <div className="text-label font-bold text-foreground bg-muted px-2 py-0.5 rounded-md uppercase tracking-tight">
                   {settings.ruledMarginLineOffset}px
                 </div>
               </div>
@@ -755,7 +755,8 @@ export default function SettingsPanel({
                     ))}
                   </div>
 
-                  <button
+                  <Button
+                    variant="link"
                     type="button"
                     onClick={() =>
                       updateSettings({
@@ -763,10 +764,10 @@ export default function SettingsPanel({
                         customBackgroundImage: null,
                       })
                     }
-                    className="text-label font-bold text-destructive uppercase tracking-wider hover:underline"
+                    className="text-label font-bold text-destructive uppercase tracking-wider p-0 h-auto hover:no-underline"
                   >
                     Remove all
-                  </button>
+                  </Button>
                 </div>
               )}
 
@@ -828,7 +829,7 @@ export default function SettingsPanel({
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between items-center">
                   <Label className="label-text">Line Offset (Y Position)</Label>
-                  <div className="text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-md">
+                  <div className="text-label font-bold text-foreground bg-muted px-2 py-0.5 rounded-md uppercase tracking-tight">
                     {pageSettings.customLineOffset}px
                   </div>
                 </div>
@@ -846,14 +847,15 @@ export default function SettingsPanel({
                   <Label className="label-text">Custom Line Spacing</Label>
                   <div className="flex items-center gap-2">
                     {pageSettings.customLineSpacing !== null && (
-                      <button
+                      <Button
+                        variant="link"
                         onClick={() => updatePageSetting('customLineSpacing', null)}
-                        className="text-label font-bold text-brand-accent uppercase tracking-wider hover:underline"
+                        className="text-label font-bold text-brand-accent uppercase tracking-wider p-0 h-auto hover:no-underline"
                       >
                         Reset
-                      </button>
+                      </Button>
                     )}
-                    <div className="text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-md">
+                    <div className="text-label font-bold text-foreground bg-muted px-2 py-0.5 rounded-md uppercase tracking-tight">
                       {pageSettings.customLineSpacing ?? 'Auto'}
                     </div>
                   </div>
@@ -955,7 +957,7 @@ export default function SettingsPanel({
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between items-center">
                   <Label className="label-text">Letter Spacing Variation</Label>
-                  <div className="text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-md">
+                  <div className="text-label font-bold text-foreground bg-muted px-2 py-0.5 rounded-md uppercase tracking-tight">
                     {settings.randomness.spacing.toFixed(1)}
                   </div>
                 </div>
@@ -971,7 +973,7 @@ export default function SettingsPanel({
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between items-center">
                   <Label className="label-text">Baseline Variation</Label>
-                  <div className="text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-md">
+                  <div className="text-label font-bold text-foreground bg-muted px-2 py-0.5 rounded-md uppercase tracking-tight">
                     {settings.randomness.baseline.toFixed(1)}
                   </div>
                 </div>
@@ -986,8 +988,8 @@ export default function SettingsPanel({
 
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between items-center">
-                  <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Rotation Variation</Label>
-                  <div className="text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded-md">
+                  <Label className="label-text">Rotation Variation</Label>
+                  <div className="text-label font-bold text-foreground bg-muted px-2 py-0.5 rounded-md uppercase tracking-tight">
                     {settings.randomness.rotation.toFixed(1)}°
                   </div>
                 </div>
