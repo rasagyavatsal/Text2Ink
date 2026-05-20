@@ -12,6 +12,14 @@ import ThemePicker from '@/components/ThemePicker';
 import WorkspaceShell from '@/components/patterns/WorkspaceShell';
 import { Button } from '@/components/ui/button';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
   HandwritingSettings,
   DEFAULT_SETTINGS,
   PageSettings,
@@ -187,6 +195,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
   const [isPaginationComplete, setIsPaginationComplete] = useState(true);
   
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
   const [exportPageIndex, setExportPageIndex] = useState<number | null>(null);
   
   const [mobileSheetAnchor, setMobileSheetAnchor] = useState<MobileSheetAnchor>('peek');
@@ -342,12 +351,15 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
   );
 
   const handleClearAll = useCallback(() => {
-    if (window.confirm('Are you sure you want to remove all text and text fields from all pages? This action cannot be undone.')) {
-      setText('');
-      setCurrentPageIndex(0);
-      handleSettingsChange((prev) => ({ ...prev, textFields: [] }));
-      setPageSettingsByPage((prev) => prev.map((ps) => ({ ...ps, textFields: [] })));
-    }
+    setIsClearConfirmOpen(true);
+  }, []);
+
+  const confirmClearAll = useCallback(() => {
+    setText('');
+    setCurrentPageIndex(0);
+    handleSettingsChange((prev) => ({ ...prev, textFields: [] }));
+    setPageSettingsByPage((prev) => prev.map((ps) => ({ ...ps, textFields: [] })));
+    setIsClearConfirmOpen(false);
   }, [handleSettingsChange]);
 
   const handlePreviewScaleChange = useCallback(
@@ -455,16 +467,15 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       ) : null}
       <div className="flex items-center gap-3 sm:gap-4">
         <ThemePicker />
-        <Button variant="outline" size="sm" onClick={() => setIsExportModalOpen(true)} className="h-9">
+        <Button variant="outline" onClick={() => setIsExportModalOpen(true)}>
           <Download className="w-4 h-4 mr-2" />
           Export
         </Button>
-        <Link
-          href="/contact"
-          className="text-sm text-muted-foreground hover:text-brand-accent font-medium transition-colors"
-        >
-          Contact
-        </Link>
+        <Button variant="ghost" asChild>
+          <Link href="/contact">
+            Contact
+          </Link>
+        </Button>
       </div>
     </div>
   );
@@ -539,6 +550,30 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
         }}
         onExportPageIndexChange={setExportPageIndex}
       />
+      <Dialog open={isClearConfirmOpen} onOpenChange={setIsClearConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Clear Everything</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove all text and text fields from all pages? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="ghost"
+              onClick={() => setIsClearConfirmOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmClearAll}
+            >
+              Clear
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

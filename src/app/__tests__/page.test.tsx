@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import HomePage from '../page';
 
@@ -11,12 +11,13 @@ vi.mock('@/components/ThemePicker', () => ({
 describe('Landing Page Shell', () => {
   it('renders the header with Text2Ink, Contact, and Open Editor links', () => {
     render(<HomePage />);
-    expect(screen.getByRole('banner')).toBeInTheDocument();
+    const header = screen.getByRole('banner');
+    expect(header).toBeInTheDocument();
     
     // Check for logo text
-    expect(screen.getByText('Text')).toBeInTheDocument();
-    expect(screen.getByText('2')).toBeInTheDocument();
-    expect(screen.getByText('Ink')).toBeInTheDocument();
+    expect(within(header).getByText('Text')).toBeInTheDocument();
+    expect(within(header).getByText('2')).toBeInTheDocument();
+    expect(within(header).getByText('Ink')).toBeInTheDocument();
 
     // Check for Contact link
     const contactLink = screen.getByRole('link', { name: /contact/i });

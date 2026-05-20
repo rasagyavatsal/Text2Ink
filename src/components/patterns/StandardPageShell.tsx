@@ -14,18 +14,24 @@ export default function StandardPageShell({
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-background" role="banner">
-        {header}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 w-full">
+          {header}
+        </div>
       </header>
 
-      <main className="py-12 sm:py-16 md:py-20 px-4 sm:px-6">
-        {content}
+      <main className="py-12 sm:py-16 md:py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 w-full">
+          {content}
+        </div>
       </main>
 
       <footer
-        className="border-t border-border bg-background py-6 sm:py-8 px-4 sm:px-6 mt-12"
+        className="border-t border-border bg-background py-6 sm:py-8 mt-12"
         role="contentinfo"
       >
-        {footer}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 w-full">
+          {footer}
+        </div>
       </footer>
     </div>
   );

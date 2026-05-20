@@ -6,11 +6,24 @@ import { InquiryForm } from "../InquiryForm"
 const mockFetch = vi.fn()
 global.fetch = mockFetch
 
+if (typeof window !== "undefined" && window.Element) {
+  window.Element.prototype.hasPointerCapture = () => false
+  window.Element.prototype.setPointerCapture = () => {}
+  window.Element.prototype.releasePointerCapture = () => {}
+}
+
 describe("InquiryForm", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ message: "ok" }) })
   })
+
+  const selectTopic = async (user: any, topic: string) => {
+    const topicTrigger = screen.getByRole("combobox", { name: /topic/i })
+    fireEvent.click(topicTrigger)
+    const topicOption = await screen.findByRole("option", { name: topic })
+    fireEvent.click(topicOption)
+  }
 
   it("renders all required fields", () => {
     render(<InquiryForm />)
@@ -62,8 +75,7 @@ describe("InquiryForm", () => {
 
     await user.type(screen.getByLabelText(/name/i), "Jane Doe")
     await user.type(screen.getByLabelText(/email/i), "jane@example.com")
-    // Select topic using the native select fallback
-    await user.selectOptions(screen.getByLabelText(/topic/i), "General inquiry")
+    await selectTopic(user, "General inquiry")
     await user.type(screen.getByLabelText(/message/i), "I have a question about your product.")
 
     await user.click(screen.getByRole("button", { name: /send inquiry/i }))
@@ -84,7 +96,7 @@ describe("InquiryForm", () => {
     // Fill and submit
     await user.type(screen.getByLabelText(/name/i), "Jane Doe")
     await user.type(screen.getByLabelText(/email/i), "jane@example.com")
-    await user.selectOptions(screen.getByLabelText(/topic/i), "General inquiry")
+    await selectTopic(user, "General inquiry")
     await user.type(screen.getByLabelText(/message/i), "I have a question about your product.")
     await user.click(screen.getByRole("button", { name: /send inquiry/i }))
 
@@ -112,7 +124,7 @@ describe("InquiryForm", () => {
 
     await user.type(screen.getByLabelText(/name/i), "Jane Doe")
     await user.type(screen.getByLabelText(/email/i), "jane@example.com")
-    await user.selectOptions(screen.getByLabelText(/topic/i), "General inquiry")
+    await selectTopic(user, "General inquiry")
     await user.type(screen.getByLabelText(/message/i), "I have a question about your product.")
     await user.click(screen.getByRole("button", { name: /send inquiry/i }))
 
@@ -136,7 +148,7 @@ describe("InquiryForm", () => {
 
     await user.type(screen.getByLabelText(/name/i), "Jane Doe")
     await user.type(screen.getByLabelText(/email/i), "jane@example.com")
-    await user.selectOptions(screen.getByLabelText(/topic/i), "General inquiry")
+    await selectTopic(user, "General inquiry")
     await user.type(screen.getByLabelText(/message/i), "I have a question about your product.")
     await user.click(screen.getByRole("button", { name: /send inquiry/i }))
 
@@ -154,7 +166,7 @@ describe("InquiryForm", () => {
 
     await user.type(screen.getByLabelText(/name/i), "Jane Doe")
     await user.type(screen.getByLabelText(/email/i), "jane@example.com")
-    await user.selectOptions(screen.getByLabelText(/topic/i), "General inquiry")
+    await selectTopic(user, "General inquiry")
     await user.type(screen.getByLabelText(/message/i), "I have a question about your product.")
     await user.click(screen.getByRole("button", { name: /send inquiry/i }))
 
@@ -175,13 +187,17 @@ describe("InquiryForm", () => {
     expect(honeypot).toHaveAttribute("tabindex", "-1")
   })
 
-  it("renders the three topic options", () => {
+  it("renders the three topic options", async () => {
     render(<InquiryForm />)
 
-    const topicSelect = screen.getByLabelText(/topic/i)
+    const topicSelect = screen.getByRole("combobox", { name: /topic/i })
     expect(topicSelect).toBeInTheDocument()
+    
+    // Open the dropdown
+    fireEvent.click(topicSelect)
+
     // Check that the select has the right options
-    expect(screen.getByRole("option", { name: "General inquiry" })).toBeInTheDocument()
+    expect(await screen.findByRole("option", { name: "General inquiry" })).toBeInTheDocument()
     expect(screen.getByRole("option", { name: "Bug report" })).toBeInTheDocument()
     expect(screen.getByRole("option", { name: "Feature request" })).toBeInTheDocument()
   })

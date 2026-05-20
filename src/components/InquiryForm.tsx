@@ -4,6 +4,13 @@ import { useState, type FormEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Input, Textarea } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 
 const TOPICS = ["General inquiry", "Bug report", "Feature request"] as const
@@ -33,9 +40,6 @@ function validateClient(data: FormData): FormErrors {
   if (data.message.trim().length < 10) errors.message = "Message must be at least 10 characters"
   return errors
 }
-
-const selectClasses =
-  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 
 export function InquiryForm() {
   const [formData, setFormData] = useState<FormData>({
@@ -167,19 +171,24 @@ export function InquiryForm() {
 
       <div>
         <Label htmlFor="inquiry-topic">Topic</Label>
-        <select
-          id="inquiry-topic"
+        <Select
           value={formData.topic}
-          onChange={(e) => handleChange("topic", e.target.value)}
-          className={cn(selectClasses, "mt-1.5", errors.topic && "border-destructive")}
+          onValueChange={(value) => handleChange("topic", value)}
         >
-          <option value="">Select a topic</option>
-          {TOPICS.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger
+            id="inquiry-topic"
+            className={cn("mt-1.5 w-full", errors.topic && "border-destructive")}
+          >
+            <SelectValue placeholder="Select a topic" />
+          </SelectTrigger>
+          <SelectContent>
+            {TOPICS.map((t) => (
+              <SelectItem key={t} value={t}>
+                {t}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {errors.topic && <p className="text-sm text-destructive mt-1">{errors.topic}</p>}
       </div>
 
