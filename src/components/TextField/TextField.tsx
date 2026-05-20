@@ -331,7 +331,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
               {/* Font Size Section */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Font Size</label>
+                  <label className="label-text">Font Size</label>
                   <span className="text-label font-mono font-bold text-foreground">{field.fontSize}px</span>
                 </div>
                 <Slider
@@ -345,7 +345,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
 
               {/* Color Picker Section */}
               <div className="space-y-2">
-                <label className="text-label font-bold text-muted-foreground uppercase tracking-widest">Text Color</label>
+                <label className="label-text">Text Color</label>
                 <div className="flex items-center gap-3 p-2 bg-muted rounded-lg border border-border">
                   <input
                     type="color"

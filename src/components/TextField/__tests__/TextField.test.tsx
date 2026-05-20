@@ -498,4 +498,29 @@ describe('TextField', () => {
     const nHandle = screen.getByTestId('handle-n');
     expect(nHandle.className).not.toContain('bg-blue-');
   });
+
+  it('uses canonical label-text utility for form labels', () => {
+    render(
+      <TextField
+        field={mockField}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+        randomness={randomness}
+      />
+    );
+    
+    // Open settings
+    const settingsButton = screen.getByRole('button', { name: /text box settings/i });
+    fireEvent.click(settingsButton);
+    
+    // Check labels inside settings popover
+    const fontSizeLabel = screen.getByText('Font Size');
+    const textColorLabel = screen.getByText('Text Color');
+    
+    expect(fontSizeLabel.className).toContain('label-text');
+    expect(textColorLabel.className).toContain('label-text');
+    expect(fontSizeLabel.className).not.toContain('text-label font-bold text-muted-foreground uppercase tracking-widest');
+  });
 });

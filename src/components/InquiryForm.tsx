@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react"
 import { Button } from "@/components/ui/button"
+import { Input, Textarea } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 
@@ -33,7 +34,7 @@ function validateClient(data: FormData): FormErrors {
   return errors
 }
 
-const inputClasses =
+const selectClasses =
   "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 
 export function InquiryForm() {
@@ -138,13 +139,13 @@ export function InquiryForm() {
 
       <div>
         <Label htmlFor="inquiry-name">Name</Label>
-        <input
+        <Input
           id="inquiry-name"
           type="text"
           value={formData.name}
           onChange={(e) => handleChange("name", e.target.value)}
           placeholder="Your name"
-          className={cn(inputClasses, "mt-1.5", errors.name && "border-destructive")}
+          className={cn("mt-1.5", errors.name && "border-destructive")}
           maxLength={100}
         />
         {errors.name && <p className="text-sm text-destructive mt-1">{errors.name}</p>}
@@ -152,13 +153,13 @@ export function InquiryForm() {
 
       <div>
         <Label htmlFor="inquiry-email">Email</Label>
-        <input
+        <Input
           id="inquiry-email"
           type="email"
           value={formData.email}
           onChange={(e) => handleChange("email", e.target.value)}
           placeholder="you@example.com"
-          className={cn(inputClasses, "mt-1.5", errors.email && "border-destructive")}
+          className={cn("mt-1.5", errors.email && "border-destructive")}
           maxLength={254}
         />
         {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
@@ -170,7 +171,7 @@ export function InquiryForm() {
           id="inquiry-topic"
           value={formData.topic}
           onChange={(e) => handleChange("topic", e.target.value)}
-          className={cn(inputClasses, "mt-1.5", errors.topic && "border-destructive")}
+          className={cn(selectClasses, "mt-1.5", errors.topic && "border-destructive")}
         >
           <option value="">Select a topic</option>
           {TOPICS.map((t) => (
@@ -184,17 +185,14 @@ export function InquiryForm() {
 
       <div>
         <Label htmlFor="inquiry-message">Message</Label>
-        <textarea
+        <Textarea
           id="inquiry-message"
           value={formData.message}
           onChange={(e) => handleChange("message", e.target.value)}
           placeholder="How can we help?"
           rows={5}
           spellCheck={false}
-          className={cn(
-            "flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 mt-1.5",
-            errors.message && "border-destructive"
-          )}
+          className={cn("mt-1.5 min-h-[80px]", errors.message && "border-destructive")}
           maxLength={5000}
         />
         {errors.message && <p className="text-sm text-destructive mt-1">{errors.message}</p>}

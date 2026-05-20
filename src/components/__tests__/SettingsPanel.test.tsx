@@ -139,4 +139,44 @@ describe('SettingsPanel', () => {
     // The test should fail initially because these classes exist
     expect(hardcodedElements.length).toBe(0);
   });
+
+  it('uses canonical primitives for layout and styling', () => {
+    const settingsWithBg = {
+      ...defaultProps.settings,
+      customBackgroundImage: 'data:image/png;base64,123',
+    };
+    const { container } = render(<SettingsPanel {...defaultProps} settings={settingsWithBg} />);
+
+    // Check action buttons use canonical variants
+    const detectLinesButton = screen.getByRole('button', { name: /detect lines/i });
+    expect(detectLinesButton).toHaveAttribute('data-variant', 'brand');
+
+    const addTextBoxButton = screen.getByRole('button', { name: /add text box/i });
+    expect(addTextBoxButton).toHaveAttribute('data-variant', 'secondary');
+
+    const clearAllButton = screen.getByRole('button', { name: /clear everything/i });
+    // Outline variant with destructive class
+    expect(clearAllButton).toHaveAttribute('data-variant', 'outline');
+
+    const applyAllButton = screen.getByRole('button', { name: /apply settings to all pages/i });
+    expect(applyAllButton).toHaveAttribute('data-variant', 'brand-soft');
+
+    // Zoom buttons should be ghost
+    const zoomInButton = screen.getByRole('button', { name: /zoom in/i });
+    expect(zoomInButton).toHaveAttribute('data-variant', 'ghost');
+    expect(zoomInButton).toHaveAttribute('data-size', 'icon');
+
+    // Font select trigger should be h-control-md
+    const selects = screen.getAllByRole('combobox');
+    expect(selects[0].className).toContain('h-control-md');
+
+    // Labels should use label-text class and not the raw one
+    const fontLabel = screen.getByText('Fonts');
+    expect(fontLabel.className).toContain('label-text');
+    expect(fontLabel.className).not.toContain('text-label font-bold text-muted-foreground uppercase tracking-widest');
+
+    // Action button padding should be py-2.5
+    // Add text box is a good candidate for this check
+    expect(addTextBoxButton.className).toContain('py-2.5');
+  });
 });

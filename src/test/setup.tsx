@@ -29,6 +29,7 @@ class ResizeObserver {
   disconnect() {}
 }
 window.ResizeObserver = ResizeObserver;
+window.HTMLElement.prototype.scrollIntoView = vi.fn();
 
 // Mock HTMLCanvasElement getContext
 if (typeof window !== 'undefined') {
