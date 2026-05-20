@@ -20,7 +20,9 @@ describe("ContactPage", () => {
   it("renders ThemePicker and Back to Editor in the header", () => {
     render(<ContactPage />)
     expect(screen.getByRole("group", { name: /theme preference/i })).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: /back to editor/i })).toBeInTheDocument()
+    const backLink = screen.getByRole("link", { name: /back to editor/i })
+    expect(backLink).toBeInTheDocument()
+    expect(backLink).toHaveAttribute("href", "/editor")
   })
 
   it("renders the InquiryForm", () => {

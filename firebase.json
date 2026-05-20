@@ -46,18 +46,7 @@
         ]
       }
     ],
-    "redirects": [
-      {
-        "source": "/editor",
-        "destination": "/",
-        "type": 301
-      },
-      {
-        "source": "/editor/**",
-        "destination": "/",
-        "type": 301
-      }
-    ],
+    "redirects": [],
     "rewrites": [
       {
         "source": "/api/inquiry",
