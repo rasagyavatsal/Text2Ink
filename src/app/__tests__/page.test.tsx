@@ -27,7 +27,8 @@ describe('Landing Page Shell', () => {
     const ctaLinks = screen.getAllByRole('link', { name: /open editor/i });
     expect(ctaLinks.length).toBeGreaterThan(0);
     expect(ctaLinks[0]).toHaveAttribute('href', '/editor');
-    expect(ctaLinks[0]).toHaveClass('bg-brand-accent');
+    expect(ctaLinks[0]).toHaveAttribute('data-variant', 'brand');
+    expect(ctaLinks[0]).toHaveAttribute('data-size', 'sm');
   });
 
   it('renders the footer with logo and copyright', () => {
@@ -45,6 +46,8 @@ describe('Landing Page Shell', () => {
     const ctaLinks = screen.getAllByRole('link', { name: /open editor/i });
     expect(ctaLinks.length).toBe(2);
     expect(ctaLinks[1]).toHaveAttribute('href', '/editor');
+    expect(ctaLinks[1]).toHaveAttribute('data-variant', 'brand');
+    expect(ctaLinks[1]).toHaveAttribute('data-size', 'lg');
   });
 
   it('renders the preview images with responsive picture sources', () => {

@@ -27,6 +27,8 @@ describe("ContactPage", () => {
     const backLink = screen.getByRole("link", { name: /back to editor/i })
     expect(backLink).toBeInTheDocument()
     expect(backLink).toHaveAttribute("href", "/editor")
+    expect(backLink).toHaveAttribute("data-variant", "brand")
+    expect(backLink).toHaveAttribute("data-size", "sm")
   })
 
   it("renders the InquiryForm", () => {
