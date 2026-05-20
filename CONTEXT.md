@@ -64,6 +64,14 @@ _Avoid_: generic content page, marketing shell, universal page wrapper
 A page-shell pattern for in-flow pages that use a conventional header and document-style content flow.
 _Avoid_: workspace shell, floating tool chrome, editor-only layout
 
+**Landing Page**:
+A marketing surface at `/` that introduces Text2Ink to first-time visitors with a hero section and handwriting preview images.
+_Avoid_: editor homepage, direct editor access, feature documentation
+
+**Editor Route**:
+The `/editor` path where the handwriting editor application lives after the route restructuring.
+_Avoid_: root route, landing page, marketing surface
+
 **Design Tokens**:
 Named semantic values used to style layout and visuals consistently across the product.
 _Avoid_: raw hex values, one-off spacing, direct palette literals, hardcoded component dimensions
@@ -81,6 +89,10 @@ _Avoid_: raw hex values, one-off spacing, direct palette literals, hardcoded com
 - The editor page uses the **Workspace Shell**
 - The contact page keeps its standard in-flow header instead of switching to fixed **Page-Level Top Controls**
 - The contact page uses the **Standard Page Shell**
+- The **Landing Page** uses the **Standard Page Shell** with the same header and footer as the contact page
+- The **Landing Page** lives at `/` and the editor lives at the **Editor Route** (`/editor`)
+- The **Landing Page** header CTA links to the **Editor Route** instead of showing "Back to Editor"
+- The contact page header "Back to Editor" link points to the **Editor Route** instead of `/`
 - On desktop, the editor uses a **Persistent Settings Panel** instead of a collapsible sidebar
 - On desktop, the editor's home link lives at the top of the **Persistent Settings Panel** instead of the **Page-Level Top Controls**
 - Export on the editor page happens through the **Export Modal** instead of a sidebar tab
@@ -254,6 +266,18 @@ _Avoid_: raw hex values, one-off spacing, direct palette literals, hardcoded com
 >
 > **Dev:** "Should the site briefly render in the wrong theme before the app hydrates?"
 > **Domain expert:** "No. The active **Theme Preference** should be visible on first paint."
+>
+> **Dev:** "Should the **Landing Page** use a different shell than the contact page?"
+> **Domain expert:** "No. The **Landing Page** uses the **Standard Page Shell** with the same header and footer as the contact page."
+>
+> **Dev:** "Should the **Landing Page** header say 'Back to Editor' like the contact page?"
+> **Domain expert:** "No. The **Landing Page** header CTA says 'Open Editor' and links to the **Editor Route**, since visitors haven't been to the editor yet."
+>
+> **Dev:** "Should the editor stay at `/` after the **Landing Page** is added?"
+> **Domain expert:** "No. The editor moves to the **Editor Route** (`/editor`), and the **Landing Page** takes `/`."
+>
+> **Dev:** "Should the contact page 'Back to Editor' link still point to `/`?"
+> **Domain expert:** "No. It should point to the **Editor Route** (`/editor`) since the editor no longer lives at `/`."
 
 ## Flagged ambiguities
 
@@ -293,3 +317,5 @@ _Avoid_: raw hex values, one-off spacing, direct palette literals, hardcoded com
 - "shell composition model" was ambiguous — resolved: shell families are slot-based **Pattern Library** components rather than hardcoded page templates
 - "page shell scope" was ambiguous — resolved: the editor uses fixed top controls, while the contact page keeps its standard header
 - "no hardcoded values" was too broad — resolved: shared layout and theme-sensitive visual values come from **Design Tokens** rather than one-off component values
+- "landing page route" was ambiguous between `/` and a separate path — resolved: the **Landing Page** takes `/` and the editor moves to the **Editor Route** (`/editor`)
+- "landing page header CTA" was ambiguous — resolved: the **Landing Page** uses "Open Editor" instead of "Back to Editor" since visitors have not been to the editor yet
