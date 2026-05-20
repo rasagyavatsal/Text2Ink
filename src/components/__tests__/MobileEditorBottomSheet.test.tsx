@@ -5,7 +5,7 @@ import MobileEditorBottomSheet from '../MobileEditorBottomSheet';
 import { createMobileSheetSnapPoints, getMobileSheetAnchorSnapIndex } from '@/lib/mobileEditorSheet';
 
 const { sheetMock } = vi.hoisted(() => ({
-  sheetMock: vi.fn(({ children }: { children: React.ReactNode }) => children),
+  sheetMock: vi.fn(({ children }: any) => children),
 }));
 
 vi.mock('react-modal-sheet', () => ({

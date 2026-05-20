@@ -185,4 +185,16 @@ describe("InquiryForm", () => {
     expect(screen.getByRole("option", { name: "Bug report" })).toBeInTheDocument()
     expect(screen.getByRole("option", { name: "Feature request" })).toBeInTheDocument()
   })
+
+  it("uses canonical Input and Textarea components", () => {
+    render(<InquiryForm />)
+
+    const nameInput = screen.getByLabelText(/name/i)
+    const emailInput = screen.getByLabelText(/email/i)
+    const messageTextarea = screen.getByLabelText(/message/i)
+
+    expect(nameInput).toHaveAttribute("data-slot", "input")
+    expect(emailInput).toHaveAttribute("data-slot", "input")
+    expect(messageTextarea).toHaveAttribute("data-slot", "textarea")
+  })
 })

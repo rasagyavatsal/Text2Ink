@@ -322,22 +322,22 @@ export default function ExportModal({
 
         {isSuccess ? (
           <div className="flex flex-col items-center justify-center py-6 space-y-4">
-            <CheckCircle2 className="w-12 h-12 text-green-500" />
+            <CheckCircle2 className="w-12 h-12 text-success" />
             <p className="font-medium text-center">Export completed successfully!</p>
-            <Button onClick={onClose} className="mt-4 bg-brand-accent hover:bg-brand-accent-hover text-brand-accent-foreground">
+            <Button variant="brand" onClick={onClose} className="mt-4">
               Close
             </Button>
           </div>
         ) : (
           <div className="space-y-6 py-4">
             <div className="flex flex-col gap-2">
-              <Label className="text-label font-bold text-muted-foreground uppercase tracking-widest" htmlFor="export-format">Format</Label>
+              <Label className="label-text" htmlFor="export-format">Format</Label>
               <Select
                 value={format}
                 onValueChange={(value) => setFormat(value as ExportFormat)}
                 disabled={isExporting}
               >
-                <SelectTrigger id="export-format" className="bg-muted border-none h-11 text-sm">
+                <SelectTrigger id="export-format" className="bg-muted border-none h-control-lg text-sm">
                   <SelectValue placeholder="Select format" />
                 </SelectTrigger>
                 <SelectContent>
@@ -364,10 +364,11 @@ export default function ExportModal({
             </div>
 
             <Button
+              variant={hasContent ? 'brand' : 'default'}
               onClick={exportPages}
               disabled={isExporting || !hasContent}
               className={`w-full font-bold transition-all active:scale-95 h-11 ${
-                !hasContent ? 'bg-muted text-muted-foreground hover:bg-muted' : 'bg-brand-accent hover:bg-brand-accent-hover text-brand-accent-foreground shadow-sm'
+                !hasContent ? 'bg-muted text-muted-foreground hover:bg-muted' : 'shadow-sm'
               }`}
             >
               {isExporting ? (
@@ -386,7 +387,7 @@ export default function ExportModal({
             {isExporting && exportProgress && (
               <div className="space-y-4 p-3 bg-muted rounded-lg">
                 <div className="flex items-center justify-between">
-                  <span className="text-label font-bold text-muted-foreground uppercase tracking-widest">
+                  <span className="label-text">
                     {format === 'pdf' && exportProgress.current >= exportProgress.total - 1
                       ? 'Finalizing PDF...'
                       : `Page ${Math.min(exportProgress.total, exportProgress.current + 1)} / ${exportProgress.total}`}
