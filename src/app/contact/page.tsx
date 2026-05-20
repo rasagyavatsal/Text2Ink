@@ -31,7 +31,7 @@ export default function ContactPage() {
           <div className="flex items-center gap-3 sm:gap-4">
             <ThemePicker />
             <Link
-              href="/"
+              href="/editor"
               className="bg-brand-accent text-brand-accent-foreground px-4 sm:px-5 py-2 rounded-lg font-medium text-sm sm:text-base hover:bg-brand-accent-hover transition-colors"
             >
               Back to Editor

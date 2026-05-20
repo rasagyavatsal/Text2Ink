@@ -47,7 +47,7 @@ describe('JS layout tokens as CSS custom properties', () => {
 
 describe('JS sources consume CSS tokens', () => {
   it('RootEditorPageClient reads header height from CSS tokens', () => {
-    const source = readSource('app/RootEditorPageClient.tsx');
+    const source = readSource('app/editor/RootEditorPageClient.tsx');
     expect(source).not.toMatch(/isMobileEditorLayout\s*\?\s*60\s*:\s*68/);
     expect(source).toMatch(/getComputedStyle|--metric-header-height/);
   });
