@@ -51,4 +51,20 @@ describe("ContactPage", () => {
     expect(screen.getByRole("contentinfo")).toBeInTheDocument()
     expect(screen.getByText(/text2ink.*all rights reserved/i)).toBeInTheDocument()
   })
+
+  it("uses StandardPageShell with min-h-screen wrapper", () => {
+    const { container } = render(<ContactPage />)
+    const wrapper = container.firstElementChild
+    expect(wrapper?.className).toContain("min-h-screen")
+    expect(wrapper?.className).toContain("bg-background")
+  })
+
+  it("renders header and footer as semantic landmarks inside the shell", () => {
+    render(<ContactPage />)
+    const banner = screen.getByRole("banner")
+    const contentinfo = screen.getByRole("contentinfo")
+    // Header and footer should be direct children of the shell wrapper
+    expect(banner.tagName.toLowerCase()).toBe("header")
+    expect(contentinfo.tagName.toLowerCase()).toBe("footer")
+  })
 })

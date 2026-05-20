@@ -4,6 +4,7 @@ import { Metadata } from "next"
 import Version from "@/components/Version"
 import ThemePicker from "@/components/ThemePicker"
 import { InquiryForm } from "@/components/InquiryForm"
+import StandardPageShell from "@/components/patterns/StandardPageShell"
 
 export const metadata: Metadata = {
   title: "Contact Us",
@@ -16,9 +17,8 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-background" role="banner">
+    <StandardPageShell
+      header={
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <Link
             href="/"
@@ -38,10 +38,8 @@ export default function ContactPage() {
             </Link>
           </div>
         </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="py-12 sm:py-16 md:py-20 px-4 sm:px-6">
+      }
+      content={
         <div className="max-w-5xl mx-auto">
           {/* Inquiry Split Layout — desktop: two columns, mobile: stacked */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
@@ -81,13 +79,8 @@ export default function ContactPage() {
             </div>
           </div>
         </div>
-      </main>
-
-      {/* Footer */}
-      <footer
-        className="border-t border-border bg-background py-6 sm:py-8 px-4 sm:px-6 mt-12"
-        role="contentinfo"
-      >
+      }
+      footer={
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <NextImage
@@ -106,7 +99,7 @@ export default function ContactPage() {
             <Version />
           </div>
         </div>
-      </footer>
-    </div>
+      }
+    />
   )
 }
