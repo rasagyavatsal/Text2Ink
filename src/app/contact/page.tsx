@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { Metadata } from "next"
+import { Button } from "@/components/ui/button"
 import { InquiryForm } from "@/components/InquiryForm"
 import StandardPageShell from "@/components/patterns/StandardPageShell"
 import SiteHeader from "@/components/patterns/SiteHeader"
@@ -21,12 +22,11 @@ export default function ContactPage() {
         <SiteHeader
           hideContactLink
           cta={
-            <Link
-              href="/editor"
-              className="bg-brand-accent text-brand-accent-foreground px-4 sm:px-5 py-2 rounded-lg font-medium text-sm sm:text-base hover:bg-brand-accent-hover transition-colors"
-            >
-              Back to Editor
-            </Link>
+            <Button variant="brand" size="sm" asChild>
+              <Link href="/editor">
+                Back to Editor
+              </Link>
+            </Button>
           }
         />
       }

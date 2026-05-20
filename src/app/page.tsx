@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import SiteHeader from '@/components/patterns/SiteHeader';
 import SiteFooter from '@/components/patterns/SiteFooter';
 import StandardPageShell from '@/components/patterns/StandardPageShell';
@@ -15,12 +16,11 @@ export default function HomePage() {
       header={
         <SiteHeader
           cta={
-            <Link
-              href="/editor"
-              className="bg-brand-accent text-brand-accent-foreground px-4 sm:px-5 py-2 rounded-lg font-medium text-sm sm:text-base hover:bg-brand-accent-hover transition-colors"
-            >
-              Open Editor
-            </Link>
+            <Button variant="brand" size="sm" asChild>
+              <Link href="/editor">
+                Open Editor
+              </Link>
+            </Button>
           }
         />
       }
@@ -33,12 +33,11 @@ export default function HomePage() {
             <p className="text-lg sm:text-xl text-muted-foreground">
               Because life&apos;s too short to handwrite assignments.
             </p>
-            <Link
-              href="/editor"
-              className="bg-brand-accent text-brand-accent-foreground px-6 sm:px-8 py-3 rounded-xl font-semibold text-base sm:text-lg hover:bg-brand-accent-hover transition-colors shadow-sm mt-2"
-            >
-              Open Editor
-            </Link>
+            <Button variant="brand" size="lg" className="mt-2 shadow-sm" asChild>
+              <Link href="/editor">
+                Open Editor
+              </Link>
+            </Button>
           </div>
 
           <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mt-4">
