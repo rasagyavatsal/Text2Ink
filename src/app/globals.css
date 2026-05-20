@@ -39,6 +39,7 @@
   --color-brand-accent-hover: var(--brand-accent-hover);
   --color-brand-accent-foreground: var(--brand-accent-foreground);
   --color-brand-accent-soft: var(--brand-accent-soft);
+  --color-success: var(--color-success);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -68,10 +69,11 @@
   --inset-panel: var(--panel-width);
 
   /* Size: tokens available as size-* utilities */
-  --size-icon-xs: 0.75rem;
-  --size-icon-sm: 1rem;
-  --size-icon-md: 1.25rem;
-  --size-icon-lg: 1.5rem;
+  /* Size: tokens available as size-* utilities */
+  --size-icon-xs: var(--size-icon-xs);
+  --size-icon-sm: var(--size-icon-sm);
+  --size-icon-md: var(--size-icon-md);
+  --size-icon-lg: var(--size-icon-lg);
 
   /* Font size: tokens available as text-* utilities */
   --font-size-label: 0.625rem;
@@ -100,6 +102,10 @@
   --size-control-sm: 2rem;
   --size-control-md: 2.25rem;
   --size-control-lg: 2.5rem;
+  --size-icon-xs: 0.75rem;
+  --size-icon-sm: 1rem;
+  --size-icon-md: 1.25rem;
+  --size-icon-lg: 1.5rem;
 
   /* Primitive tokens: width scale */
   --width-panel: 24rem;
@@ -157,6 +163,7 @@
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
@@ -173,10 +180,11 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  --brand-accent: #E0A32A;
-  --brand-accent-hover: #c99225;
-  --brand-accent-foreground: #ffffff;
-  --brand-accent-soft: #E0A32A1A;
+  --brand-accent: oklch(0.755 0.145 79.142);
+  --brand-accent-hover: oklch(0.696 0.134 79.166);
+  --brand-accent-foreground: oklch(1 0 0);
+  --brand-accent-soft: oklch(0.755 0.145 79.142 / 0.1);
+  --color-success: oklch(0.723 0.192 149.579);
 }
 
 .dark {
@@ -212,10 +220,11 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
-  --brand-accent: #E0A32A;
-  --brand-accent-hover: #c99225;
-  --brand-accent-foreground: #ffffff;
-  --brand-accent-soft: #E0A32A1A;
+  --brand-accent: oklch(0.755 0.145 79.142);
+  --brand-accent-hover: oklch(0.696 0.134 79.166);
+  --brand-accent-foreground: oklch(1 0 0);
+  --brand-accent-soft: oklch(0.755 0.145 79.142 / 0.1);
+  --color-success: oklch(0.723 0.192 149.579);
 }
 
 @layer base {
@@ -240,6 +249,6 @@
 
   .mobile-editor-sheet__scroller {
     overscroll-behavior: contain;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-bottom: var(--safe-area-inset-bottom);
   }
 }

@@ -464,7 +464,7 @@ export default function SettingsPanel({
                         customFont: null,
                       });
                     }}
-                    className="absolute -top-1.5 -right-1.5 p-1 bg-destructive text-brand-accent-foreground rounded-full hover:bg-destructive/90 transition-colors opacity-100 xl:opacity-0 xl:group-hover:opacity-100 shadow-sm z-10"
+                    className="absolute -top-1.5 -right-1.5 p-1 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90 transition-colors opacity-100 xl:opacity-0 xl:group-hover:opacity-100 shadow-sm z-10"
                     title="Remove custom font"
                     type="button"
                   >
@@ -476,7 +476,7 @@ export default function SettingsPanel({
                   <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center mb-2 group-hover:bg-brand-accent/10 transition-colors">
                     <Upload className="w-4 h-4 text-muted-foreground group-hover:text-brand-accent transition-colors" />
                   </div>
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tight group-hover:text-brand-accent transition-colors text-center px-2">Upload Font</span>
+                  <span className="text-label font-bold text-muted-foreground uppercase tracking-tight group-hover:text-brand-accent transition-colors text-center px-2">Upload Font</span>
                   <input
                     type="file"
                     accept=".ttf,.otf,font/ttf,font/otf,application/x-font-ttf,application/x-font-opentype"
@@ -724,7 +724,7 @@ export default function SettingsPanel({
                               customBackgroundImage: next.length > 0 ? next[0] : null,
                             });
                           }}
-                          className="absolute -top-1 -right-1 p-1 bg-destructive text-brand-accent-foreground rounded-full opacity-100 xl:opacity-0 xl:group-hover:opacity-100 transition-opacity shadow-sm"
+                          className="absolute -top-1 -right-1 p-1 bg-destructive text-destructive-foreground rounded-full opacity-100 xl:opacity-0 xl:group-hover:opacity-100 transition-opacity shadow-sm"
                           title="Remove background image"
                         >
                           <X className="w-3 h-3" />

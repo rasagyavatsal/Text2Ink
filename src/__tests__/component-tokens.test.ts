@@ -67,9 +67,14 @@ describe('shared component token consumption', () => {
   describe('SettingsPanel.tsx', () => {
     const source = readComponentFile('SettingsPanel.tsx');
 
-    it('uses token-based label text size instead of hardcoded text-[10px]', () => {
+    it('uses token-based label text size instead of hardcoded text-[10px] or text-[9px]', () => {
       expect(source).not.toMatch(/text-\[10px\]/);
+      expect(source).not.toMatch(/text-\[9px\]/);
       expect(source).toMatch(/text-label/);
+    });
+
+    it('uses text-destructive-foreground for destructive buttons instead of text-brand-accent-foreground', () => {
+      expect(source).not.toMatch(/bg-destructive text-brand-accent-foreground/);
     });
   });
 
@@ -80,5 +85,46 @@ describe('shared component token consumption', () => {
       expect(source).not.toMatch(/text-\[10px\]/);
       expect(source).toMatch(/text-label/);
     });
+  });
+});
+
+describe('global CSS tokens', () => {
+  const source = fs.readFileSync(
+    path.resolve(__dirname, '../app/globals.css'),
+    'utf-8'
+  );
+
+  it('uses oklch for brand accent colors instead of hex', () => {
+    expect(source).not.toMatch(/--brand-accent: #/);
+    expect(source).not.toMatch(/--brand-accent-hover: #/);
+    expect(source).not.toMatch(/--brand-accent-foreground: #/);
+    expect(source).not.toMatch(/--brand-accent-soft: #/);
+  });
+
+  it('defines --color-success token', () => {
+    expect(source).toMatch(/--color-success:/);
+  });
+
+  it('defines --destructive-foreground in :root light mode', () => {
+    const rootBlockMatch = source.match(/:root\s*{([^}]*)}/);
+    expect(rootBlockMatch).toBeTruthy();
+    expect(rootBlockMatch![1]).toMatch(/--destructive-foreground:/);
+  });
+
+  it('uses var(--safe-area-inset-bottom) instead of env() in components layer', () => {
+    const componentsLayerMatch = source.match(/@layer components\s*{([\s\S]*)}/);
+    expect(componentsLayerMatch).toBeTruthy();
+    expect(componentsLayerMatch![1]).not.toMatch(/env\(safe-area-inset-bottom/);
+    expect(componentsLayerMatch![1]).toMatch(/var\(--safe-area-inset-bottom\)/);
+  });
+
+  it('defines icon sizes in :root and references them in @theme inline', () => {
+    const rootBlockMatch = source.match(/:root\s*{([^}]*)}/);
+    expect(rootBlockMatch).toBeTruthy();
+    expect(rootBlockMatch![1]).toMatch(/--size-icon-xs:/);
+    
+    const themeInlineMatch = source.match(/@theme inline\s*{([^}]*)}/);
+    expect(themeInlineMatch).toBeTruthy();
+    expect(themeInlineMatch![1]).toMatch(/--size-icon-xs: var\(--size-icon-xs\)/);
   });
 });
