@@ -251,4 +251,12 @@
     overscroll-behavior: contain;
     padding-bottom: var(--safe-area-inset-bottom);
   }
+
+  .label-text {
+    font-size: var(--font-size-label);
+    font-weight: 700;
+    color: var(--color-muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
 }
