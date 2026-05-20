@@ -47,3 +47,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 docs/ui-inquiry-design-system-refactor-spec.md
+
+/.claude
+/.antigravitycli
