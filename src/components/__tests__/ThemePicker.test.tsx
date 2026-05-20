@@ -26,6 +26,7 @@ describe('ThemePicker', () => {
     // The default mock theme is 'system', so it should show the system toggle
     const button = screen.getByRole('button', { name: /system theme/i });
     expect(button).toBeInTheDocument();
+    expect(button).toHaveAttribute('data-variant', 'outline');
     
     // It should not render other theme buttons
     expect(screen.queryByRole('button', { name: /light theme/i })).not.toBeInTheDocument();

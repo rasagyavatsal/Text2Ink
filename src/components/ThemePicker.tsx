@@ -3,6 +3,7 @@
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 import { Sun, Moon, Monitor } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function ThemePicker() {
   const { theme, setTheme } = useTheme();
@@ -27,13 +28,15 @@ export default function ThemePicker() {
   };
 
   return (
-    <button
+    <Button
+      variant="outline"
+      size="icon"
       onClick={cycleTheme}
       aria-label={label}
       title={label}
-      className="flex items-center justify-center h-control-md aspect-square rounded-lg border border-border bg-background shadow-sm text-brand-accent transition-colors hover:text-foreground hover:bg-muted"
+      className="text-brand-accent hover:text-foreground hover:bg-muted"
     >
       <Icon className="w-4 h-4" />
-    </button>
+    </Button>
   );
 }

@@ -82,8 +82,14 @@ describe("InquiryForm", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/thank you/i)).toBeInTheDocument()
-      expect(screen.getByRole("button", { name: /send another inquiry/i })).toBeInTheDocument()
+      const sendAnotherButton = screen.getByRole("button", { name: /send another inquiry/i });
+      expect(sendAnotherButton).toBeInTheDocument()
+      expect(sendAnotherButton).toHaveAttribute('data-variant', 'brand')
     })
+    
+    // Check for success icon
+    const checkIcon = document.querySelector('svg.text-success');
+    expect(checkIcon).toBeInTheDocument();
 
     // Form should no longer be visible
     expect(screen.queryByLabelText(/name/i)).not.toBeInTheDocument()

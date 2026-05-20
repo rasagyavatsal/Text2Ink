@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import ThemePicker from '../ThemePicker';
+import { Button } from '@/components/ui/button';
 
 interface SiteHeaderProps {
   cta?: React.ReactNode;
@@ -30,12 +31,11 @@ export default function SiteHeader({ cta, hideContactLink }: SiteHeaderProps = {
       <div className="flex items-center gap-3 sm:gap-4">
         <ThemePicker />
         {!hideContactLink && (
-          <Link
-            href="/contact"
-            className="text-sm sm:text-base font-medium text-muted-foreground hover:text-brand-accent transition-colors"
-          >
-            Contact
-          </Link>
+          <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex text-muted-foreground hover:text-brand-accent">
+            <Link href="/contact">
+              Contact
+            </Link>
+          </Button>
         )}
         {cta}
       </div>
