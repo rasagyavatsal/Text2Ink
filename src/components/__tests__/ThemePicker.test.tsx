@@ -20,26 +20,53 @@ describe('ThemePicker', () => {
     });
   });
 
-  it('renders three theme options', () => {
+  it('renders a single toggle button indicating the current theme', () => {
     render(<ThemePicker />);
     
-    // It should have options for Light, Dark, System
-    expect(screen.getByRole('button', { name: /light/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /dark/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /system/i })).toBeInTheDocument();
+    // The default mock theme is 'system', so it should show the system toggle
+    const button = screen.getByRole('button', { name: /system theme/i });
+    expect(button).toBeInTheDocument();
+    
+    // It should not render other theme buttons
+    expect(screen.queryByRole('button', { name: /light theme/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /dark theme/i })).not.toBeInTheDocument();
   });
 
-  it('calls setTheme when an option is clicked', async () => {
+  it('cycles theme through light -> dark -> system on click', async () => {
     const user = userEvent.setup();
-    render(<ThemePicker />);
+    const { rerender } = render(<ThemePicker />);
     
-    await user.click(screen.getByRole('button', { name: /dark/i }));
-    expect(setThemeMock).toHaveBeenCalledWith('dark');
+    // Initial mock state has theme 'system'
+    const button = screen.getByRole('button', { name: /system theme/i });
     
-    await user.click(screen.getByRole('button', { name: /light/i }));
+    // Click 1: system -> light
+    await user.click(button);
     expect(setThemeMock).toHaveBeenCalledWith('light');
     
-    await user.click(screen.getByRole('button', { name: /system/i }));
+    // Update mock to simulate theme changed to 'light'
+    (useTheme as any).mockReturnValue({
+      theme: 'light',
+      setTheme: setThemeMock,
+      themes: ['light', 'dark', 'system'],
+    });
+    rerender(<ThemePicker />);
+    
+    // Click 2: light -> dark
+    const lightButton = screen.getByRole('button', { name: /light theme/i });
+    await user.click(lightButton);
+    expect(setThemeMock).toHaveBeenCalledWith('dark');
+    
+    // Update mock to simulate theme changed to 'dark'
+    (useTheme as any).mockReturnValue({
+      theme: 'dark',
+      setTheme: setThemeMock,
+      themes: ['light', 'dark', 'system'],
+    });
+    rerender(<ThemePicker />);
+    
+    // Click 3: dark -> system
+    const darkButton = screen.getByRole('button', { name: /dark theme/i });
+    await user.click(darkButton);
     expect(setThemeMock).toHaveBeenCalledWith('system');
   });
 });

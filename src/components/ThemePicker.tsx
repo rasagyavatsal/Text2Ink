@@ -13,35 +13,27 @@ export default function ThemePicker() {
   }, []);
 
   if (!mounted) {
-    return <div className="h-control-md w-[6.25rem] bg-muted rounded-lg animate-pulse" />;
+    return <div className="h-control-md aspect-square rounded-lg border border-border bg-background animate-pulse" />;
   }
 
+  const currentTheme = theme || 'system';
+  const Icon = currentTheme === 'light' ? Sun : currentTheme === 'dark' ? Moon : Monitor;
+  const label = currentTheme === 'light' ? 'Light theme' : currentTheme === 'dark' ? 'Dark theme' : 'System theme';
+
+  const cycleTheme = () => {
+    if (currentTheme === 'light') setTheme('dark');
+    else if (currentTheme === 'dark') setTheme('system');
+    else setTheme('light');
+  };
+
   return (
-    <div className="flex bg-muted p-1 rounded-lg border border-border" role="group" aria-label="Theme preference">
-      <button
-        onClick={() => setTheme('light')}
-        aria-label="Light theme"
-        title="Light theme"
-        className={`p-1.5 rounded-md transition-colors ${theme === 'light' ? 'bg-background shadow-sm text-brand-accent' : 'text-muted-foreground hover:text-foreground'}`}
-      >
-        <Sun className="w-4 h-4" />
-      </button>
-      <button
-        onClick={() => setTheme('dark')}
-        aria-label="Dark theme"
-        title="Dark theme"
-        className={`p-1.5 rounded-md transition-colors ${theme === 'dark' ? 'bg-background shadow-sm text-brand-accent' : 'text-muted-foreground hover:text-foreground'}`}
-      >
-        <Moon className="w-4 h-4" />
-      </button>
-      <button
-        onClick={() => setTheme('system')}
-        aria-label="System theme"
-        title="System theme"
-        className={`p-1.5 rounded-md transition-colors ${theme === 'system' ? 'bg-background shadow-sm text-brand-accent' : 'text-muted-foreground hover:text-foreground'}`}
-      >
-        <Monitor className="w-4 h-4" />
-      </button>
-    </div>
+    <button
+      onClick={cycleTheme}
+      aria-label={label}
+      title={label}
+      className="flex items-center justify-center h-control-md aspect-square rounded-lg border border-border bg-background shadow-sm text-brand-accent transition-colors hover:text-foreground hover:bg-muted"
+    >
+      <Icon className="w-4 h-4" />
+    </button>
   );
 }
