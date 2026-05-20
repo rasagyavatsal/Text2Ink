@@ -386,7 +386,7 @@ export default function SettingsPanel({
                 <DialogTrigger asChild>
                   <Button variant="link" className="text-label font-bold text-brand-accent p-0 h-auto">See all</Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl bg-background border-border text-foreground p-0 overflow-hidden sm:rounded-2xl shadow-xl">
+                <DialogContent className="max-w-2xl bg-background border-border text-foreground p-0 overflow-hidden">
                   <DialogHeader className="p-6 border-b border-border">
                     <DialogTitle className="text-lg font-bold">All Handwriting Fonts</DialogTitle>
                   </DialogHeader>

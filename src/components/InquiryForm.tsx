@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { CheckCircle2 } from "lucide-react"
 
 const TOPICS = ["General inquiry", "Bug report", "Feature request"] as const
 
@@ -117,12 +118,15 @@ export function InquiryForm() {
 
   if (isSuccess) {
     return (
-      <div className="text-center py-8">
-        <h3 className="text-lg font-semibold mb-2">Thank you</h3>
-        <p className="text-muted-foreground mb-4">
-          Your inquiry has been received. We&apos;ll get back to you soon.
-        </p>
-        <Button variant="outline" onClick={handleReset}>
+      <div className="flex flex-col items-center justify-center py-6 space-y-4 text-center">
+        <CheckCircle2 className="w-12 h-12 text-success" />
+        <div className="space-y-1">
+          <h3 className="font-medium">Thank you</h3>
+          <p className="text-sm text-muted-foreground max-w-sm px-4">
+            Your inquiry has been received. We&apos;ll get back to you soon.
+          </p>
+        </div>
+        <Button variant="brand" onClick={handleReset} className="mt-4">
           Send another inquiry
         </Button>
       </div>
@@ -177,7 +181,7 @@ export function InquiryForm() {
         >
           <SelectTrigger
             id="inquiry-topic"
-            className={cn("mt-1.5 w-full", errors.topic && "border-destructive")}
+            className={cn("mt-1.5", errors.topic && "border-destructive")}
           >
             <SelectValue placeholder="Select a topic" />
           </SelectTrigger>

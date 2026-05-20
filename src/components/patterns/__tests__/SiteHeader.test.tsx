@@ -22,12 +22,15 @@ describe('SiteHeader', () => {
     expect(screen.getByTestId('theme-picker')).toBeInTheDocument();
   });
 
-  it('renders the Contact link by default', () => {
+  it('renders the Contact link by default and hides it on mobile', () => {
     render(<SiteHeader />);
     
     const contactLink = screen.getByRole('link', { name: /contact/i });
     expect(contactLink).toBeInTheDocument();
     expect(contactLink).toHaveAttribute('href', '/contact');
+    
+    // The link wrapper should have the compact behavior classes to hide on mobile
+    expect(contactLink).toHaveClass('hidden', 'sm:inline-flex');
   });
 
   it('hides the Contact link when hideContactLink is true', () => {

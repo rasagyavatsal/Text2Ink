@@ -50,10 +50,12 @@ describe('ExportModal', () => {
     const exportButton = screen.getByRole('button', { name: /export pdf/i });
     expect(exportButton).toHaveAttribute('data-variant', 'brand');
     
-    // 2. Select trigger uses h-control-lg
+    // 2. Select trigger uses h-control-lg and w-full
     const selectTrigger = screen.getByRole('combobox');
     expect(selectTrigger.className).toContain('h-control-lg');
     expect(selectTrigger.className).not.toContain('h-11');
+    expect(selectTrigger.className).toContain('w-full');
+    expect(selectTrigger.className).not.toContain('w-fit');
     
     // 3. Labels use label-text class
     const formatLabel = screen.getByText('Format');

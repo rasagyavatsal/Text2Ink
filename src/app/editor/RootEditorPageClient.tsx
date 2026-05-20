@@ -471,7 +471,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
           <Download className="w-4 h-4 mr-2" />
           Export
         </Button>
-        <Button variant="ghost" asChild>
+        <Button variant="ghost" asChild className="hidden sm:inline-flex">
           <Link href="/contact">
             Contact
           </Link>
