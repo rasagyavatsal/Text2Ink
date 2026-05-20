@@ -1,8 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import NextImage from 'next/image';
-import Version from '@/components/Version';
-import ThemePicker from '@/components/ThemePicker';
+import SiteHeader from '@/components/patterns/SiteHeader';
+import SiteFooter from '@/components/patterns/SiteFooter';
 import StandardPageShell from '@/components/patterns/StandardPageShell';
 
 export const metadata: Metadata = {
@@ -14,31 +13,16 @@ export default function HomePage() {
   return (
     <StandardPageShell
       header={
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-          <Link
-            href="/"
-            className="font-bold text-2xl sm:text-3xl font-dancing-script hover:text-brand-accent transition-colors"
-          >
-            <span className="text-brand-accent">Text</span>
-            <span className="text-foreground">2</span>
-            <span className="text-brand-accent">Ink</span>
-          </Link>
-          <div className="flex items-center gap-3 sm:gap-4">
-            <ThemePicker />
-            <Link
-              href="/contact"
-              className="text-sm sm:text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Contact
-            </Link>
+        <SiteHeader
+          cta={
             <Link
               href="/editor"
               className="bg-brand-accent text-brand-accent-foreground px-4 sm:px-5 py-2 rounded-lg font-medium text-sm sm:text-base hover:bg-brand-accent-hover transition-colors"
             >
               Open Editor
             </Link>
-          </div>
-        </div>
+          }
+        />
       }
       content={
         <div className="max-w-5xl mx-auto flex flex-col items-center gap-12 sm:gap-16">
@@ -86,24 +70,7 @@ export default function HomePage() {
         </div>
       }
       footer={
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <NextImage
-              src="/logo-192.png"
-              alt="Text2Ink logo"
-              width={64}
-              height={64}
-              className="w-16 h-16"
-              priority
-            />
-          </div>
-          <div className="flex flex-col items-center md:items-end gap-1">
-            <p className="text-muted-foreground text-xs sm:text-sm">
-              © {new Date().getFullYear()} Text2Ink. All rights reserved.
-            </p>
-            <Version />
-          </div>
-        </div>
+        <SiteFooter />
       }
     />
   );

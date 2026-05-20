@@ -6,6 +6,10 @@ vi.mock("@/components/InquiryForm", () => ({
   InquiryForm: () => <div data-testid="inquiry-form">Inquiry Form Mock</div>,
 }))
 
+vi.mock("@/components/ThemePicker", () => ({
+  default: () => <div data-testid="theme-picker" />
+}))
+
 describe("ContactPage", () => {
   it("renders the sparse header with Text2Ink on the left", () => {
     render(<ContactPage />)
@@ -19,7 +23,7 @@ describe("ContactPage", () => {
 
   it("renders ThemePicker and Back to Editor in the header", () => {
     render(<ContactPage />)
-    expect(screen.getByRole("group", { name: /theme preference/i })).toBeInTheDocument()
+    expect(screen.getByTestId("theme-picker")).toBeInTheDocument()
     const backLink = screen.getByRole("link", { name: /back to editor/i })
     expect(backLink).toBeInTheDocument()
     expect(backLink).toHaveAttribute("href", "/editor")
