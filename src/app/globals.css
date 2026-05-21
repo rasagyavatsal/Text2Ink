@@ -82,7 +82,17 @@
   --size-icon-lg: var(--size-icon-lg);
 
   /* Font size: tokens available as text-* utilities */
-  --font-size-label: 0.625rem;
+  --font-size-label: var(--text-size-2xs);
+  --font-size-brand-mark: var(--type-brand-mark-size);
+  --font-size-display-title: var(--type-display-title-size);
+  --font-size-page-title: var(--type-page-title-size);
+  --font-size-document-title: var(--type-document-title-size);
+  --font-size-section-title: var(--type-section-title-size);
+  --font-size-overlay-title: var(--type-overlay-title-size);
+  --font-size-body-lg: var(--type-body-lg-size);
+  --font-size-body: var(--type-body-size);
+  --font-size-supporting: var(--type-supporting-size);
+  --font-size-caption: var(--type-caption-size);
 }
 
 :root {
@@ -124,6 +134,20 @@
   --breakpoint-lg: 1024px;
   --breakpoint-xl: 1280px;
 
+  /* Primitive tokens: typography scale */
+  --text-size-2xs: 0.625rem;
+  --text-size-xs: 0.75rem;
+  --text-size-sm: 0.875rem;
+  --text-size-base: 1rem;
+  --text-size-lg: 1.125rem;
+  --text-size-xl: 1.25rem;
+  --text-size-2xl: 1.5rem;
+  --text-size-3xl: 1.875rem;
+  --text-size-4xl: 2.25rem;
+  --text-size-5xl: 3rem;
+  --text-size-6xl: 3.75rem;
+  --text-size-7xl: 4.5rem;
+
   /* Primitive tokens: layout metrics consumed by JS */
   --metric-header-height-mobile: 60px;
   --metric-header-height-desktop: 68px;
@@ -159,6 +183,18 @@
   --panel-width: var(--layout-panel-width);
   --panel-padding: var(--space-6);
   --panel-gap: var(--space-6);
+
+  /* Semantic tokens: typography intent */
+  --type-brand-mark-size: var(--text-size-2xl);
+  --type-display-title-size: var(--text-size-5xl);
+  --type-page-title-size: var(--text-size-3xl);
+  --type-document-title-size: var(--text-size-4xl);
+  --type-section-title-size: var(--text-size-2xl);
+  --type-overlay-title-size: var(--text-size-lg);
+  --type-body-lg-size: var(--text-size-lg);
+  --type-body-size: var(--text-size-base);
+  --type-supporting-size: var(--text-size-sm);
+  --type-caption-size: var(--text-size-xs);
 
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -207,12 +243,18 @@
     --layout-page-padding-x: var(--space-6);
     --layout-page-padding-y: var(--space-16);
     --layout-section-rhythm: var(--space-16);
+    --type-brand-mark-size: var(--text-size-3xl);
+    --type-display-title-size: var(--text-size-6xl);
+    --type-page-title-size: var(--text-size-4xl);
+    --type-document-title-size: var(--text-size-5xl);
+    --type-body-lg-size: var(--text-size-xl);
   }
 }
 
 @media (min-width: 768px) {
   :root {
     --layout-page-padding-y: var(--space-20);
+    --type-display-title-size: var(--text-size-7xl);
   }
 }
 

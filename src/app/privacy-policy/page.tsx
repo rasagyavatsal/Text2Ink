@@ -73,14 +73,14 @@ export default function PrivacyPolicyPage() {
               <p className="text-sm font-medium uppercase tracking-[0.24em] text-brand-accent">
                 Legal
               </p>
-              <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+              <h1 className="text-document-title font-bold tracking-tight text-foreground">
                 Privacy Policy
               </h1>
-              <p className="max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg">
+              <p className="max-w-3xl text-body-lg leading-7 text-muted-foreground">
                 This policy explains what information Text2Ink collects, where it is
                 stored, and how that information is used across the editor and public site.
               </p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-caption text-muted-foreground">
                 Effective date: May 21, 2026
               </p>
             </div>
@@ -89,10 +89,10 @@ export default function PrivacyPolicyPage() {
               <div className="space-y-8">
                 {sections.map((section) => (
                   <section key={section.title} className="space-y-3">
-                    <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                    <h2 className="text-section-title font-semibold tracking-tight text-foreground">
                       {section.title}
                     </h2>
-                    <p className="text-base leading-7 text-muted-foreground">
+                    <p className="text-body leading-7 text-muted-foreground">
                       {section.body}
                     </p>
                   </section>

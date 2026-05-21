@@ -13,7 +13,7 @@ export default function SiteHeader({ cta, hideContactLink }: SiteHeaderProps = {
     <div className="flex items-center justify-between w-full">
       <Link
         href="/"
-        className="flex items-center gap-2 font-bold text-2xl sm:text-3xl font-dancing-script hover:text-brand-accent transition-colors"
+        className="flex items-center gap-2 text-brand-mark font-bold font-dancing-script hover:text-brand-accent transition-colors"
       >
         <Image
           src="/logo-without-background.png"

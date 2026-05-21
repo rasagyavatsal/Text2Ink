@@ -41,10 +41,10 @@ export default function ContactPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
               {/* Left: Email info */}
               <div>
-                <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+                <h1 className="text-page-title font-bold text-foreground mb-4">
                   Email me
                 </h1>
-                <p className="text-muted-foreground mb-6">
+                <p className="text-body text-muted-foreground mb-6">
                   Have a question, found a bug, or want to request a feature?
                   Fill out the form and I&apos;ll get back to you.
                 </p>
@@ -62,7 +62,7 @@ export default function ContactPage() {
 
                 {/* Mobile-only fallback email below form */}
                 <div className="lg:hidden mt-6">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-supporting text-muted-foreground">
                     Or email directly:{" "}
                     <a
                       href="mailto:rasagyavatsal16@gmail.com"
