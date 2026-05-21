@@ -29,7 +29,7 @@ describe('shared typography consumers use semantic tokens', () => {
 
     expect(contactSource).not.toMatch(/text-3xl sm:text-4xl/);
     expect(contactSource).toMatch(/text-page-title/);
-    expect(contactSource).toMatch(/text-body/);
+    expect(contactSource).toMatch(/text-body-lg/);
     expect(contactSource).toMatch(/text-supporting/);
   });
 

@@ -62,6 +62,11 @@ describe("ContactPage", () => {
     expect(screen.getByText("Email me")).toBeInTheDocument()
   })
 
+  it("renders the Mail icon with the email address", () => {
+    render(<ContactPage />)
+    expect(screen.getByTestId("mail-icon")).toBeInTheDocument()
+  })
+
   it("has the inquiry split layout structure on desktop", () => {
     const { container } = render(<ContactPage />)
     const splitLayout = container.querySelector(".lg\\:grid-cols-2")
