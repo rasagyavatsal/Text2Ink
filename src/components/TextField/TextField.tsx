@@ -205,8 +205,8 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
     <div
       ref={rootRef}
       className={cn(
-        "absolute border border-dashed group transition-colors",
-        showControls ? "border-brand-accent/60" : "border-border/60 hover:border-brand-accent/30"
+        "absolute border-2 border-dashed group transition-colors duration-200 rounded-lg",
+        showControls ? "border-brand-accent bg-brand-accent/5 shadow-sm" : "border-border/40 hover:border-brand-accent/40 hover:bg-brand-accent/5"
       )}
       onPointerDown={() => {
         setIsSelected(true);
@@ -230,60 +230,60 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
         {/* Corners */}
         <div
           data-testid="handle-nw"
-          className="absolute -top-5 -left-5 size-11 pointer-events-auto cursor-nwse-resize touch-none flex items-center justify-center"
+          className="absolute -top-3 -left-3 size-6 pointer-events-auto cursor-nwse-resize touch-none flex items-center justify-center"
           onPointerDown={(e) => handleResizeStart(e, 'nw')}
         >
-          <span className="h-2 w-2 rounded-full border border-brand-accent bg-background shadow-sm transition-transform hover:scale-125" />
+          <span className="h-2.5 w-2.5 rounded-full border-2 border-brand-accent bg-background shadow-sm transition-transform hover:scale-125" />
         </div>
         <div
           data-testid="handle-ne"
-          className="absolute -top-5 -right-5 size-11 pointer-events-auto cursor-nesw-resize touch-none flex items-center justify-center"
+          className="absolute -top-3 -right-3 size-6 pointer-events-auto cursor-nesw-resize touch-none flex items-center justify-center"
           onPointerDown={(e) => handleResizeStart(e, 'ne')}
         >
-          <span className="h-2 w-2 rounded-full border border-brand-accent bg-background shadow-sm transition-transform hover:scale-125" />
+          <span className="h-2.5 w-2.5 rounded-full border-2 border-brand-accent bg-background shadow-sm transition-transform hover:scale-125" />
         </div>
         <div
           data-testid="handle-sw"
-          className="absolute -bottom-5 -left-5 size-11 pointer-events-auto cursor-nesw-resize touch-none flex items-center justify-center"
+          className="absolute -bottom-3 -left-3 size-6 pointer-events-auto cursor-nesw-resize touch-none flex items-center justify-center"
           onPointerDown={(e) => handleResizeStart(e, 'sw')}
         >
-          <span className="h-2 w-2 rounded-full border border-brand-accent bg-background shadow-sm transition-transform hover:scale-125" />
+          <span className="h-2.5 w-2.5 rounded-full border-2 border-brand-accent bg-background shadow-sm transition-transform hover:scale-125" />
         </div>
         <div
           data-testid="handle-se"
-          className="absolute -bottom-5 -right-5 size-11 pointer-events-auto cursor-nwse-resize touch-none flex items-center justify-center"
+          className="absolute -bottom-3 -right-3 size-6 pointer-events-auto cursor-nwse-resize touch-none flex items-center justify-center"
           onPointerDown={(e) => handleResizeStart(e, 'se')}
         >
-          <span className="h-2 w-2 rounded-full border border-brand-accent bg-background shadow-sm transition-transform hover:scale-125" />
+          <span className="h-2.5 w-2.5 rounded-full border-2 border-brand-accent bg-background shadow-sm transition-transform hover:scale-125" />
         </div>
 
         {/* Sides */}
         <div
           data-testid="handle-n"
-          className="absolute -top-5 left-3 right-3 h-11 pointer-events-auto cursor-ns-resize touch-none"
+          className="absolute -top-3 left-3 right-3 h-6 pointer-events-auto cursor-ns-resize touch-none"
           onPointerDown={(e) => handleResizeStart(e, 'n')}
         />
         <div
           data-testid="handle-s"
-          className="absolute -bottom-5 left-3 right-3 h-11 pointer-events-auto cursor-ns-resize touch-none"
+          className="absolute -bottom-3 left-3 right-3 h-6 pointer-events-auto cursor-ns-resize touch-none"
           onPointerDown={(e) => handleResizeStart(e, 's')}
         />
         <div
           data-testid="handle-w"
-          className="absolute -left-5 top-3 bottom-3 w-11 pointer-events-auto cursor-ew-resize touch-none"
+          className="absolute -left-3 top-3 bottom-3 w-6 pointer-events-auto cursor-ew-resize touch-none"
           onPointerDown={(e) => handleResizeStart(e, 'w')}
         />
         <div
           data-testid="handle-e"
-          className="absolute -right-5 top-3 bottom-3 w-11 pointer-events-auto cursor-ew-resize touch-none"
+          className="absolute -right-3 top-3 bottom-3 w-6 pointer-events-auto cursor-ew-resize touch-none"
           onPointerDown={(e) => handleResizeStart(e, 'e')}
         />
       </div>
 
-      {/* Top Left Icons */}
+      {/* Top Left Icon - Drag */}
       <div
         className={cn(
-          "absolute -top-4 -left-4 flex items-center z-10 transition-opacity",
+          "absolute -top-6 -left-6 z-20 flex items-center transition-opacity",
           showControls ? "opacity-100" : "opacity-0 xl:group-hover:opacity-100"
         )}
       >
@@ -292,17 +292,17 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
           variant="outline"
           size="icon-sm"
           aria-label="Move text box"
-          className="rounded-full cursor-move bg-background shadow-sm text-muted-foreground touch-none"
+          className="rounded-full cursor-move bg-background shadow-md border-border text-muted-foreground hover:text-foreground touch-none h-8 w-8"
           onPointerDown={handleDragPointerDown}
         >
-          <Move className="size-3.5" />
+          <Move className="size-4" />
         </Button>
       </div>
 
-      {/* Top Right Icons - Consolidated Settings */}
+      {/* Top Right Icon - Settings */}
       <div
         className={cn(
-          "absolute -top-4 -right-4 z-10 transition-opacity",
+          "absolute -top-6 -right-6 z-20 flex items-center transition-opacity",
           showControls ? "opacity-100" : "opacity-0 xl:group-hover:opacity-100"
         )}
       >
@@ -314,9 +314,12 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
               variant="outline"
               size="icon-sm"
               aria-label="Text box settings"
-              className="rounded-full bg-background shadow-sm text-muted-foreground"
+              className={cn(
+                "rounded-full bg-background shadow-md border-border text-muted-foreground hover:text-foreground transition-colors h-8 w-8",
+                isSettingsOpen && "bg-muted text-foreground"
+              )}
             >
-              <Settings className="size-3.5" />
+              <Settings className="size-4" />
             </Button>
           </PopoverTrigger>
           {settingsAnchorPoint && (
@@ -331,13 +334,13 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
               }}
             />
           )}
-          <PopoverContent className="w-48 p-4 shadow-xl border-border">
-            <div className="space-y-5">
+          <PopoverContent className="w-64 p-5 shadow-2xl border-border rounded-2xl" align="center" sideOffset={16}>
+            <div className="space-y-6">
               {/* Font Size Section */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <label className="label-text">Font Size</label>
-                  <span className="text-label font-mono font-bold text-foreground">{field.fontSize}px</span>
+                  <label className="text-sm font-medium">Font Size</label>
+                  <span className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">{field.fontSize}px</span>
                 </div>
                 <Slider
                   value={[field.fontSize]}
@@ -349,16 +352,16 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
               </div>
 
               {/* Color Picker Section */}
-              <div className="space-y-2">
-                <label className="label-text">Text Color</label>
-                <div className="flex items-center gap-3 p-2 bg-muted rounded-lg border border-border">
+              <div className="space-y-3">
+                <label className="text-sm font-medium">Text Color</label>
+                <div className="flex items-center gap-3 p-2 bg-secondary rounded-lg border border-border">
                   <input
                     type="color"
                     value={field.color}
                     onChange={(e) => onUpdate({ color: e.target.value })}
                     className="w-8 h-8 rounded-md cursor-pointer border-0 p-0 bg-transparent shadow-sm"
                   />
-                  <span className="text-label font-mono font-bold text-foreground uppercase">
+                  <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
                     {field.color}
                   </span>
                 </div>
@@ -367,11 +370,11 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
               <div className="pt-2 border-t border-border">
                 <Button
                   variant="ghost"
-                  className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-label font-bold text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors uppercase tracking-widest"
+                  className="w-full flex items-center justify-center gap-2 py-5 rounded-xl font-semibold text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
                   onClick={onDelete}
                 >
-                  <X className="size-3" />
-                  Delete Box
+                  <X className="size-4" />
+                  Delete Text Box
                 </Button>
               </div>
             </div>
