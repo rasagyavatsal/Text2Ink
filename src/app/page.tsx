@@ -25,7 +25,7 @@ export default function HomePage() {
         />
       }
       content={
-        <div className="flex flex-col items-center gap-12 sm:gap-16 w-full">
+        <div className="flex flex-col items-center gap-section w-full">
           <div className="text-center flex flex-col items-center gap-6 max-w-3xl">
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-foreground">
               Text to Handwriting converter

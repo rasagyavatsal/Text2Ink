@@ -51,8 +51,11 @@
 
   /* Spacing: semantic tokens available as p-*, m-*, gap-* utilities */
   --spacing-panel: var(--panel-padding);
-  --spacing-section: var(--layout-section-gap);
+  --spacing-section: var(--layout-section-rhythm);
   --spacing-controls: var(--layout-controls-gap);
+  --spacing-chrome: var(--layout-chrome-gap);
+  --spacing-chrome-y: var(--layout-chrome-padding-y);
+  --spacing-footer: var(--layout-footer-padding-y);
   --spacing-page-x: var(--layout-page-padding-x);
   --spacing-page-y: var(--layout-page-padding-y);
 
@@ -64,6 +67,9 @@
 
   /* Width: semantic tokens available as w-* utilities */
   --width-panel: var(--panel-width);
+
+  /* Container: semantic tokens available as max-w-* utilities */
+  --container-content: var(--layout-content-width);
 
   /* Inset: semantic tokens available as left-*, right-*, top-*, bottom-* utilities */
   --inset-panel: var(--panel-width);
@@ -97,6 +103,7 @@
   --space-10: 2.5rem;
   --space-12: 3rem;
   --space-16: 4rem;
+  --space-20: 5rem;
 
   /* Primitive tokens: size scale */
   --size-control-sm: 2rem;
@@ -109,6 +116,7 @@
 
   /* Primitive tokens: width scale */
   --width-panel: 24rem;
+  --width-content: 72rem;
 
   /* Primitive tokens: breakpoint scale */
   --breakpoint-sm: 640px;
@@ -124,16 +132,20 @@
 
   /* Semantic tokens: layout intent */
   --layout-panel-width: var(--width-panel);
+  --layout-content-width: var(--width-content);
   --layout-header-height: var(--size-control-lg);
   --layout-controls-gap: var(--space-4);
-  --layout-page-padding-x: var(--space-6);
+  --layout-chrome-gap: var(--space-3);
+  --layout-chrome-padding-y: var(--space-3);
+  --layout-footer-padding-y: var(--space-6);
+  --layout-page-padding-x: var(--space-4);
   --layout-page-padding-y: var(--space-12);
-  --layout-section-gap: var(--space-8);
+  --layout-section-rhythm: var(--space-12);
 
   /* Semantic tokens: surface intent */
-  --surface-page-padding: var(--space-6);
+  --surface-page-padding: var(--layout-page-padding-x);
   --surface-card-padding: var(--space-6);
-  --surface-section-gap: var(--space-6);
+  --surface-section-gap: var(--layout-section-rhythm);
   --surface-input-height: var(--size-control-md);
 
   /* Semantic tokens: control intent */
@@ -185,6 +197,23 @@
   --brand-accent-foreground: oklch(1 0 0);
   --brand-accent-soft: oklch(0.755 0.145 79.142 / 0.1);
   --color-success: oklch(0.723 0.192 149.579);
+}
+
+@media (min-width: 640px) {
+  :root {
+    --layout-chrome-gap: var(--space-4);
+    --layout-chrome-padding-y: var(--space-4);
+    --layout-footer-padding-y: var(--space-8);
+    --layout-page-padding-x: var(--space-6);
+    --layout-page-padding-y: var(--space-16);
+    --layout-section-rhythm: var(--space-16);
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --layout-page-padding-y: var(--space-20);
+  }
 }
 
 .dark {

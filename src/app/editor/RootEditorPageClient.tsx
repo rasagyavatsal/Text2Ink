@@ -446,7 +446,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
 
   const topControls = (
     <div
-      className={`max-w-full mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center ${
+      className={`w-full px-page-x py-chrome-y flex items-center ${
         isMobileEditorLayout ? 'justify-between' : 'justify-end'
       }`}
     >
@@ -465,7 +465,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
           />
         </Link>
       ) : null}
-      <div className="flex items-center gap-3 sm:gap-4">
+      <div className="flex items-center gap-chrome">
         <ThemePicker />
         <Button variant="outline" size="chrome" onClick={() => setIsExportModalOpen(true)}>
           <Download className="w-4 h-4 mr-2" />
@@ -490,7 +490,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
           : { top: headerHeight }
       }
     >
-      <div className={`min-h-full flex justify-center ${isMobileEditorLayout ? 'px-4 py-3' : 'py-12 px-6'}`}>
+      <div className={`min-h-full flex justify-center ${isMobileEditorLayout ? 'px-page-x py-chrome-y' : 'px-page-x py-section'}`}>
         <HandwritingEditor
           text={text}
           onTextChange={setText}
