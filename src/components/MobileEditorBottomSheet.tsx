@@ -125,7 +125,7 @@ export default function MobileEditorBottomSheet({
               {settingsPanel}
             </div>
 
-            <div className="border-t border-border bg-muted/50 px-4 py-3 text-center">
+            <div className="border-t border-border bg-muted/50 px-page-x py-chrome-y text-center">
               <Version />
             </div>
           </div>

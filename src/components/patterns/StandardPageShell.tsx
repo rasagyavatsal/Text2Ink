@@ -11,25 +11,27 @@ export default function StandardPageShell({
   content,
   footer,
 }: StandardPageShellProps) {
+  const frameClasses = 'mx-auto w-full max-w-content px-page-x';
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-background" role="banner">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 w-full">
+        <div className={`${frameClasses} py-chrome-y`}>
           {header}
         </div>
       </header>
 
-      <main className="py-12 sm:py-16 md:py-20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 w-full">
+      <main className="py-page-y">
+        <div className={frameClasses}>
           {content}
         </div>
       </main>
 
       <footer
-        className="border-t border-border bg-background py-6 sm:py-8 mt-12"
+        className="border-t border-border bg-background py-footer mt-section"
         role="contentinfo"
       >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 w-full">
+        <div className={frameClasses}>
           {footer}
         </div>
       </footer>

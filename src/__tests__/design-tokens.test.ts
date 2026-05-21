@@ -47,6 +47,15 @@ describe('primitive design tokens', () => {
     });
   });
 
+  describe('width scale', () => {
+    it.each([
+      '--width-panel',
+      '--width-content',
+    ])('defines %s', (token) => {
+      expect(allProps.has(token)).toBe(true);
+    });
+  });
+
   describe('breakpoint scale', () => {
     it.each([
       '--breakpoint-sm', '--breakpoint-md', '--breakpoint-lg', '--breakpoint-xl',
@@ -73,11 +82,15 @@ describe('semantic design tokens', () => {
   describe('layout tokens', () => {
     it.each([
       '--layout-panel-width',
+      '--layout-content-width',
       '--layout-header-height',
       '--layout-controls-gap',
+      '--layout-chrome-gap',
+      '--layout-chrome-padding-y',
+      '--layout-footer-padding-y',
       '--layout-page-padding-x',
       '--layout-page-padding-y',
-      '--layout-section-gap',
+      '--layout-section-rhythm',
     ])('defines %s', (token) => {
       expect(allProps.has(token)).toBe(true);
     });
@@ -163,6 +176,9 @@ describe('Tailwind @theme integration', () => {
       '--spacing-panel',
       '--spacing-section',
       '--spacing-controls',
+      '--spacing-chrome',
+      '--spacing-chrome-y',
+      '--spacing-footer',
       '--spacing-page-x',
       '--spacing-page-y',
       '--height-control-sm',
@@ -170,6 +186,7 @@ describe('Tailwind @theme integration', () => {
       '--height-control-lg',
       '--height-input',
       '--width-panel',
+      '--container-content',
     ];
     for (const token of expectedThemeTokens) {
       expect(themeEntries.has(token)).toBe(true);
@@ -178,7 +195,12 @@ describe('Tailwind @theme integration', () => {
 
   it('theme entries reference CSS custom properties via var()', () => {
     for (const [key, value] of themeEntries) {
-      if (key.startsWith('--spacing-') || key.startsWith('--height-') || key.startsWith('--width-panel')) {
+      if (
+        key.startsWith('--spacing-') ||
+        key.startsWith('--height-') ||
+        key.startsWith('--width-panel') ||
+        key.startsWith('--container-')
+      ) {
         expect(value).toMatch(/var\(--/);
       }
     }
