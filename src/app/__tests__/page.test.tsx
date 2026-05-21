@@ -1,4 +1,6 @@
 import React from 'react';
+import fs from 'fs';
+import path from 'path';
 import { render, screen, within } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import HomePage from '../page';
@@ -8,7 +10,19 @@ vi.mock('@/components/ThemePicker', () => ({
   default: () => <div data-testid="theme-picker" />
 }));
 
-describe('Landing Page Shell', () => {
+const homePageSource = fs.readFileSync(
+  path.resolve(__dirname, '../page.tsx'),
+  'utf-8'
+);
+
+describe('HomePage', () => {
+  it('keeps the landing page frame local to the route module', () => {
+    expect(homePageSource).not.toMatch(/StandardPageShell/);
+    expect(homePageSource).toMatch(/<header\b/);
+    expect(homePageSource).toMatch(/<main\b/);
+    expect(homePageSource).toMatch(/<footer\b/);
+  });
+
   it('renders the header with Text2Ink, Contact, and Open Editor links', () => {
     render(<HomePage />);
     const header = screen.getByRole('banner');

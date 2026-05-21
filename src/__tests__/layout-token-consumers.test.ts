@@ -7,8 +7,24 @@ function readSource(relPath: string): string {
 }
 
 describe('shared layout consumers use token-backed framing utilities', () => {
-  it('StandardPageShell consumes shared width, gutter, and rhythm tokens', () => {
-    const source = readSource('components/patterns/StandardPageShell.tsx');
+  it('HomePage consumes shared width, gutter, and rhythm tokens', () => {
+    const source = readSource('app/page.tsx');
+
+    expect(source).not.toMatch(/max-w-6xl\b/);
+    expect(source).not.toMatch(/px-4 sm:px-6/);
+    expect(source).not.toMatch(/py-3 sm:py-4/);
+    expect(source).not.toMatch(/py-12 sm:py-16 md:py-20/);
+    expect(source).not.toMatch(/mt-12\b/);
+
+    expect(source).toMatch(/max-w-content/);
+    expect(source).toMatch(/px-page-x/);
+    expect(source).toMatch(/py-chrome-y/);
+    expect(source).toMatch(/py-page-y/);
+    expect(source).toMatch(/mt-section/);
+  });
+
+  it('ContactPage consumes shared width, gutter, and rhythm tokens', () => {
+    const source = readSource('app/contact/page.tsx');
 
     expect(source).not.toMatch(/max-w-6xl\b/);
     expect(source).not.toMatch(/px-4 sm:px-6/);
