@@ -1,3 +1,0 @@
-# Landing page at root, editor moves to /editor
-
-Text2Ink will serve a marketing **Landing Page** at `/` and move the handwriting editor to `/editor`. The root route currently serves the full editor application directly, but a dedicated landing page with a hero section and handwriting preview images gives first-time visitors a clearer introduction to the product before they reach the editor. The **Landing Page** keeps its own page-local layout while reusing the same header and footer components as the contact page, including an "Open Editor" CTA that links to `/editor`. The Firebase redirect from `/editor` to `/` is removed, the contact page's "Back to Editor" link is updated to point to `/editor`, and the sitemap is updated to include the new editor route.
