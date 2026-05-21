@@ -24,7 +24,7 @@ describe('shared typography consumers use semantic tokens', () => {
     expect(homeSource).not.toMatch(/text-4xl sm:text-5xl md:text-6xl/);
     expect(homeSource).not.toMatch(/text-lg sm:text-xl/);
     expect(homeSource).toMatch(/text-display-title/);
-    expect(homeSource).toMatch(/font-black/);
+    expect(homeSource).toMatch(/font-bold/);
     expect(homeSource).toMatch(/text-body-lg/);
 
     expect(contactSource).not.toMatch(/text-3xl sm:text-4xl/);

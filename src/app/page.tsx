@@ -32,7 +32,7 @@ export default function HomePage() {
         <div className={frameClasses}>
           <div className="flex flex-col items-center gap-section w-full">
             <div className="text-center flex flex-col items-center gap-6 max-w-3xl">
-              <h1 className="text-display-title font-black tracking-tight text-foreground">
+              <h1 className="text-display-title font-bold tracking-tight text-foreground">
                 Text to Handwriting converter
               </h1>
               <p className="text-body-lg text-muted-foreground">
