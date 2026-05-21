@@ -53,16 +53,12 @@ A centralized set of reusable individual UI elements with defined code usage and
 _Avoid_: page sections, full interaction flows, one-off controls
 
 **Pattern Library**:
-Reusable UX templates that compose multiple components to solve recurring layout and interaction needs.
-_Avoid_: single primitive controls, unnamed page recipes, one-off page markup
+Reusable multi-component UX solutions that serve more than one real surface and preserve the same interaction structure across those surfaces.
+_Avoid_: single primitive controls, speculative shells, page-specific wrappers, one-off page markup
 
-**Workspace Shell**:
-A page-shell pattern for task-focused surfaces that prioritize persistent tools and maximum working area.
-_Avoid_: generic content page, marketing shell, universal page wrapper
-
-**Standard Page Shell**:
-A page-shell pattern for in-flow pages that use a conventional header and document-style content flow.
-_Avoid_: workspace shell, floating tool chrome, editor-only layout
+**Page-Local Layout**:
+A route-specific or feature-specific layout that can reuse shared components and **Design Tokens** without becoming a **Pattern Library** abstraction.
+_Avoid_: speculative shell abstraction, false shared layout, token-less one-off structure
 
 **Landing Page**:
 A marketing surface at `/` that introduces Text2Ink to first-time visitors with a hero section and handwriting preview images.
@@ -71,6 +67,10 @@ _Avoid_: editor homepage, direct editor access, feature documentation
 **Editor Route**:
 The `/editor` path where the handwriting editor application lives after the route restructuring.
 _Avoid_: root route, landing page, marketing surface
+
+**Legal Pages**:
+The Terms of Service and Privacy Policy pages linked from the site footer.
+_Avoid_: hidden compliance copy, missing footer navigation, contact-only legal fallback
 
 **Design Tokens**:
 Named semantic values used to style layout and visuals consistently across the product.
@@ -85,14 +85,17 @@ _Avoid_: raw hex values, one-off spacing, direct palette literals, hardcoded com
 - The **Theme Picker** stays in the **Page-Level Top Controls** of each page so the **Theme Preference** can be changed from any page
 - When the **Theme Preference** is system, the **Editor Chrome** follows the operating system color scheme
 - The current **Theme Preference** is reflected on first paint without a visible theme flash
+- Shared controls within one header use the same semantic **Design Tokens** for size unless a difference is intentional
 - On the editor page, the **Page-Level Top Controls** are fixed instead of using a full-width header
-- The editor page uses the **Workspace Shell**
+- The editor page uses a **Page-Local Layout** tailored to the handwriting workflow rather than a shared shell abstraction
 - The contact page keeps its standard in-flow header instead of switching to fixed **Page-Level Top Controls**
-- The contact page uses the **Standard Page Shell**
-- The **Landing Page** uses the **Standard Page Shell** with the same header and footer as the contact page
+- The contact page uses a **Page-Local Layout** rather than the editor's task-focused layout
+- The **Landing Page** uses its own **Page-Local Layout** instead of inheriting a shared standard shell
+- The **Landing Page** and the contact page may share header and footer components and **Design Tokens** without sharing one page-shell abstraction
 - The **Landing Page** lives at `/` and the editor lives at the **Editor Route** (`/editor`)
 - The **Landing Page** header CTA links to the **Editor Route** instead of showing "Back to Editor"
 - The contact page header "Back to Editor" link points to the **Editor Route** instead of `/`
+- The site footer includes links to the **Legal Pages**
 - On desktop, the editor uses a **Persistent Settings Panel** instead of a collapsible sidebar
 - On desktop, the editor's home link lives at the top of the **Persistent Settings Panel** instead of the **Page-Level Top Controls**
 - Export on the editor page happens through the **Export Modal** instead of a sidebar tab
@@ -105,11 +108,9 @@ _Avoid_: raw hex values, one-off spacing, direct palette literals, hardcoded com
 - The contact page keeps a direct email fallback below the **Inquiry Form**, using `rasagyavatsal16@gmail.com`
 - On desktop, the contact page uses an **Inquiry Split Layout** with fallback email content on the left and the **Inquiry Form** on the right
 - On mobile, the contact page shows "Email me" content first, then the **Inquiry Form**, then the fallback email address
-- The **Pattern Library** includes reusable page-shell patterns when they apply across more than one surface
-- The **Pattern Library** may extract reusable patterns proactively when a refactor is establishing a cross-page standard
-- The **Pattern Library** formalizes both the **Workspace Shell** and the **Standard Page Shell** instead of forcing one universal shell
-- The **Workspace Shell** and **Standard Page Shell** start as explicit **Pattern Library** components rather than page-local recipes
-- The **Workspace Shell** and **Standard Page Shell** are slot-based **Pattern Library** components rather than hardcoded page templates
+- The **Pattern Library** contains only reusable multi-component solutions with real cross-surface reuse
+- Route-specific page layouts stay local even when they share gutters, widths, or spacing scales
+- The **Pattern Library** is not a bucket for page-specific wrappers or speculative shells
 - The **Inquiry Rate Limit** tracks inquiry submissions by HMAC-hashed IP and HMAC-hashed normalized email
 - The inquiry endpoint accepts requests only from allowed origins for production, preview, and local development
 - The inquiry endpoint silently drops honeypot submissions while returning a success-shaped response
@@ -125,13 +126,14 @@ _Avoid_: raw hex values, one-off spacing, direct palette literals, hardcoded com
 - **Design Tokens** define both layout and visual styling across the entire codebase
 - The codebase uses a two-layer **Design Tokens** system with primitive tokens and semantic tokens
 - Primitive **Design Tokens** use reusable scale-based names, and semantic **Design Tokens** use intent-based names mapped on top of them
-- Semantic **Design Tokens** default to shared pattern-level names instead of page-specific names
+- Semantic **Design Tokens** default to shared purpose-based names instead of page-specific or shell-specific names
 - Tailwind utilities are the primary way shared components and pages consume **Design Tokens**
 - Raw CSS custom properties are reserved for edge cases such as dynamic measurements and layout calculations that Tailwind cannot express cleanly
+- Shared gutters, widths, spacing scales, and same-role control sizing come from **Design Tokens** rather than speculative shell abstractions
 - Theme-sensitive visual values in the **Editor Chrome** come from **Design Tokens**
 - Shared layout values such as spacing, radii, panel widths, breakpoints, and related component dimensions also come from **Design Tokens**
 - Shared components, the **Pattern Library**, layout patterns, and page surfaces across the codebase derive both layout and theme-sensitive styling from **Design Tokens**
-- The site-wide token migration updates shared primitives, the **Component Library**, and the **Pattern Library** before migrating page surfaces
+- The site-wide token migration updates shared primitives, the **Component Library**, and any genuine **Pattern Library** components before migrating page surfaces
 - The **Component Library** and the **Pattern Library** stay as separate layers rather than collapsing into one shared bucket
 - Document-color swatches inside the **Editor Chrome** display **Handwritten Page** data rather than theme token values
 - On mobile, secondary top-level actions stay compact so the **Theme Picker** can fit without wrapping
@@ -165,7 +167,7 @@ _Avoid_: raw hex values, one-off spacing, direct palette literals, hardcoded com
 > **Dev:** "Should the mobile sheet start open when the editor first loads?"
 > **Domain expert:** "No. The **Controls Sheet** starts minimized so the **Page-Level Top Controls** remain available on entry."
 >
-> **Dev:** "Where should the editor home link live after the shell split?"
+> **Dev:** "Where should the editor home link live in the page layout?"
 > **Domain expert:** "On desktop it lives at the top of the **Persistent Settings Panel**, but on mobile it stays in the **Page-Level Top Controls** so navigation stays visible while the sheet is minimized."
 >
 > **Dev:** "Can the **Export Modal** be dismissed while export is running?"
@@ -223,7 +225,7 @@ _Avoid_: raw hex values, one-off spacing, direct palette literals, hardcoded com
 > **Domain expert:** "Primitive tokens use scale-based names like `--space-*` and `--radius-*`, while semantic tokens use intent-based names like `--layout-*`, `--surface-*`, and `--control-*`."
 >
 > **Dev:** "Should semantic tokens be page-specific by default?"
-> **Domain expert:** "No. Semantic tokens should default to shared pattern-level names and only become page-specific when reuse clearly breaks down."
+> **Domain expert:** "No. Semantic tokens should default to shared purpose-based names and only become page-specific when reuse clearly breaks down."
 >
 > **Dev:** "Should components consume tokens directly in CSS by default?"
 > **Domain expert:** "No. Tailwind remains the primary consumption layer, and raw CSS variables are reserved for edge cases like dynamic measurements."
@@ -235,19 +237,13 @@ _Avoid_: raw hex values, one-off spacing, direct palette literals, hardcoded com
 > **Domain expert:** "No. The **Component Library** and the **Pattern Library** stay separate so reusable elements do not get mixed with multi-component solutions."
 >
 > **Dev:** "Can the **Pattern Library** include page-shell structures too?"
-> **Domain expert:** "Yes, as long as those shells are reusable across more than one surface."
+> **Domain expert:** "Only when the same multi-component structure is demonstrably reused across more than one real surface. Page-local layouts and speculative shells stay out."
 >
 > **Dev:** "Do we wait for literal duplication before promoting a pattern?"
-> **Domain expert:** "No. The **Pattern Library** can extract patterns proactively when a refactor is clearly defining a cross-page standard."
+> **Domain expert:** "No. But there should be real recurring UX structure or a concrete second consumer, not just similar gutters or spacing."
 >
 > **Dev:** "Should the site force one universal page shell?"
-> **Domain expert:** "No. The **Pattern Library** should formalize separate **Workspace Shell** and **Standard Page Shell** families."
->
-> **Dev:** "Should those shell families stay as informal recipes at first?"
-> **Domain expert:** "No. They should become explicit **Pattern Library** components from the start."
->
-> **Dev:** "Should those shell patterns hardcode their contents?"
-> **Domain expert:** "No. They should be slot-based so the shell stays reusable instead of becoming a disguised page template."
+> **Domain expert:** "No. Page-specific layouts can stay local; shared headers, footers, components, and **Design Tokens** are enough when the layouts are otherwise different."
 >
 > **Dev:** "Should the contact page also switch to fixed top controls like the editor?"
 > **Domain expert:** "No. The contact page keeps its standard header; the fixed top-controls treatment is specific to the editor workspace."
@@ -267,8 +263,11 @@ _Avoid_: raw hex values, one-off spacing, direct palette literals, hardcoded com
 > **Dev:** "Should the site briefly render in the wrong theme before the app hydrates?"
 > **Domain expert:** "No. The active **Theme Preference** should be visible on first paint."
 >
-> **Dev:** "Should the **Landing Page** use a different shell than the contact page?"
-> **Domain expert:** "No. The **Landing Page** uses the **Standard Page Shell** with the same header and footer as the contact page."
+> **Dev:** "Should the theme picker use a different control size than neighboring header actions?"
+> **Domain expert:** "No. Same-role header controls should share semantic size tokens unless a difference is intentional."
+>
+> **Dev:** "Should the **Landing Page** and contact page share one standard shell?"
+> **Domain expert:** "No shared shell is required. They can share header and footer components and **Design Tokens** while keeping different page-local layouts."
 >
 > **Dev:** "Should the **Landing Page** header say 'Back to Editor' like the contact page?"
 > **Domain expert:** "No. The **Landing Page** header CTA says 'Open Editor' and links to the **Editor Route**, since visitors haven't been to the editor yet."
@@ -278,6 +277,9 @@ _Avoid_: raw hex values, one-off spacing, direct palette literals, hardcoded com
 >
 > **Dev:** "Should the contact page 'Back to Editor' link still point to `/`?"
 > **Domain expert:** "No. It should point to the **Editor Route** (`/editor`) since the editor no longer lives at `/`."
+>
+> **Dev:** "Should the site footer include legal navigation?"
+> **Domain expert:** "Yes. It should link to the **Legal Pages**."
 
 ## Flagged ambiguities
 
@@ -305,17 +307,17 @@ _Avoid_: raw hex values, one-off spacing, direct palette literals, hardcoded com
 - "token refactor scope" was ambiguous — resolved: the **Design Tokens** expansion applies site-wide across the entire codebase
 - "token architecture" was ambiguous — resolved: the codebase uses two layers of **Design Tokens**: primitive and semantic
 - "token naming" was ambiguous — resolved: primitive tokens use scale-based names and semantic tokens use intent-based names
-- "semantic token scope" was ambiguous — resolved: semantic tokens default to shared pattern-level names rather than page-specific names
+- "semantic token scope" was ambiguous — resolved: semantic tokens default to shared purpose-based names rather than page-specific or shell-specific names
 - "token consumption path" was ambiguous — resolved: Tailwind is the primary token-consumption layer, with raw CSS variables reserved for edge cases
-- "migration order" was ambiguous — resolved: shared primitives, the **Component Library**, and the **Pattern Library** migrate before page surfaces
+- "migration order" was ambiguous — resolved: shared primitives, the **Component Library**, and any genuine **Pattern Library** components migrate before page surfaces
 - "component vs pattern libraries" was ambiguous — resolved: the **Component Library** holds reusable individual elements, while the **Pattern Library** holds multi-component UX solutions
 - "library separation" was ambiguous — resolved: the **Component Library** and **Pattern Library** remain distinct layers rather than a single combined library
-- "pattern-library scope" was ambiguous — resolved: the **Pattern Library** can include reusable page-shell patterns, not only smaller in-page assemblies
-- "pattern promotion rule" was ambiguous — resolved: the **Pattern Library** can promote patterns proactively when establishing a cross-page standard
-- "page-shell family" was ambiguous — resolved: the codebase formalizes separate **Workspace Shell** and **Standard Page Shell** families rather than one universal shell
-- "shell component timing" was ambiguous — resolved: shell families become explicit **Pattern Library** components from the start
-- "shell composition model" was ambiguous — resolved: shell families are slot-based **Pattern Library** components rather than hardcoded page templates
+- "pattern-library scope" was ambiguous — resolved: the **Pattern Library** holds only multi-component UX solutions with real cross-surface reuse, while page-specific shells stay local
+- "pattern promotion rule" was ambiguous — resolved: patterns are promoted only when recurring structure is real, not just because pages share gutters or spacing
+- "page layout ownership" was ambiguous — resolved: the editor, landing page, and contact page keep page-local layouts unless real cross-surface reuse emerges
 - "page shell scope" was ambiguous — resolved: the editor uses fixed top controls, while the contact page keeps its standard header
+- "header control sizing" was ambiguous — resolved: same-role header controls share semantic size tokens unless a difference is intentional
 - "no hardcoded values" was too broad — resolved: shared layout and theme-sensitive visual values come from **Design Tokens** rather than one-off component values
 - "landing page route" was ambiguous between `/` and a separate path — resolved: the **Landing Page** takes `/` and the editor moves to the **Editor Route** (`/editor`)
 - "landing page header CTA" was ambiguous — resolved: the **Landing Page** uses "Open Editor" instead of "Back to Editor" since visitors have not been to the editor yet
+- "footer legal navigation" was ambiguous — resolved: the site footer links to the **Legal Pages**
