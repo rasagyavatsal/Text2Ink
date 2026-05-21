@@ -29,7 +29,7 @@ describe('Landing Page Shell', () => {
     expect(ctaLinks.length).toBeGreaterThan(0);
     expect(ctaLinks[0]).toHaveAttribute('href', '/editor');
     expect(ctaLinks[0]).toHaveAttribute('data-variant', 'brand');
-    expect(ctaLinks[0]).toHaveAttribute('data-size', 'sm');
+    expect(ctaLinks[0]).toHaveAttribute('data-size', 'chrome');
   });
 
   it('renders the footer with logo and copyright', () => {

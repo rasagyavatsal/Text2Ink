@@ -31,7 +31,7 @@ export default function SiteHeader({ cta, hideContactLink }: SiteHeaderProps = {
       <div className="flex items-center gap-3 sm:gap-4">
         <ThemePicker />
         {!hideContactLink && (
-          <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex text-muted-foreground hover:text-brand-accent">
+          <Button variant="ghost" size="chrome" asChild className="hidden sm:inline-flex text-muted-foreground hover:text-brand-accent">
             <Link href="/contact">
               Contact
             </Link>

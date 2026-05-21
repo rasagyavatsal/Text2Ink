@@ -28,6 +28,7 @@ describe('SiteHeader', () => {
     const contactLink = screen.getByRole('link', { name: /contact/i });
     expect(contactLink).toBeInTheDocument();
     expect(contactLink).toHaveAttribute('href', '/contact');
+    expect(contactLink).toHaveAttribute('data-size', 'chrome');
     
     // The link wrapper should have the compact behavior classes to hide on mobile
     expect(contactLink).toHaveClass('hidden', 'sm:inline-flex');

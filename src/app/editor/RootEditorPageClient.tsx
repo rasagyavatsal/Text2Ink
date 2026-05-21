@@ -467,11 +467,11 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       ) : null}
       <div className="flex items-center gap-3 sm:gap-4">
         <ThemePicker />
-        <Button variant="outline" onClick={() => setIsExportModalOpen(true)}>
+        <Button variant="outline" size="chrome" onClick={() => setIsExportModalOpen(true)}>
           <Download className="w-4 h-4 mr-2" />
           Export
         </Button>
-        <Button variant="ghost" asChild className="hidden sm:inline-flex">
+        <Button variant="ghost" size="chrome" asChild className="hidden sm:inline-flex">
           <Link href="/contact">
             Contact
           </Link>
