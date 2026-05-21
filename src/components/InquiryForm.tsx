@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input, Textarea } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -118,23 +119,31 @@ export function InquiryForm() {
 
   if (isSuccess) {
     return (
-      <div className="flex flex-col items-center justify-center py-6 space-y-4 text-center">
-        <CheckCircle2 className="w-12 h-12 text-success" />
-        <div className="space-y-1">
-          <h3 className="font-medium">Thank you</h3>
-          <p className="text-sm text-muted-foreground max-w-sm px-4">
-            Your inquiry has been received. We&apos;ll get back to you soon.
-          </p>
-        </div>
-        <Button variant="brand" onClick={handleReset} className="mt-4">
-          Send another inquiry
-        </Button>
-      </div>
+      <Card className="w-full">
+        <CardContent className="flex flex-col items-center justify-center py-12 space-y-4 text-center">
+          <CheckCircle2 className="w-16 h-16 text-success" />
+          <div className="space-y-2">
+            <h3 className="font-semibold text-xl">Thank you</h3>
+            <p className="text-body text-muted-foreground max-w-sm px-4">
+              Your inquiry has been received. We&apos;ll get back to you soon.
+            </p>
+          </div>
+          <Button variant="brand" onClick={handleReset} className="mt-6">
+            Send another inquiry
+          </Button>
+        </CardContent>
+      </Card>
     )
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-4">
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Send a message</CardTitle>
+        <CardDescription>We usually respond within 24 hours.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} noValidate className="space-y-5">
       {/* Honeypot — hidden from users */}
       <input
         type="text"
@@ -212,12 +221,14 @@ export function InquiryForm() {
       </div>
 
       {errors.submit && (
-        <p className="text-sm text-destructive text-center">{errors.submit}</p>
+        <p className="text-sm text-destructive text-center mt-2">{errors.submit}</p>
       )}
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
+      <Button type="submit" className="w-full mt-2" size="lg" disabled={isSubmitting}>
         {isSubmitting ? "Sending..." : "Send inquiry"}
       </Button>
-    </form>
+        </form>
+      </CardContent>
+    </Card>
   )
 }
