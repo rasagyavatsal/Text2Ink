@@ -81,18 +81,18 @@
   --size-icon-md: var(--size-icon-md);
   --size-icon-lg: var(--size-icon-lg);
 
-  /* Font size: tokens available as text-* utilities */
-  --font-size-label: var(--text-size-2xs);
-  --font-size-brand-mark: var(--type-brand-mark-size);
-  --font-size-display-title: var(--type-display-title-size);
-  --font-size-page-title: var(--type-page-title-size);
-  --font-size-document-title: var(--type-document-title-size);
-  --font-size-section-title: var(--type-section-title-size);
-  --font-size-overlay-title: var(--type-overlay-title-size);
-  --font-size-body-lg: var(--type-body-lg-size);
-  --font-size-body: var(--type-body-size);
-  --font-size-supporting: var(--type-supporting-size);
-  --font-size-caption: var(--type-caption-size);
+  /* Text size: tokens available as text-* utilities */
+  --text-label: var(--text-size-2xs);
+  --text-brand-mark: var(--type-brand-mark-size);
+  --text-display-title: var(--type-display-title-size);
+  --text-page-title: var(--type-page-title-size);
+  --text-document-title: var(--type-document-title-size);
+  --text-section-title: var(--type-section-title-size);
+  --text-overlay-title: var(--type-overlay-title-size);
+  --text-body-lg: var(--type-body-lg-size);
+  --text-body: var(--type-body-size);
+  --text-supporting: var(--type-supporting-size);
+  --text-caption: var(--type-caption-size);
 }
 
 :root {
@@ -324,7 +324,7 @@
   }
 
   .label-text {
-    font-size: var(--font-size-label);
+    font-size: var(--text-size-2xs);
     font-weight: 700;
     color: var(--color-muted-foreground);
     text-transform: uppercase;

@@ -18,7 +18,7 @@ describe('.label-text CSS utility', () => {
     const componentsLayerMatch = source.match(/@layer components\s*{([\s\S]*)}/);
     expect(componentsLayerMatch).toBeTruthy();
     const labelTextBlock = componentsLayerMatch![1];
-    expect(labelTextBlock).toMatch(/font-size:\s*var\(--font-size-label\)/);
+    expect(labelTextBlock).toMatch(/font-size:\s*var\(--text-size-2xs\)/);
     expect(labelTextBlock).toMatch(/font-weight:\s*700/);
     expect(labelTextBlock).toMatch(/color:\s*var\(--color-muted-foreground\)/);
     expect(labelTextBlock).toMatch(/text-transform:\s*uppercase/);
