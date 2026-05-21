@@ -47,10 +47,46 @@ describe('primitive design tokens', () => {
     });
   });
 
+  describe('typography scale', () => {
+    it.each([
+      '--text-size-2xs',
+      '--text-size-xs',
+      '--text-size-sm',
+      '--text-size-base',
+      '--text-size-lg',
+      '--text-size-xl',
+      '--text-size-2xl',
+      '--text-size-3xl',
+      '--text-size-4xl',
+      '--text-size-5xl',
+      '--text-size-6xl',
+      '--text-size-7xl',
+    ])('defines %s', (token) => {
+      expect(allProps.has(token)).toBe(true);
+    });
+  });
+
   describe('width scale', () => {
     it.each([
       '--width-panel',
       '--width-content',
+    ])('defines %s', (token) => {
+      expect(allProps.has(token)).toBe(true);
+    });
+  });
+
+  describe('typography tokens', () => {
+    it.each([
+      '--type-brand-mark-size',
+      '--type-display-title-size',
+      '--type-page-title-size',
+      '--type-document-title-size',
+      '--type-section-title-size',
+      '--type-overlay-title-size',
+      '--type-body-lg-size',
+      '--type-body-size',
+      '--type-supporting-size',
+      '--type-caption-size',
     ])('defines %s', (token) => {
       expect(allProps.has(token)).toBe(true);
     });
@@ -72,7 +108,7 @@ describe('primitive design tokens', () => {
       key.startsWith('--breakpoint-')
     );
     expect(primitives.length).toBeGreaterThan(0);
-    for (const [key, value] of primitives) {
+    for (const [, value] of primitives) {
       expect(value).not.toBe('');
     }
   });
@@ -134,10 +170,11 @@ describe('semantic design tokens', () => {
       key.startsWith('--layout-') ||
       key.startsWith('--surface-') ||
       key.startsWith('--control-') ||
-      key.startsWith('--panel-')
+      key.startsWith('--panel-') ||
+      key.startsWith('--type-')
     );
     expect(semanticEntries.length).toBeGreaterThan(0);
-    for (const [key, value] of semanticEntries) {
+    for (const [, value] of semanticEntries) {
       expect(value).toMatch(/var\(--/);
     }
   });
@@ -147,11 +184,13 @@ describe('semantic design tokens', () => {
       key.startsWith('--layout-') ||
       key.startsWith('--surface-') ||
       key.startsWith('--control-') ||
-      key.startsWith('--panel-')
+      key.startsWith('--panel-') ||
+      key.startsWith('--type-')
     );
     for (const key of semanticKeys) {
       expect(key).not.toMatch(/--(?:layout|surface|control|panel)-editor-/);
       expect(key).not.toMatch(/--(?:layout|surface|control|panel)-contact-/);
+      expect(key).not.toMatch(/--type-(?:home|landing|contact|footer|modal|privacy|terms)-/);
     }
   });
 });
@@ -187,6 +226,17 @@ describe('Tailwind @theme integration', () => {
       '--height-input',
       '--width-panel',
       '--container-content',
+      '--font-size-label',
+      '--font-size-brand-mark',
+      '--font-size-display-title',
+      '--font-size-page-title',
+      '--font-size-document-title',
+      '--font-size-section-title',
+      '--font-size-overlay-title',
+      '--font-size-body-lg',
+      '--font-size-body',
+      '--font-size-supporting',
+      '--font-size-caption',
     ];
     for (const token of expectedThemeTokens) {
       expect(themeEntries.has(token)).toBe(true);
@@ -199,7 +249,8 @@ describe('Tailwind @theme integration', () => {
         key.startsWith('--spacing-') ||
         key.startsWith('--height-') ||
         key.startsWith('--width-panel') ||
-        key.startsWith('--container-')
+        key.startsWith('--container-') ||
+        key.startsWith('--font-size-')
       ) {
         expect(value).toMatch(/var\(--/);
       }

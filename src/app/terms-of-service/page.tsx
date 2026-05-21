@@ -69,14 +69,14 @@ export default function TermsOfServicePage() {
               <p className="text-sm font-medium uppercase tracking-[0.24em] text-brand-accent">
                 Legal
               </p>
-              <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+              <h1 className="text-document-title font-bold tracking-tight text-foreground">
                 Terms of Service
               </h1>
-              <p className="max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg">
+              <p className="max-w-3xl text-body-lg leading-7 text-muted-foreground">
                 These terms govern your use of Text2Ink, including the editor, exports,
                 contact workflows, and related public pages.
               </p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-caption text-muted-foreground">
                 Effective date: May 21, 2026
               </p>
             </div>
@@ -85,10 +85,10 @@ export default function TermsOfServicePage() {
               <div className="space-y-8">
                 {sections.map((section) => (
                   <section key={section.title} className="space-y-3">
-                    <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                    <h2 className="text-section-title font-semibold tracking-tight text-foreground">
                       {section.title}
                     </h2>
-                    <p className="text-base leading-7 text-muted-foreground">
+                    <p className="text-body leading-7 text-muted-foreground">
                       {section.body}
                     </p>
                   </section>
