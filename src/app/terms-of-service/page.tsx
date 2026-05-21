@@ -65,18 +65,11 @@ export default function TermsOfServicePage() {
       <main className="py-page-y">
         <div className={frameClasses}>
           <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
-            <div className="space-y-4">
-              <p className="text-sm font-medium uppercase tracking-[0.24em] text-brand-accent">
-                Legal
-              </p>
-              <h1 className="text-document-title font-bold tracking-tight text-foreground">
+            <div>
+              <h1 className="text-page-title font-bold tracking-tight text-foreground mb-4">
                 Terms of Service
               </h1>
-              <p className="max-w-3xl text-body-lg leading-7 text-muted-foreground">
-                These terms govern your use of Text2Ink, including the editor, exports,
-                contact workflows, and related public pages.
-              </p>
-              <p className="text-caption text-muted-foreground">
+              <p className="text-caption text-muted-foreground mb-8">
                 Effective date: May 21, 2026
               </p>
             </div>
