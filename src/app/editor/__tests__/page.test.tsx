@@ -133,6 +133,18 @@ describe('Root editor page', () => {
     expect(container.querySelector('header')).not.toBeInTheDocument();
   });
 
+  it('renders the desktop settings rail beside the preview and keeps controls in a fixed top lane', () => {
+    const { container } = render(<RootEditorPageClient />);
+
+    const settingsRail = screen.getByTestId('settings-panel').closest('aside');
+    const fixedTopLane = container.querySelector('.fixed');
+
+    expect(settingsRail).toBeInTheDocument();
+    expect(settingsRail?.className).toContain('w-panel');
+    expect(fixedTopLane).toContainElement(screen.getByRole('button', { name: /export/i }));
+    expect(container.querySelector('main')).toContainElement(screen.getByTestId('preview-scroll-container'));
+  });
+
   it('keeps the home logo in mobile page-level top controls', async () => {
     mockMatchMedia(true);
     Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 390 });

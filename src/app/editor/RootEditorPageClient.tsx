@@ -9,7 +9,6 @@ import ExportModal from '@/components/ExportModal';
 import Version from '@/components/Version';
 import MobileEditorBottomSheet from '@/components/MobileEditorBottomSheet';
 import ThemePicker from '@/components/ThemePicker';
-import WorkspaceShell from '@/components/patterns/WorkspaceShell';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -39,6 +38,7 @@ import {
   MobileSheetAnchor,
   PREVIEW_MAX_SCALE,
 } from '@/lib/mobileEditorSheet';
+import { cn } from '@/lib/utils';
 import { Download } from 'lucide-react';
 
 const MemoSettingsPanel = React.memo(SettingsPanel);
@@ -444,6 +444,15 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
     />
   );
 
+  const desktopSettingsRail = (
+    <div className="flex flex-1 min-h-0 flex-col">
+      {desktopSettingsPanel}
+      <div className="shrink-0 border-t border-border bg-muted/50 px-4 py-2 flex justify-center">
+        <Version />
+      </div>
+    </div>
+  );
+
   const topControls = (
     <div
       className={`w-full px-page-x py-chrome-y flex items-center ${
@@ -527,13 +536,32 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
 
   return (
     <>
-      <WorkspaceShell
-        topControls={topControls}
-        settings={<div className="flex-1 min-h-0">{desktopSettingsPanel}<div className="shrink-0 py-2 px-4 border-t border-border flex justify-center bg-muted/50"><Version /></div></div>}
-        canvas={canvas}
-        mobileControlsSheet={mobileControlsSheet}
-        isMobileTopControlsVisible={!isMobileEditorLayout || mobileSheetAnchor === 'peek'}
-      />
+      <div className="relative h-[100dvh] overflow-hidden bg-background">
+        <div
+          className={cn(
+            'fixed inset-x-0 top-0 z-20 transition-transform xl:left-panel',
+            isMobileEditorLayout && mobileSheetAnchor !== 'peek' && 'hidden xl:block',
+          )}
+        >
+          {topControls}
+        </div>
+
+        <div className="flex h-full min-h-0 box-border overflow-hidden bg-muted">
+          <aside className="hidden xl:flex flex-col w-panel shrink-0 bg-background border-r border-border overflow-y-auto overscroll-contain">
+            {desktopSettingsRail}
+          </aside>
+
+          <main className="flex-1 min-h-0 relative">
+            {canvas}
+          </main>
+        </div>
+
+        {mobileControlsSheet ? (
+          <div className="xl:hidden">
+            {mobileControlsSheet}
+          </div>
+        ) : null}
+      </div>
       <ExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}

@@ -16,6 +16,13 @@ function readComponentFile(relPath: string): string {
   );
 }
 
+function readAppFile(relPath: string): string {
+  return fs.readFileSync(
+    path.resolve(__dirname, `../app/${relPath}`),
+    'utf-8'
+  );
+}
+
 describe('Component Library token consumption', () => {
   describe('button.tsx', () => {
     const source = readComponent('button.tsx');
@@ -46,9 +53,9 @@ describe('Component Library token consumption', () => {
   });
 });
 
-describe('shared component token consumption', () => {
-  describe('WorkspaceShell.tsx', () => {
-    const source = readComponentFile('patterns/WorkspaceShell.tsx');
+describe('route and shared component token consumption', () => {
+  describe('RootEditorPageClient.tsx', () => {
+    const source = readAppFile('editor/RootEditorPageClient.tsx');
 
     it('uses token-based panel width instead of hardcoded w-96', () => {
       expect(source).not.toMatch(/w-96\b/);
