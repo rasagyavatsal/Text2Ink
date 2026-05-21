@@ -6,7 +6,6 @@ import Link from 'next/link';
 import HandwritingEditor from '@/components/HandwritingEditor';
 import SettingsPanel from '@/components/SettingsPanel';
 import ExportModal from '@/components/ExportModal';
-import Version from '@/components/Version';
 import MobileEditorBottomSheet from '@/components/MobileEditorBottomSheet';
 import ThemePicker from '@/components/ThemePicker';
 import { Button } from '@/components/ui/button';
@@ -447,9 +446,6 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
   const desktopSettingsRail = (
     <div className="flex flex-1 min-h-0 flex-col">
       {desktopSettingsPanel}
-      <div className="shrink-0 border-t border-border bg-muted/50 px-4 py-2 flex justify-center">
-        <Version />
-      </div>
     </div>
   );
 

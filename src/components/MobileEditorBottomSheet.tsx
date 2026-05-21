@@ -11,7 +11,6 @@ import {
   MobileSheetAnchor,
   resolveMobileSheetSnapHeight,
 } from '@/lib/mobileEditorSheet';
-import Version from '@/components/Version';
 
 interface MobileEditorBottomSheetProps {
   anchor: MobileSheetAnchor;
@@ -123,10 +122,6 @@ export default function MobileEditorBottomSheet({
           <div className="min-h-full bg-background">
             <div className="min-h-0">
               {settingsPanel}
-            </div>
-
-            <div className="border-t border-border bg-muted/50 px-page-x py-chrome-y text-center">
-              <Version />
             </div>
           </div>
         </Sheet.Content>
