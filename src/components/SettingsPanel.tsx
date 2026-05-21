@@ -728,18 +728,15 @@ export default function SettingsPanel({
 
           {hasCustomBackground && (
             <div className="space-y-6 pt-2">
-              <div className="flex flex-col gap-3 p-4 bg-secondary border border-brand-accent/20 rounded-xl">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-semibold text-brand-accent">Auto-Detect Lines</Label>
-                  <Button
-                    variant="brand"
-                    onClick={handleDetectLines}
-                    disabled={!currentBackground || lineDetecting}
-                    className="font-bold shadow-sm"
-                  >
-                    {lineDetecting ? 'Detecting...' : 'Detect Lines'}
-                  </Button>
-                </div>
+              <div className="flex flex-col gap-3">
+                <Button
+                  variant="brand"
+                  onClick={handleDetectLines}
+                  disabled={!currentBackground || lineDetecting}
+                  className="w-full font-bold shadow-sm"
+                >
+                  {lineDetecting ? 'Detecting...' : 'Auto-Detect Lines'}
+                </Button>
                 {lineDetectInfo && (
                   <p className="text-sm font-medium text-success bg-success/10 px-3 py-2 rounded-lg">
                     ✓ Applied offset {lineDetectInfo.offset}px and spacing {lineDetectInfo.spacing}px.
