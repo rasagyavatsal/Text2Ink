@@ -70,16 +70,16 @@ const FontCard = ({
     <div
       onClick={onClick}
       className={cn(
-        "cursor-pointer rounded-xl p-2.5 flex flex-col items-center gap-2 transition-all border-2 w-full",
+        "cursor-pointer rounded-xl p-2 flex flex-col items-center gap-2 transition-all border w-full h-full",
         isSelected 
-          ? "bg-brand-accent border-brand-accent text-brand-accent-foreground shadow-md shadow-brand-accent/20" 
-          : "bg-muted border-transparent hover:bg-accent text-foreground"
+          ? "border-brand-accent bg-brand-accent/5 ring-1 ring-brand-accent" 
+          : "bg-background border-border hover:border-brand-accent/30 hover:bg-accent/50"
       )}
     >
       <div 
         className={cn(
-          "w-full aspect-[1.6/1] rounded-lg flex items-center justify-center text-2xl overflow-hidden transition-colors",
-          isSelected ? "bg-background/20" : "bg-background",
+          "w-full aspect-[1.8/1] rounded-lg flex items-center justify-center text-2xl overflow-hidden transition-colors",
+          isSelected ? "bg-background text-brand-accent shadow-sm" : "bg-muted/50 text-foreground",
           !customStyle && font.className
         )}
         style={customStyle}
@@ -87,8 +87,8 @@ const FontCard = ({
         AaBb
       </div>
       <span className={cn(
-        "text-label font-bold truncate w-full text-center px-1 uppercase tracking-tight",
-        isSelected ? "text-brand-accent-foreground" : "text-muted-foreground"
+        "text-xs font-medium truncate w-full text-center px-1",
+        isSelected ? "text-brand-accent font-semibold" : "text-muted-foreground"
       )}>
         {font.name}
       </span>
@@ -149,24 +149,7 @@ export default function SettingsPanel({
     [currentPageIndex, settings.customBackgroundImages, settings.customBackgroundImage]
   );
 
-  const [fontPageIndex, setFontPageIndex] = useState(0);
   const availableFonts = useMemo(() => HANDWRITING_FONTS.filter(f => f.value !== 'custom'), []);
-  const fontsPerPage = 4;
-  const totalFontPages = Math.ceil(availableFonts.length / fontsPerPage);
-
-  const visibleFonts = useMemo(() => {
-    const start = fontPageIndex * fontsPerPage;
-    return availableFonts.slice(start, start + fontsPerPage);
-  }, [fontPageIndex, availableFonts]);
-
-  const handleNextFonts = () => {
-    setFontPageIndex((prev) => (prev + 1) % totalFontPages);
-  };
-
-  const handlePrevFonts = () => {
-    setFontPageIndex((prev) => (prev - 1 + totalFontPages) % totalFontPages);
-  };
-
   useEffect(() => {
     setLineDetectError(null);
     setLineDetectInfo(null);
@@ -381,79 +364,23 @@ export default function SettingsPanel({
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium">Fonts</Label>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="link" className="text-sm font-semibold text-brand-accent p-0 h-auto">See all</Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl bg-background border-border text-foreground p-0 overflow-hidden">
-                  <DialogHeader className="p-6 border-b border-border">
-                    <DialogTitle className="text-lg font-bold">All Handwriting Fonts</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-6 max-h-[70vh] overflow-y-auto bg-muted/50">
-                    {HANDWRITING_FONTS.filter(f => f.value !== 'custom').map((font) => (
-                      <FontCard
-                        key={font.value}
-                        font={font}
-                        isSelected={settings.fontFamily === font.value}
-                        onClick={() => {
-                          setCustomFontError(null);
-                          updateSetting('fontFamily', font.value);
-                        }}
-                      />
-                    ))}
-                    {settings.customFont && (
-                      <FontCard
-                        font={{ name: settings.customFont.name, value: 'custom', className: '' }}
-                        isSelected={settings.fontFamily === 'custom'}
-                        onClick={() => {
-                          setCustomFontError(null);
-                          updateSetting('fontFamily', 'custom');
-                        }}
-                        customStyle={{ fontFamily: settings.customFont.family }}
-                      />
-                    )}
-                  </div>
-                </DialogContent>
-              </Dialog>
             </div>
             
-            <div className="relative group/grid">
-              <div className="grid grid-cols-2 gap-3">
-                {visibleFonts.map((font) => (
-                  <FontCard
-                    key={font.value}
-                    font={font}
-                    isSelected={settings.fontFamily === font.value}
-                    onClick={() => {
-                      setCustomFontError(null);
-                      updateSetting('fontFamily', font.value);
-                    }}
-                  />
+            <div className="relative w-full overflow-hidden">
+              <div className="grid grid-rows-2 grid-flow-col gap-3 auto-cols-[calc(45%-0.375rem)] overflow-x-auto pb-4 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                {availableFonts.map((font) => (
+                  <div key={font.value} className="snap-start">
+                    <FontCard
+                      font={font}
+                      isSelected={settings.fontFamily === font.value}
+                      onClick={() => {
+                        setCustomFontError(null);
+                        updateSetting('fontFamily', font.value);
+                      }}
+                    />
+                  </div>
                 ))}
               </div>
-
-              {totalFontPages > 1 && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handlePrevFonts}
-                    className="absolute -left-3 top-1/2 -translate-y-1/2 rounded-full shadow-sm text-muted-foreground hover:text-brand-accent hover:border-brand-accent transition-all opacity-100 translate-x-0 xl:opacity-0 xl:-translate-x-2 xl:group-hover/grid:opacity-100 xl:group-hover/grid:translate-x-0 border-transparent bg-background"
-                    aria-label="Previous fonts"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleNextFonts}
-                    className="absolute -right-3 top-1/2 -translate-y-1/2 rounded-full shadow-sm text-muted-foreground hover:text-brand-accent hover:border-brand-accent transition-all opacity-100 translate-x-0 xl:opacity-0 xl:translate-x-2 xl:group-hover/grid:opacity-100 xl:group-hover/grid:translate-x-0 border-transparent bg-background"
-                    aria-label="Next fonts"
-                  >
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </Button>
-                </>
-              )}
             </div>
           </div>
 
