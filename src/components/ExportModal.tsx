@@ -309,25 +309,22 @@ export default function ExportModal({
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent 
-        className="sm:max-w-md"
+        className="w-[calc(100%-2rem)] sm:max-w-md rounded-3xl sm:w-full"
         onInteractOutside={handleInteractOutside}
         onEscapeKeyDown={handleInteractOutside}
       >
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 text-section-title font-semibold tracking-tight text-foreground">
             <Download className="w-5 h-5 text-brand-accent" />
             Export Document
           </DialogTitle>
-          <DialogDescription>
-            Download your handwritten pages as a single PDF or individual images.
-          </DialogDescription>
         </DialogHeader>
 
         {isSuccess ? (
           <div className="flex flex-col items-center justify-center py-6 space-y-4">
             <CheckCircle2 className="w-12 h-12 text-success" />
-            <p className="font-medium text-center">Export completed successfully!</p>
-            <Button variant="brand" onClick={onClose} className="mt-4">
+            <p className="font-medium text-center text-foreground">Export completed successfully!</p>
+            <Button variant="brand" onClick={onClose} className="mt-4 font-semibold transition-all active:scale-95 shadow-sm">
               Close
             </Button>
           </div>
@@ -339,24 +336,24 @@ export default function ExportModal({
               {exportError}
             </p>
             <div className="flex gap-3 mt-4 w-full justify-center">
-              <Button variant="outline" onClick={() => setExportError(null)}>
+              <Button variant="outline" onClick={() => setExportError(null)} className="font-semibold transition-all active:scale-95">
                 Cancel
               </Button>
-              <Button variant="brand" onClick={exportPages}>
+              <Button variant="brand" onClick={exportPages} className="font-semibold transition-all active:scale-95 shadow-sm">
                 Retry
               </Button>
             </div>
           </div>
         ) : (
           <div className="space-y-6 py-4">
-            <div className="flex flex-col gap-2">
-              <Label className="label-text" htmlFor="export-format">Format</Label>
+            <div className="flex flex-col gap-3">
+              <Label className="text-sm font-medium" htmlFor="export-format">Format</Label>
               <Select
                 value={format}
                 onValueChange={(value) => setFormat(value as ExportFormat)}
                 disabled={isExporting}
               >
-                <SelectTrigger id="export-format" className="bg-muted border-none h-control-lg text-sm">
+                <SelectTrigger id="export-format" className="w-full h-10">
                   <SelectValue placeholder="Select format" />
                 </SelectTrigger>
                 <SelectContent>
@@ -383,11 +380,12 @@ export default function ExportModal({
             </div>
 
             <Button
-              variant={hasContent ? 'brand' : 'default'}
+              variant={hasContent ? 'brand' : 'outline'}
+              size="lg"
               onClick={exportPages}
               disabled={isExporting || !hasContent}
-              className={`w-full font-bold transition-all active:scale-95 h-11 ${
-                !hasContent ? 'bg-muted text-muted-foreground hover:bg-muted' : 'shadow-sm'
+              className={`w-full font-semibold transition-all ${
+                !hasContent ? 'bg-muted text-muted-foreground border-border hover:bg-muted' : 'shadow-sm active:scale-95'
               }`}
             >
               {isExporting ? (
@@ -406,12 +404,12 @@ export default function ExportModal({
             {isExporting && exportProgress && (
               <div className="space-y-4 p-3 bg-muted rounded-lg">
                 <div className="flex items-center justify-between">
-                  <span className="label-text">
+                  <span className="text-sm font-medium text-foreground">
                     {format === 'pdf' && exportProgress.current >= exportProgress.total - 1
                       ? 'Finalizing PDF...'
                       : `Page ${Math.min(exportProgress.total, exportProgress.current + 1)} / ${exportProgress.total}`}
                   </span>
-                  <span className="text-label font-bold text-foreground bg-background px-1.5 py-0.5 rounded shadow-sm">
+                  <span className="text-xs font-semibold text-muted-foreground bg-background border border-border px-2 py-1 rounded-md shadow-sm">
                     {Math.round((exportProgress.current / exportProgress.total) * 100)}%
                   </span>
                 </div>
@@ -425,8 +423,8 @@ export default function ExportModal({
                 </div>
                 <Button
                   type="button"
-                  variant="ghost"
-                  className="w-full h-8 text-label font-bold text-destructive hover:text-destructive/80 hover:bg-background/50 uppercase tracking-widest"
+                  variant="outline"
+                  className="w-full py-3 h-auto text-destructive border-destructive/20 hover:bg-destructive/10 hover:text-destructive font-bold transition-all active:scale-95"
                   onClick={() => {
                     cancelExportRef.current = true;
                   }}
@@ -437,16 +435,10 @@ export default function ExportModal({
             )}
 
             {!hasContent && (
-              <p className="text-label font-bold text-brand-accent/60 text-center uppercase tracking-wider">
-                Start typing to enable export
+              <p className="text-xs text-muted-foreground text-center">
+                Start typing to enable export.
               </p>
             )}
-
-            <p className="text-label text-muted-foreground text-center leading-relaxed italic">
-              {format === 'pdf'
-                ? 'All pages will be combined into a single PDF'
-                : 'Each page will be downloaded as a separate image'}
-            </p>
           </div>
         )}
       </DialogContent>
