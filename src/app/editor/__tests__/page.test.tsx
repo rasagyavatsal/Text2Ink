@@ -118,6 +118,7 @@ describe('Root editor page', () => {
     const exportButton = screen.getByRole('button', { name: /export/i });
     expect(exportButton).toHaveAttribute('data-size', 'chrome');
     expect(exportButton.className).toContain('h-control-md');
+    expect(exportButton.className).toContain('min-w-[7.5rem]');
     expect(screen.getByRole('link', { name: /contact/i })).toHaveAttribute('href', '/contact');
     expect(screen.getByRole('link', { name: /contact/i })).toHaveAttribute('data-size', 'chrome');
     expect(screen.queryByRole('link', { name: /text2ink home/i })).not.toBeInTheDocument();

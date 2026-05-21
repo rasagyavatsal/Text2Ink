@@ -476,7 +476,12 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       ) : null}
       <div className="flex items-center gap-chrome">
         <ThemePicker />
-        <Button variant="outline" size="chrome" onClick={() => setIsExportModalOpen(true)}>
+        <Button
+          variant="brand"
+          size="chrome"
+          className="min-w-[7.5rem] px-4 has-[>svg]:px-4"
+          onClick={() => setIsExportModalOpen(true)}
+        >
           <Download className="w-4 h-4 mr-2" />
           Export
         </Button>
