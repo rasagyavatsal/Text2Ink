@@ -22,7 +22,7 @@ export default function ContactPage() {
         <SiteHeader
           hideContactLink
           cta={
-            <Button variant="brand" size="sm" asChild>
+            <Button variant="brand" size="chrome" asChild>
               <Link href="/editor">
                 Back to Editor
               </Link>

@@ -28,7 +28,7 @@ describe("ContactPage", () => {
     expect(backLink).toBeInTheDocument()
     expect(backLink).toHaveAttribute("href", "/editor")
     expect(backLink).toHaveAttribute("data-variant", "brand")
-    expect(backLink).toHaveAttribute("data-size", "sm")
+    expect(backLink).toHaveAttribute("data-size", "chrome")
   })
 
   it("renders the InquiryForm", () => {

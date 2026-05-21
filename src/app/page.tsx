@@ -16,7 +16,7 @@ export default function HomePage() {
       header={
         <SiteHeader
           cta={
-            <Button variant="brand" size="sm" asChild>
+            <Button variant="brand" size="chrome" asChild>
               <Link href="/editor">
                 Open Editor
               </Link>

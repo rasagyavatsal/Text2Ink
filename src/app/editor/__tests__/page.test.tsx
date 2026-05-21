@@ -115,7 +115,11 @@ describe('Root editor page', () => {
   it('renders editor shell and contact navigation on root route', () => {
     render(<RootEditorPageClient />);
 
+    const exportButton = screen.getByRole('button', { name: /export/i });
+    expect(exportButton).toHaveAttribute('data-size', 'chrome');
+    expect(exportButton.className).toContain('h-control-md');
     expect(screen.getByRole('link', { name: /contact/i })).toHaveAttribute('href', '/contact');
+    expect(screen.getByRole('link', { name: /contact/i })).toHaveAttribute('data-size', 'chrome');
     expect(screen.queryByRole('link', { name: /text2ink home/i })).not.toBeInTheDocument();
     expect(screen.getByTestId('settings-panel')).toBeInTheDocument();
     expect(screen.getByTestId('handwriting-editor')).toBeInTheDocument();

@@ -30,7 +30,7 @@ export default function ThemePicker() {
   return (
     <Button
       variant="outline"
-      size="icon"
+      size="chrome"
       onClick={cycleTheme}
       aria-label={label}
       title={label}

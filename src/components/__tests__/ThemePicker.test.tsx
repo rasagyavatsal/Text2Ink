@@ -27,6 +27,7 @@ describe('ThemePicker', () => {
     const button = screen.getByRole('button', { name: /system theme/i });
     expect(button).toBeInTheDocument();
     expect(button).toHaveAttribute('data-variant', 'outline');
+    expect(button).toHaveAttribute('data-size', 'chrome');
     
     // It should not render other theme buttons
     expect(screen.queryByRole('button', { name: /light theme/i })).not.toBeInTheDocument();

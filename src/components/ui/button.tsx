@@ -28,6 +28,8 @@ const buttonVariants = cva(
         default: "h-control-md px-4 py-2 has-[>svg]:px-3",
         sm: "h-control-sm rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
         lg: "h-control-lg rounded-md px-6 has-[>svg]:px-4",
+        chrome:
+          "h-control-md rounded-md gap-1.5 px-3 has-[>svg]:px-3 has-[>svg:only-child]:aspect-square has-[>svg:only-child]:px-0",
         icon: "size-9",
         "icon-sm": "size-8",
         "icon-lg": "size-10",
