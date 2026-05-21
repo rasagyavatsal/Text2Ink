@@ -22,7 +22,27 @@ export default function SiteFooter() {
           <span className="text-brand-accent">Ink</span>
         </div>
       </Link>
-      <div className="flex flex-col items-center md:items-end gap-1">
+      <div className="flex flex-col items-center md:items-end gap-2">
+        <nav aria-label="Legal">
+          <ul className="flex items-center gap-4 text-sm text-muted-foreground">
+            <li>
+              <Link
+                href="/terms-of-service"
+                className="transition-colors hover:text-brand-accent"
+              >
+                Terms of Service
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/privacy-policy"
+                className="transition-colors hover:text-brand-accent"
+              >
+                Privacy Policy
+              </Link>
+            </li>
+          </ul>
+        </nav>
         <p className="text-muted-foreground text-xs sm:text-sm">
           © {new Date().getFullYear()} Text2Ink. All rights reserved.
         </p>

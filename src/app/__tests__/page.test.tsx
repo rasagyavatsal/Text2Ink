@@ -46,9 +46,11 @@ describe('HomePage', () => {
     expect(ctaLinks[0]).toHaveAttribute('data-size', 'chrome');
   });
 
-  it('renders the footer with logo and copyright', () => {
+  it('renders the footer with legal navigation and copyright', () => {
     render(<HomePage />);
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /terms of service/i })).toHaveAttribute('href', '/terms-of-service');
+    expect(screen.getByRole('link', { name: /privacy policy/i })).toHaveAttribute('href', '/privacy-policy');
     expect(screen.getByText(/all rights reserved/i)).toBeInTheDocument();
   });
 

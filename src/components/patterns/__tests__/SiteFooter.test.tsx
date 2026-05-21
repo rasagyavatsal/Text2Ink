@@ -16,11 +16,20 @@ vi.mock('@/components/Version', () => ({
 }));
 
 describe('SiteFooter', () => {
-  it('renders the logo image, copyright text, and version component', () => {
+  it('renders the logo image, legal links, copyright text, and version component', () => {
     render(<SiteFooter />);
     
     // Logo
     expect(screen.getByRole('img', { name: /text2ink logo/i })).toBeInTheDocument();
+
+    // Legal links
+    const termsLink = screen.getByRole('link', { name: /terms of service/i });
+    expect(termsLink).toBeInTheDocument();
+    expect(termsLink).toHaveAttribute('href', '/terms-of-service');
+
+    const privacyLink = screen.getByRole('link', { name: /privacy policy/i });
+    expect(privacyLink).toBeInTheDocument();
+    expect(privacyLink).toHaveAttribute('href', '/privacy-policy');
     
     // Copyright
     const currentYear = new Date().getFullYear();
