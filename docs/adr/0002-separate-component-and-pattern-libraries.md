@@ -1,5 +1,0 @@
-# Separate component and pattern libraries across the codebase
-
-Superseded by ADR-0004: Keep page layouts local and tighten pattern-library scope.
-
-Text2Ink will keep the **Component Library** and the **Pattern Library** as distinct site-wide layers rather than one combined UI bucket. The **Component Library** owns reusable individual elements and their supported states, the **Pattern Library** owns multi-component UX solutions built from those elements, including reusable page-shell patterns when they span more than one surface, and the refactor order moves through shared primitives and these two libraries before page surfaces so reuse stabilizes before page-specific markup is rewritten; pattern extraction can also happen proactively when a refactor is intentionally defining a cross-page standard rather than waiting for literal duplication everywhere, the codebase will formalize separate **Workspace Shell** and **Standard Page Shell** families rather than force one universal shell, and those shell families start as explicit slot-based **Pattern Library** components rather than page-local recipes or hardcoded page templates.
