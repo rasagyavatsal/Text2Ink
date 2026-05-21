@@ -69,18 +69,11 @@ export default function PrivacyPolicyPage() {
       <main className="py-page-y">
         <div className={frameClasses}>
           <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
-            <div className="space-y-4">
-              <p className="text-sm font-medium uppercase tracking-[0.24em] text-brand-accent">
-                Legal
-              </p>
-              <h1 className="text-document-title font-bold tracking-tight text-foreground">
+            <div>
+              <h1 className="text-page-title font-bold tracking-tight text-foreground mb-4">
                 Privacy Policy
               </h1>
-              <p className="max-w-3xl text-body-lg leading-7 text-muted-foreground">
-                This policy explains what information Text2Ink collects, where it is
-                stored, and how that information is used across the editor and public site.
-              </p>
-              <p className="text-caption text-muted-foreground">
+              <p className="text-caption text-muted-foreground mb-8">
                 Effective date: May 21, 2026
               </p>
             </div>
