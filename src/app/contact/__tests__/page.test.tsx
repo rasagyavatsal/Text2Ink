@@ -1,3 +1,5 @@
+import fs from "fs"
+import path from "path"
 import { describe, it, expect, vi } from "vitest"
 import { render, screen, within } from "@testing-library/react"
 import ContactPage from "../page"
@@ -10,7 +12,19 @@ vi.mock("@/components/ThemePicker", () => ({
   default: () => <div data-testid="theme-picker" />
 }))
 
+const contactPageSource = fs.readFileSync(
+  path.resolve(__dirname, "../page.tsx"),
+  "utf-8",
+)
+
 describe("ContactPage", () => {
+  it("keeps the contact page frame local to the route module", () => {
+    expect(contactPageSource).not.toMatch(/StandardPageShell/)
+    expect(contactPageSource).toMatch(/<header\b/)
+    expect(contactPageSource).toMatch(/<main\b/)
+    expect(contactPageSource).toMatch(/<footer\b/)
+  })
+
   it("renders the sparse header with Text2Ink on the left", () => {
     render(<ContactPage />)
     const header = screen.getByRole("banner")
@@ -60,18 +74,17 @@ describe("ContactPage", () => {
     expect(screen.getByText(/text2ink.*all rights reserved/i)).toBeInTheDocument()
   })
 
-  it("uses StandardPageShell with min-h-screen wrapper", () => {
+  it("uses a full-height page background wrapper", () => {
     const { container } = render(<ContactPage />)
     const wrapper = container.firstElementChild
     expect(wrapper?.className).toContain("min-h-screen")
     expect(wrapper?.className).toContain("bg-background")
   })
 
-  it("renders header and footer as semantic landmarks inside the shell", () => {
+  it("renders header and footer as semantic landmarks", () => {
     render(<ContactPage />)
     const banner = screen.getByRole("banner")
     const contentinfo = screen.getByRole("contentinfo")
-    // Header and footer should be direct children of the shell wrapper
     expect(banner.tagName.toLowerCase()).toBe("header")
     expect(contentinfo.tagName.toLowerCase()).toBe("footer")
   })
