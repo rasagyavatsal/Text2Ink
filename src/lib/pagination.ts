@@ -1,3 +1,6 @@
+import { resolvePagePaper } from './paper/PaperEngine';
+import type { HandwritingSettings, PageSettings } from './types';
+
 export type PaginationLineData = {
   text: string;
   lineIndex: number;
@@ -12,21 +15,36 @@ export type PaginationRequest = {
   renderAllPagesForExport: boolean;
   pageWidth: number;
   pageHeight: number;
-  hasAnyCustomBackground: boolean;
-  settings: {
-    lineHeight: number;
-    paperStyle: 'blank' | 'lined' | 'ruled' | 'grid';
-    ruledMarginLineOffset: number;
-  };
-  pages: Array<{
-    marginTop: number;
-    marginRight: number;
-    marginBottom: number;
-    marginLeft: number;
-    fontSize: number;
-    customLineSpacing?: number;
-  }>;
-  pageHasBackground: boolean[];
+  settings: Partial<
+    Pick<
+      HandwritingSettings,
+      | 'customBackgroundImage'
+      | 'customBackgroundImages'
+      | 'lineHeight'
+      | 'paperColor'
+      | 'paperStyle'
+      | 'lineColor'
+      | 'ruledMarginLineOffset'
+    >
+  >;
+  pageSettings: Array<
+    Partial<
+      Pick<
+        PageSettings,
+        | 'customBackgroundImage'
+        | 'customLineOffset'
+        | 'customLineSpacing'
+        | 'fontSize'
+        | 'marginTop'
+        | 'marginRight'
+        | 'marginBottom'
+        | 'marginLeft'
+        | 'paperColor'
+        | 'paperStyle'
+        | 'lineColor'
+      >
+    >
+  >;
   fontFamily: string;
 };
 
@@ -136,24 +154,23 @@ export function paginate(req: PaginationRequest): PaginationResponse {
   }
 
   while (cursor < textLen) {
-    const ps = req.pages[pageIndex] ?? req.pages[req.pages.length - 1];
-    const pageHasBackground = !!req.pageHasBackground[pageIndex];
+    const ps = req.pageSettings[pageIndex] ?? req.pageSettings[req.pageSettings.length - 1];
+    const resolvedPaper = resolvePagePaper({
+      pageIndex,
+      settings: req.settings,
+      pageSettings: ps,
+      pageSize: {
+        width: req.pageWidth,
+        height: req.pageHeight,
+      },
+    });
 
-    const contentHeight = req.pageHeight - ps.marginTop - ps.marginBottom;
-
-    const ruledTextLeft =
-      req.settings.paperStyle === 'ruled' && !req.hasAnyCustomBackground
-        ? ps.marginLeft + req.settings.ruledMarginLineOffset + 10
-        : ps.marginLeft;
-
-    const ruledTextWidth = req.pageWidth - ruledTextLeft - ps.marginRight;
-
-    const baseLineHeightPx = ps.fontSize * req.settings.lineHeight;
-    const lineHeightPx = pageHasBackground && ps.customLineSpacing ? ps.customLineSpacing : baseLineHeightPx;
+    const contentHeight = resolvedPaper.geometry.contentHeight;
+    const lineHeightPx = resolvedPaper.geometry.lineHeightPx;
     const linesPerPage = Math.max(1, Math.floor(contentHeight / lineHeightPx));
 
-    const measure = createMeasure(req.fontFamily, ps.fontSize);
-    const maxWidth = ruledTextWidth;
+    const measure = createMeasure(req.fontFamily, resolvedPaper.geometry.fontSize);
+    const maxWidth = resolvedPaper.geometry.textWidth;
 
     const pageLines: PaginationLineData[] = [];
     for (let i = 0; i < linesPerPage && cursor < textLen; i++) {
