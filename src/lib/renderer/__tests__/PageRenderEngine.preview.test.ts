@@ -347,7 +347,7 @@ describe('PageRenderEngine preview — character positions respect resolved page
 
     // Text bounds left must come from the resolved layout for A4, not a hard-coded Letter value.
     const expectedTextLeft = result.layout.writing.textBounds.left;
-    expect(expectedTextLeft).toBe(pageSettings.marginLeft);
+    expect(expectedTextLeft).toBe(85);
 
     // The first character position must be at that left edge.
     const firstPos = result.characterPositions[0];

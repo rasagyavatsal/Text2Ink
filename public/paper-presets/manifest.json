@@ -11,13 +11,13 @@
     "assetPath": "/paper-presets/lined-letter-portrait.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 90,
+        "right": 36,
+        "bottom": 36,
+        "left": 90
       },
-      "firstBaselineOffset": 60,
-      "lineSpacing": 43.2,
+      "firstBaselineOffset": 90,
+      "lineSpacing": 20.25,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -26,12 +26,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 552,
-        "bottom": 732,
-        "left": 60,
-        "width": 492,
-        "height": 672
+        "top": 90,
+        "right": 576,
+        "bottom": 756,
+        "left": 90,
+        "width": 486,
+        "height": 666
       },
       "gridSpacing": null
     }
@@ -48,13 +48,13 @@
     "assetPath": "/paper-presets/lined-letter-landscape.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 90,
+        "right": 36,
+        "bottom": 36,
+        "left": 36
       },
-      "firstBaselineOffset": 60,
-      "lineSpacing": 43.2,
+      "firstBaselineOffset": 90,
+      "lineSpacing": 20.25,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -63,12 +63,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 732,
-        "bottom": 552,
-        "left": 60,
-        "width": 672,
-        "height": 492
+        "top": 90,
+        "right": 756,
+        "bottom": 576,
+        "left": 36,
+        "width": 720,
+        "height": 486
       },
       "gridSpacing": null
     }
@@ -85,13 +85,13 @@
     "assetPath": "/paper-presets/lined-a4-portrait.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 85,
+        "right": 43,
+        "bottom": 43,
+        "left": 85
       },
-      "firstBaselineOffset": 60,
-      "lineSpacing": 43.2,
+      "firstBaselineOffset": 85,
+      "lineSpacing": 22.68,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -100,12 +100,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 535.28,
-        "bottom": 781.89,
-        "left": 60,
-        "width": 475.28,
-        "height": 721.89
+        "top": 85,
+        "right": 552.28,
+        "bottom": 798.89,
+        "left": 85,
+        "width": 467.28,
+        "height": 713.89
       },
       "gridSpacing": null
     }
@@ -122,13 +122,13 @@
     "assetPath": "/paper-presets/lined-a4-landscape.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 85,
+        "right": 43,
+        "bottom": 43,
+        "left": 43
       },
-      "firstBaselineOffset": 60,
-      "lineSpacing": 43.2,
+      "firstBaselineOffset": 85,
+      "lineSpacing": 22.68,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -137,12 +137,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 781.89,
-        "bottom": 535.28,
-        "left": 60,
-        "width": 721.89,
-        "height": 475.28
+        "top": 85,
+        "right": 798.89,
+        "bottom": 552.28,
+        "left": 43,
+        "width": 755.89,
+        "height": 467.28
       },
       "gridSpacing": null
     }
@@ -159,13 +159,13 @@
     "assetPath": "/paper-presets/lined-a3-portrait.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 85,
+        "right": 43,
+        "bottom": 43,
+        "left": 85
       },
-      "firstBaselineOffset": 60,
-      "lineSpacing": 43.2,
+      "firstBaselineOffset": 85,
+      "lineSpacing": 22.68,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -174,12 +174,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 781.89,
-        "bottom": 1130.55,
-        "left": 60,
-        "width": 721.89,
-        "height": 1070.55
+        "top": 85,
+        "right": 798.89,
+        "bottom": 1147.55,
+        "left": 85,
+        "width": 713.89,
+        "height": 1062.55
       },
       "gridSpacing": null
     }
@@ -196,13 +196,13 @@
     "assetPath": "/paper-presets/lined-a3-landscape.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 85,
+        "right": 43,
+        "bottom": 43,
+        "left": 43
       },
-      "firstBaselineOffset": 60,
-      "lineSpacing": 43.2,
+      "firstBaselineOffset": 85,
+      "lineSpacing": 22.68,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -211,12 +211,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 1130.55,
-        "bottom": 781.89,
-        "left": 60,
-        "width": 1070.55,
-        "height": 721.89
+        "top": 85,
+        "right": 1147.55,
+        "bottom": 798.89,
+        "left": 43,
+        "width": 1104.55,
+        "height": 713.89
       },
       "gridSpacing": null
     }
@@ -233,14 +233,14 @@
     "assetPath": "/paper-presets/ruled-letter-portrait.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 90,
+        "right": 36,
+        "bottom": 36,
+        "left": 90
       },
-      "firstBaselineOffset": 60,
-      "lineSpacing": 43.2,
-      "ruledMarginPosition": 50,
+      "firstBaselineOffset": 90,
+      "lineSpacing": 20.25,
+      "ruledMarginPosition": 80,
       "safeCrop": {
         "top": 24,
         "right": 24,
@@ -248,12 +248,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 552,
-        "bottom": 732,
-        "left": 60,
-        "width": 492,
-        "height": 672
+        "top": 90,
+        "right": 576,
+        "bottom": 756,
+        "left": 90,
+        "width": 486,
+        "height": 666
       },
       "gridSpacing": null
     }
@@ -270,14 +270,14 @@
     "assetPath": "/paper-presets/ruled-letter-landscape.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 90,
+        "right": 36,
+        "bottom": 36,
+        "left": 36
       },
-      "firstBaselineOffset": 60,
-      "lineSpacing": 43.2,
-      "ruledMarginPosition": 50,
+      "firstBaselineOffset": 90,
+      "lineSpacing": 20.25,
+      "ruledMarginPosition": 26,
       "safeCrop": {
         "top": 24,
         "right": 24,
@@ -285,12 +285,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 732,
-        "bottom": 552,
-        "left": 60,
-        "width": 672,
-        "height": 492
+        "top": 90,
+        "right": 756,
+        "bottom": 576,
+        "left": 36,
+        "width": 720,
+        "height": 486
       },
       "gridSpacing": null
     }
@@ -307,14 +307,14 @@
     "assetPath": "/paper-presets/ruled-a4-portrait.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 85,
+        "right": 43,
+        "bottom": 43,
+        "left": 85
       },
-      "firstBaselineOffset": 60,
-      "lineSpacing": 43.2,
-      "ruledMarginPosition": 50,
+      "firstBaselineOffset": 85,
+      "lineSpacing": 22.68,
+      "ruledMarginPosition": 75,
       "safeCrop": {
         "top": 24,
         "right": 24,
@@ -322,12 +322,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 535.28,
-        "bottom": 781.89,
-        "left": 60,
-        "width": 475.28,
-        "height": 721.89
+        "top": 85,
+        "right": 552.28,
+        "bottom": 798.89,
+        "left": 85,
+        "width": 467.28,
+        "height": 713.89
       },
       "gridSpacing": null
     }
@@ -344,14 +344,14 @@
     "assetPath": "/paper-presets/ruled-a4-landscape.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 85,
+        "right": 43,
+        "bottom": 43,
+        "left": 43
       },
-      "firstBaselineOffset": 60,
-      "lineSpacing": 43.2,
-      "ruledMarginPosition": 50,
+      "firstBaselineOffset": 85,
+      "lineSpacing": 22.68,
+      "ruledMarginPosition": 33,
       "safeCrop": {
         "top": 24,
         "right": 24,
@@ -359,12 +359,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 781.89,
-        "bottom": 535.28,
-        "left": 60,
-        "width": 721.89,
-        "height": 475.28
+        "top": 85,
+        "right": 798.89,
+        "bottom": 552.28,
+        "left": 43,
+        "width": 755.89,
+        "height": 467.28
       },
       "gridSpacing": null
     }
@@ -381,14 +381,14 @@
     "assetPath": "/paper-presets/ruled-a3-portrait.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 85,
+        "right": 43,
+        "bottom": 43,
+        "left": 85
       },
-      "firstBaselineOffset": 60,
-      "lineSpacing": 43.2,
-      "ruledMarginPosition": 50,
+      "firstBaselineOffset": 85,
+      "lineSpacing": 22.68,
+      "ruledMarginPosition": 75,
       "safeCrop": {
         "top": 24,
         "right": 24,
@@ -396,12 +396,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 781.89,
-        "bottom": 1130.55,
-        "left": 60,
-        "width": 721.89,
-        "height": 1070.55
+        "top": 85,
+        "right": 798.89,
+        "bottom": 1147.55,
+        "left": 85,
+        "width": 713.89,
+        "height": 1062.55
       },
       "gridSpacing": null
     }
@@ -418,14 +418,14 @@
     "assetPath": "/paper-presets/ruled-a3-landscape.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 85,
+        "right": 43,
+        "bottom": 43,
+        "left": 43
       },
-      "firstBaselineOffset": 60,
-      "lineSpacing": 43.2,
-      "ruledMarginPosition": 50,
+      "firstBaselineOffset": 85,
+      "lineSpacing": 22.68,
+      "ruledMarginPosition": 33,
       "safeCrop": {
         "top": 24,
         "right": 24,
@@ -433,12 +433,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 1130.55,
-        "bottom": 781.89,
-        "left": 60,
-        "width": 1070.55,
-        "height": 721.89
+        "top": 85,
+        "right": 1147.55,
+        "bottom": 798.89,
+        "left": 43,
+        "width": 1104.55,
+        "height": 713.89
       },
       "gridSpacing": null
     }
@@ -455,14 +455,14 @@
     "assetPath": "/paper-presets/grid-letter-portrait.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 90,
+        "right": 36,
+        "bottom": 36,
+        "left": 90
       },
-      "firstBaselineOffset": 75.12,
-      "lineSpacing": 43.2,
-      "gridSpacing": 21.6,
+      "firstBaselineOffset": 104.4,
+      "lineSpacing": 28.8,
+      "gridSpacing": 14.4,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -471,12 +471,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 552,
-        "bottom": 732,
-        "left": 60,
-        "width": 492,
-        "height": 672
+        "top": 90,
+        "right": 576,
+        "bottom": 756,
+        "left": 90,
+        "width": 486,
+        "height": 666
       }
     }
   },
@@ -492,14 +492,14 @@
     "assetPath": "/paper-presets/grid-letter-landscape.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 90,
+        "right": 36,
+        "bottom": 36,
+        "left": 36
       },
-      "firstBaselineOffset": 75.12,
-      "lineSpacing": 43.2,
-      "gridSpacing": 21.6,
+      "firstBaselineOffset": 104.4,
+      "lineSpacing": 28.8,
+      "gridSpacing": 14.4,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -508,12 +508,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 732,
-        "bottom": 552,
-        "left": 60,
-        "width": 672,
-        "height": 492
+        "top": 90,
+        "right": 756,
+        "bottom": 576,
+        "left": 36,
+        "width": 720,
+        "height": 486
       }
     }
   },
@@ -529,14 +529,14 @@
     "assetPath": "/paper-presets/grid-a4-portrait.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 85,
+        "right": 43,
+        "bottom": 43,
+        "left": 85
       },
-      "firstBaselineOffset": 75.12,
-      "lineSpacing": 43.2,
-      "gridSpacing": 21.6,
+      "firstBaselineOffset": 99.17,
+      "lineSpacing": 28.34,
+      "gridSpacing": 14.17,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -545,12 +545,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 535.28,
-        "bottom": 781.89,
-        "left": 60,
-        "width": 475.28,
-        "height": 721.89
+        "top": 85,
+        "right": 552.28,
+        "bottom": 798.89,
+        "left": 85,
+        "width": 467.28,
+        "height": 713.89
       }
     }
   },
@@ -566,14 +566,14 @@
     "assetPath": "/paper-presets/grid-a4-landscape.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 85,
+        "right": 43,
+        "bottom": 43,
+        "left": 43
       },
-      "firstBaselineOffset": 75.12,
-      "lineSpacing": 43.2,
-      "gridSpacing": 21.6,
+      "firstBaselineOffset": 99.17,
+      "lineSpacing": 28.34,
+      "gridSpacing": 14.17,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -582,12 +582,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 781.89,
-        "bottom": 535.28,
-        "left": 60,
-        "width": 721.89,
-        "height": 475.28
+        "top": 85,
+        "right": 798.89,
+        "bottom": 552.28,
+        "left": 43,
+        "width": 755.89,
+        "height": 467.28
       }
     }
   },
@@ -603,14 +603,14 @@
     "assetPath": "/paper-presets/grid-a3-portrait.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 85,
+        "right": 43,
+        "bottom": 43,
+        "left": 85
       },
-      "firstBaselineOffset": 75.12,
-      "lineSpacing": 43.2,
-      "gridSpacing": 21.6,
+      "firstBaselineOffset": 99.17,
+      "lineSpacing": 28.34,
+      "gridSpacing": 14.17,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -619,12 +619,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 781.89,
-        "bottom": 1130.55,
-        "left": 60,
-        "width": 721.89,
-        "height": 1070.55
+        "top": 85,
+        "right": 798.89,
+        "bottom": 1147.55,
+        "left": 85,
+        "width": 713.89,
+        "height": 1062.55
       }
     }
   },
@@ -640,14 +640,14 @@
     "assetPath": "/paper-presets/grid-a3-landscape.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 85,
+        "right": 43,
+        "bottom": 43,
+        "left": 43
       },
-      "firstBaselineOffset": 75.12,
-      "lineSpacing": 43.2,
-      "gridSpacing": 21.6,
+      "firstBaselineOffset": 99.17,
+      "lineSpacing": 28.34,
+      "gridSpacing": 14.17,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -656,12 +656,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 1130.55,
-        "bottom": 781.89,
-        "left": 60,
-        "width": 1070.55,
-        "height": 721.89
+        "top": 85,
+        "right": 1147.55,
+        "bottom": 798.89,
+        "left": 43,
+        "width": 1104.55,
+        "height": 713.89
       }
     }
   },
@@ -677,14 +677,14 @@
     "assetPath": "/paper-presets/dot-grid-letter-portrait.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 90,
+        "right": 36,
+        "bottom": 36,
+        "left": 90
       },
-      "firstBaselineOffset": 75.12,
-      "lineSpacing": 43.2,
-      "gridSpacing": 21.6,
+      "firstBaselineOffset": 104.4,
+      "lineSpacing": 28.8,
+      "gridSpacing": 14.4,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -693,12 +693,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 552,
-        "bottom": 732,
-        "left": 60,
-        "width": 492,
-        "height": 672
+        "top": 90,
+        "right": 576,
+        "bottom": 756,
+        "left": 90,
+        "width": 486,
+        "height": 666
       }
     }
   },
@@ -714,14 +714,14 @@
     "assetPath": "/paper-presets/dot-grid-letter-landscape.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 90,
+        "right": 36,
+        "bottom": 36,
+        "left": 36
       },
-      "firstBaselineOffset": 75.12,
-      "lineSpacing": 43.2,
-      "gridSpacing": 21.6,
+      "firstBaselineOffset": 104.4,
+      "lineSpacing": 28.8,
+      "gridSpacing": 14.4,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -730,12 +730,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 732,
-        "bottom": 552,
-        "left": 60,
-        "width": 672,
-        "height": 492
+        "top": 90,
+        "right": 756,
+        "bottom": 576,
+        "left": 36,
+        "width": 720,
+        "height": 486
       }
     }
   },
@@ -751,14 +751,14 @@
     "assetPath": "/paper-presets/dot-grid-a4-portrait.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 85,
+        "right": 43,
+        "bottom": 43,
+        "left": 85
       },
-      "firstBaselineOffset": 75.12,
-      "lineSpacing": 43.2,
-      "gridSpacing": 21.6,
+      "firstBaselineOffset": 99.17,
+      "lineSpacing": 28.34,
+      "gridSpacing": 14.17,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -767,12 +767,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 535.28,
-        "bottom": 781.89,
-        "left": 60,
-        "width": 475.28,
-        "height": 721.89
+        "top": 85,
+        "right": 552.28,
+        "bottom": 798.89,
+        "left": 85,
+        "width": 467.28,
+        "height": 713.89
       }
     }
   },
@@ -788,14 +788,14 @@
     "assetPath": "/paper-presets/dot-grid-a4-landscape.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 85,
+        "right": 43,
+        "bottom": 43,
+        "left": 43
       },
-      "firstBaselineOffset": 75.12,
-      "lineSpacing": 43.2,
-      "gridSpacing": 21.6,
+      "firstBaselineOffset": 99.17,
+      "lineSpacing": 28.34,
+      "gridSpacing": 14.17,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -804,12 +804,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 781.89,
-        "bottom": 535.28,
-        "left": 60,
-        "width": 721.89,
-        "height": 475.28
+        "top": 85,
+        "right": 798.89,
+        "bottom": 552.28,
+        "left": 43,
+        "width": 755.89,
+        "height": 467.28
       }
     }
   },
@@ -825,14 +825,14 @@
     "assetPath": "/paper-presets/dot-grid-a3-portrait.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 85,
+        "right": 43,
+        "bottom": 43,
+        "left": 85
       },
-      "firstBaselineOffset": 75.12,
-      "lineSpacing": 43.2,
-      "gridSpacing": 21.6,
+      "firstBaselineOffset": 99.17,
+      "lineSpacing": 28.34,
+      "gridSpacing": 14.17,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -841,12 +841,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 781.89,
-        "bottom": 1130.55,
-        "left": 60,
-        "width": 721.89,
-        "height": 1070.55
+        "top": 85,
+        "right": 798.89,
+        "bottom": 1147.55,
+        "left": 85,
+        "width": 713.89,
+        "height": 1062.55
       }
     }
   },
@@ -862,14 +862,14 @@
     "assetPath": "/paper-presets/dot-grid-a3-landscape.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 85,
+        "right": 43,
+        "bottom": 43,
+        "left": 43
       },
-      "firstBaselineOffset": 75.12,
-      "lineSpacing": 43.2,
-      "gridSpacing": 21.6,
+      "firstBaselineOffset": 99.17,
+      "lineSpacing": 28.34,
+      "gridSpacing": 14.17,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -878,12 +878,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 1130.55,
-        "bottom": 781.89,
-        "left": 60,
-        "width": 1070.55,
-        "height": 721.89
+        "top": 85,
+        "right": 1147.55,
+        "bottom": 798.89,
+        "left": 43,
+        "width": 1104.55,
+        "height": 713.89
       }
     }
   },
@@ -899,13 +899,13 @@
     "assetPath": "/paper-presets/cornell-letter-portrait.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 90,
+        "right": 36,
+        "bottom": 36,
+        "left": 90
       },
-      "firstBaselineOffset": 60,
-      "lineSpacing": 43.2,
+      "firstBaselineOffset": 90,
+      "lineSpacing": 20.25,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -914,12 +914,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 552,
-        "bottom": 732,
-        "left": 60,
-        "width": 492,
-        "height": 672
+        "top": 90,
+        "right": 576,
+        "bottom": 756,
+        "left": 90,
+        "width": 486,
+        "height": 666
       },
       "gridSpacing": null
     }
@@ -936,13 +936,13 @@
     "assetPath": "/paper-presets/cornell-letter-landscape.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 90,
+        "right": 36,
+        "bottom": 36,
+        "left": 36
       },
-      "firstBaselineOffset": 60,
-      "lineSpacing": 43.2,
+      "firstBaselineOffset": 90,
+      "lineSpacing": 20.25,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -951,12 +951,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 732,
-        "bottom": 552,
-        "left": 60,
-        "width": 672,
-        "height": 492
+        "top": 90,
+        "right": 756,
+        "bottom": 576,
+        "left": 36,
+        "width": 720,
+        "height": 486
       },
       "gridSpacing": null
     }
@@ -973,13 +973,13 @@
     "assetPath": "/paper-presets/cornell-a4-portrait.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 85,
+        "right": 43,
+        "bottom": 43,
+        "left": 85
       },
-      "firstBaselineOffset": 60,
-      "lineSpacing": 43.2,
+      "firstBaselineOffset": 85,
+      "lineSpacing": 22.68,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -988,12 +988,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 535.28,
-        "bottom": 781.89,
-        "left": 60,
-        "width": 475.28,
-        "height": 721.89
+        "top": 85,
+        "right": 552.28,
+        "bottom": 798.89,
+        "left": 85,
+        "width": 467.28,
+        "height": 713.89
       },
       "gridSpacing": null
     }
@@ -1010,13 +1010,13 @@
     "assetPath": "/paper-presets/cornell-a4-landscape.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 85,
+        "right": 43,
+        "bottom": 43,
+        "left": 43
       },
-      "firstBaselineOffset": 60,
-      "lineSpacing": 43.2,
+      "firstBaselineOffset": 85,
+      "lineSpacing": 22.68,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -1025,12 +1025,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 781.89,
-        "bottom": 535.28,
-        "left": 60,
-        "width": 721.89,
-        "height": 475.28
+        "top": 85,
+        "right": 798.89,
+        "bottom": 552.28,
+        "left": 43,
+        "width": 755.89,
+        "height": 467.28
       },
       "gridSpacing": null
     }
@@ -1047,13 +1047,13 @@
     "assetPath": "/paper-presets/cornell-a3-portrait.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 85,
+        "right": 43,
+        "bottom": 43,
+        "left": 85
       },
-      "firstBaselineOffset": 60,
-      "lineSpacing": 43.2,
+      "firstBaselineOffset": 85,
+      "lineSpacing": 22.68,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -1062,12 +1062,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 781.89,
-        "bottom": 1130.55,
-        "left": 60,
-        "width": 721.89,
-        "height": 1070.55
+        "top": 85,
+        "right": 798.89,
+        "bottom": 1147.55,
+        "left": 85,
+        "width": 713.89,
+        "height": 1062.55
       },
       "gridSpacing": null
     }
@@ -1084,13 +1084,13 @@
     "assetPath": "/paper-presets/cornell-a3-landscape.svg",
     "alignment": {
       "writingMargins": {
-        "top": 60,
-        "right": 60,
-        "bottom": 60,
-        "left": 60
+        "top": 85,
+        "right": 43,
+        "bottom": 43,
+        "left": 43
       },
-      "firstBaselineOffset": 60,
-      "lineSpacing": 43.2,
+      "firstBaselineOffset": 85,
+      "lineSpacing": 22.68,
       "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
@@ -1099,12 +1099,12 @@
         "left": 24
       },
       "contentArea": {
-        "top": 60,
-        "right": 1130.55,
-        "bottom": 781.89,
-        "left": 60,
-        "width": 1070.55,
-        "height": 721.89
+        "top": 85,
+        "right": 1147.55,
+        "bottom": 798.89,
+        "left": 43,
+        "width": 1104.55,
+        "height": 713.89
       },
       "gridSpacing": null
     }
