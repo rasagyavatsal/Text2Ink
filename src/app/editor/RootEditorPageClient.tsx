@@ -515,7 +515,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
           : { top: headerHeight }
       }
     >
-      <div className={`min-h-full flex justify-center ${isMobileEditorLayout ? 'px-page-x py-chrome-y' : 'px-page-x py-section'}`}>
+      <div className={`min-h-full flex justify-center ${isMobileEditorLayout ? 'px-page-x pt-[80px] pb-chrome-y' : 'px-page-x py-section'}`}>
         <HandwritingEditor
           text={text}
           onTextChange={setText}
