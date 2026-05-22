@@ -338,8 +338,8 @@ export const UnifiedPagePainter = {
         ctx.strokeStyle = guides.marginLineColor;
         ctx.lineWidth = guides.marginLineWidth;
         ctx.beginPath();
-        ctx.moveTo(guides.marginLineX, contentBounds.top);
-        ctx.lineTo(guides.marginLineX, contentBounds.top + contentHeight);
+        ctx.moveTo(guides.marginLineX, 0);
+        ctx.lineTo(guides.marginLineX, page.height);
         ctx.stroke();
       }
     } else if (guides.kind === 'grid') {
