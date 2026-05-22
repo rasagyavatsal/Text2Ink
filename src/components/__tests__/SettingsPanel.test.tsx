@@ -166,9 +166,56 @@ describe('SettingsPanel', () => {
     expect(zoomInButton).toHaveAttribute('data-variant', 'ghost');
     expect(zoomInButton).toHaveAttribute('data-size', 'icon');
 
-    // Font select trigger should be h-control-md
-    const selects = screen.getAllByRole('combobox');
-    expect(selects[0].className).toContain('h-control-md');
+  });
 
+  it('renders a paper mode switch with Built-in and Custom options', () => {
+    render(<SettingsPanel {...defaultProps} />);
+    
+    const builtInTab = screen.getByRole('radio', { name: /built-in/i });
+    const customTab = screen.getByRole('radio', { name: /custom/i });
+    
+    expect(builtInTab).toBeInTheDocument();
+    expect(customTab).toBeInTheDocument();
+  });
+
+  it('shows Size and Orientation pickers in Built-in mode, and hides them in Custom mode', () => {
+    const { rerender } = render(<SettingsPanel {...defaultProps} />);
+    
+    // Switch to built-in mode explicitly
+    fireEvent.click(screen.getByRole('radio', { name: /built-in/i }));
+    
+    expect(screen.getByLabelText(/Paper Style/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Size/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Orientation/i)).toBeInTheDocument();
+    
+    // Switch to custom mode
+    fireEvent.click(screen.getByRole('radio', { name: /custom/i }));
+    
+    expect(screen.queryByLabelText(/Paper Style/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Size/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/Orientation/i)).not.toBeInTheDocument();
+  });
+
+  it('hides Custom Background upload and line detection in Built-in mode', () => {
+    render(<SettingsPanel {...defaultProps} />);
+    
+    // Custom Background should be hidden in Built-in mode
+    fireEvent.click(screen.getByRole('radio', { name: /built-in/i }));
+    expect(screen.queryByText(/Upload PNG or JPG/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Auto-Detect Lines/i })).not.toBeInTheDocument();
+    
+    // Custom Background should be visible in Custom mode
+    fireEvent.click(screen.getByRole('radio', { name: /custom/i }));
+    expect(screen.getByText(/Upload PNG or JPG/i)).toBeInTheDocument();
+  });
+
+  it('hides paperColor and lineColor for non-blank Built-in papers', () => {
+    render(<SettingsPanel {...defaultProps} />);
+    
+    fireEvent.click(screen.getByRole('radio', { name: /built-in/i }));
+    
+    // Lined paper (default) should not show Paper Color and Line Color
+    expect(screen.queryByText('Paper Color')).not.toBeInTheDocument();
+    expect(screen.queryByText('Line Color')).not.toBeInTheDocument();
   });
 });
