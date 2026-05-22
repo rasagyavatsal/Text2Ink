@@ -66,7 +66,7 @@ describe('notebookPresetCatalog', () => {
 
       if (preset.style === 'ruled') {
         expect(preset.alignment.ruledMarginPosition).toBeGreaterThan(0);
-        expect(svg).toContain('#e6a1a8');
+        expect(svg).toContain('#f39ca6');
       } else {
         expect(preset.alignment.ruledMarginPosition).toBeNull();
       }

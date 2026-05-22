@@ -166,8 +166,8 @@ const PAPER_DIMENSIONS_PT: Record<PaperFormat, { width: number; height: number }
   },
 };
 const RULED_TEXT_INSET_PX = 10;
-const RULED_MARGIN_LINE_COLOR = '#ffb3b3';
-const RULED_MARGIN_LINE_WIDTH = 2;
+const RULED_MARGIN_LINE_COLOR = '#f39ca6';
+const RULED_MARGIN_LINE_WIDTH = 2.4;
 const GRID_GUIDE_ALPHA = 0.5;
 const BUILTIN_PRESET_EPSILON = 0.01;
 const BUILTIN_PRESET_SUPPORT = buildBuiltinPresetSupport();
