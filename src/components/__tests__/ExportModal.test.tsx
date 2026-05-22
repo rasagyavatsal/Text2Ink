@@ -4,8 +4,14 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ExportModal from '../ExportModal';
 import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '../../lib/types';
 
-vi.mock('@/lib/canvasRenderer', () => ({
-  renderPageToCanvas: vi.fn().mockResolvedValue(true),
+const { exportDocumentMock } = vi.hoisted(() => ({
+  exportDocumentMock: vi.fn(),
+}));
+
+vi.mock('@/lib/export/ExportEngine', () => ({
+  exportEngine: {
+    exportDocument: exportDocumentMock,
+  },
 }));
 
 // Mock lucide-react
@@ -29,18 +35,19 @@ describe('ExportModal', () => {
   const defaultProps = {
     isOpen: true,
     onClose: vi.fn(),
-    hasContent: true,
+    text: 'test',
     settings: DEFAULT_SETTINGS,
-    pages: [[{ text: 'test', lineIndex: 0, hasNewline: false }]],
-    isPaginationComplete: true,
     pageSettingsByPage: [defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS)],
-    totalPages: 1,
-    currentPageIndex: 0,
-    onCurrentPageChange: vi.fn(),
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
+    exportDocumentMock.mockResolvedValue({
+      status: 'success',
+      format: 'pdf',
+      pageCount: 1,
+      files: [{ fileName: 'handwritten-document.pdf', mimeType: 'application/pdf' }],
+    });
   });
 
   it('uses canonical primitives for layout and styling', () => {
@@ -77,6 +84,19 @@ describe('ExportModal', () => {
     // Click Export
     const exportButton = screen.getByRole('button', { name: /export png/i });
     fireEvent.click(exportButton);
+
+    await waitFor(() => {
+      expect(exportDocumentMock).toHaveBeenCalledWith(expect.objectContaining({
+        format: 'png',
+        document: expect.objectContaining({
+          text: 'test',
+          settings: DEFAULT_SETTINGS,
+          pageSettingsByPage: [defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS)],
+        }),
+        onProgress: expect.any(Function),
+        signal: expect.any(AbortSignal),
+      }));
+    });
     
     // Wait for success
     await waitFor(() => {
@@ -96,12 +116,15 @@ describe('ExportModal', () => {
 
   it('renders custom error state when export fails, retry clears it and does not call window.alert', async () => {
     const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
-    
-    // Force canvas.toDataURL to throw an error by mocking canvas.toDataURL
-    const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
-    HTMLCanvasElement.prototype.toDataURL = vi.fn().mockImplementation(() => {
-      throw new Error('Canvas rendering error');
-    });
+    const consoleErrorMock = vi.spyOn(console, 'error').mockImplementation(() => {});
+    exportDocumentMock
+      .mockRejectedValueOnce(new Error('Canvas rendering error'))
+      .mockResolvedValueOnce({
+        status: 'success',
+        format: 'png',
+        pageCount: 1,
+        files: [{ fileName: 'handwritten-page-1.png', mimeType: 'image/png' }],
+      });
 
     render(<ExportModal {...defaultProps} />);
     
@@ -131,9 +154,6 @@ describe('ExportModal', () => {
     expect(retryButton).toBeInTheDocument();
     expect(cancelButton).toBeInTheDocument();
     
-    // Reset canvas toDataURL mock to pass next time
-    HTMLCanvasElement.prototype.toDataURL = originalToDataURL;
-    
     // Click Retry
     fireEvent.click(retryButton);
     
@@ -143,5 +163,6 @@ describe('ExportModal', () => {
     });
     
     alertMock.mockRestore();
+    consoleErrorMock.mockRestore();
   });
 });

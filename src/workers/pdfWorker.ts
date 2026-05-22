@@ -7,11 +7,11 @@ self.onmessage = async (event: MessageEvent) => {
 
   switch (type) {
     case 'init': {
-      const { orientation, unit, format } = payload;
+      const { orientation, width, height } = payload;
       pdf = new jsPDF({
         orientation,
-        unit,
-        format,
+        unit: 'pt',
+        format: [width, height],
       });
       (self as any).postMessage({ type: 'initialized' });
       break;
@@ -22,10 +22,10 @@ self.onmessage = async (event: MessageEvent) => {
         (self as any).postMessage({ type: 'error', payload: 'PDF not initialized' });
         return;
       }
-      const { imgData, width, height, isFirstPage } = payload;
+      const { imgData, width, height, orientation, isFirstPage } = payload;
       
       if (!isFirstPage) {
-        pdf.addPage();
+        pdf.addPage([width, height], orientation);
       }
       
       // Use 'FAST' compression for speed
