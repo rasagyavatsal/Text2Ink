@@ -69,8 +69,26 @@ describe('PaperEngine', () => {
     if (resolved.background.kind !== 'image') {
       throw new Error('Expected built-in lined paper to resolve to an SVG image background.');
     }
-    expect(resolved.background.imageSrc).toMatch(/^data:image\/svg\+xml/);
+    expect(resolved.background.imageSrc).toBe('/paper-presets/lined-letter-portrait.svg');
     expect(resolved.guides).toEqual({ kind: 'none' });
+    expect(resolved.preset).toMatchObject({
+      id: 'lined-letter-portrait',
+      assetPath: '/paper-presets/lined-letter-portrait.svg',
+      supportedFormats: ['letter', 'a4', 'a3'],
+      supportedOrientations: ['portrait', 'landscape'],
+      alignment: {
+        writingMargins: {
+          top: 60,
+          right: 60,
+          bottom: 60,
+          left: 60,
+        },
+        firstBaselineOffset: 60,
+        lineSpacing: 43.2,
+        gridSpacing: null,
+        ruledMarginPosition: null,
+      },
+    });
     expect(resolved.geometry).toMatchObject({
       pageWidth: PAGE_WIDTH,
       pageHeight: PAGE_HEIGHT,
@@ -113,15 +131,13 @@ describe('PaperEngine', () => {
     expect(resolved.geometry.lineHeightPx).toBe(44);
   });
 
-  it('resolves ruled presets to notebook artwork while preserving the ruled text inset', () => {
+  it('resolves ruled presets from the registered notebook asset metadata', () => {
     const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
     const settings = {
       ...DEFAULT_SETTINGS,
       paperStyle: 'ruled',
-      ruledMarginLineOffset: -14,
     } as typeof DEFAULT_SETTINGS & {
       paperStyle: 'ruled';
-      ruledMarginLineOffset: number;
     };
 
     const resolved = resolvePagePaper({
@@ -136,12 +152,13 @@ describe('PaperEngine', () => {
     if (resolved.background.kind !== 'image') {
       throw new Error('Expected built-in ruled paper to resolve to an SVG image background.');
     }
-    expect(decodeURIComponent(resolved.background.imageSrc)).toContain('#e6a1a8');
+    expect(resolved.background.imageSrc).toBe('/paper-presets/ruled-letter-portrait.svg');
     expect(resolved.guides).toEqual({ kind: 'none' });
-    expect(resolved.geometry.textLeft).toBe(pageSettings.marginLeft - 14 + 10);
+    expect(resolved.preset?.alignment.ruledMarginPosition).toBe(50);
+    expect(resolved.geometry.textLeft).toBe(pageSettings.marginLeft);
   });
 
-  it('resolves grid presets to graph-paper artwork instead of synthetic guides', () => {
+  it('resolves grid presets from the registered graph-paper asset metadata', () => {
     const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
     const settings = {
       ...DEFAULT_SETTINGS,
@@ -162,8 +179,84 @@ describe('PaperEngine', () => {
     if (resolved.background.kind !== 'image') {
       throw new Error('Expected built-in grid paper to resolve to an SVG image background.');
     }
-    expect(decodeURIComponent(resolved.background.imageSrc)).toContain('major-grid');
+    expect(resolved.background.imageSrc).toBe('/paper-presets/grid-letter-portrait.svg');
     expect(resolved.guides).toEqual({ kind: 'none' });
+    expect(resolved.preset?.alignment.gridSpacing).toBe(21.6);
+    expect(resolved.preset?.alignment.firstBaselineOffset).toBe(75.12);
+  });
+
+  it('falls back for customized ruled offsets that no longer match the authored preset metadata', () => {
+    const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      paperStyle: 'ruled',
+      ruledMarginLineOffset: -14,
+    } as typeof DEFAULT_SETTINGS & {
+      paperStyle: 'ruled';
+      ruledMarginLineOffset: number;
+    };
+
+    const resolved = resolvePagePaper({
+      pageIndex: 0,
+      settings,
+      pageSettings,
+    });
+
+    expect(resolved.variant).toBe('legacy-fallback');
+    expect(resolved.preset).toBeNull();
+    expect(resolved.background.kind).toBe('image');
+    if (resolved.background.kind !== 'image') {
+      throw new Error('Expected customized ruled paper to fall back to generated SVG artwork.');
+    }
+    expect(resolved.background.imageSrc).toMatch(/^data:image\/svg\+xml/);
+    expect(resolved.geometry.textLeft).toBe(pageSettings.marginLeft - 14 + 10);
+  });
+
+  it('falls back for custom paper colors that cannot be expressed by the authored preset assets', () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      paperColor: '#ffffff',
+      lineColor: '#4f8ad9',
+    } as typeof DEFAULT_SETTINGS;
+    const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
+
+    const resolved = resolvePagePaper({
+      pageIndex: 0,
+      settings,
+      pageSettings,
+    });
+
+    expect(resolved.variant).toBe('legacy-fallback');
+    expect(resolved.preset).toBeNull();
+    expect(resolved.background.kind).toBe('image');
+    if (resolved.background.kind !== 'image') {
+      throw new Error('Expected custom colored paper to fall back to generated SVG artwork.');
+    }
+    expect(resolved.background.imageSrc).toMatch(/^data:image\/svg\+xml/);
+  });
+
+  it('falls back explicitly when a built-in preset request uses an unsupported paper format', () => {
+    const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      paperFormat: 'legal',
+    } as typeof DEFAULT_SETTINGS & {
+      paperFormat: 'legal';
+    };
+
+    const resolved = resolvePagePaper({
+      pageIndex: 0,
+      settings,
+      pageSettings,
+    });
+
+    expect(resolved.variant).toBe('legacy-fallback');
+    expect(resolved.preset).toBeNull();
+    expect(resolved.background.kind).toBe('image');
+    if (resolved.background.kind !== 'image') {
+      throw new Error('Expected unsupported built-in paper requests to fall back explicitly.');
+    }
+    expect(resolved.background.imageSrc).toMatch(/^data:image\/svg\+xml/);
   });
 
   it('falls back for legacy paper settings while preserving page geometry', () => {
@@ -180,6 +273,7 @@ describe('PaperEngine', () => {
 
     expect(resolved.variant).toBe('legacy-fallback');
     expect(resolved.style).toBe(DEFAULT_SETTINGS.paperStyle);
+    expect(resolved.preset).toBeNull();
     expect(resolved.background.kind).toBe('image');
     if (resolved.background.kind !== 'image') {
       throw new Error('Expected legacy built-in paper fallback to resolve to an SVG image background.');
