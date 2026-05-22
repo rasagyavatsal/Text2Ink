@@ -1,7 +1,11 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { NOTEBOOK_PAPER_PRESETS } from '../notebookPresetCatalog';
+import {
+  NOTEBOOK_PAPER_PRESETS,
+  resolveNotebookPaperPresetById,
+  resolveNotebookPaperPresetId,
+} from '../notebookPresetCatalog';
 
 describe('notebookPresetCatalog', () => {
   it('covers lined, ruled, and grid assets for every supported page size and orientation', () => {
@@ -67,5 +71,19 @@ describe('notebookPresetCatalog', () => {
         expect(preset.alignment.ruledMarginPosition).toBeNull();
       }
     }
+  });
+
+  it('resolves preset ids from preset-backed paper selections', () => {
+    expect(resolveNotebookPaperPresetId({
+      style: 'lined',
+      format: 'letter',
+      orientation: 'portrait',
+    })).toBe('lined-letter-portrait');
+    expect(resolveNotebookPaperPresetId({
+      style: 'blank',
+      format: 'letter',
+      orientation: 'portrait',
+    })).toBeNull();
+    expect(resolveNotebookPaperPresetById(' GRID-A4-LANDSCAPE ')?.id).toBe('grid-a4-landscape');
   });
 });

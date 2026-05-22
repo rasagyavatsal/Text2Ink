@@ -196,6 +196,36 @@ describe('SettingsPanel', () => {
     expect(screen.queryByLabelText(/Orientation/i)).not.toBeInTheDocument();
   });
 
+  it('hides preset-owned alignment controls for preset-backed built-in papers', () => {
+    render(<SettingsPanel {...defaultProps} />);
+
+    fireEvent.click(screen.getByRole('radio', { name: /built-in/i }));
+
+    expect(screen.queryByText('Line Height')).not.toBeInTheDocument();
+    expect(screen.queryByText('Top Margin')).not.toBeInTheDocument();
+    expect(screen.queryByText('Bottom Margin')).not.toBeInTheDocument();
+    expect(screen.queryByText('Left Margin')).not.toBeInTheDocument();
+    expect(screen.queryByText('Right Margin')).not.toBeInTheDocument();
+    expect(screen.queryByText('Margin Line Offset')).not.toBeInTheDocument();
+  });
+
+  it('keeps alignment controls available for blank built-in paper', () => {
+    render(
+      <SettingsPanel
+        {...defaultProps}
+        settings={{ ...defaultProps.settings, paperStyle: 'blank', paperPresetId: null }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('radio', { name: /built-in/i }));
+
+    expect(screen.getByText('Line Height')).toBeInTheDocument();
+    expect(screen.getByText('Top Margin')).toBeInTheDocument();
+    expect(screen.getByText('Bottom Margin')).toBeInTheDocument();
+    expect(screen.getByText('Left Margin')).toBeInTheDocument();
+    expect(screen.getByText('Right Margin')).toBeInTheDocument();
+  });
+
   it('hides Custom Background upload and line detection in Built-in mode', () => {
     // First render with no custom background
     const { rerender } = render(<SettingsPanel {...defaultProps} />);

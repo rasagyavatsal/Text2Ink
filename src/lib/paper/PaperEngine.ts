@@ -12,6 +12,8 @@ import {
   NOTEBOOK_PAPER_PRESETS,
   type NotebookPaperAlignmentMetadata,
   type NotebookPaperPreset,
+  resolveNotebookPaperPreset,
+  resolveNotebookPaperPresetById,
 } from './notebookPresetCatalog';
 
 type PaperStyle = HandwritingSettings['paperStyle'];
@@ -149,7 +151,6 @@ const DEFAULT_PAGE_SETTINGS = defaultPageSettingsFromHandwritingSettings(DEFAULT
 const PAPER_STYLES = new Set<PaperStyle>(['blank', 'lined', 'ruled', 'grid']);
 const PAPER_FORMATS = new Set<PaperFormat>(['letter', 'a4', 'a3']);
 const PAPER_ORIENTATIONS = new Set<PaperOrientation>(['portrait', 'landscape']);
-const BUILTIN_PRESET_STYLES = new Set<ResolvedBuiltinPaperPreset['style']>(['lined', 'ruled', 'grid']);
 const PAPER_DIMENSIONS_PT: Record<PaperFormat, { width: number; height: number }> = {
   letter: {
     width: PAGE_WIDTH,
@@ -176,26 +177,36 @@ const BUILTIN_PRESET_BY_ID = buildBuiltinPresetIdLookup();
 export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
   const settings = input.settings ?? {};
   const pageSettings = input.pageSettings ?? {};
-  const explicitBuiltinPreset = resolveBuiltinPresetById(settings.paperPresetId);
+  const backgroundImage = resolveBackgroundImage({
+    pageIndex: input.pageIndex,
+    settings,
+    pageSettings,
+  });
+  const hasUploadBackground = backgroundImage !== null;
+  const explicitBuiltinPreset = !hasUploadBackground
+    ? resolveBuiltinPresetById(settings.paperPresetId)
+    : null;
 
-  const paperFormatResolution = explicitBuiltinPreset
-    ? { value: explicitBuiltinPreset.format, usedFallback: false, incompatible: false }
-    : resolvePaperFormat(settings.paperFormat, DEFAULT_SETTINGS.paperFormat);
-  const paperOrientationResolution = explicitBuiltinPreset
-    ? { value: explicitBuiltinPreset.orientation, usedFallback: false, incompatible: false }
-    : resolvePaperOrientation(
-        settings.paperOrientation,
-        DEFAULT_SETTINGS.paperOrientation,
-      );
+  if (explicitBuiltinPreset) {
+    return resolveExplicitBuiltinPresetPaper({
+      preset: explicitBuiltinPreset,
+      pageSettings,
+      backgroundImage,
+    });
+  }
+
+  const paperFormatResolution = resolvePaperFormat(settings.paperFormat, DEFAULT_SETTINGS.paperFormat);
+  const paperOrientationResolution = resolvePaperOrientation(
+    settings.paperOrientation,
+    DEFAULT_SETTINGS.paperOrientation,
+  );
   const resolvedPageSize = resolvePaperPageSize(
     paperFormatResolution.value,
     paperOrientationResolution.value,
   );
   const pageWidth = resolvePositiveNumber(input.pageSize?.width, resolvedPageSize.width).value;
   const pageHeight = resolvePositiveNumber(input.pageSize?.height, resolvedPageSize.height).value;
-  const styleResolution = explicitBuiltinPreset
-    ? { value: explicitBuiltinPreset.style, usedFallback: false, incompatible: false }
-    : resolvePaperStyle(settings.paperStyle, pageSettings.paperStyle);
+  const styleResolution = resolvePaperStyle(settings.paperStyle, pageSettings.paperStyle);
   const lineHeightResolution = resolvePositiveNumber(settings.lineHeight, DEFAULT_SETTINGS.lineHeight);
   const ruledMarginLineOffsetResolution = resolveFiniteNumber(
     settings.ruledMarginLineOffset,
@@ -224,13 +235,6 @@ export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
     pageSettings.customLineSpacing,
     DEFAULT_PAGE_SETTINGS.customLineSpacing,
   );
-
-  const backgroundImage = resolveBackgroundImage({
-    pageIndex: input.pageIndex,
-    settings,
-    pageSettings,
-  });
-  const hasUploadBackground = backgroundImage !== null;
   const style = styleResolution.value;
   const margins = {
     top: marginTopResolution.value,
@@ -359,6 +363,65 @@ export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
       lineOffset,
     },
     preset: builtinPreset,
+  };
+}
+
+function resolveExplicitBuiltinPresetPaper(input: {
+  preset: ResolvedBuiltinPaperPreset;
+  pageSettings: RawPagePaperSettings;
+  backgroundImage: string | null;
+}): ResolvedPaper {
+  if (input.backgroundImage) {
+    throw new Error('Explicit built-in presets should not be resolved through upload backgrounds.');
+  }
+
+  const fontSizeResolution = resolvePositiveNumber(
+    input.pageSettings.fontSize,
+    DEFAULT_PAGE_SETTINGS.fontSize,
+  );
+  const margins = input.preset.alignment.writingMargins;
+  const contentBounds = input.preset.alignment.contentArea;
+  const textTop = input.preset.alignment.firstBaselineOffset;
+  const textLeft = input.preset.style === 'ruled'
+    ? (input.preset.alignment.ruledMarginPosition ?? contentBounds.left) + RULED_TEXT_INSET_PX
+    : contentBounds.left;
+
+  return {
+    variant: 'preset',
+    style: input.preset.style,
+    background: {
+      kind: 'image',
+      imageSrc: input.preset.assetPath,
+    },
+    guides: { kind: 'none' },
+    geometry: {
+      pageWidth: input.preset.pageSize.width,
+      pageHeight: input.preset.pageSize.height,
+      aspectRatio: input.preset.pageSize.width / input.preset.pageSize.height,
+      fontSize: fontSizeResolution.value,
+      margins: {
+        top: margins.top,
+        right: margins.right,
+        bottom: margins.bottom,
+        left: margins.left,
+      },
+      contentWidth: contentBounds.width,
+      contentHeight: contentBounds.height,
+      contentBounds: {
+        top: contentBounds.top,
+        right: contentBounds.right,
+        bottom: contentBounds.bottom,
+        left: contentBounds.left,
+        width: contentBounds.width,
+        height: contentBounds.height,
+      },
+      textTop,
+      textLeft,
+      textWidth: Math.max(0, contentBounds.right - textLeft),
+      lineHeightPx: input.preset.alignment.lineSpacing,
+      lineOffset: Math.max(0, textTop - contentBounds.top),
+    },
+    preset: input.preset,
   };
 }
 
@@ -616,13 +679,16 @@ function resolveBuiltinPreset(input: {
   paperFormat: PaperFormat;
   paperOrientation: PaperOrientation;
 }): ResolvedBuiltinPaperPreset | null {
-  if (!isBuiltinPresetStyle(input.style)) {
-    return null;
-  }
-
-  return BUILTIN_PRESET_BY_KEY.get(
-    builtinPresetKey(input.style, input.paperFormat, input.paperOrientation),
-  ) ?? null;
+  const preset = resolveNotebookPaperPreset({
+    style: input.style,
+    format: input.paperFormat,
+    orientation: input.paperOrientation,
+  });
+  return preset
+    ? BUILTIN_PRESET_BY_KEY.get(
+        builtinPresetKey(preset.style, preset.format, preset.orientation),
+      ) ?? null
+    : null;
 }
 
 function buildBuiltinPresetLookup(): Map<string, ResolvedBuiltinPaperPreset> {
@@ -674,8 +740,8 @@ function builtinPresetKey(
 }
 
 function resolveBuiltinPresetById(value: RawDocumentPaperSettings['paperPresetId']): ResolvedBuiltinPaperPreset | null {
-  const presetId = normalizePresetId(value);
-  return presetId ? BUILTIN_PRESET_BY_ID.get(presetId) ?? null : null;
+  const preset = resolveNotebookPaperPresetById(value);
+  return preset ? BUILTIN_PRESET_BY_ID.get(preset.id.toLowerCase()) ?? null : null;
 }
 
 function isCompatibleBuiltinPreset(input: {
@@ -745,12 +811,4 @@ function sameNumber(left: number, right: number): boolean {
 
 function sameString(left: string, right: string): boolean {
   return left.trim().toLowerCase() === right.trim().toLowerCase();
-}
-
-function normalizePresetId(value: unknown): string | null {
-  return typeof value === 'string' && value.trim().length > 0 ? value.trim().toLowerCase() : null;
-}
-
-function isBuiltinPresetStyle(value: PaperStyle): value is ResolvedBuiltinPaperPreset['style'] {
-  return BUILTIN_PRESET_STYLES.has(value as ResolvedBuiltinPaperPreset['style']);
 }

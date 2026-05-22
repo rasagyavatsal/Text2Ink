@@ -5,6 +5,7 @@ import {
   type HandwritingSettings,
   type PageSettings,
 } from '@/lib/types';
+import { resolveNotebookPaperPresetId } from '@/lib/paper/notebookPresetCatalog';
 import { ExportEngine } from '../ExportEngine';
 
 function createDocument(overrides?: Partial<{
@@ -23,6 +24,24 @@ function createDocument(overrides?: Partial<{
     pageSettingsByPage: overrides?.pageSettingsByPage ?? [
       defaultPageSettingsFromHandwritingSettings(settings),
     ],
+  };
+}
+
+function withResolvedPaperPreset(
+  settings: Partial<HandwritingSettings>,
+): HandwritingSettings {
+  const nextSettings = {
+    ...DEFAULT_SETTINGS,
+    ...settings,
+  };
+
+  return {
+    ...nextSettings,
+    paperPresetId: resolveNotebookPaperPresetId({
+      style: nextSettings.paperStyle,
+      format: nextSettings.paperFormat,
+      orientation: nextSettings.paperOrientation,
+    }),
   };
 }
 
@@ -168,15 +187,14 @@ describe('ExportEngine', () => {
       },
     } as unknown as HTMLCanvasElement;
 
-    const settings = {
-      ...DEFAULT_SETTINGS,
+    const settings = withResolvedPaperPreset({
       customBackgroundImages: [
         'data:image/png;base64,page-0',
         'data:image/png;base64,page-1',
       ],
       paperStyle: 'ruled' as const,
       randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    };
+    });
 
     const result = await new ExportEngine({
       createCanvas: () => canvas,
@@ -274,12 +292,11 @@ describe('ExportEngine', () => {
       await engine.exportDocument({
         format: 'pdf',
         document: createDocument({
-          settings: {
-            ...DEFAULT_SETTINGS,
+          settings: withResolvedPaperPreset({
             paperFormat,
             paperOrientation,
             randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-          },
+          }),
         }),
       });
 

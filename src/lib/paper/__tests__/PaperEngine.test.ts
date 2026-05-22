@@ -12,9 +12,11 @@ describe('PaperEngine', () => {
     const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
     const settings = {
       ...DEFAULT_SETTINGS,
+      paperPresetId: 'lined-a4-landscape',
       paperFormat: 'a4',
       paperOrientation: 'landscape',
     } as typeof DEFAULT_SETTINGS & {
+      paperPresetId: string;
       paperFormat: 'a4';
       paperOrientation: 'landscape';
     };
@@ -133,6 +135,68 @@ describe('PaperEngine', () => {
     expect(resolved.geometry.pageHeight).toBeCloseTo(595.28, 1);
   });
 
+  it('treats explicit preset identifiers as the built-in source of truth for background and alignment', () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      paperPresetId: 'grid-letter-portrait',
+      paperStyle: 'ruled',
+      lineHeight: 2.4,
+      paperColor: '#ffffff',
+      lineColor: '#4f8ad9',
+      ruledMarginLineOffset: -40,
+    } as typeof DEFAULT_SETTINGS & {
+      paperPresetId: string;
+      paperStyle: 'ruled';
+    };
+    const pageSettings = {
+      ...defaultPageSettingsFromHandwritingSettings(settings),
+      marginTop: 90,
+      marginRight: 72,
+      marginBottom: 84,
+      marginLeft: 88,
+      paperColor: '#f8f7ef',
+      lineColor: '#cc8899',
+    };
+
+    const resolved = resolvePagePaper({
+      pageIndex: 0,
+      settings,
+      pageSettings,
+    });
+
+    expect(resolved.variant).toBe('preset');
+    expect(resolved.style).toBe('grid');
+    expect(resolved.background).toEqual({
+      kind: 'image',
+      imageSrc: '/paper-presets/grid-letter-portrait.svg',
+    });
+    expect(resolved.guides).toEqual({ kind: 'none' });
+    expect(resolved.preset?.id).toBe('grid-letter-portrait');
+    expect(resolved.geometry).toMatchObject({
+      pageWidth: PAGE_WIDTH,
+      pageHeight: PAGE_HEIGHT,
+      margins: {
+        top: 60,
+        right: 60,
+        bottom: 60,
+        left: 60,
+      },
+      contentBounds: {
+        top: 60,
+        right: 552,
+        bottom: 732,
+        left: 60,
+        width: 492,
+        height: 672,
+      },
+      textTop: 75.12,
+      textLeft: 60,
+      textWidth: 492,
+      lineHeightPx: 43.2,
+    });
+    expect(resolved.geometry.lineOffset).toBeCloseTo(15.12, 5);
+  });
+
   it('resolves uploaded backgrounds without exposing paper-line branching to callers', () => {
     const pageSettings = {
       ...defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
@@ -168,8 +232,10 @@ describe('PaperEngine', () => {
     const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
     const settings = {
       ...DEFAULT_SETTINGS,
+      paperPresetId: 'ruled-letter-portrait',
       paperStyle: 'ruled',
     } as typeof DEFAULT_SETTINGS & {
+      paperPresetId: string;
       paperStyle: 'ruled';
     };
 
@@ -195,8 +261,10 @@ describe('PaperEngine', () => {
     const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
     const settings = {
       ...DEFAULT_SETTINGS,
+      paperPresetId: 'grid-letter-portrait',
       paperStyle: 'grid',
     } as typeof DEFAULT_SETTINGS & {
+      paperPresetId: string;
       paperStyle: 'grid';
     };
 
@@ -222,9 +290,11 @@ describe('PaperEngine', () => {
     const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
     const settings = {
       ...DEFAULT_SETTINGS,
+      paperPresetId: null,
       paperStyle: 'ruled',
       ruledMarginLineOffset: -14,
     } as typeof DEFAULT_SETTINGS & {
+      paperPresetId: null;
       paperStyle: 'ruled';
       ruledMarginLineOffset: number;
     };
@@ -248,6 +318,7 @@ describe('PaperEngine', () => {
   it('falls back for custom paper colors that cannot be expressed by the authored preset assets', () => {
     const settings = {
       ...DEFAULT_SETTINGS,
+      paperPresetId: null,
       paperColor: '#ffffff',
       lineColor: '#4f8ad9',
     } as typeof DEFAULT_SETTINGS;
@@ -272,8 +343,10 @@ describe('PaperEngine', () => {
     const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
     const settings = {
       ...DEFAULT_SETTINGS,
+      paperPresetId: null,
       paperFormat: 'legal',
     } as typeof DEFAULT_SETTINGS & {
+      paperPresetId: null;
       paperFormat: 'legal';
     };
 
