@@ -1,4 +1,4 @@
-type NotebookPaperStyle = 'lined' | 'ruled';
+type NotebookPaperStyle = 'lined' | 'ruled' | 'grid';
 
 interface NotebookPaperSvgInput {
   style: NotebookPaperStyle;
@@ -19,6 +19,11 @@ interface NotebookPaperSvgInput {
 
 const PAPER_GRAIN_COLOR = '#d4c7ab';
 const RULED_MARGIN_LINE_COLOR = '#e6a1a8';
+const GRID_FIELD_WASH_END = '#eaf4fb';
+const GRID_MAJOR_LINE_FALLBACK = '#89b6d4';
+const GRID_FIELD_BORDER_FALLBACK = '#d4e4ef';
+const GRID_SPACING_RATIO = 0.5;
+const GRID_MAJOR_LINE_MULTIPLIER = 5;
 
 export function buildBuiltinNotebookPaperDataUrl(input: NotebookPaperSvgInput): string {
   const svg = buildBuiltinNotebookPaperSvg(input);
@@ -27,7 +32,8 @@ export function buildBuiltinNotebookPaperDataUrl(input: NotebookPaperSvgInput): 
 
 function buildBuiltinNotebookPaperSvg(input: NotebookPaperSvgInput): string {
   const { pageWidth, pageHeight, paperColor, style } = input;
-  const lineMarkup = buildHorizontalLines(input);
+  const styleDefs = style === 'grid' ? buildGridDefinitions(input) : '';
+  const lineMarkup = style === 'grid' ? buildGridField(input) : buildHorizontalLines(input);
   const marginMarkup = style === 'ruled' ? buildRuledMarginLine(input) : '';
   const grainMarkup = buildPaperGrain(pageWidth, pageHeight);
 
@@ -45,6 +51,7 @@ function buildBuiltinNotebookPaperSvg(input: NotebookPaperSvgInput): string {
     '    <stop offset="94%" stop-color="#dccfb4" stop-opacity="0.05" />',
     '    <stop offset="100%" stop-color="#dccfb4" stop-opacity="0.18" />',
     '  </linearGradient>',
+    styleDefs,
     '</defs>',
     `  <rect width="${formatNumber(pageWidth)}" height="${formatNumber(pageHeight)}" fill="${escapeXml(paperColor)}" />`,
     `  <rect width="${formatNumber(pageWidth)}" height="${formatNumber(pageHeight)}" fill="url(#paper-wash)" />`,
@@ -83,6 +90,38 @@ function buildRuledMarginLine(input: NotebookPaperSvgInput): string {
   return [
     `  <line x1="${marginX}" y1="${top}" x2="${marginX}" y2="${bottom}" stroke="${RULED_MARGIN_LINE_COLOR}" stroke-width="1.6" stroke-opacity="0.9" />`,
     `  <line x1="${formatNumber((input.marginLineX ?? input.margins.left) + 1.6)}" y1="${top}" x2="${formatNumber((input.marginLineX ?? input.margins.left) + 1.6)}" y2="${bottom}" stroke="#f7d9dd" stroke-width="0.8" stroke-opacity="0.7" />`,
+  ].join('');
+}
+
+function buildGridDefinitions(input: NotebookPaperSvgInput): string {
+  const gridSpacing = input.lineHeightPx * GRID_SPACING_RATIO;
+  const majorGridSpacing = gridSpacing * GRID_MAJOR_LINE_MULTIPLIER;
+  const majorLineColor = mixHexColors(input.lineColor, GRID_MAJOR_LINE_FALLBACK, 0.34);
+
+  return [
+    '  <linearGradient id="grid-field-wash" x1="0" y1="0" x2="0" y2="1">',
+    '    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.14" />',
+    `    <stop offset="100%" stop-color="${escapeXml(GRID_FIELD_WASH_END)}" stop-opacity="0.22" />`,
+    '  </linearGradient>',
+    `  <pattern id="minor-grid" x="${formatNumber(input.margins.left)}" y="${formatNumber(input.margins.top)}" width="${formatNumber(gridSpacing)}" height="${formatNumber(gridSpacing)}" patternUnits="userSpaceOnUse">`,
+    `    <path d="M ${formatNumber(gridSpacing)} 0 L 0 0 0 ${formatNumber(gridSpacing)}" fill="none" stroke="${escapeXml(input.lineColor)}" stroke-width="0.85" stroke-opacity="0.78" />`,
+    '  </pattern>',
+    `  <pattern id="major-grid" x="${formatNumber(input.margins.left)}" y="${formatNumber(input.margins.top)}" width="${formatNumber(majorGridSpacing)}" height="${formatNumber(majorGridSpacing)}" patternUnits="userSpaceOnUse">`,
+    `    <path d="M ${formatNumber(majorGridSpacing)} 0 L 0 0 0 ${formatNumber(majorGridSpacing)}" fill="none" stroke="${escapeXml(majorLineColor)}" stroke-width="1.15" stroke-opacity="0.86" />`,
+    '  </pattern>',
+  ].join('');
+}
+
+function buildGridField(input: NotebookPaperSvgInput): string {
+  const contentWidth = Math.max(0, input.pageWidth - input.margins.left - input.margins.right);
+  const contentHeight = Math.max(0, input.pageHeight - input.margins.top - input.margins.bottom);
+  const borderColor = mixHexColors(input.lineColor, GRID_FIELD_BORDER_FALLBACK, 0.55);
+
+  return [
+    `  <rect x="${formatNumber(input.margins.left)}" y="${formatNumber(input.margins.top)}" width="${formatNumber(contentWidth)}" height="${formatNumber(contentHeight)}" fill="url(#grid-field-wash)" opacity="0.48" />`,
+    `  <rect x="${formatNumber(input.margins.left)}" y="${formatNumber(input.margins.top)}" width="${formatNumber(contentWidth)}" height="${formatNumber(contentHeight)}" fill="url(#minor-grid)" />`,
+    `  <rect x="${formatNumber(input.margins.left)}" y="${formatNumber(input.margins.top)}" width="${formatNumber(contentWidth)}" height="${formatNumber(contentHeight)}" fill="url(#major-grid)" />`,
+    `  <rect x="${formatNumber(input.margins.left)}" y="${formatNumber(input.margins.top)}" width="${formatNumber(contentWidth)}" height="${formatNumber(contentHeight)}" fill="none" stroke="${escapeXml(borderColor)}" stroke-width="0.9" stroke-opacity="0.62" />`,
   ].join('');
 }
 
@@ -132,4 +171,40 @@ function escapeXml(value: string): string {
     .replaceAll("'", '&apos;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;');
+}
+
+function mixHexColors(primary: string, fallback: string, ratio: number): string {
+  const source = parseHexColor(primary);
+  const target = parseHexColor(fallback);
+  if (!source || !target) {
+    return fallback;
+  }
+
+  const clampedRatio = Math.max(0, Math.min(1, ratio));
+  const mixed = source.map((channel, index) => (
+    Math.round(channel + (target[index] - channel) * clampedRatio)
+  ));
+
+  return `#${mixed.map((channel) => channel.toString(16).padStart(2, '0')).join('')}`;
+}
+
+function parseHexColor(value: string): [number, number, number] | null {
+  const normalized = value.trim();
+  if (/^#[\da-fA-F]{6}$/.test(normalized)) {
+    return [
+      Number.parseInt(normalized.slice(1, 3), 16),
+      Number.parseInt(normalized.slice(3, 5), 16),
+      Number.parseInt(normalized.slice(5, 7), 16),
+    ];
+  }
+
+  if (/^#[\da-fA-F]{3}$/.test(normalized)) {
+    return [
+      Number.parseInt(normalized[1] + normalized[1], 16),
+      Number.parseInt(normalized[2] + normalized[2], 16),
+      Number.parseInt(normalized[3] + normalized[3], 16),
+    ];
+  }
+
+  return null;
 }

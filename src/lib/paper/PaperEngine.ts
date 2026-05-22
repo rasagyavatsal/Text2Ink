@@ -311,7 +311,7 @@ function resolveBuiltinPresetBackground(input: {
   lineHeightPx: number;
   ruledMarginLineOffset: number;
 }): ResolvedPaperBackground | null {
-  if (input.style !== 'lined' && input.style !== 'ruled') {
+  if (input.style !== 'lined' && input.style !== 'ruled' && input.style !== 'grid') {
     return null;
   }
 

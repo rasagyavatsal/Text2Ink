@@ -32,7 +32,8 @@
         "left": 60,
         "width": 492,
         "height": 672
-      }
+      },
+      "gridSpacing": null
     }
   },
   {
@@ -68,7 +69,8 @@
         "left": 60,
         "width": 672,
         "height": 492
-      }
+      },
+      "gridSpacing": null
     }
   },
   {
@@ -104,7 +106,8 @@
         "left": 60,
         "width": 475.28,
         "height": 721.89
-      }
+      },
+      "gridSpacing": null
     }
   },
   {
@@ -140,7 +143,8 @@
         "left": 60,
         "width": 721.89,
         "height": 475.28
-      }
+      },
+      "gridSpacing": null
     }
   },
   {
@@ -176,7 +180,8 @@
         "left": 60,
         "width": 721.89,
         "height": 1070.55
-      }
+      },
+      "gridSpacing": null
     }
   },
   {
@@ -212,7 +217,8 @@
         "left": 60,
         "width": 1070.55,
         "height": 721.89
-      }
+      },
+      "gridSpacing": null
     }
   },
   {
@@ -248,7 +254,8 @@
         "left": 60,
         "width": 492,
         "height": 672
-      }
+      },
+      "gridSpacing": null
     }
   },
   {
@@ -284,7 +291,8 @@
         "left": 60,
         "width": 672,
         "height": 492
-      }
+      },
+      "gridSpacing": null
     }
   },
   {
@@ -320,7 +328,8 @@
         "left": 60,
         "width": 475.28,
         "height": 721.89
-      }
+      },
+      "gridSpacing": null
     }
   },
   {
@@ -356,7 +365,8 @@
         "left": 60,
         "width": 721.89,
         "height": 475.28
-      }
+      },
+      "gridSpacing": null
     }
   },
   {
@@ -392,7 +402,8 @@
         "left": 60,
         "width": 721.89,
         "height": 1070.55
-      }
+      },
+      "gridSpacing": null
     }
   },
   {
@@ -415,6 +426,229 @@
       "firstBaselineOffset": 60,
       "lineSpacing": 43.2,
       "ruledMarginPosition": 50,
+      "safeCrop": {
+        "top": 24,
+        "right": 24,
+        "bottom": 24,
+        "left": 24
+      },
+      "contentArea": {
+        "top": 60,
+        "right": 1130.55,
+        "bottom": 781.89,
+        "left": 60,
+        "width": 1070.55,
+        "height": 721.89
+      },
+      "gridSpacing": null
+    }
+  },
+  {
+    "id": "grid-letter-portrait",
+    "style": "grid",
+    "format": "letter",
+    "orientation": "portrait",
+    "pageSize": {
+      "width": 612,
+      "height": 792
+    },
+    "assetPath": "/paper-presets/grid-letter-portrait.svg",
+    "alignment": {
+      "writingMargins": {
+        "top": 60,
+        "right": 60,
+        "bottom": 60,
+        "left": 60
+      },
+      "firstBaselineOffset": 75.12,
+      "lineSpacing": 43.2,
+      "gridSpacing": 21.6,
+      "ruledMarginPosition": null,
+      "safeCrop": {
+        "top": 24,
+        "right": 24,
+        "bottom": 24,
+        "left": 24
+      },
+      "contentArea": {
+        "top": 60,
+        "right": 552,
+        "bottom": 732,
+        "left": 60,
+        "width": 492,
+        "height": 672
+      }
+    }
+  },
+  {
+    "id": "grid-letter-landscape",
+    "style": "grid",
+    "format": "letter",
+    "orientation": "landscape",
+    "pageSize": {
+      "width": 792,
+      "height": 612
+    },
+    "assetPath": "/paper-presets/grid-letter-landscape.svg",
+    "alignment": {
+      "writingMargins": {
+        "top": 60,
+        "right": 60,
+        "bottom": 60,
+        "left": 60
+      },
+      "firstBaselineOffset": 75.12,
+      "lineSpacing": 43.2,
+      "gridSpacing": 21.6,
+      "ruledMarginPosition": null,
+      "safeCrop": {
+        "top": 24,
+        "right": 24,
+        "bottom": 24,
+        "left": 24
+      },
+      "contentArea": {
+        "top": 60,
+        "right": 732,
+        "bottom": 552,
+        "left": 60,
+        "width": 672,
+        "height": 492
+      }
+    }
+  },
+  {
+    "id": "grid-a4-portrait",
+    "style": "grid",
+    "format": "a4",
+    "orientation": "portrait",
+    "pageSize": {
+      "width": 595.28,
+      "height": 841.89
+    },
+    "assetPath": "/paper-presets/grid-a4-portrait.svg",
+    "alignment": {
+      "writingMargins": {
+        "top": 60,
+        "right": 60,
+        "bottom": 60,
+        "left": 60
+      },
+      "firstBaselineOffset": 75.12,
+      "lineSpacing": 43.2,
+      "gridSpacing": 21.6,
+      "ruledMarginPosition": null,
+      "safeCrop": {
+        "top": 24,
+        "right": 24,
+        "bottom": 24,
+        "left": 24
+      },
+      "contentArea": {
+        "top": 60,
+        "right": 535.28,
+        "bottom": 781.89,
+        "left": 60,
+        "width": 475.28,
+        "height": 721.89
+      }
+    }
+  },
+  {
+    "id": "grid-a4-landscape",
+    "style": "grid",
+    "format": "a4",
+    "orientation": "landscape",
+    "pageSize": {
+      "width": 841.89,
+      "height": 595.28
+    },
+    "assetPath": "/paper-presets/grid-a4-landscape.svg",
+    "alignment": {
+      "writingMargins": {
+        "top": 60,
+        "right": 60,
+        "bottom": 60,
+        "left": 60
+      },
+      "firstBaselineOffset": 75.12,
+      "lineSpacing": 43.2,
+      "gridSpacing": 21.6,
+      "ruledMarginPosition": null,
+      "safeCrop": {
+        "top": 24,
+        "right": 24,
+        "bottom": 24,
+        "left": 24
+      },
+      "contentArea": {
+        "top": 60,
+        "right": 781.89,
+        "bottom": 535.28,
+        "left": 60,
+        "width": 721.89,
+        "height": 475.28
+      }
+    }
+  },
+  {
+    "id": "grid-a3-portrait",
+    "style": "grid",
+    "format": "a3",
+    "orientation": "portrait",
+    "pageSize": {
+      "width": 841.89,
+      "height": 1190.55
+    },
+    "assetPath": "/paper-presets/grid-a3-portrait.svg",
+    "alignment": {
+      "writingMargins": {
+        "top": 60,
+        "right": 60,
+        "bottom": 60,
+        "left": 60
+      },
+      "firstBaselineOffset": 75.12,
+      "lineSpacing": 43.2,
+      "gridSpacing": 21.6,
+      "ruledMarginPosition": null,
+      "safeCrop": {
+        "top": 24,
+        "right": 24,
+        "bottom": 24,
+        "left": 24
+      },
+      "contentArea": {
+        "top": 60,
+        "right": 781.89,
+        "bottom": 1130.55,
+        "left": 60,
+        "width": 721.89,
+        "height": 1070.55
+      }
+    }
+  },
+  {
+    "id": "grid-a3-landscape",
+    "style": "grid",
+    "format": "a3",
+    "orientation": "landscape",
+    "pageSize": {
+      "width": 1190.55,
+      "height": 841.89
+    },
+    "assetPath": "/paper-presets/grid-a3-landscape.svg",
+    "alignment": {
+      "writingMargins": {
+        "top": 60,
+        "right": 60,
+        "bottom": 60,
+        "left": 60
+      },
+      "firstBaselineOffset": 75.12,
+      "lineSpacing": 43.2,
+      "gridSpacing": 21.6,
+      "ruledMarginPosition": null,
       "safeCrop": {
         "top": 24,
         "right": 24,

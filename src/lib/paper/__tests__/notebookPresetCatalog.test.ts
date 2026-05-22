@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { NOTEBOOK_PAPER_PRESETS } from '../notebookPresetCatalog';
 
 describe('notebookPresetCatalog', () => {
-  it('covers lined and ruled assets for every supported page size and orientation', () => {
-    expect(NOTEBOOK_PAPER_PRESETS).toHaveLength(12);
+  it('covers lined, ruled, and grid assets for every supported page size and orientation', () => {
+    expect(NOTEBOOK_PAPER_PRESETS).toHaveLength(18);
 
     const expectedVariants = new Set([
       'lined:letter:portrait',
@@ -20,6 +20,12 @@ describe('notebookPresetCatalog', () => {
       'ruled:a4:landscape',
       'ruled:a3:portrait',
       'ruled:a3:landscape',
+      'grid:letter:portrait',
+      'grid:letter:landscape',
+      'grid:a4:portrait',
+      'grid:a4:landscape',
+      'grid:a3:portrait',
+      'grid:a3:landscape',
     ]);
 
     const actualVariants = new Set(
