@@ -38,7 +38,7 @@ function buildBuiltinNotebookPaperSvg(input: NotebookPaperSvgInput): string {
   const grainMarkup = buildPaperGrain(pageWidth, pageHeight);
 
   return [
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${formatNumber(pageWidth)} ${formatNumber(pageHeight)}" width="${formatNumber(pageWidth)}" height="${formatNumber(pageHeight)}">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${formatNumber(pageWidth)} ${formatNumber(pageHeight)}" width="100%" height="100%">`,
     '<defs>',
     '  <linearGradient id="paper-wash" x1="0" y1="0" x2="0" y2="1">',
     '    <stop offset="0%" stop-color="#ffffff" stop-opacity="0.38" />',
