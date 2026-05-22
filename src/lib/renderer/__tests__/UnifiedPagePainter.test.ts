@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UnifiedPagePainter, PaintPageOptions } from '../UnifiedPagePainter';
 import { HandwritingSettings, PageSettings, DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '../../types';
+import { resolveNotebookPaperPresetId } from '@/lib/paper/notebookPresetCatalog';
 
 function createMockCtx() {
   return {
@@ -48,11 +49,29 @@ function defaultPaintOptions(overrides?: Partial<PaintPageOptions>): PaintPageOp
   };
 }
 
+function withResolvedPaperPreset(
+  settings: Partial<HandwritingSettings>,
+): HandwritingSettings {
+  const nextSettings = {
+    ...DEFAULT_SETTINGS,
+    ...settings,
+  };
+
+  return {
+    ...nextSettings,
+    paperPresetId: resolveNotebookPaperPresetId({
+      style: nextSettings.paperStyle,
+      format: nextSettings.paperFormat,
+      orientation: nextSettings.paperOrientation,
+    }),
+  };
+}
+
 describe('UnifiedPagePainter', () => {
   describe('paintPage - background rendering', () => {
     it('fills the entire canvas area with the paper color for solid-color paper variants', () => {
       const ctx = createMockCtx();
-      const settings = { ...DEFAULT_SETTINGS, paperStyle: 'blank' as const };
+      const settings = withResolvedPaperPreset({ paperStyle: 'blank' as const });
       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
       const opts = defaultPaintOptions({ ctx, settings, pageSettings });
 
@@ -79,7 +98,7 @@ describe('UnifiedPagePainter', () => {
   describe('paintPage - paper lines', () => {
     it('does not draw synthetic guides for built-in lined paper style', () => {
       const ctx = createMockCtx();
-      const settings = { ...DEFAULT_SETTINGS, paperStyle: 'lined' as const };
+      const settings = withResolvedPaperPreset({ paperStyle: 'lined' as const });
       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
       const opts = defaultPaintOptions({ ctx, settings, pageSettings });
 
@@ -91,7 +110,7 @@ describe('UnifiedPagePainter', () => {
 
     it('does not draw paper lines for blank paper style', () => {
       const ctx = createMockCtx();
-      const settings = { ...DEFAULT_SETTINGS, paperStyle: 'blank' as const };
+      const settings = withResolvedPaperPreset({ paperStyle: 'blank' as const });
       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
       const opts = defaultPaintOptions({ ctx, settings, pageSettings });
 
@@ -102,7 +121,7 @@ describe('UnifiedPagePainter', () => {
 
     it('does not draw synthetic guides for built-in grid paper style', () => {
       const ctx = createMockCtx();
-      const settings = { ...DEFAULT_SETTINGS, paperStyle: 'grid' as const };
+      const settings = withResolvedPaperPreset({ paperStyle: 'grid' as const });
       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
       const opts = defaultPaintOptions({ ctx, settings, pageSettings });
 
@@ -114,7 +133,7 @@ describe('UnifiedPagePainter', () => {
 
     it('does not draw a synthetic margin line for ruled paper style', () => {
       const ctx = createMockCtx();
-      const settings = { ...DEFAULT_SETTINGS, paperStyle: 'ruled' as const };
+      const settings = withResolvedPaperPreset({ paperStyle: 'ruled' as const });
       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
       const opts = defaultPaintOptions({ ctx, settings, pageSettings });
 

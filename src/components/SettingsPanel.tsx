@@ -33,6 +33,7 @@ import {
   FontOption,
 } from '@/lib/types';
 import { resolvePageLayout } from '@/lib/layout/LayoutEngine';
+import { resolveNotebookPaperPresetId } from '@/lib/paper/notebookPresetCatalog';
 import { cn } from '@/lib/utils';
 import { detectBackgroundLines } from '@/lib/lineDetection';
 import { 
@@ -156,6 +157,7 @@ export default function SettingsPanel({
     () => settings.customBackgroundImages?.[currentPageIndex] ?? settings.customBackgroundImage,
     [currentPageIndex, settings.customBackgroundImages, settings.customBackgroundImage]
   );
+  const showManualAlignmentControls = paperMode === 'custom' || settings.paperStyle === 'blank';
 
   const availableFonts = useMemo(() => HANDWRITING_FONTS.filter(f => f.value !== 'custom'), []);
   useEffect(() => {
@@ -181,6 +183,20 @@ export default function SettingsPanel({
 
   const updateSettings = (patch: Partial<HandwritingSettings>) => {
     onSettingsChange({ ...settings, ...patch });
+  };
+
+  const updateBuiltinSelection = (
+    patch: Partial<Pick<HandwritingSettings, 'paperStyle' | 'paperFormat' | 'paperOrientation'>>,
+  ) => {
+    const nextSettings = { ...settings, ...patch };
+    onSettingsChange({
+      ...nextSettings,
+      paperPresetId: resolveNotebookPaperPresetId({
+        style: nextSettings.paperStyle,
+        format: nextSettings.paperFormat,
+        orientation: nextSettings.paperOrientation,
+      }),
+    });
   };
 
   const handleDetectLines = async () => {
@@ -509,7 +525,7 @@ export default function SettingsPanel({
             />
           </div>
 
-          {paperMode === 'builtin' && (
+          {paperMode === 'builtin' && settings.paperStyle === 'blank' && (
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <Label className="text-sm font-medium">Line Height</Label>
@@ -586,7 +602,9 @@ export default function SettingsPanel({
                 <Select
                   value={settings.paperStyle}
                   onValueChange={(value) =>
-                    updateSetting('paperStyle', value as HandwritingSettings['paperStyle'])
+                    updateBuiltinSelection({
+                      paperStyle: value as HandwritingSettings['paperStyle'],
+                    })
                   }
                 >
                   <SelectTrigger id="paper-style" className="w-full h-10">
@@ -607,7 +625,9 @@ export default function SettingsPanel({
                 <Select
                   value={settings.paperFormat}
                   onValueChange={(value) =>
-                    updateSetting('paperFormat', value as HandwritingSettings['paperFormat'])
+                    updateBuiltinSelection({
+                      paperFormat: value as HandwritingSettings['paperFormat'],
+                    })
                   }
                 >
                   <SelectTrigger id="paper-format" className="w-full h-10">
@@ -628,7 +648,9 @@ export default function SettingsPanel({
                 <Select
                   value={settings.paperOrientation}
                   onValueChange={(value) =>
-                    updateSetting('paperOrientation', value as HandwritingSettings['paperOrientation'])
+                    updateBuiltinSelection({
+                      paperOrientation: value as HandwritingSettings['paperOrientation'],
+                    })
                   }
                 >
                   <SelectTrigger id="paper-orientation" className="w-full h-10">
@@ -646,87 +668,71 @@ export default function SettingsPanel({
             </>
           )}
 
-          <div className="grid grid-cols-2 gap-x-4 gap-y-8">
-            <div className="flex flex-col gap-3">
-              <div className="flex justify-between items-center">
-                <Label className="text-sm font-medium">Top Margin</Label>
-                <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                  {pageSettings.marginTop}px
+          {showManualAlignmentControls && (
+            <div className="grid grid-cols-2 gap-x-4 gap-y-8">
+              <div className="flex flex-col gap-3">
+                <div className="flex justify-between items-center">
+                  <Label className="text-sm font-medium">Top Margin</Label>
+                  <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
+                    {pageSettings.marginTop}px
+                  </div>
                 </div>
+                <Slider
+                  value={[pageSettings.marginTop]}
+                  onValueChange={([value]) => updatePageSetting('marginTop', value)}
+                  min={20}
+                  max={120}
+                  step={5}
+                />
               </div>
-              <Slider
-                value={[pageSettings.marginTop]}
-                onValueChange={([value]) => updatePageSetting('marginTop', value)}
-                min={20}
-                max={120}
-                step={5}
-              />
-            </div>
 
-            <div className="flex flex-col gap-3">
-              <div className="flex justify-between items-center">
-                <Label className="text-sm font-medium">Bottom Margin</Label>
-                <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                  {pageSettings.marginBottom}px
+              <div className="flex flex-col gap-3">
+                <div className="flex justify-between items-center">
+                  <Label className="text-sm font-medium">Bottom Margin</Label>
+                  <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
+                    {pageSettings.marginBottom}px
+                  </div>
                 </div>
+                <Slider
+                  value={[pageSettings.marginBottom]}
+                  onValueChange={([value]) => updatePageSetting('marginBottom', value)}
+                  min={20}
+                  max={120}
+                  step={5}
+                />
               </div>
-              <Slider
-                value={[pageSettings.marginBottom]}
-                onValueChange={([value]) => updatePageSetting('marginBottom', value)}
-                min={20}
-                max={120}
-                step={5}
-              />
-            </div>
 
-            <div className="flex flex-col gap-3">
-              <div className="flex justify-between items-center">
-                <Label className="text-sm font-medium">Left Margin</Label>
-                <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                  {pageSettings.marginLeft}px
+              <div className="flex flex-col gap-3">
+                <div className="flex justify-between items-center">
+                  <Label className="text-sm font-medium">Left Margin</Label>
+                  <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
+                    {pageSettings.marginLeft}px
+                  </div>
                 </div>
+                <Slider
+                  value={[pageSettings.marginLeft]}
+                  onValueChange={([value]) => updatePageSetting('marginLeft', value)}
+                  min={20}
+                  max={120}
+                  step={5}
+                />
               </div>
-              <Slider
-                value={[pageSettings.marginLeft]}
-                onValueChange={([value]) => updatePageSetting('marginLeft', value)}
-                min={20}
-                max={120}
-                step={5}
-              />
-            </div>
 
-            <div className="flex flex-col gap-3">
-              <div className="flex justify-between items-center">
-                <Label className="text-sm font-medium">Right Margin</Label>
-                <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                  {pageSettings.marginRight}px
+              <div className="flex flex-col gap-3">
+                <div className="flex justify-between items-center">
+                  <Label className="text-sm font-medium">Right Margin</Label>
+                  <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
+                    {pageSettings.marginRight}px
+                  </div>
                 </div>
+                <Slider
+                  value={[pageSettings.marginRight]}
+                  onValueChange={([value]) => updatePageSetting('marginRight', value)}
+                  min={20}
+                  max={120}
+                  step={5}
+                />
               </div>
-              <Slider
-                value={[pageSettings.marginRight]}
-                onValueChange={([value]) => updatePageSetting('marginRight', value)}
-                min={20}
-                max={120}
-                step={5}
-              />
-            </div>
-          </div>
-
-          {paperMode === 'builtin' && settings.paperStyle === 'ruled' && (
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center">
-                <Label className="text-sm font-medium">Margin Line Offset</Label>
-                <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                  {settings.ruledMarginLineOffset}px
-                </div>
-              </div>
-              <Slider
-                value={[settings.ruledMarginLineOffset]}
-                onValueChange={([value]) => updateSetting('ruledMarginLineOffset', value)}
-                min={-80}
-                max={240}
-                step={2}
-              />
             </div>
           )}
 

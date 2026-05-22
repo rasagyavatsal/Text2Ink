@@ -22,6 +22,7 @@ describe('types helpers', () => {
 
   it('DEFAULT_SETTINGS and constants remain internally consistent', () => {
     expect(DEFAULT_SETTINGS).toBeDefined();
+    expect(DEFAULT_SETTINGS.paperPresetId).toBe('lined-letter-portrait');
     expect(PAPER_STYLES).toContainEqual({ name: 'Lined', value: 'lined' });
   });
 });

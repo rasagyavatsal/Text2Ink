@@ -95,6 +95,7 @@ export const DEFAULT_SETTINGS: HandwritingSettings = {
   marginBottom: 60,
   marginLeft: 60,
   marginRight: 60,
+  paperPresetId: 'lined-letter-portrait',
   paperFormat: 'letter',
   paperOrientation: 'portrait',
   ruledMarginLineOffset: -10,

@@ -15,6 +15,7 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '@/lib/types';
 import { resolvePageLayout } from '@/lib/layout/LayoutEngine';
+import { resolveNotebookPaperPresetId } from '@/lib/paper/notebookPresetCatalog';
 import { PageRenderEngine } from '../PageRenderEngine';
 
 // ---------------------------------------------------------------------------
@@ -77,6 +78,24 @@ function createMockCanvas(ctx: CanvasRenderingContext2D) {
   return canvas;
 }
 
+function withResolvedPaperPreset(
+  settings: Partial<typeof DEFAULT_SETTINGS>,
+) {
+  const nextSettings = {
+    ...DEFAULT_SETTINGS,
+    ...settings,
+  };
+
+  return {
+    ...nextSettings,
+    paperPresetId: resolveNotebookPaperPresetId({
+      style: nextSettings.paperStyle,
+      format: nextSettings.paperFormat,
+      orientation: nextSettings.paperOrientation,
+    }),
+  };
+}
+
 const originalDevicePixelRatio = window.devicePixelRatio;
 
 beforeEach(() => {
@@ -101,12 +120,11 @@ afterEach(() => {
 
 describe('PageRenderEngine preview — page sizing uses resolved geometry', () => {
   it('sets canvas dimensions from resolved Letter portrait page size (612 × 792)', async () => {
-    const settings = {
-      ...DEFAULT_SETTINGS,
+    const settings = withResolvedPaperPreset({
       paperFormat: 'letter' as const,
       paperOrientation: 'portrait' as const,
       randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    };
+    });
     const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
     const engine = new PageRenderEngine();
     const ctx = createMockCtx();
@@ -137,12 +155,11 @@ describe('PageRenderEngine preview — page sizing uses resolved geometry', () =
   // -------------------------------------------------------------------------
 
   it('sets canvas dimensions from resolved A4 portrait page size (≈595 × 842)', async () => {
-    const settings = {
-      ...DEFAULT_SETTINGS,
+    const settings = withResolvedPaperPreset({
       paperFormat: 'a4' as const,
       paperOrientation: 'portrait' as const,
       randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    };
+    });
     const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
     const engine = new PageRenderEngine();
     const ctx = createMockCtx();
@@ -171,12 +188,11 @@ describe('PageRenderEngine preview — page sizing uses resolved geometry', () =
   // -------------------------------------------------------------------------
 
   it('sets canvas dimensions from resolved A4 landscape page size (≈842 × 595)', async () => {
-    const settings = {
-      ...DEFAULT_SETTINGS,
+    const settings = withResolvedPaperPreset({
       paperFormat: 'a4' as const,
       paperOrientation: 'landscape' as const,
       randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    };
+    });
     const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
     const engine = new PageRenderEngine();
     const ctx = createMockCtx();
@@ -207,12 +223,11 @@ describe('PageRenderEngine preview — page sizing uses resolved geometry', () =
   // -------------------------------------------------------------------------
 
   it('sets canvas dimensions from resolved A3 portrait page size (≈842 × 1191)', async () => {
-    const settings = {
-      ...DEFAULT_SETTINGS,
+    const settings = withResolvedPaperPreset({
       paperFormat: 'a3' as const,
       paperOrientation: 'portrait' as const,
       randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    };
+    });
     const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
     const engine = new PageRenderEngine();
     const ctx = createMockCtx();
@@ -241,12 +256,11 @@ describe('PageRenderEngine preview — page sizing uses resolved geometry', () =
   // -------------------------------------------------------------------------
 
   it('sets canvas dimensions from resolved A3 landscape page size (≈1191 × 842)', async () => {
-    const settings = {
-      ...DEFAULT_SETTINGS,
+    const settings = withResolvedPaperPreset({
       paperFormat: 'a3' as const,
       paperOrientation: 'landscape' as const,
       randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    };
+    });
     const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
     const engine = new PageRenderEngine();
     const ctx = createMockCtx();
@@ -276,12 +290,11 @@ describe('PageRenderEngine preview — page sizing uses resolved geometry', () =
   // -------------------------------------------------------------------------
 
   it('sets canvas dimensions from resolved Letter landscape page size (≈792 × 612)', async () => {
-    const settings = {
-      ...DEFAULT_SETTINGS,
+    const settings = withResolvedPaperPreset({
       paperFormat: 'letter' as const,
       paperOrientation: 'landscape' as const,
       randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    };
+    });
     const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
     const engine = new PageRenderEngine();
     const ctx = createMockCtx();
@@ -311,12 +324,11 @@ describe('PageRenderEngine preview — page sizing uses resolved geometry', () =
 
 describe('PageRenderEngine preview — character positions respect resolved page bounds', () => {
   it('character positions for A4 portrait start at the A4 text bounds left edge, not Letter left edge', async () => {
-    const settings = {
-      ...DEFAULT_SETTINGS,
+    const settings = withResolvedPaperPreset({
       paperFormat: 'a4' as const,
       paperOrientation: 'portrait' as const,
       randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    };
+    });
     const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
     const engine = new PageRenderEngine();
     const ctx = createMockCtx();
@@ -344,12 +356,11 @@ describe('PageRenderEngine preview — character positions respect resolved page
   });
 
   it('character positions for A4 landscape start at A4 landscape text bounds', async () => {
-    const settings = {
-      ...DEFAULT_SETTINGS,
+    const settings = withResolvedPaperPreset({
       paperFormat: 'a4' as const,
       paperOrientation: 'landscape' as const,
       randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    };
+    });
     const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
     const engine = new PageRenderEngine();
     const ctx = createMockCtx();
@@ -375,12 +386,11 @@ describe('PageRenderEngine preview — character positions respect resolved page
   });
 
   it('character y position starts at firstLineTop from resolved writing layout, not a fixed offset', async () => {
-    const settings = {
-      ...DEFAULT_SETTINGS,
+    const settings = withResolvedPaperPreset({
       paperFormat: 'a4' as const,
       paperOrientation: 'portrait' as const,
       randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    };
+    });
     const pageSettings = {
       ...defaultPageSettingsFromHandwritingSettings(settings),
       marginTop: 80,
@@ -422,12 +432,11 @@ describe('resolvePageLayout — ruled-margin interaction bounds come from resolv
    * come from the resolved layout, not from fixed constants.
    */
   it('resolved page.width for Letter portrait is 612 (the drag ceiling for margin-line drag)', () => {
-    const settings = {
-      ...DEFAULT_SETTINGS,
+    const settings = withResolvedPaperPreset({
       paperStyle: 'ruled' as const,
       paperFormat: 'letter' as const,
       paperOrientation: 'portrait' as const,
-    };
+    });
     const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
     const layout = resolvePageLayout({ pageIndex: 0, settings, pageSettings });
 
@@ -439,13 +448,12 @@ describe('resolvePageLayout — ruled-margin interaction bounds come from resolv
   });
 
   it('marginLineX for A4 portrait ruled paper stays within A4 page bounds', () => {
-    const settings = {
-      ...DEFAULT_SETTINGS,
+    const settings = withResolvedPaperPreset({
       paperStyle: 'ruled' as const,
       paperFormat: 'a4' as const,
       paperOrientation: 'portrait' as const,
       ruledMarginLineOffset: -10,
-    };
+    });
     const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
     const layout = resolvePageLayout({ pageIndex: 0, settings, pageSettings });
 
@@ -462,12 +470,11 @@ describe('resolvePageLayout — ruled-margin interaction bounds come from resolv
   });
 
   it('drag-bound clamping uses resolved page width for A3 landscape paper', () => {
-    const settings = {
-      ...DEFAULT_SETTINGS,
+    const settings = withResolvedPaperPreset({
       paperStyle: 'ruled' as const,
       paperFormat: 'a3' as const,
       paperOrientation: 'landscape' as const,
-    };
+    });
     const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
     const layout = resolvePageLayout({ pageIndex: 0, settings, pageSettings });
 
@@ -485,12 +492,11 @@ describe('resolvePageLayout — ruled-margin interaction bounds come from resolv
 
 describe('PageRenderEngine export — text-field rendering works on non-Letter pages', () => {
   it('renders a text field on an A4 landscape export page', async () => {
-    const settings = {
-      ...DEFAULT_SETTINGS,
+    const settings = withResolvedPaperPreset({
       paperFormat: 'a4' as const,
       paperOrientation: 'landscape' as const,
       randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    };
+    });
     const pageSettings = {
       ...defaultPageSettingsFromHandwritingSettings(settings),
       textFields: [
@@ -528,12 +534,11 @@ describe('PageRenderEngine export — text-field rendering works on non-Letter p
   });
 
   it('renders a text field on an A3 portrait export page', async () => {
-    const settings = {
-      ...DEFAULT_SETTINGS,
+    const settings = withResolvedPaperPreset({
       paperFormat: 'a3' as const,
       paperOrientation: 'portrait' as const,
       randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    };
+    });
     const pageSettings = {
       ...defaultPageSettingsFromHandwritingSettings(settings),
       textFields: [
@@ -576,13 +581,12 @@ describe('PageRenderEngine export — text-field rendering works on non-Letter p
 
 describe('PageRenderEngine — returned layout reflects the paper source variant', () => {
   it('returns a preset variant layout for a standard lined Letter portrait render', async () => {
-    const settings = {
-      ...DEFAULT_SETTINGS,
+    const settings = withResolvedPaperPreset({
       paperFormat: 'letter' as const,
       paperOrientation: 'portrait' as const,
       paperStyle: 'lined' as const,
       randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    };
+    });
     const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
     const engine = new PageRenderEngine();
     const ctx = createMockCtx();
