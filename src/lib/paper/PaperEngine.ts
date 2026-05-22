@@ -186,12 +186,25 @@ export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
   const explicitBuiltinPreset = !hasUploadBackground
     ? resolveBuiltinPresetById(settings.paperPresetId)
     : null;
+  const fontSizeResolution = resolvePositiveNumber(pageSettings.fontSize, DEFAULT_PAGE_SETTINGS.fontSize);
+  const paperColorResolution = resolveString(
+    pageSettings.paperColor,
+    settings.paperColor,
+    DEFAULT_SETTINGS.paperColor,
+  );
+  const lineColorResolution = resolveString(
+    pageSettings.lineColor,
+    settings.lineColor,
+    DEFAULT_SETTINGS.lineColor,
+  );
 
   if (explicitBuiltinPreset) {
     return resolveExplicitBuiltinPresetPaper({
       preset: explicitBuiltinPreset,
-      pageSettings,
       backgroundImage,
+      fontSize: fontSizeResolution.value,
+      paperColor: paperColorResolution.value,
+      lineColor: lineColorResolution.value,
     });
   }
 
@@ -212,21 +225,10 @@ export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
     settings.ruledMarginLineOffset,
     DEFAULT_SETTINGS.ruledMarginLineOffset,
   );
-  const fontSizeResolution = resolvePositiveNumber(pageSettings.fontSize, DEFAULT_PAGE_SETTINGS.fontSize);
   const marginTopResolution = resolveFiniteNumber(pageSettings.marginTop, DEFAULT_PAGE_SETTINGS.marginTop);
   const marginRightResolution = resolveFiniteNumber(pageSettings.marginRight, DEFAULT_PAGE_SETTINGS.marginRight);
   const marginBottomResolution = resolveFiniteNumber(pageSettings.marginBottom, DEFAULT_PAGE_SETTINGS.marginBottom);
   const marginLeftResolution = resolveFiniteNumber(pageSettings.marginLeft, DEFAULT_PAGE_SETTINGS.marginLeft);
-  const paperColorResolution = resolveString(
-    pageSettings.paperColor,
-    settings.paperColor,
-    DEFAULT_SETTINGS.paperColor,
-  );
-  const lineColorResolution = resolveString(
-    pageSettings.lineColor,
-    settings.lineColor,
-    DEFAULT_SETTINGS.lineColor,
-  );
   const customLineOffsetResolution = resolveFiniteNumber(
     pageSettings.customLineOffset,
     DEFAULT_PAGE_SETTINGS.customLineOffset,
@@ -368,17 +370,15 @@ export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
 
 function resolveExplicitBuiltinPresetPaper(input: {
   preset: ResolvedBuiltinPaperPreset;
-  pageSettings: RawPagePaperSettings;
   backgroundImage: string | null;
+  fontSize: number;
+  paperColor: string;
+  lineColor: string;
 }): ResolvedPaper {
   if (input.backgroundImage) {
     throw new Error('Explicit built-in presets should not be resolved through upload backgrounds.');
   }
 
-  const fontSizeResolution = resolvePositiveNumber(
-    input.pageSettings.fontSize,
-    DEFAULT_PAGE_SETTINGS.fontSize,
-  );
   const margins = input.preset.alignment.writingMargins;
   const contentBounds = input.preset.alignment.contentArea;
   const textTop = input.preset.alignment.firstBaselineOffset;
@@ -389,16 +389,13 @@ function resolveExplicitBuiltinPresetPaper(input: {
   return {
     variant: 'preset',
     style: input.preset.style,
-    background: {
-      kind: 'image',
-      imageSrc: input.preset.assetPath,
-    },
+    background: resolveExplicitBuiltinPresetBackground(input),
     guides: { kind: 'none' },
     geometry: {
       pageWidth: input.preset.pageSize.width,
       pageHeight: input.preset.pageSize.height,
       aspectRatio: input.preset.pageSize.width / input.preset.pageSize.height,
-      fontSize: fontSizeResolution.value,
+      fontSize: input.fontSize,
       margins: {
         top: margins.top,
         right: margins.right,
@@ -422,6 +419,37 @@ function resolveExplicitBuiltinPresetPaper(input: {
       lineOffset: Math.max(0, textTop - contentBounds.top),
     },
     preset: input.preset,
+  };
+}
+
+function resolveExplicitBuiltinPresetBackground(input: {
+  preset: ResolvedBuiltinPaperPreset;
+  paperColor: string;
+  lineColor: string;
+}): ResolvedPaperBackground {
+  if (
+    sameString(input.paperColor, DEFAULT_SETTINGS.paperColor)
+    && sameString(input.lineColor, DEFAULT_SETTINGS.lineColor)
+  ) {
+    return {
+      kind: 'image',
+      imageSrc: input.preset.assetPath,
+    };
+  }
+
+  return {
+    kind: 'image',
+    imageSrc: buildBuiltinNotebookPaperDataUrl({
+      style: input.preset.style,
+      pageWidth: input.preset.pageSize.width,
+      pageHeight: input.preset.pageSize.height,
+      paperColor: input.paperColor,
+      lineColor: input.lineColor,
+      margins: input.preset.alignment.writingMargins,
+      textTop: input.preset.alignment.firstBaselineOffset,
+      lineHeightPx: input.preset.alignment.lineSpacing,
+      marginLineX: input.preset.alignment.ruledMarginPosition ?? undefined,
+    }),
   };
 }
 

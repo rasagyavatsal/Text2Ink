@@ -135,7 +135,7 @@ describe('PaperEngine', () => {
     expect(resolved.geometry.pageHeight).toBeCloseTo(595.28, 1);
   });
 
-  it('treats explicit preset identifiers as the built-in source of truth for background and alignment', () => {
+  it('treats explicit preset identifiers as the built-in source of truth for geometry while honoring page-level colors', () => {
     const settings = {
       ...DEFAULT_SETTINGS,
       paperPresetId: 'grid-letter-portrait',
@@ -166,10 +166,11 @@ describe('PaperEngine', () => {
 
     expect(resolved.variant).toBe('preset');
     expect(resolved.style).toBe('grid');
-    expect(resolved.background).toEqual({
-      kind: 'image',
-      imageSrc: '/paper-presets/grid-letter-portrait.svg',
-    });
+    expect(resolved.background.kind).toBe('image');
+    if (resolved.background.kind !== 'image') {
+      throw new Error('Expected explicit built-in preset ids to remain image-backed.');
+    }
+    expect(resolved.background.imageSrc).toMatch(/^data:image\/svg\+xml/);
     expect(resolved.guides).toEqual({ kind: 'none' });
     expect(resolved.preset?.id).toBe('grid-letter-portrait');
     expect(resolved.geometry).toMatchObject({
@@ -195,6 +196,40 @@ describe('PaperEngine', () => {
       lineHeightPx: 43.2,
     });
     expect(resolved.geometry.lineOffset).toBeCloseTo(15.12, 5);
+  });
+
+  it('keeps explicit preset geometry while honoring customized paper colors', () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      paperPresetId: 'lined-letter-portrait',
+      paperStyle: 'lined',
+      paperColor: '#f5f0e1',
+    } as typeof DEFAULT_SETTINGS & {
+      paperPresetId: string;
+      paperStyle: 'lined';
+    };
+    const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
+
+    const resolved = resolvePagePaper({
+      pageIndex: 0,
+      settings,
+      pageSettings,
+    });
+
+    expect(resolved.variant).toBe('preset');
+    expect(resolved.preset?.id).toBe('lined-letter-portrait');
+    expect(resolved.background.kind).toBe('image');
+    if (resolved.background.kind !== 'image') {
+      throw new Error('Expected explicit built-in preset ids to remain image-backed.');
+    }
+    expect(resolved.background.imageSrc).toMatch(/^data:image\/svg\+xml/);
+    expect(resolved.geometry).toMatchObject({
+      pageWidth: PAGE_WIDTH,
+      pageHeight: PAGE_HEIGHT,
+      textTop: 60,
+      textLeft: 60,
+      lineHeightPx: 43.2,
+    });
   });
 
   it('resolves uploaded backgrounds without exposing paper-line branching to callers', () => {
