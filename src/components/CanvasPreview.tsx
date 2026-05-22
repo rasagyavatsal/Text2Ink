@@ -4,7 +4,8 @@ import React, { useRef, useEffect, useCallback, useMemo, useState } from 'react'
 import { HandwritingSettings, PageSettings } from '@/lib/types';
 import { LineData } from '@/lib/editorHelpers';
 import { resolvePageLayout } from '@/lib/layout/LayoutEngine';
-import { UnifiedPagePainter, CharacterPosition } from '@/lib/renderer/UnifiedPagePainter';
+import { pageRenderEngine } from '@/lib/renderer/PageRenderEngine';
+import { UnifiedPagePainter, type CharacterPosition } from '@/lib/renderer/UnifiedPagePainter';
 
 export interface CanvasPreviewProps {
   lines: LineData[];
@@ -53,6 +54,10 @@ function getPageCoordsFromCanvas(
   return { x, y };
 }
 
+function isAbortError(error: unknown) {
+  return error instanceof Error && error.name === 'AbortError';
+}
+
 /**
  * CanvasPreview renders a single page using the UnifiedPagePainter onto a Canvas element.
  * This replaces the DOM-based preview (thousands of span elements) with a single canvas,
@@ -87,9 +92,7 @@ export default function CanvasPreview({
   const canvasRef = externalRef ?? internalRef;
   const charPositionsRef = useRef<CharacterPosition[]>([]);
   const [cursorVisible, setCursorVisible] = useState(true);
-  const [backgroundImageRevision, setBackgroundImageRevision] = useState(0);
-  const bgImageRef = useRef<HTMLImageElement | null>(null);
-  const bgImageSrcRef = useRef<string | null>(null);
+  const [backgroundRevision, setBackgroundRevision] = useState(0);
   const isPointerDownRef = useRef(false);
   const didDragRef = useRef(false);
   const activePointerIdRef = useRef<number | null>(null);
@@ -117,107 +120,88 @@ export default function CanvasPreview({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const abortController = new AbortController();
 
-    // Set physical canvas size
-    const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-    canvas.width = Math.ceil(pageWidth * previewScale * dpr);
-    canvas.height = Math.ceil(pageHeight * previewScale * dpr);
+    const renderPreviewPage = async () => {
+      try {
+        const result = await pageRenderEngine.renderPage({
+          canvas,
+          mode: 'preview',
+          pageIndex,
+          lines,
+          pageSettings,
+          settings,
+          scale: previewScale,
+          fontFamily,
+          signal: abortController.signal,
+        });
 
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (abortController.signal.aborted) return;
 
-    // Apply scale: previewScale * devicePixelRatio
-    ctx.save();
-    ctx.scale(previewScale * dpr, previewScale * dpr);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
 
-    // Handle custom background image
-    if (
-      resolvedLayout.paper.background.kind === 'image'
-      && bgImageRef.current
-      && bgImageSrcRef.current === resolvedLayout.paper.background.imageSrc
-    ) {
-      ctx.drawImage(bgImageRef.current, 0, 0, pageWidth, pageHeight);
-    }
+        const mainPositions = result.characterPositions;
+        charPositionsRef.current = mainPositions;
 
-    // Paint the page content
-    UnifiedPagePainter.paintPage({
-      ctx,
-      pageIndex,
-      lines,
-      pageSettings,
-      settings,
-      scaleFactor: previewScale,
-      fontFamily,
-      renderTextFields: false,
-    });
+        if (result.pendingBackground) {
+          void result.pendingBackground
+            .then(() => {
+              if (!abortController.signal.aborted) {
+                setBackgroundRevision((revision) => revision + 1);
+              }
+            })
+            .catch((error) => {
+              if (!abortController.signal.aborted) {
+                console.error('Failed to load preview page background', error);
+              }
+            });
+        }
 
-    // Compute character positions for interaction
-    const { mainPositions } = UnifiedPagePainter.computeCharacterPositions({
-      ctx,
-      lines,
-      pageSettings,
-      settings,
-      pageIndex,
-      fontFamily,
-    });
-    charPositionsRef.current = mainPositions;
+        if (selectionStart !== selectionEnd) {
+          const localSelStart = selectionStart - pageStartOffset;
+          const localSelEnd = selectionEnd - pageStartOffset;
+          UnifiedPagePainter.paintSelectionOverlay(
+            ctx,
+            mainPositions,
+            Math.max(0, localSelStart),
+            Math.min(mainPositions.length, localSelEnd),
+            pageSettings.inkColor,
+            pageSettings.lineTilt,
+          );
+        }
 
-    // Draw selection overlay
-    if (selectionStart !== selectionEnd) {
-      const localSelStart = selectionStart - pageStartOffset;
-      const localSelEnd = selectionEnd - pageStartOffset;
-      UnifiedPagePainter.paintSelectionOverlay(
-        ctx,
-        mainPositions,
-        Math.max(0, localSelStart),
-        Math.min(mainPositions.length, localSelEnd),
-        pageSettings.inkColor,
-        pageSettings.lineTilt,
-      );
-    }
+        if (isFocused && cursorPosition !== null && cursorVisible) {
+          const localCursor = cursorPosition - pageStartOffset;
+          if (localCursor >= 0 && localCursor <= mainPositions.length) {
+            UnifiedPagePainter.paintCursorOverlay(
+              ctx,
+              mainPositions,
+              localCursor,
+              pageSettings.inkColor,
+              pageSettings.lineTilt,
+            );
+          }
+        }
+      } catch (error) {
+        if (isAbortError(error)) {
+          return;
+        }
 
-    // Draw cursor overlay
-    if (isFocused && cursorPosition !== null && cursorVisible) {
-      const localCursor = cursorPosition - pageStartOffset;
-      if (localCursor >= 0 && localCursor <= mainPositions.length) {
-        UnifiedPagePainter.paintCursorOverlay(
-          ctx, 
-          mainPositions, 
-          localCursor, 
-          pageSettings.inkColor,
-          pageSettings.lineTilt,
-        );
+        console.error('Failed to render preview page', error);
       }
-    }
+    };
 
-    ctx.restore();
+    void renderPreviewPage();
+
+    return () => {
+      abortController.abort();
+    };
   }, [
     lines, pageSettings, settings, pageIndex, previewScale,
     fontFamily, cursorPosition, selectionStart, selectionEnd,
-    pageHeight, pageStartOffset, pageWidth, isFocused, cursorVisible, canvasRef, backgroundImageRevision,
+    pageStartOffset, isFocused, cursorVisible, canvasRef, backgroundRevision,
   ]);
-
-  // Load background image when it changes
-  useEffect(() => {
-    if (resolvedLayout.paper.background.kind !== 'image') {
-      bgImageRef.current = null;
-      bgImageSrcRef.current = null;
-      return;
-    }
-    const imageSrc = resolvedLayout.paper.background.imageSrc;
-    if (bgImageSrcRef.current === imageSrc) return;
-
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      bgImageRef.current = img;
-      bgImageSrcRef.current = imageSrc;
-      setBackgroundImageRevision((revision) => revision + 1);
-    };
-    img.src = imageSrc;
-  }, [resolvedLayout]);
 
   useEffect(() => {
     const handleWindowPointerUp = (e: PointerEvent) => {
