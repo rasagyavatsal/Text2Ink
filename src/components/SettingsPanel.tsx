@@ -32,7 +32,7 @@ import {
 } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { detectBackgroundLines } from '@/lib/lineDetection';
-import { PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/pageConstants';
+import { resolvePagePaper } from '@/lib/paper/PaperEngine';
 import { 
   Type, 
   Palette, 
@@ -183,9 +183,14 @@ export default function SettingsPanel({
 
     try {
       const expectedLineHeight = pageSettings.customLineSpacing ?? pageSettings.fontSize * settings.lineHeight;
+      const resolvedPaper = resolvePagePaper({
+        pageIndex: currentPageIndex,
+        settings,
+        pageSettings,
+      });
       const result = await detectBackgroundLines(currentBackground, {
-        targetWidth: PAGE_WIDTH,
-        targetHeight: PAGE_HEIGHT,
+        targetWidth: resolvedPaper.geometry.pageWidth,
+        targetHeight: resolvedPaper.geometry.pageHeight,
         marginTop: pageSettings.marginTop,
         marginBottom: pageSettings.marginBottom,
         marginLeft: pageSettings.marginLeft,

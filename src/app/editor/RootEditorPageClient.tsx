@@ -26,6 +26,7 @@ import {
 } from '@/lib/types';
 import { loadEditorStateV1, saveEditorStateV1 } from '@/lib/editorPersistence';
 import { applyPageSettingsToAll } from '@/lib/settingsHelpers';
+import { resolvePagePaper } from '@/lib/paper/PaperEngine';
 import {
   clampMobileSheetHeight,
   clampPreviewScale as clampEditorPreviewScale,
@@ -215,13 +216,30 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
     ? clampMobileSheetHeight(mobileSheetHeight ?? mobileSheetMetrics.defaultSheetHeight, mobileSheetMetrics)
     : 0;
   const mobileStablePreviewAvailableHeight = Math.max(0, viewportSize.height - headerHeight);
+  const currentPreviewPaper = useMemo(
+    () =>
+      resolvePagePaper({
+        pageIndex: currentPageIndex,
+        settings,
+        pageSettings:
+          pageSettingsByPage[currentPageIndex] ?? defaultPageSettingsFromHandwritingSettings(settings),
+      }),
+    [currentPageIndex, pageSettingsByPage, settings],
+  );
   const mobilePreviewMaxScale = useMemo(
     () =>
       computeMobilePreviewScale({
         availableWidth: viewportSize.width,
         availableHeight: mobileStablePreviewAvailableHeight,
+        pageWidth: currentPreviewPaper.geometry.pageWidth,
+        pageHeight: currentPreviewPaper.geometry.pageHeight,
       }),
-    [mobileStablePreviewAvailableHeight, viewportSize.width],
+    [
+      currentPreviewPaper.geometry.pageHeight,
+      currentPreviewPaper.geometry.pageWidth,
+      mobileStablePreviewAvailableHeight,
+      viewportSize.width,
+    ],
   );
   const effectivePreviewScale = isMobileEditorLayout
     ? clampEditorPreviewScale(previewScale, mobilePreviewMaxScale, MOBILE_PREVIEW_MIN_SCALE)

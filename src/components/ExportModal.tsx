@@ -11,8 +11,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Download, FileImage, FileText, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { HandwritingSettings, PageSettings, LineData } from '@/lib/types';
+import { DEFAULT_SETTINGS, HandwritingSettings, PageSettings, LineData } from '@/lib/types';
 import { renderPageToCanvas } from '@/lib/canvasRenderer';
+import { resolvePagePaper } from '@/lib/paper/PaperEngine';
 import {
   Dialog,
   DialogContent,
@@ -198,12 +199,13 @@ export default function ExportModal({
 
         worker.postMessage({
           type: 'init',
-          payload: { orientation: 'portrait', unit: 'pt', format: 'letter' }
+          payload: {
+            orientation: settings.paperOrientation ?? DEFAULT_SETTINGS.paperOrientation,
+            unit: 'pt',
+            format: settings.paperFormat ?? DEFAULT_SETTINGS.paperFormat,
+          }
         });
         await waitMessage('initialized');
-
-        const pdfWidth = 612;
-        const pdfHeight = 792;
 
         for (let i = 0; i < exportTotal; i++) {
           if (cancelExportRef.current) break;
@@ -213,6 +215,11 @@ export default function ExportModal({
           
           const pageLines = currentPages[i] || [];
           const pageSettings = pageSettingsByPage[i] || pageSettingsByPage[0];
+          const resolvedPaper = resolvePagePaper({
+            pageIndex: i,
+            settings,
+            pageSettings,
+          });
 
           await renderPageToCanvas({
             canvas,
@@ -232,8 +239,8 @@ export default function ExportModal({
             type: 'addPage',
             payload: {
               imgData: arrayBuffer,
-              width: pdfWidth,
-              height: pdfHeight,
+              width: resolvedPaper.geometry.pageWidth,
+              height: resolvedPaper.geometry.pageHeight,
               isFirstPage: i === 0
             }
           }, [arrayBuffer]);

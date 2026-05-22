@@ -13,8 +13,8 @@ export type PaginationRequest = {
   text: string;
   currentPageIndex: number;
   renderAllPagesForExport: boolean;
-  pageWidth: number;
-  pageHeight: number;
+  pageWidth?: number;
+  pageHeight?: number;
   settings: Partial<
     Pick<
       HandwritingSettings,
@@ -23,6 +23,8 @@ export type PaginationRequest = {
       | 'lineHeight'
       | 'paperColor'
       | 'paperStyle'
+      | 'paperFormat'
+      | 'paperOrientation'
       | 'lineColor'
       | 'ruledMarginLineOffset'
     >
@@ -159,10 +161,13 @@ export function paginate(req: PaginationRequest): PaginationResponse {
       pageIndex,
       settings: req.settings,
       pageSettings: ps,
-      pageSize: {
-        width: req.pageWidth,
-        height: req.pageHeight,
-      },
+      pageSize:
+        req.pageWidth !== undefined || req.pageHeight !== undefined
+          ? {
+              width: req.pageWidth,
+              height: req.pageHeight,
+            }
+          : undefined,
     });
 
     const contentHeight = resolvedPaper.geometry.contentHeight;

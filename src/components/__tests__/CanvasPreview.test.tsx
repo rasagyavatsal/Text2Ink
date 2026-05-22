@@ -140,4 +140,24 @@ describe('CanvasPreview', () => {
     expect(onCharClick).toHaveBeenCalledWith(0, true);
   });
 
+  it('sizes the preview canvas from the resolved document paper geometry', () => {
+    render(
+      <CanvasPreview
+        {...defaultProps}
+        previewScale={1}
+        settings={{
+          ...DEFAULT_SETTINGS,
+          paperFormat: 'a4',
+          paperOrientation: 'landscape',
+        }}
+      />
+    );
+
+    const canvas = screen.getByRole('img');
+    expect(canvas).toHaveStyle({
+      width: '841.89px',
+      height: '595.28px',
+    });
+  });
+
 });

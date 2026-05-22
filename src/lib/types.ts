@@ -1,3 +1,6 @@
+export type PaperFormat = 'letter' | 'a4' | 'a3';
+export type PaperOrientation = 'portrait' | 'landscape';
+
 // Per-page settings that can be customized for each page
 export interface TextField {
   id: string;
@@ -42,6 +45,8 @@ export interface HandwritingSettings {
   marginBottom: number;
   marginLeft: number;
   marginRight: number;
+  paperFormat: PaperFormat;
+  paperOrientation: PaperOrientation;
   ruledMarginLineOffset: number;
   paperStyle: 'blank' | 'lined' | 'ruled' | 'grid';
   inkColor: string;
@@ -89,6 +94,8 @@ export const DEFAULT_SETTINGS: HandwritingSettings = {
   marginBottom: 60,
   marginLeft: 60,
   marginRight: 60,
+  paperFormat: 'letter',
+  paperOrientation: 'portrait',
   ruledMarginLineOffset: -10,
   paperStyle: 'lined',
   inkColor: '#1a365d',
@@ -132,6 +139,17 @@ export const PAPER_STYLES = [
   { name: 'Lined', value: 'lined' },
   { name: 'Ruled', value: 'ruled' },
   { name: 'Grid', value: 'grid' },
+] as const;
+
+export const PAPER_FORMATS = [
+  { name: 'Letter', value: 'letter' },
+  { name: 'A4', value: 'a4' },
+  { name: 'A3', value: 'a3' },
+] as const;
+
+export const PAPER_ORIENTATIONS = [
+  { name: 'Portrait', value: 'portrait' },
+  { name: 'Landscape', value: 'landscape' },
 ] as const;
 
 export const PAPER_COLORS = [

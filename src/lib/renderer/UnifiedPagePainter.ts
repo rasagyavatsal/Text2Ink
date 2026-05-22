@@ -1,6 +1,5 @@
 import { HandwritingSettings, PageSettings, TextField } from '../types';
 import { LineData, calculateRandomStyle } from '../editorHelpers';
-import { PAGE_WIDTH, PAGE_HEIGHT } from '../pageConstants';
 import { type ResolvedPaper, resolvePagePaper } from '../paper/PaperEngine';
 
 export interface PaintPageOptions {
@@ -161,16 +160,13 @@ export const UnifiedPagePainter = {
       pageIndex,
       settings,
       pageSettings,
-      pageSize: {
-        width: PAGE_WIDTH,
-        height: PAGE_HEIGHT,
-      },
     });
+    const { pageWidth, pageHeight } = resolvedPaper.geometry;
 
     // 1. Draw background
     if (resolvedPaper.background.kind === 'solid-color') {
       ctx.fillStyle = resolvedPaper.background.color;
-      ctx.fillRect(0, 0, PAGE_WIDTH, PAGE_HEIGHT);
+      ctx.fillRect(0, 0, pageWidth, pageHeight);
     }
     // Note: custom background images are drawn asynchronously via drawBackgroundImage()
 
@@ -382,10 +378,6 @@ export const UnifiedPagePainter = {
       pageIndex,
       settings,
       pageSettings,
-      pageSize: {
-        width: PAGE_WIDTH,
-        height: PAGE_HEIGHT,
-      },
     });
 
     ctx.font = `${resolvedPaper.geometry.fontSize}px ${fontFamily}`;
