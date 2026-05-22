@@ -35,23 +35,23 @@ describe('PaperEngine', () => {
       5,
     );
     expect(resolved.geometry.contentBounds).toMatchObject({
-      left: pageSettings.marginLeft,
-      top: pageSettings.marginTop,
+      left: 43,
+      top: 85,
     });
     expect(resolved.geometry.contentBounds.right).toBeCloseTo(
-      resolved.geometry.pageWidth - pageSettings.marginRight,
+      resolved.geometry.pageWidth - 43,
       5,
     );
     expect(resolved.geometry.contentBounds.bottom).toBeCloseTo(
-      resolved.geometry.pageHeight - pageSettings.marginBottom,
+      resolved.geometry.pageHeight - 43,
       5,
     );
     expect(resolved.geometry.contentBounds.width).toBeCloseTo(
-      resolved.geometry.pageWidth - pageSettings.marginLeft - pageSettings.marginRight,
+      resolved.geometry.pageWidth - 43 - 43,
       5,
     );
     expect(resolved.geometry.contentBounds.height).toBeCloseTo(
-      resolved.geometry.pageHeight - pageSettings.marginTop - pageSettings.marginBottom,
+      resolved.geometry.pageHeight - 85 - 43,
       5,
     );
   });
@@ -80,13 +80,13 @@ describe('PaperEngine', () => {
       supportedOrientations: ['portrait', 'landscape'],
       alignment: {
         writingMargins: {
-          top: 60,
-          right: 60,
-          bottom: 60,
-          left: 60,
+          top: 90,
+          right: 36,
+          bottom: 36,
+          left: 90,
         },
-        firstBaselineOffset: 60,
-        lineSpacing: 43.2,
+        firstBaselineOffset: 90,
+        lineSpacing: 20.25,
         gridSpacing: null,
         ruledMarginPosition: null,
       },
@@ -94,11 +94,11 @@ describe('PaperEngine', () => {
     expect(resolved.geometry).toMatchObject({
       pageWidth: PAGE_WIDTH,
       pageHeight: PAGE_HEIGHT,
-      textTop: pageSettings.marginTop,
-      textLeft: pageSettings.marginLeft,
+      textTop: 90,
+      textLeft: 90,
       lineOffset: 0,
-      lineHeightPx: pageSettings.fontSize * DEFAULT_SETTINGS.lineHeight,
-      textWidth: PAGE_WIDTH - pageSettings.marginLeft - pageSettings.marginRight,
+      lineHeightPx: 20.25,
+      textWidth: 486,
     });
   });
 
@@ -177,25 +177,25 @@ describe('PaperEngine', () => {
       pageWidth: PAGE_WIDTH,
       pageHeight: PAGE_HEIGHT,
       margins: {
-        top: 60,
-        right: 60,
-        bottom: 60,
-        left: 60,
+        top: 90,
+        right: 36,
+        bottom: 36,
+        left: 90,
       },
       contentBounds: {
-        top: 60,
-        right: 552,
-        bottom: 732,
-        left: 60,
-        width: 492,
-        height: 672,
+        top: 90,
+        right: 576,
+        bottom: 756,
+        left: 90,
+        width: 486,
+        height: 666,
       },
-      textTop: 75.12,
-      textLeft: 60,
-      textWidth: 492,
-      lineHeightPx: 43.2,
+      textTop: 104.4,
+      textLeft: 90,
+      textWidth: 486,
+      lineHeightPx: 28.8,
     });
-    expect(resolved.geometry.lineOffset).toBeCloseTo(15.12, 5);
+    expect(resolved.geometry.lineOffset).toBeCloseTo(14.4, 1);
   });
 
   it('keeps explicit preset geometry while honoring customized paper colors', () => {
@@ -226,9 +226,9 @@ describe('PaperEngine', () => {
     expect(resolved.geometry).toMatchObject({
       pageWidth: PAGE_WIDTH,
       pageHeight: PAGE_HEIGHT,
-      textTop: 60,
-      textLeft: 60,
-      lineHeightPx: 43.2,
+      textTop: 90,
+      textLeft: 90,
+      lineHeightPx: 20.25,
     });
   });
 
@@ -288,8 +288,8 @@ describe('PaperEngine', () => {
     }
     expect(resolved.background.imageSrc).toBe('/paper-presets/ruled-letter-portrait.svg');
     expect(resolved.guides).toEqual({ kind: 'none' });
-    expect(resolved.preset?.alignment.ruledMarginPosition).toBe(50);
-    expect(resolved.geometry.textLeft).toBe(pageSettings.marginLeft);
+    expect(resolved.preset?.alignment.ruledMarginPosition).toBe(80);
+    expect(resolved.geometry.textLeft).toBe(90);
   });
 
   it('resolves grid presets from the registered graph-paper asset metadata', () => {
@@ -317,8 +317,8 @@ describe('PaperEngine', () => {
     }
     expect(resolved.background.imageSrc).toBe('/paper-presets/grid-letter-portrait.svg');
     expect(resolved.guides).toEqual({ kind: 'none' });
-    expect(resolved.preset?.alignment.gridSpacing).toBe(21.6);
-    expect(resolved.preset?.alignment.firstBaselineOffset).toBe(75.12);
+    expect(resolved.preset?.alignment.gridSpacing).toBe(14.4);
+    expect(resolved.preset?.alignment.firstBaselineOffset).toBe(104.4);
   });
 
   it('falls back for customized ruled offsets that no longer match the authored preset metadata', () => {
@@ -400,23 +400,25 @@ describe('PaperEngine', () => {
     expect(resolved.background.imageSrc).toMatch(/^data:image\/svg\+xml/);
   });
 
-  it('maps documents without a preset identifier onto the default built-in preset', () => {
+  it('maps documents without a preset identifier onto a legacy fallback to preserve geometry', () => {
     const resolved = resolvePagePaper({
       pageIndex: 0,
     });
 
-    expect(resolved.variant).toBe('preset');
+    expect(resolved.variant).toBe('legacy-fallback');
     expect(resolved.style).toBe(DEFAULT_SETTINGS.paperStyle);
-    expect(resolved.background.kind).toBe('image');
-    if (resolved.background.kind !== 'image') {
-      throw new Error('Expected default legacy documents to resolve to the registered default preset.');
-    }
-    expect(resolved.background.imageSrc).toBe('/paper-presets/lined-letter-portrait.svg');
-    expect(resolved.preset?.id).toBe('lined-letter-portrait');
+    expect(resolved.geometry.textTop).toBe(60);
   });
 
   it('falls back from an unknown preset identifier to deterministic legacy mapping', () => {
-    const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
+    const pageSettings = {
+      ...defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
+      marginTop: 85,
+      marginLeft: 43,
+      marginBottom: 43,
+      marginRight: 43,
+      fontSize: 28.34 / 1.8,
+    };
     const settings = {
       ...DEFAULT_SETTINGS,
       paperPresetId: 'missing-preset-id',
