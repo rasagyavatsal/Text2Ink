@@ -25,7 +25,6 @@ interface HandwritingEditorProps {
   onSettingsChange?: (settings: HandwritingSettings) => void;
   pageSettingsByPage: PageSettings[];
   onPageSettingsChange?: (settings: PageSettings) => void;
-  exportingPageIndex?: number | null;
   previewScale: number;
   onPreviewScaleChange: (value: number) => void;
   currentPageIndex: number;
@@ -74,7 +73,6 @@ export default function HandwritingEditor({
   onSettingsChange,
   pageSettingsByPage,
   onPageSettingsChange,
-  exportingPageIndex = null,
   previewScale,
   onPreviewScaleChange,
   currentPageIndex,
@@ -251,7 +249,7 @@ export default function HandwritingEditor({
       requestId,
       text: localText,
       currentPageIndex,
-      renderAllPagesForExport: exportingPageIndex !== null,
+      renderAllPagesForExport: false,
       settings: {
         customBackgroundImage: settings.customBackgroundImage,
         customBackgroundImages: settings.customBackgroundImages,
@@ -306,7 +304,6 @@ export default function HandwritingEditor({
     debouncedRequestPagination,
     desiredPageSettings,
     localText,
-    exportingPageIndex,
     resolvedFontFamily,
     settings.customBackgroundImage,
     settings.customBackgroundImages,
@@ -682,12 +679,11 @@ export default function HandwritingEditor({
   useEffect(() => {
     debouncedRequestPagination();
   }, [
-    currentPageIndex,
-    debouncedRequestPagination,
-    desiredPageSettings,
-    localText,
-    exportingPageIndex,
-    resolvedFontFamily,
+      currentPageIndex,
+      debouncedRequestPagination,
+      desiredPageSettings,
+      localText,
+      resolvedFontFamily,
     settings.customBackgroundImage,
     settings.customBackgroundImages,
     settings.lineHeight,

@@ -196,7 +196,6 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
   
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
-  const [exportPageIndex, setExportPageIndex] = useState<number | null>(null);
   
   const [mobileSheetAnchor, setMobileSheetAnchor] = useState<MobileSheetAnchor>('peek');
   const [mobileSheetHeight, setMobileSheetHeight] = useState<number | null>(null);
@@ -526,7 +525,6 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
           onSettingsChange={handleSettingsChange}
           pageSettingsByPage={pageSettingsByPage}
           onPageSettingsChange={handlePageSettingsChange}
-          exportingPageIndex={exportPageIndex}
           previewScale={effectivePreviewScale}
           onPreviewScaleChange={handlePreviewScaleChange}
           currentPageIndex={currentPageIndex}
@@ -584,18 +582,9 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       <ExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
-        hasContent={text.trim().length > 0}
+        text={text}
         settings={settings}
-        pages={pages}
-        isPaginationComplete={isPaginationComplete}
         pageSettingsByPage={pageSettingsByPage}
-        totalPages={totalPages}
-        currentPageIndex={currentPageIndex}
-        onCurrentPageChange={handleCurrentPageChange}
-        onExportingChange={(isExporting) => {
-          if (!isExporting) setExportPageIndex(null);
-        }}
-        onExportPageIndexChange={setExportPageIndex}
       />
       <Dialog open={isClearConfirmOpen} onOpenChange={setIsClearConfirmOpen}>
         <DialogContent>
