@@ -58,6 +58,71 @@ import {
   readFilesAsDataURL,
 } from '@/lib/settingsHelpers';
 
+const PaperStyleCard = ({
+  style,
+  isSelected,
+  onClick,
+}: {
+  style: { name: string; value: string };
+  isSelected: boolean;
+  onClick: () => void;
+}) => {
+  return (
+    <div
+      onClick={onClick}
+      className={cn(
+        "cursor-pointer rounded-xl p-2 flex flex-col items-center gap-2 transition-all border w-full h-full",
+        isSelected 
+          ? "border-brand-accent bg-brand-accent/5 ring-1 ring-brand-accent" 
+          : "bg-background border-border hover:border-brand-accent/30 hover:bg-accent/50"
+      )}
+    >
+      <div 
+        className={cn(
+          "w-full aspect-[1/1.4] rounded-lg flex flex-col overflow-hidden transition-colors border border-border/50 bg-white relative",
+          isSelected ? "shadow-sm" : ""
+        )}
+      >
+        {style.value === 'blank' && (
+           <div className="w-full h-full bg-white"></div>
+        )}
+        {style.value === 'lined' && (
+           <div className="w-full h-full flex flex-col justify-evenly py-1 px-2">
+             <div className="w-full border-b border-muted-foreground/20"></div>
+             <div className="w-full border-b border-muted-foreground/20"></div>
+             <div className="w-full border-b border-muted-foreground/20"></div>
+             <div className="w-full border-b border-muted-foreground/20"></div>
+           </div>
+        )}
+        {style.value === 'ruled' && (
+           <div className="w-full h-full flex flex-col justify-evenly py-1 pl-4 pr-2 relative bg-[#fffdf8]">
+             <div className="absolute left-3 top-0 bottom-0 w-px bg-red-400/40"></div>
+             <div className="w-full border-b border-blue-400/30"></div>
+             <div className="w-full border-b border-blue-400/30"></div>
+             <div className="w-full border-b border-blue-400/30"></div>
+             <div className="w-full border-b border-blue-400/30"></div>
+           </div>
+        )}
+        {style.value === 'grid' && (
+           <div 
+             className="w-full h-full"
+             style={{
+               backgroundImage: 'linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px)',
+               backgroundSize: '6px 6px'
+             }}
+           ></div>
+        )}
+      </div>
+      <span className={cn(
+        "text-xs font-medium truncate w-full text-center px-1",
+        isSelected ? "text-brand-accent font-semibold" : "text-muted-foreground"
+      )}>
+        {style.name}
+      </span>
+    </div>
+  );
+};
+
 const FontCard = ({ 
   font, 
   isSelected, 
@@ -137,12 +202,6 @@ export default function SettingsPanel({
   const [lineDetectError, setLineDetectError] = useState<string | null>(null);
   const [lineDetectInfo, setLineDetectInfo] = useState<{ offset: number; spacing: number } | null>(null);
 
-  const [paperMode, setPaperMode] = useState<'builtin' | 'custom'>(
-    (settings.customBackgroundImages?.length ?? 0) > 0 || !!settings.customBackgroundImage
-      ? 'custom'
-      : 'builtin'
-  );
-
   const hasCustomBackground =
     (settings.customBackgroundImages?.length ?? 0) > 0 || !!settings.customBackgroundImage;
 
@@ -157,7 +216,7 @@ export default function SettingsPanel({
     () => settings.customBackgroundImages?.[currentPageIndex] ?? settings.customBackgroundImage,
     [currentPageIndex, settings.customBackgroundImages, settings.customBackgroundImage]
   );
-  const showManualAlignmentControls = paperMode === 'custom' || settings.paperStyle === 'blank';
+  const showManualAlignmentControls = hasCustomBackground;
 
   const availableFonts = useMemo(() => HANDWRITING_FONTS.filter(f => f.value !== 'custom'), []);
   useEffect(() => {
@@ -525,7 +584,7 @@ export default function SettingsPanel({
             />
           </div>
 
-          {paperMode === 'builtin' && settings.paperStyle === 'blank' && (
+          {settings.paperStyle === 'blank' && !hasCustomBackground && (
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <Label className="text-sm font-medium">Line Height</Label>
@@ -568,178 +627,78 @@ export default function SettingsPanel({
         </div>
 
         <div className="space-y-6">
-          <div role="radiogroup" aria-label="Paper Mode" className="flex bg-secondary p-1 rounded-lg gap-1">
-            <button
-              type="button"
-              role="radio"
-              aria-checked={paperMode === 'builtin'}
-              onClick={() => setPaperMode('builtin')}
-              className={cn(
-                "flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-all",
-                paperMode === 'builtin' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Built-in Papers
-            </button>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={paperMode === 'custom'}
-              onClick={() => setPaperMode('custom')}
-              className={cn(
-                "flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-all",
-                paperMode === 'custom' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Custom Background
-            </button>
-          </div>
-
-          {paperMode === 'builtin' && (
-            <>
-              <div className="flex flex-col gap-3">
-                <Label className="text-sm font-medium" htmlFor="paper-style">Paper Style</Label>
-                <Select
-                  value={settings.paperStyle}
-                  onValueChange={(value) =>
-                    updateBuiltinSelection({
-                      paperStyle: value as HandwritingSettings['paperStyle'],
-                    })
-                  }
-                >
-                  <SelectTrigger id="paper-style" className="w-full h-10">
-                    <SelectValue placeholder="Select paper style" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PAPER_STYLES.map((style) => (
-                      <SelectItem key={style.value} value={style.value}>
-                        {style.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <Label className="text-sm font-medium" htmlFor="paper-format">Size</Label>
-                <Select
-                  value={settings.paperFormat}
-                  onValueChange={(value) =>
-                    updateBuiltinSelection({
-                      paperFormat: value as HandwritingSettings['paperFormat'],
-                    })
-                  }
-                >
-                  <SelectTrigger id="paper-format" className="w-full h-10">
-                    <SelectValue placeholder="Select size" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PAPER_FORMATS.map((format) => (
-                      <SelectItem key={format.value} value={format.value}>
-                        {format.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <Label className="text-sm font-medium" htmlFor="paper-orientation">Orientation</Label>
-                <Select
-                  value={settings.paperOrientation}
-                  onValueChange={(value) =>
-                    updateBuiltinSelection({
-                      paperOrientation: value as HandwritingSettings['paperOrientation'],
-                    })
-                  }
-                >
-                  <SelectTrigger id="paper-orientation" className="w-full h-10">
-                    <SelectValue placeholder="Select orientation" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PAPER_ORIENTATIONS.map((orientation) => (
-                      <SelectItem key={orientation.value} value={orientation.value}>
-                        {orientation.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </>
-          )}
-
-          {showManualAlignmentControls && (
-            <div className="grid grid-cols-2 gap-x-4 gap-y-8">
-              <div className="flex flex-col gap-3">
-                <div className="flex justify-between items-center">
-                  <Label className="text-sm font-medium">Top Margin</Label>
-                  <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                    {pageSettings.marginTop}px
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Paper Style</Label>
+            </div>
+            
+            <div className="relative w-full overflow-hidden">
+              <div className="grid grid-rows-2 grid-flow-col gap-3 auto-cols-[calc(45%-0.375rem)] overflow-x-auto pb-4 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                {PAPER_STYLES.map((style) => (
+                  <div key={style.value} className="snap-start">
+                    <PaperStyleCard
+                      style={{ name: style.name, value: style.value }}
+                      isSelected={settings.paperStyle === style.value}
+                      onClick={() =>
+                        updateBuiltinSelection({
+                          paperStyle: style.value as HandwritingSettings['paperStyle'],
+                        })
+                      }
+                    />
                   </div>
-                </div>
-                <Slider
-                  value={[pageSettings.marginTop]}
-                  onValueChange={([value]) => updatePageSetting('marginTop', value)}
-                  min={20}
-                  max={120}
-                  step={5}
-                />
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <div className="flex justify-between items-center">
-                  <Label className="text-sm font-medium">Bottom Margin</Label>
-                  <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                    {pageSettings.marginBottom}px
-                  </div>
-                </div>
-                <Slider
-                  value={[pageSettings.marginBottom]}
-                  onValueChange={([value]) => updatePageSetting('marginBottom', value)}
-                  min={20}
-                  max={120}
-                  step={5}
-                />
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <div className="flex justify-between items-center">
-                  <Label className="text-sm font-medium">Left Margin</Label>
-                  <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                    {pageSettings.marginLeft}px
-                  </div>
-                </div>
-                <Slider
-                  value={[pageSettings.marginLeft]}
-                  onValueChange={([value]) => updatePageSetting('marginLeft', value)}
-                  min={20}
-                  max={120}
-                  step={5}
-                />
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <div className="flex justify-between items-center">
-                  <Label className="text-sm font-medium">Right Margin</Label>
-                  <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                    {pageSettings.marginRight}px
-                  </div>
-                </div>
-                <Slider
-                  value={[pageSettings.marginRight]}
-                  onValueChange={([value]) => updatePageSetting('marginRight', value)}
-                  min={20}
-                  max={120}
-                  step={5}
-                />
+                ))}
               </div>
             </div>
-          )}
+          </div>
 
-          {paperMode === 'custom' && (
-            <>
-              <div className="flex flex-col gap-2">
-                <Label className="text-sm font-medium">Custom Background Image</Label>
+          <div className="flex flex-col gap-3">
+            <Label className="text-sm font-medium" htmlFor="paper-format">Size</Label>
+            <Select
+              value={settings.paperFormat}
+              onValueChange={(value) =>
+                updateBuiltinSelection({
+                  paperFormat: value as HandwritingSettings['paperFormat'],
+                })
+              }
+            >
+              <SelectTrigger id="paper-format" className="w-full h-10">
+                <SelectValue placeholder="Select size" />
+              </SelectTrigger>
+              <SelectContent>
+                {PAPER_FORMATS.map((format) => (
+                  <SelectItem key={format.value} value={format.value}>
+                    {format.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <Label className="text-sm font-medium" htmlFor="paper-orientation">Orientation</Label>
+            <Select
+              value={settings.paperOrientation}
+              onValueChange={(value) =>
+                updateBuiltinSelection({
+                  paperOrientation: value as HandwritingSettings['paperOrientation'],
+                })
+              }
+            >
+              <SelectTrigger id="paper-orientation" className="w-full h-10">
+                <SelectValue placeholder="Select orientation" />
+              </SelectTrigger>
+              <SelectContent>
+                {PAPER_ORIENTATIONS.map((orientation) => (
+                  <SelectItem key={orientation.value} value={orientation.value}>
+                    {orientation.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label className="text-sm font-medium">Custom Background Image</Label>
             <div className="space-y-3">
               {effectiveBackgroundImages.length > 0 && (
                 <div className="space-y-2">
@@ -820,7 +779,75 @@ export default function SettingsPanel({
             </div>
           </div>
 
-          {hasCustomBackground && paperMode === 'custom' && (
+          {showManualAlignmentControls && (
+            <div className="grid grid-cols-2 gap-x-4 gap-y-8 pt-4 border-t border-border/50">
+              <div className="flex flex-col gap-3">
+                <div className="flex justify-between items-center">
+                  <Label className="text-sm font-medium">Top Margin</Label>
+                  <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
+                    {pageSettings.marginTop}px
+                  </div>
+                </div>
+                <Slider
+                  value={[pageSettings.marginTop]}
+                  onValueChange={([value]) => updatePageSetting('marginTop', value)}
+                  min={20}
+                  max={120}
+                  step={5}
+                />
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <div className="flex justify-between items-center">
+                  <Label className="text-sm font-medium">Bottom Margin</Label>
+                  <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
+                    {pageSettings.marginBottom}px
+                  </div>
+                </div>
+                <Slider
+                  value={[pageSettings.marginBottom]}
+                  onValueChange={([value]) => updatePageSetting('marginBottom', value)}
+                  min={20}
+                  max={120}
+                  step={5}
+                />
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <div className="flex justify-between items-center">
+                  <Label className="text-sm font-medium">Left Margin</Label>
+                  <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
+                    {pageSettings.marginLeft}px
+                  </div>
+                </div>
+                <Slider
+                  value={[pageSettings.marginLeft]}
+                  onValueChange={([value]) => updatePageSetting('marginLeft', value)}
+                  min={20}
+                  max={120}
+                  step={5}
+                />
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <div className="flex justify-between items-center">
+                  <Label className="text-sm font-medium">Right Margin</Label>
+                  <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
+                    {pageSettings.marginRight}px
+                  </div>
+                </div>
+                <Slider
+                  value={[pageSettings.marginRight]}
+                  onValueChange={([value]) => updatePageSetting('marginRight', value)}
+                  min={20}
+                  max={120}
+                  step={5}
+                />
+              </div>
+            </div>
+          )}
+
+          {hasCustomBackground && (
             <div className="space-y-6 pt-2">
               <div className="flex flex-col gap-3">
                 <Button
@@ -885,10 +912,6 @@ export default function SettingsPanel({
               </div>
             </div>
           )}
-          {/* Close custom mode block */}
-          {paperMode === 'custom' && null /* Just a structural closing if needed, but we used Fragments. Actually we should close the fragment here */}
-          {paperMode === 'custom' && null}
-          </>)}
         </div>
       </div>
 
@@ -914,7 +937,7 @@ export default function SettingsPanel({
             </div>
           </div>
 
-          {!(paperMode === 'builtin' && settings.paperStyle !== 'blank') && (
+          {(hasCustomBackground || settings.paperStyle === 'blank') && (
             <div className="flex flex-col gap-3">
               <Label className="text-sm font-medium">Paper Color</Label>
               <div className="flex flex-wrap gap-2 p-2 bg-secondary border border-border rounded-lg">
@@ -934,7 +957,7 @@ export default function SettingsPanel({
             </div>
           )}
 
-          {!(paperMode === 'builtin' && settings.paperStyle !== 'blank') && settings.paperStyle !== 'blank' && (
+          {hasCustomBackground && (
             <div className="flex flex-col gap-3">
               <Label className="text-sm font-medium">Line Color</Label>
               <div className="flex items-center gap-3 p-2 bg-secondary border border-border rounded-lg">
