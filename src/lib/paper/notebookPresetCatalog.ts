@@ -29,7 +29,7 @@ export interface NotebookPaperAlignmentMetadata {
 
 export interface NotebookPaperPreset {
   id: string;
-  style: 'lined' | 'ruled' | 'grid';
+  style: 'lined' | 'ruled' | 'grid' | 'dot-grid' | 'cornell';
   format: PaperFormat;
   orientation: PaperOrientation;
   pageSize: {
@@ -42,9 +42,9 @@ export interface NotebookPaperPreset {
 
 export const NOTEBOOK_PAPER_PRESETS = notebookPresetManifest as NotebookPaperPreset[];
 
-export type PresetBackedPaperStyle = Extract<HandwritingSettings['paperStyle'], 'lined' | 'ruled' | 'grid'>;
+export type PresetBackedPaperStyle = Extract<HandwritingSettings['paperStyle'], 'lined' | 'ruled' | 'grid' | 'dot-grid' | 'cornell'>;
 
-const PRESET_BACKED_PAPER_STYLES = new Set<PresetBackedPaperStyle>(['lined', 'ruled', 'grid']);
+const PRESET_BACKED_PAPER_STYLES = new Set<PresetBackedPaperStyle>(['lined', 'ruled', 'grid', 'dot-grid', 'cornell']);
 const NOTEBOOK_PAPER_PRESET_BY_ID = new Map(
   NOTEBOOK_PAPER_PRESETS.map((preset) => [preset.id.toLowerCase(), preset] as const),
 );

@@ -88,6 +88,18 @@ export type ResolvedPaperGuides =
       kind: 'grid';
       lineColor: string;
       alpha: number;
+    }
+  | {
+      kind: 'dot-grid';
+      lineColor: string;
+      alpha: number;
+    }
+  | {
+      kind: 'cornell';
+      lineColor: string;
+      marginLineX: number;
+      marginLineColor: string;
+      marginLineWidth: number;
     };
 
 export interface ResolvedPaperGeometry {
@@ -134,7 +146,7 @@ export interface ResolvedPaper {
 
 export interface ResolvedBuiltinPaperPreset {
   id: string;
-  style: 'lined' | 'ruled' | 'grid';
+  style: 'lined' | 'ruled' | 'grid' | 'dot-grid' | 'cornell';
   format: PaperFormat;
   orientation: PaperOrientation;
   pageSize: {
@@ -148,7 +160,7 @@ export interface ResolvedBuiltinPaperPreset {
 }
 
 const DEFAULT_PAGE_SETTINGS = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
-const PAPER_STYLES = new Set<PaperStyle>(['blank', 'lined', 'ruled', 'grid']);
+const PAPER_STYLES = new Set<PaperStyle>(['blank', 'lined', 'ruled', 'grid', 'dot-grid', 'cornell']);
 const PAPER_FORMATS = new Set<PaperFormat>(['letter', 'a4', 'a3']);
 const PAPER_ORIENTATIONS = new Set<PaperOrientation>(['portrait', 'landscape']);
 const PAPER_DIMENSIONS_PT: Record<PaperFormat, { width: number; height: number }> = {
@@ -465,7 +477,7 @@ function resolveBuiltinPresetBackground(input: {
   lineHeightPx: number;
   ruledMarginLineOffset: number;
 }): ResolvedPaperBackground | null {
-  if (input.style !== 'lined' && input.style !== 'ruled' && input.style !== 'grid') {
+  if (input.style !== 'lined' && input.style !== 'ruled' && input.style !== 'grid' && input.style !== 'dot-grid' && input.style !== 'cornell') {
     return null;
   }
 
@@ -602,6 +614,24 @@ function resolveGuides(input: {
       marginLineX: input.marginLeft + input.ruledMarginLineOffset,
       marginLineColor: RULED_MARGIN_LINE_COLOR,
       marginLineWidth: RULED_MARGIN_LINE_WIDTH,
+    };
+  }
+
+  if (input.style === 'cornell') {
+    return {
+      kind: 'cornell',
+      lineColor: input.lineColor,
+      marginLineX: input.marginLeft + input.ruledMarginLineOffset,
+      marginLineColor: RULED_MARGIN_LINE_COLOR,
+      marginLineWidth: RULED_MARGIN_LINE_WIDTH,
+    };
+  }
+
+  if (input.style === 'dot-grid') {
+    return {
+      kind: 'dot-grid',
+      lineColor: input.lineColor,
+      alpha: GRID_GUIDE_ALPHA,
     };
   }
 
@@ -755,6 +785,8 @@ function buildBuiltinPresetSupport(): Record<
       lined: { formats: new Set<PaperFormat>(), orientations: new Set<PaperOrientation>() },
       ruled: { formats: new Set<PaperFormat>(), orientations: new Set<PaperOrientation>() },
       grid: { formats: new Set<PaperFormat>(), orientations: new Set<PaperOrientation>() },
+      'dot-grid': { formats: new Set<PaperFormat>(), orientations: new Set<PaperOrientation>() },
+      cornell: { formats: new Set<PaperFormat>(), orientations: new Set<PaperOrientation>() },
     },
   );
 }

@@ -8,8 +8,8 @@ import {
 } from '../notebookPresetCatalog';
 
 describe('notebookPresetCatalog', () => {
-  it('covers lined, ruled, and grid assets for every supported page size and orientation', () => {
-    expect(NOTEBOOK_PAPER_PRESETS).toHaveLength(18);
+  it('covers lined, ruled, grid, dot-grid, and cornell assets for every supported page size and orientation', () => {
+    expect(NOTEBOOK_PAPER_PRESETS).toHaveLength(30);
 
     const expectedVariants = new Set([
       'lined:letter:portrait',
@@ -30,6 +30,18 @@ describe('notebookPresetCatalog', () => {
       'grid:a4:landscape',
       'grid:a3:portrait',
       'grid:a3:landscape',
+      'dot-grid:letter:portrait',
+      'dot-grid:letter:landscape',
+      'dot-grid:a4:portrait',
+      'dot-grid:a4:landscape',
+      'dot-grid:a3:portrait',
+      'dot-grid:a3:landscape',
+      'cornell:letter:portrait',
+      'cornell:letter:landscape',
+      'cornell:a4:portrait',
+      'cornell:a4:landscape',
+      'cornell:a3:portrait',
+      'cornell:a3:landscape',
     ]);
 
     const actualVariants = new Set(

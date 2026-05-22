@@ -1,4 +1,4 @@
-export type NotebookPaperStyle = 'lined' | 'ruled' | 'grid';
+export type NotebookPaperStyle = 'lined' | 'ruled' | 'grid' | 'dot-grid' | 'cornell';
 
 export interface NotebookPaperSvgInput {
   style: NotebookPaperStyle;
@@ -40,10 +40,10 @@ export function buildBuiltinNotebookPaperSvg(
   const { pageWidth, pageHeight, paperColor, style } = input;
   const rootWidth = escapeXml(options.rootWidth ?? '100%');
   const rootHeight = escapeXml(options.rootHeight ?? '100%');
-  const styleDefs = style === 'grid' ? buildGridDefinitions(input) : '';
-  const defsMarkup = styleDefs ? ['<defs>', styleDefs, '</defs>'].join('') : '';
-  const lineMarkup = style === 'grid' ? buildGridField(input) : buildHorizontalLines(input);
-  const marginMarkup = style === 'ruled' ? buildRuledMarginLine(input) : '';
+  const styleDefs = (style === 'grid' || style === 'dot-grid') ? buildGridDefinitions(input) : '';
+  const defsMarkup = styleDefs ? '<defs>' + styleDefs + '</defs>' : '';
+  const lineMarkup = style === 'grid' ? buildGridField(input) : style === 'dot-grid' ? buildDotGridField(input) : buildHorizontalLines(input);
+  const marginMarkup = style === 'ruled' ? buildRuledMarginLine(input) : style === 'cornell' ? buildCornellLines(input) : '';
 
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${formatNumber(pageWidth)} ${formatNumber(pageHeight)}" width="${rootWidth}" height="${rootHeight}" shape-rendering="geometricPrecision">`,
@@ -56,7 +56,8 @@ export function buildBuiltinNotebookPaperSvg(
 }
 
 function buildHorizontalLines(input: NotebookPaperSvgInput): string {
-  const maxY = input.pageHeight - input.margins.bottom + input.lineHeightPx;
+  const bottomMargin = input.style === 'cornell' ? Math.max(100, input.pageHeight * 0.2) : 0;
+  const maxY = input.pageHeight - input.margins.bottom + input.lineHeightPx - bottomMargin;
   const strokeWidth = formatNumber(Math.max(1.2, input.lineHeightPx * 0.03));
   const lines: string[] = [];
 
@@ -77,7 +78,31 @@ function buildRuledMarginLine(input: NotebookPaperSvgInput): string {
   return `  <line x1="${marginX}" y1="0" x2="${marginX}" y2="${formatNumber(input.pageHeight)}" stroke="${RULED_MARGIN_LINE_COLOR}" stroke-width="${strokeWidth}" stroke-opacity="0.92" />`;
 }
 
+function buildCornellLines(input: NotebookPaperSvgInput): string {
+  const marginX = formatNumber(input.marginLineX ?? Math.max(input.margins.left, input.pageWidth * 0.25));
+  const strokeWidth = formatNumber(Math.max(1.9, input.lineHeightPx * 0.055));
+  const bottomMargin = Math.max(100, input.pageHeight * 0.2);
+  const bottomY = formatNumber(input.pageHeight - bottomMargin);
+
+  return [
+    `  <line x1="${marginX}" y1="0" x2="${marginX}" y2="${formatNumber(input.pageHeight)}" stroke="${RULED_MARGIN_LINE_COLOR}" stroke-width="${strokeWidth}" stroke-opacity="0.92" />`,
+    `  <line x1="0" y1="${bottomY}" x2="${formatNumber(input.pageWidth)}" y2="${bottomY}" stroke="${RULED_MARGIN_LINE_COLOR}" stroke-width="${strokeWidth}" stroke-opacity="0.92" />`
+  ].join('');
+}
+
 function buildGridDefinitions(input: NotebookPaperSvgInput): string {
+  if (input.style === 'dot-grid') {
+    const dotSpacing = input.lineHeightPx * GRID_SPACING_RATIO;
+    const dotColor = mixHexColors(input.lineColor, REFERENCE_GRID_MAJOR_LINE_FALLBACK, 0.4);
+    const dotRadius = formatNumber(Math.max(0.8, input.lineHeightPx * 0.02));
+
+    return [
+      `  <pattern id="dot-grid" x="${formatNumber(input.margins.left)}" y="${formatNumber(input.margins.top)}" width="${formatNumber(dotSpacing)}" height="${formatNumber(dotSpacing)}" patternUnits="userSpaceOnUse">`,
+      `    <circle cx="${dotRadius}" cy="${dotRadius}" r="${dotRadius}" fill="${escapeXml(dotColor)}" fill-opacity="0.8" />`,
+      '  </pattern>',
+    ].join('');
+  }
+
   const gridSpacing = input.lineHeightPx * GRID_SPACING_RATIO;
   const majorGridSpacing = gridSpacing * GRID_MAJOR_LINE_MULTIPLIER;
   const minorLineColor = mixHexColors(input.lineColor, REFERENCE_GRID_MINOR_LINE_FALLBACK, 0.48);
@@ -103,6 +128,13 @@ function buildGridField(input: NotebookPaperSvgInput): string {
     `  <rect x="${formatNumber(input.margins.left)}" y="${formatNumber(input.margins.top)}" width="${formatNumber(contentWidth)}" height="${formatNumber(contentHeight)}" fill="url(#minor-grid)" />`,
     `  <rect x="${formatNumber(input.margins.left)}" y="${formatNumber(input.margins.top)}" width="${formatNumber(contentWidth)}" height="${formatNumber(contentHeight)}" fill="url(#major-grid)" />`,
   ].join('');
+}
+
+function buildDotGridField(input: NotebookPaperSvgInput): string {
+  const contentWidth = Math.max(0, input.pageWidth - input.margins.left - input.margins.right);
+  const contentHeight = Math.max(0, input.pageHeight - input.margins.top - input.margins.bottom);
+
+  return `  <rect x="${formatNumber(input.margins.left)}" y="${formatNumber(input.margins.top)}" width="${formatNumber(contentWidth)}" height="${formatNumber(contentHeight)}" fill="url(#dot-grid)" />`;
 }
 
 function formatNumber(value: number): string {
