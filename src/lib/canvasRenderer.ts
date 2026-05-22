@@ -1,6 +1,5 @@
 import { HandwritingSettings, PageSettings } from './types';
 import { LineData } from './editorHelpers';
-import { PAGE_WIDTH, PAGE_HEIGHT } from './pageConstants';
 import { UnifiedPagePainter } from './renderer/UnifiedPagePainter';
 import { resolvePagePaper } from './paper/PaperEngine';
 
@@ -31,24 +30,22 @@ export async function renderPageToCanvas({
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Could not get canvas context');
 
-  // 1. Setup Canvas Size
-  canvas.width = PAGE_WIDTH * scale;
-  canvas.height = PAGE_HEIGHT * scale;
-  ctx.scale(scale, scale);
-
-  // 2. Handle custom background image (async)
   const resolvedPaper = resolvePagePaper({
     pageIndex,
     settings,
     pageSettings,
-    pageSize: {
-      width: PAGE_WIDTH,
-      height: PAGE_HEIGHT,
-    },
   });
+  const { pageWidth, pageHeight } = resolvedPaper.geometry;
+
+  // 1. Setup Canvas Size
+  canvas.width = Math.ceil(pageWidth * scale);
+  canvas.height = Math.ceil(pageHeight * scale);
+  ctx.scale(scale, scale);
+
+  // 2. Handle custom background image (async)
   if (resolvedPaper.background.kind === 'image') {
     const img = await loadImage(resolvedPaper.background.imageSrc);
-    ctx.drawImage(img, 0, 0, PAGE_WIDTH, PAGE_HEIGHT);
+    ctx.drawImage(img, 0, 0, pageWidth, pageHeight);
   }
 
   // 3. Delegate all rendering to UnifiedPagePainter

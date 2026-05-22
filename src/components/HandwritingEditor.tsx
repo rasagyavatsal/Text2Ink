@@ -8,7 +8,6 @@ import {
   LineData,
   defaultPageSettingsFromHandwritingSettings,
 } from '@/lib/types';
-import { PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/pageConstants';
 import type { PaginationResponse } from '@/lib/pagination';
 import {
   calculateRandomStyle,
@@ -177,6 +176,16 @@ export default function HandwritingEditor({
     [pageSettingsByPage, settings]
   );
 
+  const resolvePaperForPage = useCallback(
+    (pageIndex: number) =>
+      resolvePagePaper({
+        pageIndex,
+        settings,
+        pageSettings: getPageSettings(pageIndex),
+      }),
+    [getPageSettings, settings],
+  );
+
   const resolvedFontFamily = useMemo(() => {
     if (settings.fontFamily === 'custom' && settings.customFont) {
       return `"${settings.customFont.family}", cursive`;
@@ -243,14 +252,14 @@ export default function HandwritingEditor({
       text: localText,
       currentPageIndex,
       renderAllPagesForExport: exportingPageIndex !== null,
-      pageWidth: PAGE_WIDTH,
-      pageHeight: PAGE_HEIGHT,
       settings: {
         customBackgroundImage: settings.customBackgroundImage,
         customBackgroundImages: settings.customBackgroundImages,
         lineHeight: settings.lineHeight,
         lineColor: settings.lineColor,
         paperColor: settings.paperColor,
+        paperFormat: settings.paperFormat,
+        paperOrientation: settings.paperOrientation,
         paperStyle: settings.paperStyle,
         ruledMarginLineOffset: settings.ruledMarginLineOffset,
       },
@@ -300,6 +309,8 @@ export default function HandwritingEditor({
     resolvedFontFamily,
     settings.customBackgroundImage,
     settings.customBackgroundImages,
+    settings.paperFormat,
+    settings.paperOrientation,
     settings.lineHeight,
     settings.lineColor,
     settings.paperColor,
@@ -605,15 +616,16 @@ export default function HandwritingEditor({
       if (!pageRect) return;
 
       const ps = getPageSettings(pageIndex);
+      const resolvedPaper = resolvePaperForPage(pageIndex);
       const clientX = e.clientX;
       const x = (clientX - pageRect.left) / previewScale;
       const minLeft = 0;
-      const maxLeft = PAGE_WIDTH;
+      const maxLeft = resolvedPaper.geometry.pageWidth;
       const clampedLeft = clamp(x, minLeft, maxLeft);
       const newOffset = clampedLeft - ps.marginLeft;
 
       const minOffset = -ps.marginLeft;
-      const maxOffset = PAGE_WIDTH - ps.marginLeft;
+      const maxOffset = resolvedPaper.geometry.pageWidth - ps.marginLeft;
       const clampedOffset = clamp(newOffset, minOffset, maxOffset);
 
       if (clampedOffset === settings.ruledMarginLineOffset) return;
@@ -634,7 +646,7 @@ export default function HandwritingEditor({
       window.removeEventListener('pointerup', handleUp);
       window.removeEventListener('pointercancel', handleUp);
     };
-  }, [getPageSettings, isDraggingMarginLine, onSettingsChange, previewScale, settings]);
+  }, [getPageSettings, isDraggingMarginLine, onSettingsChange, previewScale, resolvePaperForPage, settings]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -692,15 +704,8 @@ export default function HandwritingEditor({
     (pageIndex: number, scale: number, isVisiblePreview: boolean) => {
       const pageLines = pages[pageIndex] ?? [];
       const ps = getPageSettings(pageIndex);
-      const resolvedPaper = resolvePagePaper({
-        pageIndex,
-        settings,
-        pageSettings: ps,
-        pageSize: {
-          width: PAGE_WIDTH,
-          height: PAGE_HEIGHT,
-        },
-      });
+      const resolvedPaper = resolvePaperForPage(pageIndex);
+      const { geometry } = resolvedPaper;
       const showCursorForPage = isVisiblePreview && pageIndex === currentPageIndex;
       const effectiveCursorPositionForPage = showCursorForPage && isFocused ? cursorPosition : null;
       const currentStartOffset = pageStartOffsets[pageIndex] ?? 0;
@@ -715,8 +720,8 @@ export default function HandwritingEditor({
           }}
           className="relative shadow-2xl"
           style={{
-            width: PAGE_WIDTH * scale,
-            height: PAGE_HEIGHT * scale,
+            width: geometry.pageWidth * scale,
+            height: geometry.pageHeight * scale,
           }}
           role="button"
           tabIndex={isVisiblePreview ? 0 : -1}
@@ -786,10 +791,10 @@ export default function HandwritingEditor({
               type="button"
               className="absolute border-0 bg-transparent p-0"
               style={{
-                left: (ps.marginLeft + settings.ruledMarginLineOffset - 6) * scale,
-                top: ps.marginTop * scale,
+                left: (resolvedPaper.guides.marginLineX - 6) * scale,
+                top: geometry.contentBounds.top * scale,
                 width: 14 * scale,
-                height: (PAGE_HEIGHT - ps.marginTop - ps.marginBottom) * scale,
+                height: geometry.contentBounds.height * scale,
                 cursor: 'col-resize',
                 backgroundColor: 'transparent',
               }}
@@ -823,7 +828,7 @@ export default function HandwritingEditor({
               aria-label="Drag to reposition margin line"
               role="slider"
               aria-valuemin={0}
-              aria-valuemax={PAGE_WIDTH - (ps.marginLeft + ps.marginRight)}
+              aria-valuemax={geometry.pageWidth - (ps.marginLeft + ps.marginRight)}
               aria-valuenow={settings.ruledMarginLineOffset}
               aria-orientation="vertical"
               tabIndex={0}
@@ -848,6 +853,7 @@ export default function HandwritingEditor({
       onTypingFocus,
       pageStartOffsets,
       pages,
+      resolvePaperForPage,
       resolvedFontFamily,
       selectionRange.end,
       selectionRange.start,

@@ -15,6 +15,8 @@ describe('pagination', () => {
       customBackgroundImages: [],
       lineHeight: 1.5,
       lineColor: '#a8d4f0',
+      paperFormat: 'letter',
+      paperOrientation: 'portrait',
       paperColor: '#fffef5',
       paperStyle: 'lined',
       ruledMarginLineOffset: -10,
@@ -152,6 +154,24 @@ describe('pagination', () => {
 
       // contentHeight = 900. linesPerPage = 900 / 75 = 12.
       expect(res.pages[0].length).toBe(12);
+    });
+
+    it('resolves lines per page from document paper format and orientation without a caller-supplied page box', () => {
+      const res = paginate({
+        ...defaultReq,
+        text: Array(40).fill('line').join('\n'),
+        pageWidth: undefined,
+        pageHeight: undefined,
+        settings: {
+          ...defaultReq.settings,
+          paperFormat: 'a4',
+          paperOrientation: 'landscape',
+        },
+      });
+
+      // A4 landscape height = 595.28. Content height = 595.28 - 50 - 50 = 495.28.
+      // lineHeight = 20 * 1.5 = 30, so floor(495.28 / 30) = 16 lines.
+      expect(res.pages[0]).toHaveLength(16);
     });
   });
 });

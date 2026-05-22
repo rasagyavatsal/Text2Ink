@@ -21,6 +21,8 @@ describe('canvasRenderer', () => {
     fontFamily: 'caveat',
     fontSize: 24,
     lineHeight: 1.5,
+    paperFormat: 'letter',
+    paperOrientation: 'portrait',
     paperStyle: 'lined',
     lineColor: '#000000',
     paperColor: '#ffffff',
@@ -107,6 +109,26 @@ describe('canvasRenderer', () => {
     expect(mockCanvas.width).toBe(612 * scale); // 612 is PAGE_WIDTH
     expect(mockCanvas.height).toBe(792 * scale); // 792 is PAGE_HEIGHT
     expect(mockCtx.scale).toHaveBeenCalledWith(scale, scale);
+  });
+
+  it('sizes the canvas from the resolved paper format and orientation', async () => {
+    const scale = 2;
+    await renderPageToCanvas({
+      canvas: mockCanvas,
+      pageIndex: 0,
+      lines: mockLines,
+      pageSettings: mockPageSettings,
+      settings: {
+        ...mockSettings,
+        paperFormat: 'a4',
+        paperOrientation: 'landscape',
+      },
+      scale,
+      fontFamily: 'Caveat',
+    });
+
+    expect(mockCanvas.width).toBe(Math.ceil(841.89 * scale));
+    expect(mockCanvas.height).toBe(Math.ceil(595.28 * scale));
   });
 
   it('applies correct vertical centering offset', async () => {

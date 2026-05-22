@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useRef, useEffect, useCallback, useState } from 'react';
+import React, { useRef, useEffect, useCallback, useMemo, useState } from 'react';
 import { HandwritingSettings, PageSettings } from '@/lib/types';
 import { LineData } from '@/lib/editorHelpers';
-import { PAGE_WIDTH, PAGE_HEIGHT } from '@/lib/pageConstants';
 import { UnifiedPagePainter, CharacterPosition } from '@/lib/renderer/UnifiedPagePainter';
 import { resolvePagePaper } from '@/lib/paper/PaperEngine';
 
@@ -94,6 +93,16 @@ export default function CanvasPreview({
   const isPointerDownRef = useRef(false);
   const didDragRef = useRef(false);
   const activePointerIdRef = useRef<number | null>(null);
+  const resolvedPaper = useMemo(
+    () =>
+      resolvePagePaper({
+        pageIndex,
+        settings,
+        pageSettings,
+      }),
+    [pageIndex, pageSettings, settings],
+  );
+  const { pageWidth, pageHeight } = resolvedPaper.geometry;
 
   // Cursor blink
   useEffect(() => {
@@ -110,20 +119,11 @@ export default function CanvasPreview({
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const resolvedPaper = resolvePagePaper({
-      pageIndex,
-      settings,
-      pageSettings,
-      pageSize: {
-        width: PAGE_WIDTH,
-        height: PAGE_HEIGHT,
-      },
-    });
 
     // Set physical canvas size
     const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-    canvas.width = PAGE_WIDTH * previewScale * dpr;
-    canvas.height = PAGE_HEIGHT * previewScale * dpr;
+    canvas.width = Math.ceil(pageWidth * previewScale * dpr);
+    canvas.height = Math.ceil(pageHeight * previewScale * dpr);
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -138,7 +138,7 @@ export default function CanvasPreview({
       && bgImageRef.current
       && bgImageSrcRef.current === resolvedPaper.background.imageSrc
     ) {
-      ctx.drawImage(bgImageRef.current, 0, 0, PAGE_WIDTH, PAGE_HEIGHT);
+      ctx.drawImage(bgImageRef.current, 0, 0, pageWidth, pageHeight);
     }
 
     // Paint the page content
@@ -196,20 +196,11 @@ export default function CanvasPreview({
   }, [
     lines, pageSettings, settings, pageIndex, previewScale,
     fontFamily, cursorPosition, selectionStart, selectionEnd,
-    pageStartOffset, isFocused, cursorVisible, canvasRef, backgroundImageRevision,
+    pageHeight, pageStartOffset, pageWidth, isFocused, cursorVisible, canvasRef, backgroundImageRevision,
   ]);
 
   // Load background image when it changes
   useEffect(() => {
-    const resolvedPaper = resolvePagePaper({
-      pageIndex,
-      settings,
-      pageSettings,
-      pageSize: {
-        width: PAGE_WIDTH,
-        height: PAGE_HEIGHT,
-      },
-    });
     if (resolvedPaper.background.kind !== 'image') {
       bgImageRef.current = null;
       bgImageSrcRef.current = null;
@@ -226,7 +217,7 @@ export default function CanvasPreview({
       setBackgroundImageRevision((revision) => revision + 1);
     };
     img.src = imageSrc;
-  }, [pageIndex, pageSettings, settings]);
+  }, [resolvedPaper]);
 
   useEffect(() => {
     const handleWindowPointerUp = (e: PointerEvent) => {
@@ -382,8 +373,8 @@ export default function CanvasPreview({
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
       style={{
-        width: PAGE_WIDTH * previewScale,
-        height: PAGE_HEIGHT * previewScale,
+        width: pageWidth * previewScale,
+        height: pageHeight * previewScale,
         cursor: 'text',
       }}
     />

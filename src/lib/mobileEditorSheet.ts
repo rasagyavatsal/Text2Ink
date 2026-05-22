@@ -180,13 +180,20 @@ export function getMobileSheetHandleLabel(anchor: MobileSheetAnchor) {
 export interface MobilePreviewScaleInput {
   availableWidth: number;
   availableHeight: number;
+  pageWidth?: number;
+  pageHeight?: number;
 }
 
-export function computeMobilePreviewScale({ availableWidth, availableHeight }: MobilePreviewScaleInput) {
+export function computeMobilePreviewScale({
+  availableWidth,
+  availableHeight,
+  pageWidth = PAGE_WIDTH,
+  pageHeight = PAGE_HEIGHT,
+}: MobilePreviewScaleInput) {
   const previewWidth = Math.max(0, normalizeFinite(availableWidth, 0) - MOBILE_PREVIEW_HORIZONTAL_PADDING);
   const previewHeight = Math.max(0, normalizeFinite(availableHeight, 0) - MOBILE_PREVIEW_VERTICAL_PADDING);
-  const fitWidthScale = previewWidth / PAGE_WIDTH;
-  const fitHeightScale = previewHeight / PAGE_HEIGHT;
+  const fitWidthScale = previewWidth / pageWidth;
+  const fitHeightScale = previewHeight / pageHeight;
   const fitScale = Math.min(fitWidthScale, fitHeightScale);
 
   return clamp(fitScale, MOBILE_PREVIEW_MIN_SCALE, PREVIEW_MAX_SCALE);

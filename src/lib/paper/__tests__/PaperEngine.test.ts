@@ -8,6 +8,52 @@ import {
 import { resolvePagePaper } from '../PaperEngine';
 
 describe('PaperEngine', () => {
+  it('resolves supported paper formats and orientations into concrete page geometry', () => {
+    const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      paperFormat: 'a4',
+      paperOrientation: 'landscape',
+    } as typeof DEFAULT_SETTINGS & {
+      paperFormat: 'a4';
+      paperOrientation: 'landscape';
+    };
+
+    const resolved = resolvePagePaper({
+      pageIndex: 0,
+      settings,
+      pageSettings,
+    });
+
+    expect(resolved.variant).toBe('preset');
+    expect(resolved.geometry.pageWidth).toBeCloseTo(841.89, 1);
+    expect(resolved.geometry.pageHeight).toBeCloseTo(595.28, 1);
+    expect(resolved.geometry.aspectRatio).toBeCloseTo(
+      resolved.geometry.pageWidth / resolved.geometry.pageHeight,
+      5,
+    );
+    expect(resolved.geometry.contentBounds).toMatchObject({
+      left: pageSettings.marginLeft,
+      top: pageSettings.marginTop,
+    });
+    expect(resolved.geometry.contentBounds.right).toBeCloseTo(
+      resolved.geometry.pageWidth - pageSettings.marginRight,
+      5,
+    );
+    expect(resolved.geometry.contentBounds.bottom).toBeCloseTo(
+      resolved.geometry.pageHeight - pageSettings.marginBottom,
+      5,
+    );
+    expect(resolved.geometry.contentBounds.width).toBeCloseTo(
+      resolved.geometry.pageWidth - pageSettings.marginLeft - pageSettings.marginRight,
+      5,
+    );
+    expect(resolved.geometry.contentBounds.height).toBeCloseTo(
+      resolved.geometry.pageHeight - pageSettings.marginTop - pageSettings.marginBottom,
+      5,
+    );
+  });
+
   it('resolves a built-in preset into a renderable paper model', () => {
     const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
 
