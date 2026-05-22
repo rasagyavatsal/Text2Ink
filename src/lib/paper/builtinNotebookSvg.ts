@@ -121,20 +121,14 @@ function buildGridDefinitions(input: NotebookPaperSvgInput): string {
 }
 
 function buildGridField(input: NotebookPaperSvgInput): string {
-  const contentWidth = Math.max(0, input.pageWidth - input.margins.left - input.margins.right);
-  const contentHeight = Math.max(0, input.pageHeight - input.margins.top - input.margins.bottom);
-
   return [
-    `  <rect x="${formatNumber(input.margins.left)}" y="${formatNumber(input.margins.top)}" width="${formatNumber(contentWidth)}" height="${formatNumber(contentHeight)}" fill="url(#minor-grid)" />`,
-    `  <rect x="${formatNumber(input.margins.left)}" y="${formatNumber(input.margins.top)}" width="${formatNumber(contentWidth)}" height="${formatNumber(contentHeight)}" fill="url(#major-grid)" />`,
+    `  <rect width="${formatNumber(input.pageWidth)}" height="${formatNumber(input.pageHeight)}" fill="url(#minor-grid)" />`,
+    `  <rect width="${formatNumber(input.pageWidth)}" height="${formatNumber(input.pageHeight)}" fill="url(#major-grid)" />`,
   ].join('');
 }
 
 function buildDotGridField(input: NotebookPaperSvgInput): string {
-  const contentWidth = Math.max(0, input.pageWidth - input.margins.left - input.margins.right);
-  const contentHeight = Math.max(0, input.pageHeight - input.margins.top - input.margins.bottom);
-
-  return `  <rect x="${formatNumber(input.margins.left)}" y="${formatNumber(input.margins.top)}" width="${formatNumber(contentWidth)}" height="${formatNumber(contentHeight)}" fill="url(#dot-grid)" />`;
+  return `  <rect width="${formatNumber(input.pageWidth)}" height="${formatNumber(input.pageHeight)}" fill="url(#dot-grid)" />`;
 }
 
 function formatNumber(value: number): string {
