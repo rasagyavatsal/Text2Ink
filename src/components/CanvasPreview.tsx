@@ -3,8 +3,8 @@
 import React, { useRef, useEffect, useCallback, useMemo, useState } from 'react';
 import { HandwritingSettings, PageSettings } from '@/lib/types';
 import { LineData } from '@/lib/editorHelpers';
+import { resolvePageLayout } from '@/lib/layout/LayoutEngine';
 import { UnifiedPagePainter, CharacterPosition } from '@/lib/renderer/UnifiedPagePainter';
-import { resolvePagePaper } from '@/lib/paper/PaperEngine';
 
 export interface CanvasPreviewProps {
   lines: LineData[];
@@ -93,16 +93,16 @@ export default function CanvasPreview({
   const isPointerDownRef = useRef(false);
   const didDragRef = useRef(false);
   const activePointerIdRef = useRef<number | null>(null);
-  const resolvedPaper = useMemo(
+  const resolvedLayout = useMemo(
     () =>
-      resolvePagePaper({
+      resolvePageLayout({
         pageIndex,
         settings,
         pageSettings,
       }),
     [pageIndex, pageSettings, settings],
   );
-  const { pageWidth, pageHeight } = resolvedPaper.geometry;
+  const { width: pageWidth, height: pageHeight } = resolvedLayout.page;
 
   // Cursor blink
   useEffect(() => {
@@ -134,9 +134,9 @@ export default function CanvasPreview({
 
     // Handle custom background image
     if (
-      resolvedPaper.background.kind === 'image'
+      resolvedLayout.paper.background.kind === 'image'
       && bgImageRef.current
-      && bgImageSrcRef.current === resolvedPaper.background.imageSrc
+      && bgImageSrcRef.current === resolvedLayout.paper.background.imageSrc
     ) {
       ctx.drawImage(bgImageRef.current, 0, 0, pageWidth, pageHeight);
     }
@@ -201,12 +201,12 @@ export default function CanvasPreview({
 
   // Load background image when it changes
   useEffect(() => {
-    if (resolvedPaper.background.kind !== 'image') {
+    if (resolvedLayout.paper.background.kind !== 'image') {
       bgImageRef.current = null;
       bgImageSrcRef.current = null;
       return;
     }
-    const imageSrc = resolvedPaper.background.imageSrc;
+    const imageSrc = resolvedLayout.paper.background.imageSrc;
     if (bgImageSrcRef.current === imageSrc) return;
 
     const img = new Image();
@@ -217,7 +217,7 @@ export default function CanvasPreview({
       setBackgroundImageRevision((revision) => revision + 1);
     };
     img.src = imageSrc;
-  }, [resolvedPaper]);
+  }, [resolvedLayout]);
 
   useEffect(() => {
     const handleWindowPointerUp = (e: PointerEvent) => {
