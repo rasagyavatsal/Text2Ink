@@ -7,6 +7,7 @@ import {
   type PageSettings,
   defaultPageSettingsFromHandwritingSettings,
 } from '@/lib/types';
+import { buildBuiltinNotebookPaperDataUrl } from './builtinNotebookSvg';
 
 type PaperStyle = HandwritingSettings['paperStyle'];
 
@@ -242,6 +243,20 @@ export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
     || customLineOffsetResolution.usedFallback
     || customLineSpacingResolution.usedFallback;
 
+  const presetBackground = !hasUploadBackground
+    ? resolveBuiltinPresetBackground({
+        style,
+        pageWidth,
+        pageHeight,
+        paperColor: paperColorResolution.value,
+        lineColor: lineColorResolution.value,
+        margins,
+        textTop,
+        lineHeightPx,
+        ruledMarginLineOffset: ruledMarginLineOffsetResolution.value,
+      })
+    : null;
+
   return {
     variant: hasUploadBackground
       ? 'upload'
@@ -254,17 +269,19 @@ export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
           kind: 'image',
           imageSrc: backgroundImage,
         }
-      : {
+      : presetBackground ?? {
           kind: 'solid-color',
           color: paperColorResolution.value,
         },
-    guides: resolveGuides({
+    guides: presetBackground
+      ? { kind: 'none' }
+      : resolveGuides({
       hasUploadBackground,
       style,
       lineColor: lineColorResolution.value,
       marginLeft: margins.left,
       ruledMarginLineOffset: ruledMarginLineOffsetResolution.value,
-    }),
+      }),
     geometry: {
       pageWidth,
       pageHeight,
@@ -280,6 +297,40 @@ export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
       lineHeightPx,
       lineOffset,
     },
+  };
+}
+
+function resolveBuiltinPresetBackground(input: {
+  style: PaperStyle;
+  pageWidth: number;
+  pageHeight: number;
+  paperColor: string;
+  lineColor: string;
+  margins: ResolvedPaperGeometry['margins'];
+  textTop: number;
+  lineHeightPx: number;
+  ruledMarginLineOffset: number;
+}): ResolvedPaperBackground | null {
+  if (input.style !== 'lined' && input.style !== 'ruled') {
+    return null;
+  }
+
+  return {
+    kind: 'image',
+    imageSrc: buildBuiltinNotebookPaperDataUrl({
+      style: input.style,
+      pageWidth: input.pageWidth,
+      pageHeight: input.pageHeight,
+      paperColor: input.paperColor,
+      lineColor: input.lineColor,
+      margins: input.margins,
+      textTop: input.textTop,
+      lineHeightPx: input.lineHeightPx,
+      marginLineX:
+        input.style === 'ruled'
+          ? input.margins.left + input.ruledMarginLineOffset
+          : undefined,
+    }),
   };
 }
 
