@@ -21,6 +21,7 @@ export interface NotebookPaperAlignmentMetadata {
   writingMargins: NotebookPaperBox;
   firstBaselineOffset: number;
   lineSpacing: number;
+  gridSpacing: number | null;
   ruledMarginPosition: number | null;
   safeCrop: NotebookPaperBox;
   contentArea: NotebookPaperContentArea;
@@ -28,7 +29,7 @@ export interface NotebookPaperAlignmentMetadata {
 
 export interface NotebookPaperPreset {
   id: string;
-  style: 'lined' | 'ruled';
+  style: 'lined' | 'ruled' | 'grid';
   format: PaperFormat;
   orientation: PaperOrientation;
   pageSize: {

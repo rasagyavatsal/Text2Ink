@@ -100,7 +100,7 @@ describe('UnifiedPagePainter', () => {
       expect(ctx.beginPath).not.toHaveBeenCalled();
     });
 
-    it('draws both horizontal and vertical lines for grid style', () => {
+    it('does not draw synthetic guides for built-in grid paper style', () => {
       const ctx = createMockCtx();
       const settings = { ...DEFAULT_SETTINGS, paperStyle: 'grid' as const };
       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
@@ -108,9 +108,8 @@ describe('UnifiedPagePainter', () => {
 
       UnifiedPagePainter.paintPage(opts);
 
-      // Grid draws both horizontal and vertical lines → multiple beginPath calls
-      const strokeCount = (ctx.stroke as ReturnType<typeof vi.fn>).mock.calls.length;
-      expect(strokeCount).toBeGreaterThan(1);
+      expect(ctx.beginPath).not.toHaveBeenCalled();
+      expect(ctx.stroke).not.toHaveBeenCalled();
     });
 
     it('does not draw a synthetic margin line for ruled paper style', () => {

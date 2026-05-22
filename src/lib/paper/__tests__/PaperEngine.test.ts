@@ -141,6 +141,31 @@ describe('PaperEngine', () => {
     expect(resolved.geometry.textLeft).toBe(pageSettings.marginLeft - 14 + 10);
   });
 
+  it('resolves grid presets to graph-paper artwork instead of synthetic guides', () => {
+    const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      paperStyle: 'grid',
+    } as typeof DEFAULT_SETTINGS & {
+      paperStyle: 'grid';
+    };
+
+    const resolved = resolvePagePaper({
+      pageIndex: 0,
+      settings,
+      pageSettings,
+    });
+
+    expect(resolved.variant).toBe('preset');
+    expect(resolved.style).toBe('grid');
+    expect(resolved.background.kind).toBe('image');
+    if (resolved.background.kind !== 'image') {
+      throw new Error('Expected built-in grid paper to resolve to an SVG image background.');
+    }
+    expect(decodeURIComponent(resolved.background.imageSrc)).toContain('major-grid');
+    expect(resolved.guides).toEqual({ kind: 'none' });
+  });
+
   it('falls back for legacy paper settings while preserving page geometry', () => {
     const resolved = resolvePagePaper({
       pageIndex: 0,
