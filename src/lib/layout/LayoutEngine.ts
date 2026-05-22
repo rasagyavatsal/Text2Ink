@@ -87,8 +87,6 @@ export interface PaginateDocumentInput {
   text: string;
   currentPageIndex: number;
   renderAllPagesForExport: boolean;
-  pageWidth?: number;
-  pageHeight?: number;
   settings: DocumentLayoutSettings;
   pageSettings: PageLayoutSettings[];
   fontFamily: string;
@@ -162,10 +160,6 @@ export function paginateDocument(input: PaginateDocumentInput): PaginateDocument
       pageIndex: 0,
       settings: input.settings,
       pageSettings: input.pageSettings[0],
-      pageSize:
-        input.pageWidth !== undefined || input.pageHeight !== undefined
-          ? { width: input.pageWidth, height: input.pageHeight }
-          : undefined,
     });
 
     return {
@@ -182,10 +176,6 @@ export function paginateDocument(input: PaginateDocumentInput): PaginateDocument
       pageIndex,
       settings: input.settings,
       pageSettings,
-      pageSize:
-        input.pageWidth !== undefined || input.pageHeight !== undefined
-          ? { width: input.pageWidth, height: input.pageHeight }
-          : undefined,
     });
 
     const measure = createMeasure(input.fontFamily, layout.writing.fontSize);

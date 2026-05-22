@@ -95,8 +95,6 @@ describe('LayoutEngine', () => {
         text: Array(40).fill('line').join('\n'),
         currentPageIndex: 0,
         renderAllPagesForExport: false,
-        pageWidth: 800,
-        pageHeight: 1000,
         settings: {
           customBackgroundImage: null,
           customBackgroundImages: [],
@@ -120,13 +118,13 @@ describe('LayoutEngine', () => {
         fontFamily: 'caveat',
       });
 
-      expect(result.pages[0]).toHaveLength(30);
+      expect(result.pages[0]).toHaveLength(23);
       expect(result.totalPages).toBe(2);
       expect(result.isPaginationComplete).toBe(true);
       expect(result.pageLayouts).toHaveLength(2);
-      expect(result.pageLayouts[0]?.writing.linesPerPage).toBe(30);
-      expect(result.pageLayouts[0]?.page.width).toBe(800);
-      expect(result.pageLayouts[0]?.page.height).toBe(1000);
+      expect(result.pageLayouts[0]?.writing.linesPerPage).toBe(23);
+      expect(result.pageLayouts[0]?.page.width).toBe(PAGE_WIDTH);
+      expect(result.pageLayouts[0]?.page.height).toBe(PAGE_HEIGHT);
     });
   });
 });
