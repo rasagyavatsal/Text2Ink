@@ -133,6 +133,31 @@ const PaperStyleCard = ({
              }}
            ></div>
         )}
+        {style.value === 'dot-grid' && (
+           <div 
+             className="w-full h-full"
+             style={{
+               backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(169,190,205,0.8) 1px, transparent 0)',
+               backgroundSize: '12px 12px',
+               backgroundPosition: '11px 11px'
+             }}
+           ></div>
+        )}
+        {style.value === 'cornell' && (
+           <div className="w-full h-full relative">
+             <div 
+               className="absolute inset-x-0 top-0 bottom-[20%]"
+               style={{
+                 backgroundImage: 'linear-gradient(to bottom, transparent 11px, rgba(169, 190, 205, 0.6) 11px)',
+                 backgroundSize: '100% 12px',
+                 paddingTop: '18px',
+                 backgroundClip: 'content-box'
+               }}
+             ></div>
+             <div className="absolute left-[20%] top-0 bottom-0 w-px bg-[#f39ca6]/90 z-10"></div>
+             <div className="absolute left-0 right-0 bottom-[20%] h-px bg-[#f39ca6]/90 z-10"></div>
+           </div>
+        )}
       </div>
       <span className={cn(
         "text-xs font-medium truncate w-full text-center px-1",

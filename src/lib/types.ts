@@ -141,6 +141,8 @@ export const PAPER_STYLES = [
   { name: 'Lined', value: 'lined' },
   { name: 'Ruled', value: 'ruled' },
   { name: 'Grid', value: 'grid' },
+  { name: 'Dot Grid', value: 'dot-grid' },
+  { name: 'Cornell', value: 'cornell' },
 ] as const;
 
 export const PAPER_FORMATS = [
