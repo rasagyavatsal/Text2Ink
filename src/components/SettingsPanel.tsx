@@ -95,28 +95,41 @@ const PaperStyleCard = ({
            <div className="w-full h-full"></div>
         )}
         {style.value === 'lined' && (
-           <div className="w-full h-full flex flex-col justify-evenly py-1 px-2">
-             <div className="w-full border-b border-muted-foreground/20"></div>
-             <div className="w-full border-b border-muted-foreground/20"></div>
-             <div className="w-full border-b border-muted-foreground/20"></div>
-             <div className="w-full border-b border-muted-foreground/20"></div>
-           </div>
+           <div 
+             className="w-full h-full"
+             style={{
+               backgroundImage: 'linear-gradient(to bottom, transparent 11px, rgba(169, 190, 205, 0.6) 11px)',
+               backgroundSize: '100% 12px',
+               paddingTop: '18px',
+               backgroundClip: 'content-box'
+             }}
+           ></div>
         )}
         {style.value === 'ruled' && (
-           <div className="w-full h-full flex flex-col justify-evenly py-1 pl-4 pr-2 relative">
-             <div className="absolute left-3 top-0 bottom-0 w-px bg-red-400/40"></div>
-             <div className="w-full border-b border-blue-400/30"></div>
-             <div className="w-full border-b border-blue-400/30"></div>
-             <div className="w-full border-b border-blue-400/30"></div>
-             <div className="w-full border-b border-blue-400/30"></div>
+           <div className="w-full h-full relative">
+             <div 
+               className="absolute inset-0"
+               style={{
+                 backgroundImage: 'linear-gradient(to bottom, transparent 11px, rgba(169, 190, 205, 0.6) 11px)',
+                 backgroundSize: '100% 12px',
+                 paddingTop: '18px',
+                 backgroundClip: 'content-box'
+               }}
+             ></div>
+             <div className="absolute left-[18%] top-0 bottom-0 w-px bg-[#f39ca6]/90 z-10"></div>
            </div>
         )}
         {style.value === 'grid' && (
            <div 
              className="w-full h-full"
              style={{
-               backgroundImage: 'linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px)',
-               backgroundSize: '6px 6px'
+               backgroundImage: `
+                 linear-gradient(to right, rgba(169,190,205,0.4) 1px, transparent 1px),
+                 linear-gradient(to bottom, rgba(169,190,205,0.4) 1px, transparent 1px),
+                 linear-gradient(to right, rgba(215,226,234,0.6) 1px, transparent 1px),
+                 linear-gradient(to bottom, rgba(215,226,234,0.6) 1px, transparent 1px)
+               `,
+               backgroundSize: '25px 25px, 25px 25px, 5px 5px, 5px 5px'
              }}
            ></div>
         )}
