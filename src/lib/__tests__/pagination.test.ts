@@ -1,15 +1,28 @@
 import { describe, it, expect } from 'vitest';
+import type { PaperFormat, PaperOrientation } from '../types';
 import { paginate, nextLineFrom, createMeasure, type PaginationRequest } from '../pagination';
 
 describe('pagination', () => {
+  const paginationFormatCases: Array<{
+    paperFormat: PaperFormat;
+    paperOrientation: PaperOrientation;
+    expectedLinesPerPage: number;
+    expectedTotalPages: number;
+  }> = [
+    { paperFormat: 'letter', paperOrientation: 'portrait', expectedLinesPerPage: 23, expectedTotalPages: 3 },
+    { paperFormat: 'letter', paperOrientation: 'landscape', expectedLinesPerPage: 17, expectedTotalPages: 4 },
+    { paperFormat: 'a4', paperOrientation: 'portrait', expectedLinesPerPage: 24, expectedTotalPages: 3 },
+    { paperFormat: 'a4', paperOrientation: 'landscape', expectedLinesPerPage: 16, expectedTotalPages: 4 },
+    { paperFormat: 'a3', paperOrientation: 'portrait', expectedLinesPerPage: 36, expectedTotalPages: 2 },
+    { paperFormat: 'a3', paperOrientation: 'landscape', expectedLinesPerPage: 24, expectedTotalPages: 3 },
+  ];
+
   const defaultReq: PaginationRequest = {
     type: 'paginate',
     requestId: 1,
     text: '',
     currentPageIndex: 0,
     renderAllPagesForExport: false,
-    pageWidth: 800,
-    pageHeight: 1000,
     settings: {
       customBackgroundImage: null,
       customBackgroundImages: [],
@@ -78,6 +91,26 @@ describe('pagination', () => {
   });
 
   describe('paginate', () => {
+    it.each(paginationFormatCases)(
+      'supports $paperFormat $paperOrientation pagination through resolved layouts',
+      ({ paperFormat, paperOrientation, expectedLinesPerPage, expectedTotalPages }) => {
+        const res = paginate({
+          ...defaultReq,
+          text: Array(60).fill('line').join('\n'),
+          renderAllPagesForExport: true,
+          settings: {
+            ...defaultReq.settings,
+            paperFormat,
+            paperOrientation,
+          },
+        });
+
+        expect(res.pages[0]).toHaveLength(expectedLinesPerPage);
+        expect(res.totalPages).toBe(expectedTotalPages);
+        expect(res.isPaginationComplete).toBe(true);
+      },
+    );
+
     it('returns one empty page for empty text', () => {
       const res = paginate({ ...defaultReq, text: '' });
       expect(res.pages).toHaveLength(1);
@@ -87,13 +120,13 @@ describe('pagination', () => {
     });
 
     it('paginates multiple lines and pages', () => {
-      // contentHeight = 1000 - 50 - 50 = 900
+      // Letter portrait contentHeight = 792 - 50 - 50 = 692
       // lineHeight = 20 * 1.5 = 30
-      // linesPerPage = 900 / 30 = 30
+      // linesPerPage = floor(692 / 30) = 23
       const text = Array(40).fill('line').join('\n');
       const res = paginate({ ...defaultReq, text });
       
-      expect(res.pages[0]).toHaveLength(30);
+      expect(res.pages[0]).toHaveLength(23);
       expect(res.pages).toHaveLength(2); // By default it paginates current + 1
       expect(res.totalPages).toBe(2);
       expect(res.isPaginationComplete).toBe(true);
@@ -135,8 +168,8 @@ describe('pagination', () => {
         pageSettings: [{ ...defaultReq.pageSettings[0], customLineSpacing: 100 }]
       });
       
-      // contentHeight = 900. linesPerPage = 900 / 100 = 9.
-      expect(res.pages[0].length).toBe(9);
+      // Letter portrait contentHeight = 692. linesPerPage = floor(692 / 100) = 6.
+      expect(res.pages[0].length).toBe(6);
     });
 
     it('uses page-specific uploaded paper backgrounds when resolving page geometry', () => {
@@ -152,16 +185,48 @@ describe('pagination', () => {
         pageSettings: [{ ...defaultReq.pageSettings[0], customLineSpacing: 75, customLineOffset: 12 }],
       });
 
-      // contentHeight = 900. linesPerPage = 900 / 75 = 12.
-      expect(res.pages[0].length).toBe(12);
+      // Letter portrait contentHeight = 692. linesPerPage = floor(692 / 75) = 9.
+      expect(res.pages[0].length).toBe(9);
+    });
+
+    it('returns page-specific resolved layouts for upload-backed pagination', () => {
+      const res = paginate({
+        ...defaultReq,
+        text: Array(20).fill('line').join('\n'),
+        renderAllPagesForExport: true,
+        settings: {
+          ...defaultReq.settings,
+          customBackgroundImage: 'data:image/png;base64,document-fallback',
+          customBackgroundImages: [
+            'data:image/png;base64,page-0',
+            'data:image/png;base64,page-1',
+          ],
+        },
+        pageSettings: [
+          { ...defaultReq.pageSettings[0], customLineSpacing: 75, customLineOffset: 12 },
+          { ...defaultReq.pageSettings[0], customLineSpacing: 100, customLineOffset: 4 },
+        ],
+      });
+
+      expect(res.pages.map((page) => page.length)).toEqual([9, 6, 5]);
+      expect(res.pageLayouts?.map((layout) => layout.paper.variant)).toEqual([
+        'upload',
+        'upload',
+        'upload',
+      ]);
+      expect(res.pageLayouts?.map((layout) => layout.paper.background)).toEqual([
+        { kind: 'image', imageSrc: 'data:image/png;base64,page-0' },
+        { kind: 'image', imageSrc: 'data:image/png;base64,page-1' },
+        { kind: 'image', imageSrc: 'data:image/png;base64,document-fallback' },
+      ]);
+      expect(res.pageLayouts?.map((layout) => layout.writing.lineHeightPx)).toEqual([75, 100, 100]);
+      expect(res.pageLayouts?.map((layout) => layout.writing.firstLineTop)).toEqual([62, 54, 54]);
     });
 
     it('resolves lines per page from document paper format and orientation without a caller-supplied page box', () => {
       const res = paginate({
         ...defaultReq,
         text: Array(40).fill('line').join('\n'),
-        pageWidth: undefined,
-        pageHeight: undefined,
         settings: {
           ...defaultReq.settings,
           paperFormat: 'a4',
@@ -172,6 +237,29 @@ describe('pagination', () => {
       // A4 landscape height = 595.28. Content height = 595.28 - 50 - 50 = 495.28.
       // lineHeight = 20 * 1.5 = 30, so floor(495.28 / 30) = 16 lines.
       expect(res.pages[0]).toHaveLength(16);
+    });
+
+    it('derives pagination from resolved paper format even when raw page dimensions are provided', () => {
+      const res = paginate({
+        ...defaultReq,
+        text: Array(40).fill('line').join('\n'),
+        settings: {
+          ...defaultReq.settings,
+          paperFormat: 'a4',
+          paperOrientation: 'landscape',
+        },
+        pageWidth: 800,
+        pageHeight: 1000,
+      } as PaginationRequest & {
+        pageWidth: number;
+        pageHeight: number;
+      });
+
+      // Pagination should follow the resolved A4 landscape layout rather than
+      // a caller-supplied 800x1000 box.
+      expect(res.pages[0]).toHaveLength(16);
+      expect(res.pageLayouts?.[0]?.page.width).toBeCloseTo(841.89, 1);
+      expect(res.pageLayouts?.[0]?.page.height).toBeCloseTo(595.28, 1);
     });
   });
 });
