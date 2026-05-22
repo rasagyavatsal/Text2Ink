@@ -29,7 +29,7 @@ vi.mock('lucide-react', () => {
 
 // Mock next/image
 vi.mock('next/image', () => ({
-  default: (props: any) => <img {...props} />,
+  default: ({ unoptimized: _unoptimized, ...props }: any) => <img {...props} />,
 }));
 
 describe('SettingsPanel', () => {
@@ -168,38 +168,31 @@ describe('SettingsPanel', () => {
 
   });
 
-  it('renders a paper mode switch with Built-in and Custom options', () => {
+  it('renders paper style buttons for the built-in paper presets', () => {
     render(<SettingsPanel {...defaultProps} />);
     
-    const builtInTab = screen.getByRole('radio', { name: /built-in/i });
-    const customTab = screen.getByRole('radio', { name: /custom/i });
+    const blankStyle = screen.getByRole('button', { name: /blank paper style/i });
+    const linedStyle = screen.getByRole('button', { name: /lined paper style/i });
+    const ruledStyle = screen.getByRole('button', { name: /ruled paper style/i });
+    const gridStyle = screen.getByRole('button', { name: /grid paper style/i });
     
-    expect(builtInTab).toBeInTheDocument();
-    expect(customTab).toBeInTheDocument();
+    expect(blankStyle).toBeInTheDocument();
+    expect(linedStyle).toBeInTheDocument();
+    expect(ruledStyle).toBeInTheDocument();
+    expect(gridStyle).toBeInTheDocument();
   });
 
-  it('shows Size and Orientation pickers in Built-in mode, and hides them in Custom mode', () => {
-    const { rerender } = render(<SettingsPanel {...defaultProps} />);
-    
-    // Switch to built-in mode explicitly
-    fireEvent.click(screen.getByRole('radio', { name: /built-in/i }));
-    
-    expect(screen.getByLabelText(/Paper Style/i)).toBeInTheDocument();
+  it('keeps paper style, size, and orientation controls available in the layout section', () => {
+    render(<SettingsPanel {...defaultProps} />);
+
+    expect(screen.getByRole('button', { name: /blank paper style/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /lined paper style/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/Size/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Orientation/i)).toBeInTheDocument();
-    
-    // Switch to custom mode
-    fireEvent.click(screen.getByRole('radio', { name: /custom/i }));
-    
-    expect(screen.queryByLabelText(/Paper Style/i)).not.toBeInTheDocument();
-    expect(screen.queryByLabelText(/Size/i)).not.toBeInTheDocument();
-    expect(screen.queryByLabelText(/Orientation/i)).not.toBeInTheDocument();
   });
 
   it('hides preset-owned alignment controls for preset-backed built-in papers', () => {
     render(<SettingsPanel {...defaultProps} />);
-
-    fireEvent.click(screen.getByRole('radio', { name: /built-in/i }));
 
     expect(screen.queryByText('Line Height')).not.toBeInTheDocument();
     expect(screen.queryByText('Top Margin')).not.toBeInTheDocument();
@@ -209,7 +202,7 @@ describe('SettingsPanel', () => {
     expect(screen.queryByText('Margin Line Offset')).not.toBeInTheDocument();
   });
 
-  it('keeps alignment controls available for blank built-in paper', () => {
+  it('keeps blank-paper line height controls available without upload-only margin sliders', () => {
     render(
       <SettingsPanel
         {...defaultProps}
@@ -217,27 +210,19 @@ describe('SettingsPanel', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('radio', { name: /built-in/i }));
-
     expect(screen.getByText('Line Height')).toBeInTheDocument();
-    expect(screen.getByText('Top Margin')).toBeInTheDocument();
-    expect(screen.getByText('Bottom Margin')).toBeInTheDocument();
-    expect(screen.getByText('Left Margin')).toBeInTheDocument();
-    expect(screen.getByText('Right Margin')).toBeInTheDocument();
+    expect(screen.queryByText('Top Margin')).not.toBeInTheDocument();
+    expect(screen.queryByText('Bottom Margin')).not.toBeInTheDocument();
+    expect(screen.queryByText('Left Margin')).not.toBeInTheDocument();
+    expect(screen.queryByText('Right Margin')).not.toBeInTheDocument();
   });
 
-  it('hides Custom Background upload and line detection in Built-in mode', () => {
+  it('keeps custom background upload visible and only shows line detection when a background exists', () => {
     // First render with no custom background
     const { rerender } = render(<SettingsPanel {...defaultProps} />);
     
-    // Custom Background should be hidden in Built-in mode
-    fireEvent.click(screen.getByRole('radio', { name: /built-in/i }));
-    expect(screen.queryByText(/Upload PNG or JPG/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Auto-Detect Lines/i })).not.toBeInTheDocument();
-    
-    // Custom Background should be visible in Custom mode
-    fireEvent.click(screen.getByRole('radio', { name: /custom/i }));
     expect(screen.getByText(/Upload PNG or JPG/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Auto-Detect Lines/i })).not.toBeInTheDocument();
 
     // Now render with a custom background
     const settingsWithBg = {
@@ -249,19 +234,12 @@ describe('SettingsPanel', () => {
     
     // Should show Auto-Detect Lines in Custom mode since we have a background
     expect(screen.getByRole('button', { name: /Auto-Detect Lines/i })).toBeInTheDocument();
-
-    // But it should be hidden when switching back to Built-in mode
-    fireEvent.click(screen.getByRole('radio', { name: /built-in/i }));
-    expect(screen.queryByRole('button', { name: /Auto-Detect Lines/i })).not.toBeInTheDocument();
   });
 
-  it('hides paperColor and lineColor for non-blank Built-in papers', () => {
+  it('shows paper color and hides line color for preset-backed built-in papers', () => {
     render(<SettingsPanel {...defaultProps} />);
-    
-    fireEvent.click(screen.getByRole('radio', { name: /built-in/i }));
-    
-    // Lined paper (default) should not show Paper Color and Line Color
-    expect(screen.queryByText('Paper Color')).not.toBeInTheDocument();
+
+    expect(screen.getByText('Paper Color')).toBeInTheDocument();
     expect(screen.queryByText('Line Color')).not.toBeInTheDocument();
   });
 });

@@ -60,16 +60,22 @@ import {
 
 const PaperStyleCard = ({
   style,
+  paperColor,
   isSelected,
   onClick,
 }: {
   style: { name: string; value: string };
+  paperColor: string;
   isSelected: boolean;
   onClick: () => void;
 }) => {
   return (
-    <div
+    <button
+      type="button"
       onClick={onClick}
+      aria-label={`${style.name} paper style`}
+      aria-pressed={isSelected}
+      data-testid={`paper-style-card-${style.value}`}
       className={cn(
         "cursor-pointer rounded-xl p-2 flex flex-col items-center gap-2 transition-all border w-full h-full",
         isSelected 
@@ -78,13 +84,15 @@ const PaperStyleCard = ({
       )}
     >
       <div 
+        data-testid={`paper-style-preview-${style.value}`}
         className={cn(
-          "w-full aspect-[1/1.4] rounded-lg flex flex-col overflow-hidden transition-colors border border-border/50 bg-white relative",
+          "w-full aspect-[1/1.4] rounded-lg flex flex-col overflow-hidden transition-colors border border-border/50 relative",
           isSelected ? "shadow-sm" : ""
         )}
+        style={{ backgroundColor: paperColor }}
       >
         {style.value === 'blank' && (
-           <div className="w-full h-full bg-white"></div>
+           <div className="w-full h-full"></div>
         )}
         {style.value === 'lined' && (
            <div className="w-full h-full flex flex-col justify-evenly py-1 px-2">
@@ -95,7 +103,7 @@ const PaperStyleCard = ({
            </div>
         )}
         {style.value === 'ruled' && (
-           <div className="w-full h-full flex flex-col justify-evenly py-1 pl-4 pr-2 relative bg-[#fffdf8]">
+           <div className="w-full h-full flex flex-col justify-evenly py-1 pl-4 pr-2 relative">
              <div className="absolute left-3 top-0 bottom-0 w-px bg-red-400/40"></div>
              <div className="w-full border-b border-blue-400/30"></div>
              <div className="w-full border-b border-blue-400/30"></div>
@@ -119,7 +127,7 @@ const PaperStyleCard = ({
       )}>
         {style.name}
       </span>
-    </div>
+    </button>
   );
 };
 
@@ -638,6 +646,7 @@ export default function SettingsPanel({
                   <div key={style.value} className="snap-start">
                     <PaperStyleCard
                       style={{ name: style.name, value: style.value }}
+                      paperColor={settings.paperColor}
                       isSelected={settings.paperStyle === style.value}
                       onClick={() =>
                         updateBuiltinSelection({
@@ -937,25 +946,23 @@ export default function SettingsPanel({
             </div>
           </div>
 
-          {(hasCustomBackground || settings.paperStyle === 'blank') && (
-            <div className="flex flex-col gap-3">
-              <Label className="text-sm font-medium">Paper Color</Label>
-              <div className="flex flex-wrap gap-2 p-2 bg-secondary border border-border rounded-lg">
-                {PAPER_COLORS.map((color) => (
-                  <button
-                    key={color.value}
-                    onClick={() => updateSetting('paperColor', color.value)}
-                    className={`w-8 h-8 rounded-md border-2 transition-all shadow-sm ${settings.paperColor === color.value
-                      ? 'border-brand-accent scale-110'
-                      : 'border-transparent hover:border-border hover:scale-105'
-                      }`}
-                    style={{ backgroundColor: color.value }}
-                    title={color.name}
-                  />
-                ))}
-              </div>
+          <div className="flex flex-col gap-3">
+            <Label className="text-sm font-medium">Paper Color</Label>
+            <div className="flex flex-wrap gap-2 p-2 bg-secondary border border-border rounded-lg">
+              {PAPER_COLORS.map((color) => (
+                <button
+                  key={color.value}
+                  onClick={() => updateSetting('paperColor', color.value)}
+                  className={`w-8 h-8 rounded-md border-2 transition-all shadow-sm ${settings.paperColor === color.value
+                    ? 'border-brand-accent scale-110'
+                    : 'border-transparent hover:border-border hover:scale-105'
+                    }`}
+                  style={{ backgroundColor: color.value }}
+                  title={color.name}
+                />
+              ))}
             </div>
-          )}
+          </div>
 
           {hasCustomBackground && (
             <div className="flex flex-col gap-3">
