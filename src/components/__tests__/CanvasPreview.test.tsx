@@ -4,18 +4,21 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import CanvasPreview from '../CanvasPreview';
 import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '@/lib/types';
 
-const { paintPage, computeCharacterPositions, paintCursorOverlay, paintSelectionOverlay } = vi.hoisted(() => ({
-  paintPage: vi.fn(),
-  computeCharacterPositions: vi.fn(),
+const { renderPage, paintCursorOverlay, paintSelectionOverlay } = vi.hoisted(() => ({
+  renderPage: vi.fn(),
   paintCursorOverlay: vi.fn(),
   paintSelectionOverlay: vi.fn(),
 }));
 const getBoundingClientRectSpy = vi.spyOn(HTMLCanvasElement.prototype, 'getBoundingClientRect');
 
+vi.mock('@/lib/renderer/PageRenderEngine', () => ({
+  pageRenderEngine: {
+    renderPage,
+  },
+}));
+
 vi.mock('@/lib/renderer/UnifiedPagePainter', () => ({
   UnifiedPagePainter: {
-    paintPage,
-    computeCharacterPositions,
     paintCursorOverlay,
     paintSelectionOverlay,
   },
@@ -33,11 +36,13 @@ const defaultProps = {
 describe('CanvasPreview', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    computeCharacterPositions.mockReturnValue({
-      mainPositions: [
+    renderPage.mockResolvedValue({
+      layout: {} as never,
+      characterPositions: [
         { x: 0, y: 0, width: 10, height: 20, lineIndex: 0, charIndex: 0 },
         { x: 10, y: 0, width: 10, height: 20, lineIndex: 0, charIndex: 1 },
       ],
+      pendingBackground: null,
     });
     getBoundingClientRectSpy.mockReturnValue({
       left: 0,
@@ -73,6 +78,7 @@ describe('CanvasPreview', () => {
         <CanvasPreview {...defaultProps} />
       </div>
     );
+    await waitFor(() => expect(renderPage).toHaveBeenCalled());
 
     fireEvent.pointerDown(screen.getByRole('img'), { pointerId: 1 });
     fireEvent.mouseDown(screen.getByRole('img'));
@@ -94,6 +100,7 @@ describe('CanvasPreview', () => {
         onCharMouseMove={onCharMouseMove}
       />
     );
+    await waitFor(() => expect(renderPage).toHaveBeenCalled());
 
     const canvas = screen.getByRole('img');
     fireEvent.pointerDown(canvas, { clientX: 4, clientY: 5, pointerId: 1 });
@@ -117,6 +124,7 @@ describe('CanvasPreview', () => {
         onCharTripleClick={onCharTripleClick}
       />
     );
+    await waitFor(() => expect(renderPage).toHaveBeenCalled());
 
     const canvas = screen.getByRole('img');
     fireEvent.doubleClick(canvas, { clientX: 4, clientY: 5 });
@@ -130,14 +138,15 @@ describe('CanvasPreview', () => {
     const onCharClick = vi.fn();
 
     render(<CanvasPreview {...defaultProps} onCharClick={onCharClick} onCharMouseMove={vi.fn()} onCharMouseDown={vi.fn()} />);
+    return waitFor(() => expect(renderPage).toHaveBeenCalled()).then(() => {
+      const canvas = screen.getByRole('img');
+      fireEvent.pointerDown(canvas, { clientX: 4, clientY: 5, pointerId: 1 });
+      fireEvent.pointerMove(canvas, { clientX: 14, clientY: 5, pointerId: 1 });
+      fireEvent.pointerUp(window, { pointerId: 1 });
+      fireEvent.click(canvas, { clientX: 4, clientY: 5 });
 
-    const canvas = screen.getByRole('img');
-    fireEvent.pointerDown(canvas, { clientX: 4, clientY: 5, pointerId: 1 });
-    fireEvent.pointerMove(canvas, { clientX: 14, clientY: 5, pointerId: 1 });
-    fireEvent.pointerUp(window, { pointerId: 1 });
-    fireEvent.click(canvas, { clientX: 4, clientY: 5 });
-
-    expect(onCharClick).toHaveBeenCalledWith(0, true);
+      expect(onCharClick).toHaveBeenCalledWith(0, true);
+    });
   });
 
   it('sizes the preview canvas from the resolved document paper geometry', () => {
