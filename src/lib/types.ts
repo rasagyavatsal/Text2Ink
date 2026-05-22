@@ -45,6 +45,7 @@ export interface HandwritingSettings {
   marginBottom: number;
   marginLeft: number;
   marginRight: number;
+  paperPresetId?: string | null;
   paperFormat: PaperFormat;
   paperOrientation: PaperOrientation;
   ruledMarginLineOffset: number;

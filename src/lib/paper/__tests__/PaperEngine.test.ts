@@ -100,6 +100,39 @@ describe('PaperEngine', () => {
     });
   });
 
+  it('resolves an explicit preset identifier ahead of legacy paper settings', () => {
+    const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      paperPresetId: 'grid-a4-landscape',
+      paperStyle: 'blank',
+      paperFormat: 'letter',
+      paperOrientation: 'portrait',
+    } as typeof DEFAULT_SETTINGS & {
+      paperPresetId: string;
+      paperStyle: 'blank';
+      paperFormat: 'letter';
+      paperOrientation: 'portrait';
+    };
+
+    const resolved = resolvePagePaper({
+      pageIndex: 0,
+      settings,
+      pageSettings,
+    });
+
+    expect(resolved.variant).toBe('preset');
+    expect(resolved.style).toBe('grid');
+    expect(resolved.background.kind).toBe('image');
+    if (resolved.background.kind !== 'image') {
+      throw new Error('Expected explicit built-in preset ids to resolve to an image background.');
+    }
+    expect(resolved.background.imageSrc).toBe('/paper-presets/grid-a4-landscape.svg');
+    expect(resolved.preset?.id).toBe('grid-a4-landscape');
+    expect(resolved.geometry.pageWidth).toBeCloseTo(841.89, 1);
+    expect(resolved.geometry.pageHeight).toBeCloseTo(595.28, 1);
+  });
+
   it('resolves uploaded backgrounds without exposing paper-line branching to callers', () => {
     const pageSettings = {
       ...defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
@@ -257,6 +290,52 @@ describe('PaperEngine', () => {
       throw new Error('Expected unsupported built-in paper requests to fall back explicitly.');
     }
     expect(resolved.background.imageSrc).toMatch(/^data:image\/svg\+xml/);
+  });
+
+  it('maps documents without a preset identifier onto the default built-in preset', () => {
+    const resolved = resolvePagePaper({
+      pageIndex: 0,
+    });
+
+    expect(resolved.variant).toBe('preset');
+    expect(resolved.style).toBe(DEFAULT_SETTINGS.paperStyle);
+    expect(resolved.background.kind).toBe('image');
+    if (resolved.background.kind !== 'image') {
+      throw new Error('Expected default legacy documents to resolve to the registered default preset.');
+    }
+    expect(resolved.background.imageSrc).toBe('/paper-presets/lined-letter-portrait.svg');
+    expect(resolved.preset?.id).toBe('lined-letter-portrait');
+  });
+
+  it('falls back from an unknown preset identifier to deterministic legacy mapping', () => {
+    const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      paperPresetId: 'missing-preset-id',
+      paperStyle: 'grid',
+      paperFormat: 'a4',
+      paperOrientation: 'landscape',
+    } as typeof DEFAULT_SETTINGS & {
+      paperPresetId: string;
+      paperStyle: 'grid';
+      paperFormat: 'a4';
+      paperOrientation: 'landscape';
+    };
+
+    const resolved = resolvePagePaper({
+      pageIndex: 0,
+      settings,
+      pageSettings,
+    });
+
+    expect(resolved.variant).toBe('preset');
+    expect(resolved.style).toBe('grid');
+    expect(resolved.background.kind).toBe('image');
+    if (resolved.background.kind !== 'image') {
+      throw new Error('Expected legacy mapping to recover a registered built-in preset.');
+    }
+    expect(resolved.background.imageSrc).toBe('/paper-presets/grid-a4-landscape.svg');
+    expect(resolved.preset?.id).toBe('grid-a4-landscape');
   });
 
   it('falls back for legacy paper settings while preserving page geometry', () => {
