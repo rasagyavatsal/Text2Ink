@@ -27,6 +27,8 @@ import {
   HANDWRITING_FONTS,
   PAPER_STYLES,
   PAPER_COLORS,
+  PAPER_FORMATS,
+  PAPER_ORIENTATIONS,
   LineData,
   FontOption,
 } from '@/lib/types';
@@ -133,6 +135,12 @@ export default function SettingsPanel({
   const [lineDetecting, setLineDetecting] = useState(false);
   const [lineDetectError, setLineDetectError] = useState<string | null>(null);
   const [lineDetectInfo, setLineDetectInfo] = useState<{ offset: number; spacing: number } | null>(null);
+
+  const [paperMode, setPaperMode] = useState<'builtin' | 'custom'>(
+    (settings.customBackgroundImages?.length ?? 0) > 0 || !!settings.customBackgroundImage
+      ? 'custom'
+      : 'builtin'
+  );
 
   const hasCustomBackground =
     (settings.customBackgroundImages?.length ?? 0) > 0 || !!settings.customBackgroundImage;
@@ -544,26 +552,99 @@ export default function SettingsPanel({
         </div>
 
         <div className="space-y-6">
-          <div className="flex flex-col gap-3">
-            <Label className="text-sm font-medium" htmlFor="paper-style">Paper Style</Label>
-            <Select
-              value={settings.paperStyle}
-              onValueChange={(value) =>
-                updateSetting('paperStyle', value as HandwritingSettings['paperStyle'])
-              }
+          <div role="radiogroup" aria-label="Paper Mode" className="flex bg-secondary p-1 rounded-lg gap-1">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={paperMode === 'builtin'}
+              onClick={() => setPaperMode('builtin')}
+              className={cn(
+                "flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-all",
+                paperMode === 'builtin' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              )}
             >
-              <SelectTrigger id="paper-style" className="w-full h-10">
-                <SelectValue placeholder="Select paper style" />
-              </SelectTrigger>
-              <SelectContent>
-                {PAPER_STYLES.map((style) => (
-                  <SelectItem key={style.value} value={style.value}>
-                    {style.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              Built-in Papers
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={paperMode === 'custom'}
+              onClick={() => setPaperMode('custom')}
+              className={cn(
+                "flex-1 px-3 py-1.5 text-sm font-medium rounded-md transition-all",
+                paperMode === 'custom' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Custom Background
+            </button>
           </div>
+
+          {paperMode === 'builtin' && (
+            <>
+              <div className="flex flex-col gap-3">
+                <Label className="text-sm font-medium" htmlFor="paper-style">Paper Style</Label>
+                <Select
+                  value={settings.paperStyle}
+                  onValueChange={(value) =>
+                    updateSetting('paperStyle', value as HandwritingSettings['paperStyle'])
+                  }
+                >
+                  <SelectTrigger id="paper-style" className="w-full h-10">
+                    <SelectValue placeholder="Select paper style" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAPER_STYLES.map((style) => (
+                      <SelectItem key={style.value} value={style.value}>
+                        {style.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <Label className="text-sm font-medium" htmlFor="paper-format">Size</Label>
+                <Select
+                  value={settings.paperFormat}
+                  onValueChange={(value) =>
+                    updateSetting('paperFormat', value as HandwritingSettings['paperFormat'])
+                  }
+                >
+                  <SelectTrigger id="paper-format" className="w-full h-10">
+                    <SelectValue placeholder="Select size" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAPER_FORMATS.map((format) => (
+                      <SelectItem key={format.value} value={format.value}>
+                        {format.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <Label className="text-sm font-medium" htmlFor="paper-orientation">Orientation</Label>
+                <Select
+                  value={settings.paperOrientation}
+                  onValueChange={(value) =>
+                    updateSetting('paperOrientation', value as HandwritingSettings['paperOrientation'])
+                  }
+                >
+                  <SelectTrigger id="paper-orientation" className="w-full h-10">
+                    <SelectValue placeholder="Select orientation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAPER_ORIENTATIONS.map((orientation) => (
+                      <SelectItem key={orientation.value} value={orientation.value}>
+                        {orientation.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
 
           <div className="grid grid-cols-2 gap-x-4 gap-y-8">
             <div className="flex flex-col gap-3">
@@ -631,7 +712,7 @@ export default function SettingsPanel({
             </div>
           </div>
 
-          {settings.paperStyle === 'ruled' && (
+          {paperMode === 'builtin' && settings.paperStyle === 'ruled' && (
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <Label className="text-sm font-medium">Margin Line Offset</Label>
@@ -649,8 +730,10 @@ export default function SettingsPanel({
             </div>
           )}
 
-          <div className="flex flex-col gap-2">
-            <Label className="text-sm font-medium">Custom Background Image</Label>
+          {paperMode === 'custom' && (
+            <>
+              <div className="flex flex-col gap-2">
+                <Label className="text-sm font-medium">Custom Background Image</Label>
             <div className="space-y-3">
               {effectiveBackgroundImages.length > 0 && (
                 <div className="space-y-2">
@@ -796,6 +879,10 @@ export default function SettingsPanel({
               </div>
             </div>
           )}
+          {/* Close custom mode block */}
+          {paperMode === 'custom' && null /* Just a structural closing if needed, but we used Fragments. Actually we should close the fragment here */}
+          {paperMode === 'custom' && null}
+          </>)}
         </div>
       </div>
 
@@ -821,25 +908,27 @@ export default function SettingsPanel({
             </div>
           </div>
 
-          <div className="flex flex-col gap-3">
-            <Label className="text-sm font-medium">Paper Color</Label>
-            <div className="flex flex-wrap gap-2 p-2 bg-secondary border border-border rounded-lg">
-              {PAPER_COLORS.map((color) => (
-                <button
-                  key={color.value}
-                  onClick={() => updateSetting('paperColor', color.value)}
-                  className={`w-8 h-8 rounded-md border-2 transition-all shadow-sm ${settings.paperColor === color.value
-                    ? 'border-brand-accent scale-110'
-                    : 'border-transparent hover:border-border hover:scale-105'
-                    }`}
-                  style={{ backgroundColor: color.value }}
-                  title={color.name}
-                />
-              ))}
+          {!(paperMode === 'builtin' && settings.paperStyle !== 'blank') && (
+            <div className="flex flex-col gap-3">
+              <Label className="text-sm font-medium">Paper Color</Label>
+              <div className="flex flex-wrap gap-2 p-2 bg-secondary border border-border rounded-lg">
+                {PAPER_COLORS.map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => updateSetting('paperColor', color.value)}
+                    className={`w-8 h-8 rounded-md border-2 transition-all shadow-sm ${settings.paperColor === color.value
+                      ? 'border-brand-accent scale-110'
+                      : 'border-transparent hover:border-border hover:scale-105'
+                      }`}
+                    style={{ backgroundColor: color.value }}
+                    title={color.name}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
-          {settings.paperStyle !== 'blank' && (
+          {!(paperMode === 'builtin' && settings.paperStyle !== 'blank') && settings.paperStyle !== 'blank' && (
             <div className="flex flex-col gap-3">
               <Label className="text-sm font-medium">Line Color</Label>
               <div className="flex items-center gap-3 p-2 bg-secondary border border-border rounded-lg">
