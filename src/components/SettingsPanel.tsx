@@ -509,7 +509,7 @@ export default function SettingsPanel({
             />
           </div>
 
-          {!hasCustomBackground && (
+          {paperMode === 'builtin' && (
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <Label className="text-sm font-medium">Line Height</Label>
@@ -814,7 +814,7 @@ export default function SettingsPanel({
             </div>
           </div>
 
-          {hasCustomBackground && (
+          {hasCustomBackground && paperMode === 'custom' && (
             <div className="space-y-6 pt-2">
               <div className="flex flex-col gap-3">
                 <Button

@@ -197,7 +197,8 @@ describe('SettingsPanel', () => {
   });
 
   it('hides Custom Background upload and line detection in Built-in mode', () => {
-    render(<SettingsPanel {...defaultProps} />);
+    // First render with no custom background
+    const { rerender } = render(<SettingsPanel {...defaultProps} />);
     
     // Custom Background should be hidden in Built-in mode
     fireEvent.click(screen.getByRole('radio', { name: /built-in/i }));
@@ -207,6 +208,21 @@ describe('SettingsPanel', () => {
     // Custom Background should be visible in Custom mode
     fireEvent.click(screen.getByRole('radio', { name: /custom/i }));
     expect(screen.getByText(/Upload PNG or JPG/i)).toBeInTheDocument();
+
+    // Now render with a custom background
+    const settingsWithBg = {
+      ...defaultProps.settings,
+      customBackgroundImage: 'data:image/png;base64,mock',
+      customBackgroundImages: ['data:image/png;base64,mock'],
+    };
+    rerender(<SettingsPanel {...defaultProps} settings={settingsWithBg} />);
+    
+    // Should show Auto-Detect Lines in Custom mode since we have a background
+    expect(screen.getByRole('button', { name: /Auto-Detect Lines/i })).toBeInTheDocument();
+
+    // But it should be hidden when switching back to Built-in mode
+    fireEvent.click(screen.getByRole('radio', { name: /built-in/i }));
+    expect(screen.queryByRole('button', { name: /Auto-Detect Lines/i })).not.toBeInTheDocument();
   });
 
   it('hides paperColor and lineColor for non-blank Built-in papers', () => {
