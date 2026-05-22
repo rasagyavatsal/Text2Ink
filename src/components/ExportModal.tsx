@@ -13,7 +13,7 @@ import {
 import { Download, FileImage, FileText, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { DEFAULT_SETTINGS, HandwritingSettings, PageSettings, LineData } from '@/lib/types';
 import { renderPageToCanvas } from '@/lib/canvasRenderer';
-import { resolvePagePaper } from '@/lib/paper/PaperEngine';
+import { resolvePageLayout } from '@/lib/layout/LayoutEngine';
 import {
   Dialog,
   DialogContent,
@@ -215,7 +215,7 @@ export default function ExportModal({
           
           const pageLines = currentPages[i] || [];
           const pageSettings = pageSettingsByPage[i] || pageSettingsByPage[0];
-          const resolvedPaper = resolvePagePaper({
+          const resolvedLayout = resolvePageLayout({
             pageIndex: i,
             settings,
             pageSettings,
@@ -239,8 +239,8 @@ export default function ExportModal({
             type: 'addPage',
             payload: {
               imgData: arrayBuffer,
-              width: resolvedPaper.geometry.pageWidth,
-              height: resolvedPaper.geometry.pageHeight,
+              width: resolvedLayout.page.width,
+              height: resolvedLayout.page.height,
               isFirstPage: i === 0
             }
           }, [arrayBuffer]);

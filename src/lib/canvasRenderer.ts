@@ -1,7 +1,7 @@
 import { HandwritingSettings, PageSettings } from './types';
 import { LineData } from './editorHelpers';
+import { resolvePageLayout } from './layout/LayoutEngine';
 import { UnifiedPagePainter } from './renderer/UnifiedPagePainter';
-import { resolvePagePaper } from './paper/PaperEngine';
 
 interface RenderPageOptions {
   canvas: HTMLCanvasElement;
@@ -30,12 +30,12 @@ export async function renderPageToCanvas({
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Could not get canvas context');
 
-  const resolvedPaper = resolvePagePaper({
+  const resolvedLayout = resolvePageLayout({
     pageIndex,
     settings,
     pageSettings,
   });
-  const { pageWidth, pageHeight } = resolvedPaper.geometry;
+  const { width: pageWidth, height: pageHeight } = resolvedLayout.page;
 
   // 1. Setup Canvas Size
   canvas.width = Math.ceil(pageWidth * scale);
@@ -43,8 +43,8 @@ export async function renderPageToCanvas({
   ctx.scale(scale, scale);
 
   // 2. Handle custom background image (async)
-  if (resolvedPaper.background.kind === 'image') {
-    const img = await loadImage(resolvedPaper.background.imageSrc);
+  if (resolvedLayout.paper.background.kind === 'image') {
+    const img = await loadImage(resolvedLayout.paper.background.imageSrc);
     ctx.drawImage(img, 0, 0, pageWidth, pageHeight);
   }
 

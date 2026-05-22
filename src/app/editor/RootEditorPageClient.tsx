@@ -25,8 +25,8 @@ import {
   LineData,
 } from '@/lib/types';
 import { loadEditorStateV1, saveEditorStateV1 } from '@/lib/editorPersistence';
+import { resolvePageLayout } from '@/lib/layout/LayoutEngine';
 import { applyPageSettingsToAll } from '@/lib/settingsHelpers';
-import { resolvePagePaper } from '@/lib/paper/PaperEngine';
 import {
   clampMobileSheetHeight,
   clampPreviewScale as clampEditorPreviewScale,
@@ -216,9 +216,9 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
     ? clampMobileSheetHeight(mobileSheetHeight ?? mobileSheetMetrics.defaultSheetHeight, mobileSheetMetrics)
     : 0;
   const mobileStablePreviewAvailableHeight = Math.max(0, viewportSize.height - headerHeight);
-  const currentPreviewPaper = useMemo(
+  const currentPreviewLayout = useMemo(
     () =>
-      resolvePagePaper({
+      resolvePageLayout({
         pageIndex: currentPageIndex,
         settings,
         pageSettings:
@@ -231,12 +231,12 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       computeMobilePreviewScale({
         availableWidth: viewportSize.width,
         availableHeight: mobileStablePreviewAvailableHeight,
-        pageWidth: currentPreviewPaper.geometry.pageWidth,
-        pageHeight: currentPreviewPaper.geometry.pageHeight,
+        pageWidth: currentPreviewLayout.page.width,
+        pageHeight: currentPreviewLayout.page.height,
       }),
     [
-      currentPreviewPaper.geometry.pageHeight,
-      currentPreviewPaper.geometry.pageWidth,
+      currentPreviewLayout.page.height,
+      currentPreviewLayout.page.width,
       mobileStablePreviewAvailableHeight,
       viewportSize.width,
     ],

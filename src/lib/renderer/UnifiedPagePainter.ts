@@ -1,6 +1,6 @@
 import { HandwritingSettings, PageSettings, TextField } from '../types';
 import { LineData, calculateRandomStyle } from '../editorHelpers';
-import { type ResolvedPaper, resolvePagePaper } from '../paper/PaperEngine';
+import { type ResolvedPageLayout, resolvePageLayout } from '../layout/LayoutEngine';
 
 export interface PaintPageOptions {
   ctx: CanvasRenderingContext2D;
@@ -156,38 +156,39 @@ function buildCharacterPositionsForLines(opts: {
 export const UnifiedPagePainter = {
   paintPage(opts: PaintPageOptions): void {
     const { ctx, pageIndex, lines, pageSettings, settings, fontFamily, renderTextFields = true } = opts;
-    const resolvedPaper = resolvePagePaper({
+    const resolvedLayout = resolvePageLayout({
       pageIndex,
       settings,
       pageSettings,
     });
-    const { pageWidth, pageHeight } = resolvedPaper.geometry;
+    const { page, paper, writing } = resolvedLayout;
+    const { width: pageWidth, height: pageHeight } = page;
 
     // 1. Draw background
-    if (resolvedPaper.background.kind === 'solid-color') {
-      ctx.fillStyle = resolvedPaper.background.color;
+    if (paper.background.kind === 'solid-color') {
+      ctx.fillStyle = paper.background.color;
       ctx.fillRect(0, 0, pageWidth, pageHeight);
     }
     // Note: custom background images are drawn asynchronously via drawBackgroundImage()
 
     // 2. Draw paper lines
-    if (resolvedPaper.guides.kind !== 'none') {
-      this._drawPaperGuides(ctx, resolvedPaper);
+    if (paper.guides.kind !== 'none') {
+      this._drawPaperGuides(ctx, resolvedLayout);
     }
 
     // 3. Draw main text
-    const pageLineHeightPx = resolvedPaper.geometry.lineHeightPx;
+    const pageLineHeightPx = writing.lineHeightPx;
 
-    ctx.font = `${resolvedPaper.geometry.fontSize}px ${fontFamily}`;
+    ctx.font = `${writing.fontSize}px ${fontFamily}`;
     ctx.fillStyle = pageSettings.inkColor;
     ctx.textBaseline = 'alphabetic';
 
     // Compute vertical centering offset
-    const halfLeading = (pageLineHeightPx - resolvedPaper.geometry.fontSize) / 2;
+    const halfLeading = (pageLineHeightPx - writing.fontSize) / 2;
     const sampleMetrics = ctx.measureText('Ajpqy');
     const fontAscent = sampleMetrics.fontBoundingBoxAscent
       ?? sampleMetrics.actualBoundingBoxAscent
-      ?? (resolvedPaper.geometry.fontSize * 0.85);
+      ?? (writing.fontSize * 0.85);
     const verticalCenteringOffset = halfLeading + fontAscent;
 
     ctx.save();
@@ -196,9 +197,17 @@ export const UnifiedPagePainter = {
       ctx.rotate((tilt * Math.PI) / 180);
     }
 
-    let currentLineY = resolvedPaper.geometry.textTop;
+    let currentLineY = writing.firstLineTop;
     for (let i = 0; i < lines.length; i++) {
-      this._drawTextLine(ctx, lines[i].text, lines[i].lineIndex, resolvedPaper.geometry.textLeft, currentLineY, verticalCenteringOffset, settings);
+      this._drawTextLine(
+        ctx,
+        lines[i].text,
+        lines[i].lineIndex,
+        writing.textBounds.left,
+        currentLineY,
+        verticalCenteringOffset,
+        settings,
+      );
       currentLineY += pageLineHeightPx;
     }
     ctx.restore();
@@ -299,11 +308,13 @@ export const UnifiedPagePainter = {
 
   _drawPaperGuides(
     ctx: CanvasRenderingContext2D,
-    resolvedPaper: ResolvedPaper,
+    resolvedLayout: ResolvedPageLayout,
   ): void {
-    const { geometry, guides } = resolvedPaper;
-    const { contentHeight, contentWidth, lineHeightPx, margins, pageHeight } = geometry;
-    const linesPerPage = Math.max(1, Math.floor(contentHeight / lineHeightPx));
+    const { page, paper, writing } = resolvedLayout;
+    const { guides } = paper;
+    const { contentBounds, lineHeightPx, linesPerPage } = writing;
+    const contentHeight = contentBounds.height;
+    const contentWidth = contentBounds.width;
 
     if (guides.kind === 'none') {
       return;
@@ -314,11 +325,11 @@ export const UnifiedPagePainter = {
 
     if (guides.kind === 'lined' || guides.kind === 'ruled') {
       for (let i = 0; i <= linesPerPage; i++) {
-        const y = margins.top + i * lineHeightPx;
-        if (y < pageHeight - margins.bottom + lineHeightPx) {
+        const y = contentBounds.top + i * lineHeightPx;
+        if (y < contentBounds.bottom + lineHeightPx) {
           ctx.beginPath();
-          ctx.moveTo(margins.left, y);
-          ctx.lineTo(margins.left + contentWidth, y);
+          ctx.moveTo(contentBounds.left, y);
+          ctx.lineTo(contentBounds.left + contentWidth, y);
           ctx.stroke();
         }
       }
@@ -327,25 +338,25 @@ export const UnifiedPagePainter = {
         ctx.strokeStyle = guides.marginLineColor;
         ctx.lineWidth = guides.marginLineWidth;
         ctx.beginPath();
-        ctx.moveTo(guides.marginLineX, margins.top);
-        ctx.lineTo(guides.marginLineX, margins.top + contentHeight);
+        ctx.moveTo(guides.marginLineX, contentBounds.top);
+        ctx.lineTo(guides.marginLineX, contentBounds.top + contentHeight);
         ctx.stroke();
       }
     } else if (guides.kind === 'grid') {
       ctx.globalAlpha = guides.alpha;
       for (let i = 0; i <= linesPerPage; i++) {
-        const y = margins.top + i * lineHeightPx;
+        const y = contentBounds.top + i * lineHeightPx;
         ctx.beginPath();
-        ctx.moveTo(margins.left, y);
-        ctx.lineTo(margins.left + contentWidth, y);
+        ctx.moveTo(contentBounds.left, y);
+        ctx.lineTo(contentBounds.left + contentWidth, y);
         ctx.stroke();
       }
       const cols = Math.floor(contentWidth / lineHeightPx);
       for (let j = 0; j <= cols; j++) {
-        const x = margins.left + j * lineHeightPx;
+        const x = contentBounds.left + j * lineHeightPx;
         ctx.beginPath();
-        ctx.moveTo(x, margins.top);
-        ctx.lineTo(x, margins.top + contentHeight);
+        ctx.moveTo(x, contentBounds.top);
+        ctx.lineTo(x, contentBounds.top + contentHeight);
         ctx.stroke();
       }
       ctx.globalAlpha = 1.0;
@@ -374,34 +385,34 @@ export const UnifiedPagePainter = {
       fontFamily,
       pageIndex = 0,
     } = opts;
-    const resolvedPaper = resolvePagePaper({
+    const resolvedLayout = resolvePageLayout({
       pageIndex,
       settings,
       pageSettings,
     });
 
-    ctx.font = `${resolvedPaper.geometry.fontSize}px ${fontFamily}`;
+    ctx.font = `${resolvedLayout.writing.fontSize}px ${fontFamily}`;
 
     // Measure font metrics once for fallback
     const sampleMetrics = ctx.measureText('Ajpqy');
     const fontAscent = sampleMetrics.fontBoundingBoxAscent
       ?? sampleMetrics.actualBoundingBoxAscent
-      ?? (resolvedPaper.geometry.fontSize * 0.85);
+      ?? (resolvedLayout.writing.fontSize * 0.85);
     const fontDescent = sampleMetrics.fontBoundingBoxDescent
       ?? sampleMetrics.actualBoundingBoxDescent
-      ?? (resolvedPaper.geometry.fontSize * 0.15);
+      ?? (resolvedLayout.writing.fontSize * 0.15);
 
     // Compute vertical centering offset (matches _drawTextLine logic)
-    const halfLeading = (resolvedPaper.geometry.lineHeightPx - resolvedPaper.geometry.fontSize) / 2;
+    const halfLeading = (resolvedLayout.writing.lineHeightPx - resolvedLayout.writing.fontSize) / 2;
     const verticalCenteringOffset = halfLeading + fontAscent;
 
     const mainPositions = buildCharacterPositionsForLines({
       ctx,
       lines,
-      startX: resolvedPaper.geometry.textLeft,
-      startY: resolvedPaper.geometry.textTop,
+      startX: resolvedLayout.writing.textBounds.left,
+      startY: resolvedLayout.writing.firstLineTop,
       verticalCenteringOffset,
-      pageLineHeightPx: resolvedPaper.geometry.lineHeightPx,
+      pageLineHeightPx: resolvedLayout.writing.lineHeightPx,
       settings,
       fontAscent,
       fontDescent,
