@@ -10,13 +10,16 @@ describe('pagination', () => {
     renderAllPagesForExport: false,
     pageWidth: 800,
     pageHeight: 1000,
-    hasAnyCustomBackground: false,
     settings: {
+      customBackgroundImage: null,
+      customBackgroundImages: [],
       lineHeight: 1.5,
+      lineColor: '#a8d4f0',
+      paperColor: '#fffef5',
       paperStyle: 'lined',
       ruledMarginLineOffset: -10,
     },
-    pages: [
+    pageSettings: [
       {
         marginTop: 50,
         marginRight: 50,
@@ -25,7 +28,6 @@ describe('pagination', () => {
         fontSize: 20,
       },
     ],
-    pageHasBackground: [false],
     fontFamily: 'caveat',
   };
 
@@ -124,12 +126,32 @@ describe('pagination', () => {
       const res = paginate({
         ...defaultReq,
         text: Array(40).fill('line').join('\n'),
-        pages: [{ ...defaultReq.pages[0], customLineSpacing: 100 }],
-        pageHasBackground: [true]
+        settings: {
+          ...defaultReq.settings,
+          customBackgroundImage: 'data:image/png;base64,custom-paper',
+        },
+        pageSettings: [{ ...defaultReq.pageSettings[0], customLineSpacing: 100 }]
       });
       
       // contentHeight = 900. linesPerPage = 900 / 100 = 9.
       expect(res.pages[0].length).toBe(9);
+    });
+
+    it('uses page-specific uploaded paper backgrounds when resolving page geometry', () => {
+      const res = paginate({
+        ...defaultReq,
+        text: Array(40).fill('line').join('\n'),
+        settings: {
+          ...defaultReq.settings,
+          customBackgroundImages: [
+            'data:image/png;base64,page-0',
+          ],
+        },
+        pageSettings: [{ ...defaultReq.pageSettings[0], customLineSpacing: 75, customLineOffset: 12 }],
+      });
+
+      // contentHeight = 900. linesPerPage = 900 / 75 = 12.
+      expect(res.pages[0].length).toBe(12);
     });
   });
 });

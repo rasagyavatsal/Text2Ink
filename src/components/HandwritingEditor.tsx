@@ -15,6 +15,7 @@ import {
   calculatePageStartOffsets,
   calculateLineStarts,
 } from '@/lib/editorHelpers';
+import { resolvePagePaper } from '@/lib/paper/PaperEngine';
 import CanvasPreview from './CanvasPreview';
 import TextField from './TextField/TextField';
 
@@ -170,15 +171,6 @@ export default function HandwritingEditor({
     };
   }, [settings.customFont]);
 
-  const getBackgroundForPage = useCallback(
-    (pageIndex: number) =>
-      settings.customBackgroundImages?.[pageIndex] ?? settings.customBackgroundImage,
-    [settings.customBackgroundImages, settings.customBackgroundImage]
-  );
-
-  const hasAnyCustomBackground =
-    (settings.customBackgroundImages?.length ?? 0) > 0 || !!settings.customBackgroundImage;
-
   const getPageSettings = useCallback(
     (pageIndex: number): PageSettings =>
       pageSettingsByPage[pageIndex] ?? defaultPageSettingsFromHandwritingSettings(settings),
@@ -205,39 +197,38 @@ export default function HandwritingEditor({
   const desiredPageSettings = useMemo(() => {
     const desiredLength = Math.max(pageSettingsByPage.length, currentPageIndex + 2);
     const out: Array<{
+      customBackgroundImage?: string | null;
+      customLineOffset?: number;
+      customLineSpacing?: number;
+      fontSize: number;
+      lineColor?: string;
       marginTop: number;
       marginRight: number;
       marginBottom: number;
       marginLeft: number;
-      fontSize: number;
-      customLineSpacing?: number;
-      customLineOffset?: number;
+      paperColor?: string;
+      paperStyle?: PageSettings['paperStyle'];
     }> = [];
 
     for (let i = 0; i < desiredLength; i++) {
       const ps = getPageSettings(i);
       out.push({
+        customBackgroundImage: ps.customBackgroundImage,
+        customLineOffset: ps.customLineOffset ?? undefined,
+        customLineSpacing: ps.customLineSpacing ?? undefined,
+        fontSize: ps.fontSize,
+        lineColor: ps.lineColor,
         marginTop: ps.marginTop,
         marginRight: ps.marginRight,
         marginBottom: ps.marginBottom,
         marginLeft: ps.marginLeft,
-        fontSize: ps.fontSize,
-        customLineSpacing: ps.customLineSpacing ?? undefined,
-        customLineOffset: ps.customLineOffset ?? undefined,
+        paperColor: ps.paperColor,
+        paperStyle: ps.paperStyle,
       });
     }
 
     return out;
   }, [currentPageIndex, getPageSettings, pageSettingsByPage.length]);
-
-  const desiredPageHasBackground = useMemo(() => {
-    const desiredLength = Math.max(pageSettingsByPage.length, currentPageIndex + 2);
-    const out: boolean[] = [];
-    for (let i = 0; i < desiredLength; i++) {
-      out.push(!!getBackgroundForPage(i));
-    }
-    return out;
-  }, [currentPageIndex, getBackgroundForPage, pageSettingsByPage.length]);
 
   const debouncedRequestPagination = useDebouncedCallback(() => {
     const worker = workerRef.current;
@@ -254,14 +245,16 @@ export default function HandwritingEditor({
       renderAllPagesForExport: exportingPageIndex !== null,
       pageWidth: PAGE_WIDTH,
       pageHeight: PAGE_HEIGHT,
-      hasAnyCustomBackground,
       settings: {
+        customBackgroundImage: settings.customBackgroundImage,
+        customBackgroundImages: settings.customBackgroundImages,
         lineHeight: settings.lineHeight,
+        lineColor: settings.lineColor,
+        paperColor: settings.paperColor,
         paperStyle: settings.paperStyle,
         ruledMarginLineOffset: settings.ruledMarginLineOffset,
       },
-      pages: desiredPageSettings,
-      pageHasBackground: desiredPageHasBackground,
+      pageSettings: desiredPageSettings,
       fontFamily: resolvedFontFamily,
     });
   }, 40);
@@ -301,13 +294,15 @@ export default function HandwritingEditor({
   }, [
     currentPageIndex,
     debouncedRequestPagination,
-    desiredPageHasBackground,
     desiredPageSettings,
-    hasAnyCustomBackground,
     localText,
     exportingPageIndex,
     resolvedFontFamily,
+    settings.customBackgroundImage,
+    settings.customBackgroundImages,
     settings.lineHeight,
+    settings.lineColor,
+    settings.paperColor,
     settings.paperStyle,
     settings.ruledMarginLineOffset,
   ]);
@@ -676,13 +671,15 @@ export default function HandwritingEditor({
   }, [
     currentPageIndex,
     debouncedRequestPagination,
-    desiredPageHasBackground,
     desiredPageSettings,
-    hasAnyCustomBackground,
     localText,
     exportingPageIndex,
     resolvedFontFamily,
+    settings.customBackgroundImage,
+    settings.customBackgroundImages,
     settings.lineHeight,
+    settings.lineColor,
+    settings.paperColor,
     settings.paperStyle,
     settings.ruledMarginLineOffset,
   ]);
@@ -695,6 +692,15 @@ export default function HandwritingEditor({
     (pageIndex: number, scale: number, isVisiblePreview: boolean) => {
       const pageLines = pages[pageIndex] ?? [];
       const ps = getPageSettings(pageIndex);
+      const resolvedPaper = resolvePagePaper({
+        pageIndex,
+        settings,
+        pageSettings: ps,
+        pageSize: {
+          width: PAGE_WIDTH,
+          height: PAGE_HEIGHT,
+        },
+      });
       const showCursorForPage = isVisiblePreview && pageIndex === currentPageIndex;
       const effectiveCursorPositionForPage = showCursorForPage && isFocused ? cursorPosition : null;
       const currentStartOffset = pageStartOffsets[pageIndex] ?? 0;
@@ -775,7 +781,7 @@ export default function HandwritingEditor({
             </div>
           ))}
 
-          {isVisiblePreview && settings.paperStyle === 'ruled' && !getBackgroundForPage(pageIndex) && onSettingsChange && (
+          {isVisiblePreview && resolvedPaper.guides.kind === 'ruled' && onSettingsChange && (
             <button
               type="button"
               className="absolute border-0 bg-transparent p-0"
@@ -828,7 +834,6 @@ export default function HandwritingEditor({
     },
     [
       cursorPosition,
-      getBackgroundForPage,
       getPageSettings,
       handleCharMouseDown,
       handleCharMouseMove,

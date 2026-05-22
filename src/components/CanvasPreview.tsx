@@ -5,6 +5,7 @@ import { HandwritingSettings, PageSettings } from '@/lib/types';
 import { LineData } from '@/lib/editorHelpers';
 import { PAGE_WIDTH, PAGE_HEIGHT } from '@/lib/pageConstants';
 import { UnifiedPagePainter, CharacterPosition } from '@/lib/renderer/UnifiedPagePainter';
+import { resolvePagePaper } from '@/lib/paper/PaperEngine';
 
 export interface CanvasPreviewProps {
   lines: LineData[];
@@ -109,6 +110,15 @@ export default function CanvasPreview({
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    const resolvedPaper = resolvePagePaper({
+      pageIndex,
+      settings,
+      pageSettings,
+      pageSize: {
+        width: PAGE_WIDTH,
+        height: PAGE_HEIGHT,
+      },
+    });
 
     // Set physical canvas size
     const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
@@ -123,8 +133,11 @@ export default function CanvasPreview({
     ctx.scale(previewScale * dpr, previewScale * dpr);
 
     // Handle custom background image
-    const customBg = settings.customBackgroundImages?.[pageIndex] ?? settings.customBackgroundImage;
-    if (customBg && bgImageRef.current && bgImageSrcRef.current === customBg) {
+    if (
+      resolvedPaper.background.kind === 'image'
+      && bgImageRef.current
+      && bgImageSrcRef.current === resolvedPaper.background.imageSrc
+    ) {
       ctx.drawImage(bgImageRef.current, 0, 0, PAGE_WIDTH, PAGE_HEIGHT);
     }
 
@@ -188,23 +201,32 @@ export default function CanvasPreview({
 
   // Load background image when it changes
   useEffect(() => {
-    const customBg = settings.customBackgroundImages?.[pageIndex] ?? settings.customBackgroundImage;
-    if (!customBg) {
+    const resolvedPaper = resolvePagePaper({
+      pageIndex,
+      settings,
+      pageSettings,
+      pageSize: {
+        width: PAGE_WIDTH,
+        height: PAGE_HEIGHT,
+      },
+    });
+    if (resolvedPaper.background.kind !== 'image') {
       bgImageRef.current = null;
       bgImageSrcRef.current = null;
       return;
     }
-    if (bgImageSrcRef.current === customBg) return;
+    const imageSrc = resolvedPaper.background.imageSrc;
+    if (bgImageSrcRef.current === imageSrc) return;
 
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       bgImageRef.current = img;
-      bgImageSrcRef.current = customBg;
+      bgImageSrcRef.current = imageSrc;
       setBackgroundImageRevision((revision) => revision + 1);
     };
-    img.src = customBg;
-  }, [settings.customBackgroundImages, settings.customBackgroundImage, pageIndex]);
+    img.src = imageSrc;
+  }, [pageIndex, pageSettings, settings]);
 
   useEffect(() => {
     const handleWindowPointerUp = (e: PointerEvent) => {

@@ -2,6 +2,7 @@ import { HandwritingSettings, PageSettings } from './types';
 import { LineData } from './editorHelpers';
 import { PAGE_WIDTH, PAGE_HEIGHT } from './pageConstants';
 import { UnifiedPagePainter } from './renderer/UnifiedPagePainter';
+import { resolvePagePaper } from './paper/PaperEngine';
 
 interface RenderPageOptions {
   canvas: HTMLCanvasElement;
@@ -36,9 +37,17 @@ export async function renderPageToCanvas({
   ctx.scale(scale, scale);
 
   // 2. Handle custom background image (async)
-  const customBg = settings.customBackgroundImages?.[pageIndex] ?? settings.customBackgroundImage;
-  if (customBg) {
-    const img = await loadImage(customBg);
+  const resolvedPaper = resolvePagePaper({
+    pageIndex,
+    settings,
+    pageSettings,
+    pageSize: {
+      width: PAGE_WIDTH,
+      height: PAGE_HEIGHT,
+    },
+  });
+  if (resolvedPaper.background.kind === 'image') {
+    const img = await loadImage(resolvedPaper.background.imageSrc);
     ctx.drawImage(img, 0, 0, PAGE_WIDTH, PAGE_HEIGHT);
   }
 
