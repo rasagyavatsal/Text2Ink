@@ -1,4 +1,4 @@
-export type NotebookPaperStyle = 'lined' | 'ruled' | 'grid' | 'dot-grid' | 'cornell';
+export type NotebookPaperStyle = 'lined' | 'wide-lined' | 'narrow-lined' | 'ruled' | 'wide-ruled' | 'narrow-ruled' | 'grid' | 'dot-grid' | 'cornell';
 
 export interface NotebookPaperSvgInput {
   style: NotebookPaperStyle;
@@ -43,7 +43,7 @@ export function buildBuiltinNotebookPaperSvg(
   const styleDefs = (style === 'grid' || style === 'dot-grid') ? buildGridDefinitions(input) : '';
   const defsMarkup = styleDefs ? '<defs>' + styleDefs + '</defs>' : '';
   const lineMarkup = style === 'grid' ? buildGridField(input) : style === 'dot-grid' ? buildDotGridField(input) : buildHorizontalLines(input);
-  const marginMarkup = style === 'ruled' ? buildRuledMarginLine(input) : style === 'cornell' ? buildCornellLines(input) : '';
+  const marginMarkup = style === 'ruled' || style === 'wide-ruled' || style === 'narrow-ruled' ? buildRuledMarginLine(input) : style === 'cornell' ? buildCornellLines(input) : '';
 
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${formatNumber(pageWidth)} ${formatNumber(pageHeight)}" width="${rootWidth}" height="${rootHeight}" shape-rendering="geometricPrecision">`,

@@ -26,7 +26,7 @@ export interface PageSettings {
   customLineSpacing: number | null;
   inkColor: string;
   lineColor: string;
-  paperStyle: 'blank' | 'lined' | 'ruled' | 'grid';
+  paperStyle: 'blank' | 'lined' | 'wide-lined' | 'narrow-lined' | 'ruled' | 'wide-ruled' | 'narrow-ruled' | 'grid' | 'dot-grid' | 'cornell';
   textFields?: TextField[];
 }
 
@@ -49,7 +49,7 @@ export interface HandwritingSettings {
   paperFormat: PaperFormat;
   paperOrientation: PaperOrientation;
   ruledMarginLineOffset: number;
-  paperStyle: 'blank' | 'lined' | 'ruled' | 'grid';
+  paperStyle: 'blank' | 'lined' | 'wide-lined' | 'narrow-lined' | 'ruled' | 'wide-ruled' | 'narrow-ruled' | 'grid' | 'dot-grid' | 'cornell';
   inkColor: string;
   paperColor: string;
   lineColor: string;
@@ -138,8 +138,12 @@ export const defaultPageSettingsFromHandwritingSettings = (
 
 export const PAPER_STYLES = [
   { name: 'Blank', value: 'blank' },
-  { name: 'Lined', value: 'lined' },
-  { name: 'Ruled', value: 'ruled' },
+  { name: 'Lined (Medium)', value: 'lined' },
+  { name: 'Wide Lined', value: 'wide-lined' },
+  { name: 'Narrow Lined', value: 'narrow-lined' },
+  { name: 'Ruled (Medium)', value: 'ruled' },
+  { name: 'Wide Ruled', value: 'wide-ruled' },
+  { name: 'Narrow Ruled', value: 'narrow-ruled' },
   { name: 'Grid', value: 'grid' },
   { name: 'Dot Grid', value: 'dot-grid' },
   { name: 'Cornell', value: 'cornell' },

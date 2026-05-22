@@ -160,7 +160,7 @@ export interface ResolvedBuiltinPaperPreset {
 }
 
 const DEFAULT_PAGE_SETTINGS = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
-const PAPER_STYLES = new Set<PaperStyle>(['blank', 'lined', 'ruled', 'grid', 'dot-grid', 'cornell']);
+const PAPER_STYLES = new Set<PaperStyle>(['blank', 'lined', 'wide-lined', 'narrow-lined', 'ruled', 'wide-ruled', 'narrow-ruled', 'grid', 'dot-grid', 'cornell']);
 const PAPER_FORMATS = new Set<PaperFormat>(['letter', 'a4', 'a3']);
 const PAPER_ORIENTATIONS = new Set<PaperOrientation>(['portrait', 'landscape']);
 const PAPER_DIMENSIONS_PT: Record<PaperFormat, { width: number; height: number }> = {
@@ -266,13 +266,19 @@ export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
     width: contentWidth,
     height: contentHeight,
   };
-  const lineHeightPx =
+  let lineHeightPx =
     hasUploadBackground && customLineSpacingResolution.value !== null
       ? customLineSpacingResolution.value
       : fontSizeResolution.value * lineHeightResolution.value;
+
+  if (style === 'wide-lined' || style === 'wide-ruled') {
+    lineHeightPx *= 1.5;
+  } else if (style === 'narrow-lined' || style === 'narrow-ruled') {
+    lineHeightPx *= 0.8;
+  }
   const lineOffset = hasUploadBackground ? customLineOffsetResolution.value : 0;
   const textLeft =
-    style === 'ruled' && !hasUploadBackground
+    (style === 'ruled' || style === 'wide-ruled' || style === 'narrow-ruled') && !hasUploadBackground
       ? margins.left + ruledMarginLineOffsetResolution.value + RULED_TEXT_INSET_PX
       : margins.left;
   const textTop = margins.top + lineOffset;
@@ -477,7 +483,7 @@ function resolveBuiltinPresetBackground(input: {
   lineHeightPx: number;
   ruledMarginLineOffset: number;
 }): ResolvedPaperBackground | null {
-  if (input.style !== 'lined' && input.style !== 'ruled' && input.style !== 'grid' && input.style !== 'dot-grid' && input.style !== 'cornell') {
+  if (input.style !== 'lined' && input.style !== 'wide-lined' && input.style !== 'narrow-lined' && input.style !== 'ruled' && input.style !== 'wide-ruled' && input.style !== 'narrow-ruled' && input.style !== 'grid' && input.style !== 'dot-grid' && input.style !== 'cornell') {
     return null;
   }
 
@@ -500,7 +506,7 @@ function resolveBuiltinPresetBackground(input: {
       textTop: input.textTop,
       lineHeightPx: input.lineHeightPx,
       marginLineX:
-        input.style === 'ruled'
+        input.style === 'ruled' || input.style === 'wide-ruled' || input.style === 'narrow-ruled'
           ? input.margins.left + input.ruledMarginLineOffset
           : undefined,
     }),
@@ -600,14 +606,14 @@ function resolveGuides(input: {
     return { kind: 'none' };
   }
 
-  if (input.style === 'lined') {
+  if (input.style === 'lined' || input.style === 'wide-lined' || input.style === 'narrow-lined') {
     return {
       kind: 'lined',
       lineColor: input.lineColor,
     };
   }
 
-  if (input.style === 'ruled') {
+  if (input.style === 'ruled' || input.style === 'wide-ruled' || input.style === 'narrow-ruled') {
     return {
       kind: 'ruled',
       lineColor: input.lineColor,
@@ -858,7 +864,7 @@ function isCompatibleBuiltinPreset(input: {
     return false;
   }
 
-  const expectedTextLeft = input.style === 'ruled'
+  const expectedTextLeft = input.style === 'ruled' || input.style === 'wide-ruled' || input.style === 'narrow-ruled'
     ? (preset.alignment.ruledMarginPosition ?? input.margins.left) + RULED_TEXT_INSET_PX
     : input.margins.left;
 
