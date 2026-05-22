@@ -8,6 +8,11 @@ import {
   defaultPageSettingsFromHandwritingSettings,
 } from '@/lib/types';
 import { buildBuiltinNotebookPaperDataUrl } from './builtinNotebookSvg';
+import {
+  NOTEBOOK_PAPER_PRESETS,
+  type NotebookPaperAlignmentMetadata,
+  type NotebookPaperPreset,
+} from './notebookPresetCatalog';
 
 type PaperStyle = HandwritingSettings['paperStyle'];
 
@@ -121,12 +126,29 @@ export interface ResolvedPaper {
   background: ResolvedPaperBackground;
   guides: ResolvedPaperGuides;
   geometry: ResolvedPaperGeometry;
+  preset: ResolvedBuiltinPaperPreset | null;
+}
+
+export interface ResolvedBuiltinPaperPreset {
+  id: string;
+  style: 'lined' | 'ruled' | 'grid';
+  format: PaperFormat;
+  orientation: PaperOrientation;
+  pageSize: {
+    width: number;
+    height: number;
+  };
+  assetPath: string;
+  supportedFormats: PaperFormat[];
+  supportedOrientations: PaperOrientation[];
+  alignment: NotebookPaperAlignmentMetadata;
 }
 
 const DEFAULT_PAGE_SETTINGS = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
 const PAPER_STYLES = new Set<PaperStyle>(['blank', 'lined', 'ruled', 'grid']);
 const PAPER_FORMATS = new Set<PaperFormat>(['letter', 'a4', 'a3']);
 const PAPER_ORIENTATIONS = new Set<PaperOrientation>(['portrait', 'landscape']);
+const BUILTIN_PRESET_STYLES = new Set<ResolvedBuiltinPaperPreset['style']>(['lined', 'ruled', 'grid']);
 const PAPER_DIMENSIONS_PT: Record<PaperFormat, { width: number; height: number }> = {
   letter: {
     width: PAGE_WIDTH,
@@ -145,6 +167,9 @@ const RULED_TEXT_INSET_PX = 10;
 const RULED_MARGIN_LINE_COLOR = '#ffb3b3';
 const RULED_MARGIN_LINE_WIDTH = 2;
 const GRID_GUIDE_ALPHA = 0.5;
+const BUILTIN_PRESET_EPSILON = 0.01;
+const BUILTIN_PRESET_SUPPORT = buildBuiltinPresetSupport();
+const BUILTIN_PRESET_BY_KEY = buildBuiltinPresetLookup();
 
 export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
   const settings = input.settings ?? {};
@@ -197,7 +222,6 @@ export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
     pageSettings,
   });
   const hasUploadBackground = backgroundImage !== null;
-
   const style = styleResolution.value;
   const margins = {
     top: marginTopResolution.value,
@@ -230,7 +254,7 @@ export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
   const usedCompatibilityFallback =
     paperFormatResolution.usedFallback
     || paperOrientationResolution.usedFallback
-    styleResolution.usedFallback
+    || styleResolution.usedFallback
     || lineHeightResolution.usedFallback
     || ruledMarginLineOffsetResolution.usedFallback
     || fontSizeResolution.usedFallback
@@ -242,9 +266,32 @@ export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
     || lineColorResolution.usedFallback
     || customLineOffsetResolution.usedFallback
     || customLineSpacingResolution.usedFallback;
+  const candidateBuiltinPreset = !hasUploadBackground
+    ? resolveBuiltinPreset({
+        style,
+        paperFormat: paperFormatResolution.value,
+        paperOrientation: paperOrientationResolution.value,
+      })
+    : null;
+  const builtinPreset = isCompatibleBuiltinPreset({
+    candidatePreset: candidateBuiltinPreset,
+    usedCompatibilityFallback,
+    style,
+    pageWidth,
+    pageHeight,
+    paperColor: paperColorResolution.value,
+    lineColor: lineColorResolution.value,
+    margins,
+    textTop,
+    textLeft,
+    lineHeightPx,
+  })
+    ? candidateBuiltinPreset
+    : null;
 
   const presetBackground = !hasUploadBackground
     ? resolveBuiltinPresetBackground({
+        builtinPreset,
         style,
         pageWidth,
         pageHeight,
@@ -260,7 +307,9 @@ export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
   return {
     variant: hasUploadBackground
       ? 'upload'
-      : usedCompatibilityFallback
+      : (builtinPreset || (style === 'blank' && !usedCompatibilityFallback))
+        ? 'preset'
+        : (usedCompatibilityFallback || style !== 'blank')
         ? 'legacy-fallback'
         : 'preset',
     style,
@@ -297,10 +346,12 @@ export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
       lineHeightPx,
       lineOffset,
     },
+    preset: builtinPreset,
   };
 }
 
 function resolveBuiltinPresetBackground(input: {
+  builtinPreset: ResolvedBuiltinPaperPreset | null;
   style: PaperStyle;
   pageWidth: number;
   pageHeight: number;
@@ -313,6 +364,13 @@ function resolveBuiltinPresetBackground(input: {
 }): ResolvedPaperBackground | null {
   if (input.style !== 'lined' && input.style !== 'ruled' && input.style !== 'grid') {
     return null;
+  }
+
+  if (input.builtinPreset) {
+    return {
+      kind: 'image',
+      imageSrc: input.builtinPreset.assetPath,
+    };
   }
 
   return {
@@ -507,4 +565,133 @@ function isPaperFormat(value: unknown): value is PaperFormat {
 
 function isPaperOrientation(value: unknown): value is PaperOrientation {
   return typeof value === 'string' && PAPER_ORIENTATIONS.has(value as PaperOrientation);
+}
+
+function resolveBuiltinPreset(input: {
+  style: PaperStyle;
+  paperFormat: PaperFormat;
+  paperOrientation: PaperOrientation;
+}): ResolvedBuiltinPaperPreset | null {
+  if (!isBuiltinPresetStyle(input.style)) {
+    return null;
+  }
+
+  return BUILTIN_PRESET_BY_KEY.get(
+    builtinPresetKey(input.style, input.paperFormat, input.paperOrientation),
+  ) ?? null;
+}
+
+function buildBuiltinPresetLookup(): Map<string, ResolvedBuiltinPaperPreset> {
+  return new Map(
+    NOTEBOOK_PAPER_PRESETS.map((preset) => [
+      builtinPresetKey(preset.style, preset.format, preset.orientation),
+      {
+        ...preset,
+        supportedFormats: [...(BUILTIN_PRESET_SUPPORT[preset.style]?.formats ?? [])],
+        supportedOrientations: [...(BUILTIN_PRESET_SUPPORT[preset.style]?.orientations ?? [])],
+      },
+    ]),
+  );
+}
+
+function buildBuiltinPresetSupport(): Record<
+  ResolvedBuiltinPaperPreset['style'],
+  {
+    formats: Set<PaperFormat>;
+    orientations: Set<PaperOrientation>;
+  }
+> {
+  return NOTEBOOK_PAPER_PRESETS.reduce(
+    (support, preset) => {
+      support[preset.style].formats.add(preset.format);
+      support[preset.style].orientations.add(preset.orientation);
+      return support;
+    },
+    {
+      lined: { formats: new Set<PaperFormat>(), orientations: new Set<PaperOrientation>() },
+      ruled: { formats: new Set<PaperFormat>(), orientations: new Set<PaperOrientation>() },
+      grid: { formats: new Set<PaperFormat>(), orientations: new Set<PaperOrientation>() },
+    },
+  );
+}
+
+function builtinPresetKey(
+  style: NotebookPaperPreset['style'],
+  format: PaperFormat,
+  orientation: PaperOrientation,
+): string {
+  return `${style}:${format}:${orientation}`;
+}
+
+function isCompatibleBuiltinPreset(input: {
+  candidatePreset: ResolvedBuiltinPaperPreset | null;
+  usedCompatibilityFallback: boolean;
+  style: PaperStyle;
+  pageWidth: number;
+  pageHeight: number;
+  paperColor: string;
+  lineColor: string;
+  margins: ResolvedPaperGeometry['margins'];
+  textTop: number;
+  textLeft: number;
+  lineHeightPx: number;
+}): input is {
+  candidatePreset: ResolvedBuiltinPaperPreset;
+  usedCompatibilityFallback: false;
+  style: PaperStyle;
+  pageWidth: number;
+  pageHeight: number;
+  paperColor: string;
+  lineColor: string;
+  margins: ResolvedPaperGeometry['margins'];
+  textTop: number;
+  textLeft: number;
+  lineHeightPx: number;
+} {
+  const preset = input.candidatePreset;
+  if (!preset || input.usedCompatibilityFallback) {
+    return false;
+  }
+
+  if (!sameNumber(input.pageWidth, preset.pageSize.width) || !sameNumber(input.pageHeight, preset.pageSize.height)) {
+    return false;
+  }
+
+  if (
+    !sameNumber(input.margins.top, preset.alignment.writingMargins.top)
+    || !sameNumber(input.margins.right, preset.alignment.writingMargins.right)
+    || !sameNumber(input.margins.bottom, preset.alignment.writingMargins.bottom)
+    || !sameNumber(input.margins.left, preset.alignment.writingMargins.left)
+  ) {
+    return false;
+  }
+
+  if (!sameNumber(input.lineHeightPx, preset.alignment.lineSpacing)) {
+    return false;
+  }
+
+  if (
+    !sameString(input.paperColor, DEFAULT_SETTINGS.paperColor)
+    || !sameString(input.lineColor, DEFAULT_SETTINGS.lineColor)
+  ) {
+    return false;
+  }
+
+  const expectedTextLeft = input.style === 'ruled'
+    ? (preset.alignment.ruledMarginPosition ?? input.margins.left) + RULED_TEXT_INSET_PX
+    : input.margins.left;
+
+  return sameNumber(input.textLeft, expectedTextLeft);
+}
+
+function sameNumber(left: number, right: number): boolean {
+  return Math.abs(left - right) <= BUILTIN_PRESET_EPSILON;
+}
+
+function sameString(left: string, right: string): boolean {
+  return left.trim().toLowerCase() === right.trim().toLowerCase();
+}
+
+function isBuiltinPresetStyle(value: PaperStyle): value is ResolvedBuiltinPaperPreset['style'] {
+  return BUILTIN_PRESET_STYLES.has(value as ResolvedBuiltinPaperPreset['style']);
 }
