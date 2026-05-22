@@ -180,10 +180,8 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
   const viewportSize = useViewportSize();
   const isMobileEditorLayout = useMediaQuery(MOBILE_EDITOR_MEDIA_QUERY);
 
-  // Header height comes from design tokens to stay in sync with the CSS system.
-  const headerHeight = isMobileEditorLayout
-    ? readCssPixelToken('--metric-header-height-mobile', 60)
-    : readCssPixelToken('--metric-header-height-desktop', 68);
+  // The invisible header has been removed so the canvas spans to the top.
+  const headerHeight = 0;
 
   const [text, setText] = useState(resolvedInitialState.text);
   const [settings, setSettings] = useState<HandwritingSettings>(resolvedInitialState.settings);
@@ -487,12 +485,12 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
           />
         </Link>
       ) : null}
-      <div className="flex items-center gap-chrome">
-        <ThemePicker />
+      <div className="flex items-center gap-chrome bg-background/80 backdrop-blur-md p-1.5 rounded-xl border border-border/50 shadow-sm">
+        <ThemePicker variant="ghost" />
         <Button
           variant="brand"
           size="chrome"
-          className="min-w-[7.5rem] px-4 has-[>svg]:px-4"
+          className="min-w-[7.5rem] px-4 has-[>svg]:px-4 shadow-sm"
           onClick={() => setIsExportModalOpen(true)}
         >
           <Download className="w-4 h-4 mr-2" />
