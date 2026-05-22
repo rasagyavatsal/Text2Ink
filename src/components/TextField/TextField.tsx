@@ -206,7 +206,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
       ref={rootRef}
       className={cn(
         "absolute border-2 border-dashed group transition-colors duration-200 rounded-lg",
-        showControls ? "border-brand-accent bg-brand-accent/5 shadow-sm" : "border-border/40 hover:border-brand-accent/40 hover:bg-brand-accent/5"
+        "border-brand-accent bg-brand-accent/5 shadow-sm"
       )}
       onPointerDown={() => {
         setIsSelected(true);
