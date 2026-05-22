@@ -50,13 +50,14 @@ function defaultPaintOptions(overrides?: Partial<PaintPageOptions>): PaintPageOp
 
 describe('UnifiedPagePainter', () => {
   describe('paintPage - background rendering', () => {
-    it('fills the entire canvas area with the paper color when no custom background', () => {
+    it('fills the entire canvas area with the paper color for solid-color paper variants', () => {
       const ctx = createMockCtx();
-      const opts = defaultPaintOptions({ ctx });
+      const settings = { ...DEFAULT_SETTINGS, paperStyle: 'blank' as const };
+      const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
+      const opts = defaultPaintOptions({ ctx, settings, pageSettings });
 
       UnifiedPagePainter.paintPage(opts);
 
-      // fillRect should be called at least once for the background
       expect(ctx.fillRect).toHaveBeenCalledWith(0, 0, 612, 792);
     });
 
@@ -76,7 +77,7 @@ describe('UnifiedPagePainter', () => {
   });
 
   describe('paintPage - paper lines', () => {
-    it('draws horizontal lines for lined paper style', () => {
+    it('does not draw synthetic guides for built-in lined paper style', () => {
       const ctx = createMockCtx();
       const settings = { ...DEFAULT_SETTINGS, paperStyle: 'lined' as const };
       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
@@ -84,9 +85,8 @@ describe('UnifiedPagePainter', () => {
 
       UnifiedPagePainter.paintPage(opts);
 
-      expect(ctx.beginPath).toHaveBeenCalled();
-      expect(ctx.stroke).toHaveBeenCalled();
-      expect(ctx.strokeStyle).toBe(settings.lineColor);
+      expect(ctx.beginPath).not.toHaveBeenCalled();
+      expect(ctx.stroke).not.toHaveBeenCalled();
     });
 
     it('does not draw paper lines for blank paper style', () => {
@@ -113,7 +113,7 @@ describe('UnifiedPagePainter', () => {
       expect(strokeCount).toBeGreaterThan(1);
     });
 
-    it('draws a vertical red margin line for ruled style', () => {
+    it('does not draw a synthetic margin line for ruled paper style', () => {
       const ctx = createMockCtx();
       const settings = { ...DEFAULT_SETTINGS, paperStyle: 'ruled' as const };
       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
@@ -121,17 +121,8 @@ describe('UnifiedPagePainter', () => {
 
       UnifiedPagePainter.paintPage(opts);
 
-      // Ruled style sets strokeStyle to '#ffb3b3' for the margin line
-      const strokeStyleSets = (ctx as any).__proto__; // can't easily track property sets, but we check moveTo calls
-      // The margin line is drawn vertically
-      const moveToCalls = (ctx.moveTo as ReturnType<typeof vi.fn>).mock.calls;
-      const lineToCalls = (ctx.lineTo as ReturnType<typeof vi.fn>).mock.calls;
-      // There should be at least one vertical line (same x for moveTo and lineTo)
-      const verticalLines = moveToCalls.filter((call: number[], idx: number) => {
-        const lineToCall = lineToCalls[idx];
-        return lineToCall && call[0] === lineToCall[0]; // same x = vertical
-      });
-      expect(verticalLines.length).toBeGreaterThan(0);
+      expect(ctx.beginPath).not.toHaveBeenCalled();
+      expect(ctx.stroke).not.toHaveBeenCalled();
     });
   });
 

@@ -65,14 +65,12 @@ describe('PaperEngine', () => {
 
     expect(resolved.variant).toBe('preset');
     expect(resolved.style).toBe('lined');
-    expect(resolved.background).toEqual({
-      kind: 'solid-color',
-      color: DEFAULT_SETTINGS.paperColor,
-    });
-    expect(resolved.guides).toMatchObject({
-      kind: 'lined',
-      lineColor: DEFAULT_SETTINGS.lineColor,
-    });
+    expect(resolved.background.kind).toBe('image');
+    if (resolved.background.kind !== 'image') {
+      throw new Error('Expected built-in lined paper to resolve to an SVG image background.');
+    }
+    expect(resolved.background.imageSrc).toMatch(/^data:image\/svg\+xml/);
+    expect(resolved.guides).toEqual({ kind: 'none' });
     expect(resolved.geometry).toMatchObject({
       pageWidth: PAGE_WIDTH,
       pageHeight: PAGE_HEIGHT,
@@ -115,6 +113,34 @@ describe('PaperEngine', () => {
     expect(resolved.geometry.lineHeightPx).toBe(44);
   });
 
+  it('resolves ruled presets to notebook artwork while preserving the ruled text inset', () => {
+    const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      paperStyle: 'ruled',
+      ruledMarginLineOffset: -14,
+    } as typeof DEFAULT_SETTINGS & {
+      paperStyle: 'ruled';
+      ruledMarginLineOffset: number;
+    };
+
+    const resolved = resolvePagePaper({
+      pageIndex: 0,
+      settings,
+      pageSettings,
+    });
+
+    expect(resolved.variant).toBe('preset');
+    expect(resolved.style).toBe('ruled');
+    expect(resolved.background.kind).toBe('image');
+    if (resolved.background.kind !== 'image') {
+      throw new Error('Expected built-in ruled paper to resolve to an SVG image background.');
+    }
+    expect(decodeURIComponent(resolved.background.imageSrc)).toContain('#e6a1a8');
+    expect(resolved.guides).toEqual({ kind: 'none' });
+    expect(resolved.geometry.textLeft).toBe(pageSettings.marginLeft - 14 + 10);
+  });
+
   it('falls back for legacy paper settings while preserving page geometry', () => {
     const resolved = resolvePagePaper({
       pageIndex: 0,
@@ -129,14 +155,12 @@ describe('PaperEngine', () => {
 
     expect(resolved.variant).toBe('legacy-fallback');
     expect(resolved.style).toBe(DEFAULT_SETTINGS.paperStyle);
-    expect(resolved.background).toEqual({
-      kind: 'solid-color',
-      color: DEFAULT_SETTINGS.paperColor,
-    });
-    expect(resolved.guides).toMatchObject({
-      kind: DEFAULT_SETTINGS.paperStyle,
-      lineColor: DEFAULT_SETTINGS.lineColor,
-    });
+    expect(resolved.background.kind).toBe('image');
+    if (resolved.background.kind !== 'image') {
+      throw new Error('Expected legacy built-in paper fallback to resolve to an SVG image background.');
+    }
+    expect(resolved.background.imageSrc).toMatch(/^data:image\/svg\+xml/);
+    expect(resolved.guides).toEqual({ kind: 'none' });
     expect(resolved.geometry.textTop).toBe(72);
     expect(resolved.geometry.textLeft).toBe(DEFAULT_SETTINGS.marginLeft);
   });

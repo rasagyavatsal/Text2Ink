@@ -163,7 +163,7 @@ describe('canvasRenderer', () => {
     expect(yValue).toBe(71);
   });
 
-  it('draws paper lines when style is lined', async () => {
+  it('renders built-in lined paper from the SVG background instead of synthetic guides', async () => {
     await renderPageToCanvas({
       canvas: mockCanvas,
       pageIndex: 0,
@@ -174,9 +174,9 @@ describe('canvasRenderer', () => {
       fontFamily: 'Caveat',
     });
 
-    expect(mockCtx.beginPath).toHaveBeenCalled();
-    expect(mockCtx.stroke).toHaveBeenCalled();
-    expect(mockCtx.strokeStyle).toBe(mockSettings.lineColor);
+    expect(mockCtx.drawImage).toHaveBeenCalled();
+    expect(mockCtx.beginPath).not.toHaveBeenCalled();
+    expect(mockCtx.stroke).not.toHaveBeenCalled();
   });
 
   it('skips background fill if custom background is provided', async () => {
