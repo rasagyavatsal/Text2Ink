@@ -24,6 +24,7 @@ type RawDocumentPaperSettings = Partial<
     | 'lineColor'
     | 'lineHeight'
     | 'paperColor'
+    | 'paperPresetId'
     | 'paperStyle'
     | 'paperFormat'
     | 'paperOrientation'
@@ -170,23 +171,31 @@ const GRID_GUIDE_ALPHA = 0.5;
 const BUILTIN_PRESET_EPSILON = 0.01;
 const BUILTIN_PRESET_SUPPORT = buildBuiltinPresetSupport();
 const BUILTIN_PRESET_BY_KEY = buildBuiltinPresetLookup();
+const BUILTIN_PRESET_BY_ID = buildBuiltinPresetIdLookup();
 
 export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
   const settings = input.settings ?? {};
   const pageSettings = input.pageSettings ?? {};
+  const explicitBuiltinPreset = resolveBuiltinPresetById(settings.paperPresetId);
 
-  const paperFormatResolution = resolvePaperFormat(settings.paperFormat, DEFAULT_SETTINGS.paperFormat);
-  const paperOrientationResolution = resolvePaperOrientation(
-    settings.paperOrientation,
-    DEFAULT_SETTINGS.paperOrientation,
-  );
+  const paperFormatResolution = explicitBuiltinPreset
+    ? { value: explicitBuiltinPreset.format, usedFallback: false, incompatible: false }
+    : resolvePaperFormat(settings.paperFormat, DEFAULT_SETTINGS.paperFormat);
+  const paperOrientationResolution = explicitBuiltinPreset
+    ? { value: explicitBuiltinPreset.orientation, usedFallback: false, incompatible: false }
+    : resolvePaperOrientation(
+        settings.paperOrientation,
+        DEFAULT_SETTINGS.paperOrientation,
+      );
   const resolvedPageSize = resolvePaperPageSize(
     paperFormatResolution.value,
     paperOrientationResolution.value,
   );
   const pageWidth = resolvePositiveNumber(input.pageSize?.width, resolvedPageSize.width).value;
   const pageHeight = resolvePositiveNumber(input.pageSize?.height, resolvedPageSize.height).value;
-  const styleResolution = resolvePaperStyle(settings.paperStyle, pageSettings.paperStyle);
+  const styleResolution = explicitBuiltinPreset
+    ? { value: explicitBuiltinPreset.style, usedFallback: false, incompatible: false }
+    : resolvePaperStyle(settings.paperStyle, pageSettings.paperStyle);
   const lineHeightResolution = resolvePositiveNumber(settings.lineHeight, DEFAULT_SETTINGS.lineHeight);
   const ruledMarginLineOffsetResolution = resolveFiniteNumber(
     settings.ruledMarginLineOffset,
@@ -252,22 +261,25 @@ export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
   const textWidth = Math.max(0, pageWidth - textLeft - margins.right);
 
   const usedCompatibilityFallback =
-    paperFormatResolution.usedFallback
-    || paperOrientationResolution.usedFallback
-    || styleResolution.usedFallback
-    || lineHeightResolution.usedFallback
-    || ruledMarginLineOffsetResolution.usedFallback
-    || fontSizeResolution.usedFallback
-    || marginTopResolution.usedFallback
-    || marginRightResolution.usedFallback
-    || marginBottomResolution.usedFallback
-    || marginLeftResolution.usedFallback
-    || paperColorResolution.usedFallback
-    || lineColorResolution.usedFallback
-    || customLineOffsetResolution.usedFallback
-    || customLineSpacingResolution.usedFallback;
+    paperFormatResolution.incompatible
+    || paperOrientationResolution.incompatible
+    || styleResolution.incompatible
+    || lineHeightResolution.incompatible
+    || ruledMarginLineOffsetResolution.incompatible
+    || fontSizeResolution.incompatible
+    || marginTopResolution.incompatible
+    || marginRightResolution.incompatible
+    || marginBottomResolution.incompatible
+    || marginLeftResolution.incompatible
+    || paperColorResolution.incompatible
+    || lineColorResolution.incompatible
+    || customLineOffsetResolution.incompatible
+    || customLineSpacingResolution.incompatible;
+  // Prefer the new preset id when it exists, otherwise deterministically
+  // map legacy built-in settings into the preset catalog inside PaperEngine.
   const candidateBuiltinPreset = !hasUploadBackground
-    ? resolveBuiltinPreset({
+    ? explicitBuiltinPreset
+      ?? resolveBuiltinPreset({
         style,
         paperFormat: paperFormatResolution.value,
         paperOrientation: paperOrientationResolution.value,
@@ -395,40 +407,53 @@ function resolveBuiltinPresetBackground(input: {
 function resolvePaperFormat(
   value: RawDocumentPaperSettings['paperFormat'],
   fallback: PaperFormat,
-): { value: PaperFormat; usedFallback: boolean } {
+): { value: PaperFormat; usedFallback: boolean; incompatible: boolean } {
   if (isPaperFormat(value)) {
-    return { value, usedFallback: false };
+    return { value, usedFallback: false, incompatible: false };
   }
 
-  return { value: fallback, usedFallback: true };
+  return {
+    value: fallback,
+    usedFallback: true,
+    incompatible: hasExplicitValue(value),
+  };
 }
 
 function resolvePaperOrientation(
   value: RawDocumentPaperSettings['paperOrientation'],
   fallback: PaperOrientation,
-): { value: PaperOrientation; usedFallback: boolean } {
+): { value: PaperOrientation; usedFallback: boolean; incompatible: boolean } {
   if (isPaperOrientation(value)) {
-    return { value, usedFallback: false };
+    return { value, usedFallback: false, incompatible: false };
   }
 
-  return { value: fallback, usedFallback: true };
+  return {
+    value: fallback,
+    usedFallback: true,
+    incompatible: hasExplicitValue(value),
+  };
 }
 
 function resolvePaperStyle(
   documentStyle: RawDocumentPaperSettings['paperStyle'],
   pageStyle: RawPagePaperSettings['paperStyle'],
-): { value: PaperStyle; usedFallback: boolean } {
+): { value: PaperStyle; usedFallback: boolean; incompatible: boolean } {
   if (isPaperStyle(documentStyle)) {
-    return { value: documentStyle, usedFallback: false };
+    return { value: documentStyle, usedFallback: false, incompatible: false };
   }
 
   if (isPaperStyle(pageStyle)) {
-    return { value: pageStyle, usedFallback: true };
+    return {
+      value: pageStyle,
+      usedFallback: true,
+      incompatible: hasExplicitValue(documentStyle),
+    };
   }
 
   return {
     value: DEFAULT_SETTINGS.paperStyle,
     usedFallback: true,
+    incompatible: hasExplicitValue(documentStyle) || hasExplicitValue(pageStyle),
   };
 }
 
@@ -499,60 +524,79 @@ function resolveGuides(input: {
 function resolveFiniteNumber(value: unknown, fallback: number): {
   value: number;
   usedFallback: boolean;
+  incompatible: boolean;
 } {
   if (typeof value === 'number' && Number.isFinite(value)) {
-    return { value, usedFallback: false };
+    return { value, usedFallback: false, incompatible: false };
   }
 
-  return { value: fallback, usedFallback: true };
+  return {
+    value: fallback,
+    usedFallback: true,
+    incompatible: hasExplicitValue(value),
+  };
 }
 
 function resolvePositiveNumber(value: unknown, fallback: number): {
   value: number;
   usedFallback: boolean;
+  incompatible: boolean;
 } {
   if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
-    return { value, usedFallback: false };
+    return { value, usedFallback: false, incompatible: false };
   }
 
-  return { value: fallback, usedFallback: true };
+  return {
+    value: fallback,
+    usedFallback: true,
+    incompatible: hasExplicitValue(value),
+  };
 }
 
 function resolveNullablePositiveNumber(value: unknown, fallback: number | null): {
   value: number | null;
   usedFallback: boolean;
+  incompatible: boolean;
 } {
   if (value === null) {
-    return { value: null, usedFallback: false };
+    return { value: null, usedFallback: false, incompatible: false };
   }
 
   if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
-    return { value, usedFallback: false };
+    return { value, usedFallback: false, incompatible: false };
   }
 
-  return { value: fallback, usedFallback: true };
+  return {
+    value: fallback,
+    usedFallback: true,
+    incompatible: hasExplicitValue(value),
+  };
 }
 
 function resolveString(
   primary: unknown,
   secondary: unknown,
   fallback: string,
-): { value: string; usedFallback: boolean } {
+): { value: string; usedFallback: boolean; incompatible: boolean } {
   const primaryValue = normalizeString(primary);
   if (primaryValue) {
-    return { value: primaryValue, usedFallback: false };
+    return { value: primaryValue, usedFallback: false, incompatible: false };
   }
 
   const secondaryValue = normalizeString(secondary);
   if (secondaryValue) {
-    return { value: secondaryValue, usedFallback: false };
+    return { value: secondaryValue, usedFallback: false, incompatible: false };
   }
 
-  return { value: fallback, usedFallback: true };
+  return { value: fallback, usedFallback: true, incompatible: false };
 }
 
 function normalizeString(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value : null;
+}
+
+function hasExplicitValue(value: unknown): boolean {
+  return value !== undefined && value !== null && !(typeof value === 'string' && value.trim().length === 0);
 }
 
 function isPaperStyle(value: unknown): value is PaperStyle {
@@ -594,6 +638,12 @@ function buildBuiltinPresetLookup(): Map<string, ResolvedBuiltinPaperPreset> {
   );
 }
 
+function buildBuiltinPresetIdLookup(): Map<string, ResolvedBuiltinPaperPreset> {
+  return new Map(
+    [...BUILTIN_PRESET_BY_KEY.values()].map((preset) => [preset.id.toLowerCase(), preset]),
+  );
+}
+
 function buildBuiltinPresetSupport(): Record<
   ResolvedBuiltinPaperPreset['style'],
   {
@@ -621,6 +671,11 @@ function builtinPresetKey(
   orientation: PaperOrientation,
 ): string {
   return `${style}:${format}:${orientation}`;
+}
+
+function resolveBuiltinPresetById(value: RawDocumentPaperSettings['paperPresetId']): ResolvedBuiltinPaperPreset | null {
+  const presetId = normalizePresetId(value);
+  return presetId ? BUILTIN_PRESET_BY_ID.get(presetId) ?? null : null;
 }
 
 function isCompatibleBuiltinPreset(input: {
@@ -690,6 +745,10 @@ function sameNumber(left: number, right: number): boolean {
 
 function sameString(left: string, right: string): boolean {
   return left.trim().toLowerCase() === right.trim().toLowerCase();
+}
+
+function normalizePresetId(value: unknown): string | null {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim().toLowerCase() : null;
 }
 
 function isBuiltinPresetStyle(value: PaperStyle): value is ResolvedBuiltinPaperPreset['style'] {
