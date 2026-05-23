@@ -26,7 +26,7 @@ describe("checkRateLimit", () => {
 
   function createMockDb(ipCount: number, emailCount: number) {
     const mockTransaction = {
-      get: vi.fn(async (ref: any) => {
+      get: vi.fn(async (ref: any): Promise<any> => {
         if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
       }),
       set: vi.fn((ref: any) => {
