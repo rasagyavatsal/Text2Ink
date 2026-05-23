@@ -60,6 +60,7 @@ import {
   processLineDetectionResult,
   readFilesAsDataURL,
 } from '@/lib/settingsHelpers';
+import { resolvePaperControlsModel } from '@/lib/paper/paperControlsModel';
 
 const PaperStyleCard = ({
   style,
@@ -310,7 +311,14 @@ export default function SettingsPanel({
     [currentPageIndex, pageSettings, settings],
   );
   const resolvedPaper = resolvedLayout.paper;
-  const hasUploadBackedPaper = resolvedPaper.sourceKind === 'upload-backed';
+
+  const paperControls = useMemo(
+    () => resolvePaperControlsModel({ settings, pageSettings, resolvedPaper }),
+    [settings, pageSettings, resolvedPaper]
+  );
+  const currentBackground = paperControls.currentBackgroundImage;
+  const showManualAlignmentControls = paperControls.showManualAlignmentControls;
+  const showLineHeightControl = paperControls.showLineHeightControl;
 
   const effectiveBackgroundImages =
     (settings.customBackgroundImages?.length ?? 0) > 0
@@ -318,16 +326,6 @@ export default function SettingsPanel({
       : settings.customBackgroundImage
         ? [settings.customBackgroundImage]
         : [];
-
-  const currentBackground = useMemo(
-    () =>
-      hasUploadBackedPaper && resolvedPaper.background.kind === 'image'
-        ? resolvedPaper.background.imageSrc
-        : null,
-    [hasUploadBackedPaper, resolvedPaper.background],
-  );
-  const showManualAlignmentControls = resolvedPaper.capabilities.supportsManualAlignment;
-  const showLineHeightControl = resolvedPaper.capabilities.supportsLineHeightControl;
   const currentPaperStyle = useMemo(
     () => resolveDocumentPaperStyle(settings.paper),
     [settings.paper],
@@ -387,7 +385,7 @@ export default function SettingsPanel({
     setLineDetecting(true);
 
     try {
-      const expectedLineHeight = pageSettings.customLineSpacing ?? pageSettings.fontSize * settings.lineHeight;
+      const expectedLineHeight = paperControls.effectiveSpacingValue ?? Math.round(pageSettings.fontSize * settings.lineHeight);
       const result = await detectBackgroundLines(currentBackground, {
         targetWidth: resolvedLayout.page.width,
         targetHeight: resolvedLayout.page.height,
@@ -965,7 +963,7 @@ export default function SettingsPanel({
             </div>
           )}
 
-          {hasUploadBackedPaper && (
+          {paperControls.showSpacingControls && (
             <div className="space-y-6 pt-2">
               <div className="flex flex-col gap-3">
                 <Button
@@ -1016,12 +1014,13 @@ export default function SettingsPanel({
                       </Button>
                     )}
                     <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                      {pageSettings.customLineSpacing ?? 'Auto'}
+                      {paperControls.effectiveSpacingValue ?? 'Auto'}
                     </div>
                   </div>
                 </div>
                 <Slider
-                  value={[pageSettings.customLineSpacing ?? Math.round(pageSettings.fontSize * settings.lineHeight)]}
+                  disabled={!paperControls.isSpacingEditable}
+                  value={[paperControls.effectiveSpacingValue ?? Math.round(pageSettings.fontSize * settings.lineHeight)]}
                   onValueChange={([value]) => updatePageSetting('customLineSpacing', value)}
                   min={20}
                   max={120}
@@ -1073,7 +1072,7 @@ export default function SettingsPanel({
             </div>
           </div>
 
-          {hasUploadBackedPaper && (
+          {paperControls.paperMode === 'upload' && (
             <div className="flex flex-col gap-3">
               <Label className="text-sm font-medium">Line Color</Label>
               <div className="flex items-center gap-3 p-2 bg-secondary border border-border rounded-lg">
