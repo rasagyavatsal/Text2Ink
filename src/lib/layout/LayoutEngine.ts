@@ -60,10 +60,12 @@ export interface ResolvedPageLayout {
   };
   paper: {
     variant: 'preset' | 'upload' | 'legacy-fallback';
+    sourceKind: ReturnType<typeof resolvePagePaper>['source']['kind'];
     style: HandwritingSettings['paperStyle'];
     background: ReturnType<typeof resolvePagePaper>['background'];
     guides: ReturnType<typeof resolvePagePaper>['guides'];
     presetId: string | null;
+    capabilities: ReturnType<typeof resolvePagePaper>['capabilities'];
   };
   writing: {
     fontSize: number;
@@ -119,10 +121,12 @@ export function resolvePageLayout(input: ResolvePageLayoutInput): ResolvedPageLa
     },
     paper: {
       variant: resolvedPaper.variant,
+      sourceKind: resolvedPaper.source.kind,
       style: resolvedPaper.style,
       background: resolvedPaper.background,
       guides: resolvedPaper.guides,
       presetId: resolvedPaper.preset?.id ?? null,
+      capabilities: resolvedPaper.capabilities,
     },
     writing: {
       fontSize: geometry.fontSize,

@@ -73,11 +73,21 @@ describe('LayoutEngine', () => {
 
       expect(resolved.paper).toMatchObject({
         variant: 'upload',
+        sourceKind: 'upload-backed',
         style: 'ruled',
         presetId: null,
         background: {
           kind: 'image',
           imageSrc: 'data:image/png;base64,page-1',
+        },
+        capabilities: {
+          alignmentMode: 'user-calibrated',
+          lineSpacingOwner: 'upload',
+          supportsLineHeightControl: false,
+          supportsManualAlignment: true,
+          supportsManualLineSpacing: true,
+          supportsMarginControls: true,
+          supportsMarginLineOffset: false,
         },
       });
       expect(resolved.writing).toMatchObject({

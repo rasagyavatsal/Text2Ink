@@ -292,9 +292,17 @@ export default function SettingsPanel({
   const [lineDetecting, setLineDetecting] = useState(false);
   const [lineDetectError, setLineDetectError] = useState<string | null>(null);
   const [lineDetectInfo, setLineDetectInfo] = useState<{ offset: number; spacing: number } | null>(null);
-
-  const hasCustomBackground =
-    (settings.customBackgroundImages?.length ?? 0) > 0 || !!settings.customBackgroundImage;
+  const resolvedLayout = useMemo(
+    () =>
+      resolvePageLayout({
+        pageIndex: currentPageIndex,
+        settings,
+        pageSettings,
+      }),
+    [currentPageIndex, pageSettings, settings],
+  );
+  const resolvedPaper = resolvedLayout.paper;
+  const hasUploadBackedPaper = resolvedPaper.sourceKind === 'upload-backed';
 
   const effectiveBackgroundImages =
     (settings.customBackgroundImages?.length ?? 0) > 0
@@ -304,10 +312,14 @@ export default function SettingsPanel({
         : [];
 
   const currentBackground = useMemo(
-    () => settings.customBackgroundImages?.[currentPageIndex] ?? settings.customBackgroundImage,
-    [currentPageIndex, settings.customBackgroundImages, settings.customBackgroundImage]
+    () =>
+      hasUploadBackedPaper && resolvedPaper.background.kind === 'image'
+        ? resolvedPaper.background.imageSrc
+        : null,
+    [hasUploadBackedPaper, resolvedPaper.background],
   );
-  const showManualAlignmentControls = hasCustomBackground;
+  const showManualAlignmentControls = resolvedPaper.capabilities.supportsManualAlignment;
+  const showLineHeightControl = resolvedPaper.capabilities.supportsLineHeightControl;
 
   const availableFonts = useMemo(() => HANDWRITING_FONTS.filter(f => f.value !== 'custom'), []);
   useEffect(() => {
@@ -357,11 +369,6 @@ export default function SettingsPanel({
 
     try {
       const expectedLineHeight = pageSettings.customLineSpacing ?? pageSettings.fontSize * settings.lineHeight;
-      const resolvedLayout = resolvePageLayout({
-        pageIndex: currentPageIndex,
-        settings,
-        pageSettings,
-      });
       const result = await detectBackgroundLines(currentBackground, {
         targetWidth: resolvedLayout.page.width,
         targetHeight: resolvedLayout.page.height,
@@ -675,7 +682,7 @@ export default function SettingsPanel({
             />
           </div>
 
-          {settings.paperStyle === 'blank' && !hasCustomBackground && (
+          {showLineHeightControl && (
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <Label className="text-sm font-medium">Line Height</Label>
@@ -939,7 +946,7 @@ export default function SettingsPanel({
             </div>
           )}
 
-          {hasCustomBackground && (
+          {hasUploadBackedPaper && (
             <div className="space-y-6 pt-2">
               <div className="flex flex-col gap-3">
                 <Button
@@ -1047,7 +1054,7 @@ export default function SettingsPanel({
             </div>
           </div>
 
-          {hasCustomBackground && (
+          {hasUploadBackedPaper && (
             <div className="flex flex-col gap-3">
               <Label className="text-sm font-medium">Line Color</Label>
               <div className="flex items-center gap-3 p-2 bg-secondary border border-border rounded-lg">
