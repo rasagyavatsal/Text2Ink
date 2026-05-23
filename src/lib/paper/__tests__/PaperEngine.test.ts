@@ -472,4 +472,43 @@ describe('PaperEngine', () => {
     expect(resolved.geometry.textTop).toBe(72);
     expect(resolved.geometry.textLeft).toBe(DEFAULT_SETTINGS.marginLeft);
   });
+
+  it('keeps fixed preset geometry for wide/narrow styles even when fontSize changes', () => {
+    const styles = ['wide-lined', 'narrow-lined', 'wide-ruled', 'narrow-ruled'] as const;
+    
+    for (const style of styles) {
+      const pageSettingsDefault = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
+      const settings = {
+        ...DEFAULT_SETTINGS,
+        paperPresetId: null,
+        paperStyle: style,
+      };
+
+      const resolvedDefault = resolvePagePaper({
+        pageIndex: 0,
+        settings,
+        pageSettings: pageSettingsDefault,
+      });
+
+      const pageSettingsLargeFont = {
+        ...pageSettingsDefault,
+        fontSize: pageSettingsDefault.fontSize * 2, // Doubling the font size
+      };
+
+      const resolvedLargeFont = resolvePagePaper({
+        pageIndex: 0,
+        settings,
+        pageSettings: pageSettingsLargeFont,
+      });
+      
+      if (resolvedLargeFont.geometry.lineHeightPx !== resolvedDefault.geometry.lineHeightPx) {
+        throw new Error(`lineHeightPx changed: ${resolvedLargeFont.geometry.lineHeightPx} vs ${resolvedDefault.geometry.lineHeightPx}`);
+      }
+
+      expect(resolvedLargeFont.variant).toBe('preset');
+      expect(resolvedLargeFont.geometry.lineHeightPx).toBe(resolvedDefault.geometry.lineHeightPx);
+      expect(resolvedLargeFont.geometry.lineHeightPx).toBe(resolvedDefault.preset?.alignment.lineSpacing);
+      expect(resolvedLargeFont.preset?.id).toBe(resolvedDefault.preset?.id);
+    }
+  });
 });

@@ -92,6 +92,38 @@ describe('LayoutEngine', () => {
         },
       });
     });
+    it('keeps linesPerPage stable for wide/narrow paper when font size changes', () => {
+      const styles = ['wide-lined', 'narrow-lined', 'wide-ruled', 'narrow-ruled'] as const;
+      
+      for (const style of styles) {
+        const pageSettingsDefault = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
+        const settings = {
+          ...DEFAULT_SETTINGS,
+          paperPresetId: null, // Test automatic fallback mechanism
+          paperStyle: style,
+        };
+
+        const resolvedDefault = resolvePageLayout({
+          pageIndex: 0,
+          settings,
+          pageSettings: pageSettingsDefault,
+        });
+
+        const pageSettingsLargeFont = {
+          ...pageSettingsDefault,
+          fontSize: pageSettingsDefault.fontSize * 2,
+        };
+
+        const resolvedLargeFont = resolvePageLayout({
+          pageIndex: 0,
+          settings,
+          pageSettings: pageSettingsLargeFont,
+        });
+
+        expect(resolvedLargeFont.paper.variant).toBe('preset');
+        expect(resolvedLargeFont.writing.linesPerPage).toBe(resolvedDefault.writing.linesPerPage);
+      }
+    });
   });
 
   describe('paginateDocument', () => {
