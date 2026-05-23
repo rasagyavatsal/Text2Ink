@@ -32,6 +32,7 @@ describe("checkRateLimit", () => {
     }
 
     const mockDb = {
+      doc: vi.fn((path: string) => ({ id: path, path })),
       runTransaction: vi.fn(async (fn: Function) => {
         // First call in get: IP doc. Second call: email doc.
         const ipDoc = {
@@ -70,14 +71,16 @@ describe("checkRateLimit", () => {
     expect(result.error).toContain("Too many inquiries")
   })
 
-  it("uses hashed keys, not raw IP or email", async () => {
-    const { mockTransaction, mockDb } = createMockDb(0, 0)
+  it("uses hashed keys and accesses correct document references", async () => {
+    const { mockDb } = createMockDb(0, 0)
     await checkRateLimit(mockDb as any, ip, email)
 
-    const setCalls = mockTransaction.set.mock.calls
-    for (const call of setCalls) {
-      const docPath = call[0]?._path?.segments?.join("/") || ""
-      // Hashed values are 64-char hex, not raw IPs or emails
+    expect(mockDb.doc).toHaveBeenCalled()
+    
+    const docCalls = mockDb.doc.mock.calls
+    for (const call of docCalls) {
+      const docPath = call[0]
+      expect(docPath).toContain("inquiryRateLimits/")
       expect(docPath).not.toContain(ip)
       expect(docPath).not.toContain(email)
     }
