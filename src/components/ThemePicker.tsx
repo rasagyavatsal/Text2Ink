@@ -1,7 +1,7 @@
 'use client';
 
 import { useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import { Sun, Moon, Monitor } from 'lucide-react';
 import { Button, type buttonVariants } from '@/components/ui/button';
 import { type VariantProps } from 'class-variance-authority';
@@ -12,13 +12,17 @@ export interface ThemePickerProps {
   variant?: VariantProps<typeof buttonVariants>['variant'];
 }
 
+const subscribeClientReady = () => () => {};
+const getClientReadySnapshot = () => true;
+const getServerReadySnapshot = () => false;
+
 export default function ThemePicker({ className, variant = 'outline' }: ThemePickerProps) {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(
+    subscribeClientReady,
+    getClientReadySnapshot,
+    getServerReadySnapshot,
+  );
 
   if (!mounted) {
     return <div className={cn("h-control-md aspect-square rounded-lg border border-border bg-background animate-pulse", className)} />;

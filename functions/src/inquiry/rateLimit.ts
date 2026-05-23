@@ -27,10 +27,6 @@ interface TransactionLike {
   update(ref: unknown, data: unknown): void
 }
 
-interface DocRef {
-  _path: { segments: string[] }
-}
-
 function bucketKey(identifier: string): string {
   const now = new Date()
   const bucket = `${now.getUTCFullYear()}-${now.getUTCMonth()}-${now.getUTCDate()}-${now.getUTCHours()}`

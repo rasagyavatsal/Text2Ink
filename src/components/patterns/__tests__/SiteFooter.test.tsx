@@ -5,7 +5,6 @@ import SiteFooter from '../SiteFooter';
 // Mock next/image
 vi.mock('next/image', () => ({
   default: ({ priority, ...props }: any) => {
-    // eslint-disable-next-line jsx-a11y/alt-text
     return <img {...props} />;
   },
 }));

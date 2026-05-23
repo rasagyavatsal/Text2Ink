@@ -92,17 +92,6 @@ function readSafeAreaBottom() {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function readCssPixelToken(property: string, fallback: number): number {
-  if (typeof window === 'undefined') return fallback;
-
-  const value = window
-    .getComputedStyle(document.documentElement)
-    .getPropertyValue(property)
-    .trim();
-  const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
 function readViewportSize() {
   if (typeof window === 'undefined') return DEFAULT_VIEWPORT_SIZE;
   const visualViewport = window.visualViewport;
