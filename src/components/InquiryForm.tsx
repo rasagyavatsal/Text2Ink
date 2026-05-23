@@ -140,7 +140,6 @@ export function InquiryForm() {
     <Card className="w-full">
       <CardHeader>
         <CardTitle>Send a message</CardTitle>
-        <CardDescription>We usually respond within 24 hours.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} noValidate className="space-y-5">

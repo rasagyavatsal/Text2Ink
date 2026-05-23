@@ -35,10 +35,9 @@ describe("InquiryForm", () => {
     expect(screen.getByRole("button", { name: /send inquiry/i })).toBeInTheDocument()
   })
 
-  it("renders within a card layout with a title and description", () => {
+  it("renders within a card layout with a title", () => {
     render(<InquiryForm />)
     expect(screen.getByText("Send a message")).toBeInTheDocument()
-    expect(screen.getByText("We usually respond within 24 hours.")).toBeInTheDocument()
   })
 
   it("shows inline errors when submitting empty form", async () => {
