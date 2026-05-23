@@ -44,12 +44,12 @@ export function withTestPaperSelection(
     ? paper
     : paperPresetId
       ? {
-          kind: 'preset',
+          kind: 'preset' as const,
           presetId: paperPresetId,
         }
       : paperPresetId === null
       ? {
-          kind: 'generated',
+          kind: 'generated' as const,
           style,
           format,
           orientation,
