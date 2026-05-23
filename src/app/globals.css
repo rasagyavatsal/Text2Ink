@@ -233,6 +233,28 @@
   --brand-accent-foreground: oklch(1 0 0);
   --brand-accent-soft: oklch(0.755 0.145 79.142 / 0.1);
   --color-success: oklch(0.723 0.192 149.579);
+
+  --font-barokah-signature: 'Barokah Signature', cursive;
+  --font-bettina-signature: 'Bettina Signature', cursive;
+  --font-children: 'Children', cursive;
+  --font-davys-crappy-writ: 'DavysCrappyWrit', cursive;
+  --font-ff-comma: 'FFCommaTrial', cursive;
+  --font-fallin-for-you: 'Fallin For You Script', cursive;
+  --font-famulred: 'Famulred', cursive;
+  --font-gargouillette: 'Gargouillette', cursive;
+  --font-honey-script: 'HoneyScript', cursive;
+  --font-kalam-light: 'Kalam Light', cursive;
+  --font-megastina: 'Megastina', cursive;
+  --font-pecita: 'Pecita', cursive;
+  --font-quetine: 'Quetine', cursive;
+  --font-reenie-beanie: 'ReenieBeanie', cursive;
+  --font-sea-ponkle: 'SeaPonkle', cursive;
+  --font-showclick: 'Showclick', cursive;
+  --font-singlong: 'Singlong', cursive;
+  --font-snake: 'Snake', cursive;
+  --font-vanilla-cream: 'VanillaCream', cursive;
+  --font-vegan-days: 'Vegan Days', cursive;
+  --font-rainydays: 'Rainydays', cursive;
 }
 
 @media (min-width: 640px) {
@@ -330,4 +352,130 @@
     text-transform: uppercase;
     letter-spacing: 0.1em;
   }
+}
+
+@font-face {
+  font-family: 'Barokah Signature';
+  src: url('/fonts/Barokah Signature by Alifinart Studio.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bettina Signature';
+  src: url('/fonts/Bettina Signature Regular.otf') format('opentype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Children';
+  src: url('/fonts/Children.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DavysCrappyWrit';
+  src: url('/fonts/DavysCrappyWrit.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'FFCommaTrial';
+  src: url('/fonts/FFCommaTrial-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Fallin For You Script';
+  src: url('/fonts/Fallin For You Script.otf') format('opentype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Famulred';
+  src: url('/fonts/Famulred.otf') format('opentype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gargouillette';
+  src: url('/fonts/Gargouillette.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'HoneyScript';
+  src: url('/fonts/HoneyScript-Light.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Kalam Light';
+  src: url('/fonts/Kalam-Light.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Megastina';
+  src: url('/fonts/Megastina.otf') format('opentype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pecita';
+  src: url('/fonts/Pecita.otf') format('opentype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Quetine';
+  src: url('/fonts/Quetine.otf') format('opentype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ReenieBeanie';
+  src: url('/fonts/ReenieBeanie.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SeaPonkle';
+  src: url('/fonts/SeaPonkle.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Showclick';
+  src: url('/fonts/Showclick.otf') format('opentype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Singlong';
+  src: url('/fonts/Singlong.otf') format('opentype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Snake';
+  src: url('/fonts/Snake.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'VanillaCream';
+  src: url('/fonts/VanillaCreamOx-Regular.otf') format('opentype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Vegan Days';
+  src: url('/fonts/Vegan Days.otf') format('opentype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Rainydays';
+  src: url('/fonts/rainydays.ttf') format('truetype');
+  font-display: swap;
 }
