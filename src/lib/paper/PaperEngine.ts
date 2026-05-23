@@ -130,6 +130,23 @@ export interface ResolvedPaperGeometry {
   lineOffset: number;
 }
 
+export type ResolvedPaperSourceKind = 'preset-built-in' | 'upload-backed' | 'generated-fallback';
+
+export interface ResolvedPaperSource {
+  kind: ResolvedPaperSourceKind;
+  presetId: string | null;
+}
+
+export interface ResolvedPaperCapabilities {
+  alignmentMode: 'fixed' | 'user-calibrated';
+  lineSpacingOwner: 'preset' | 'upload' | 'document';
+  supportsLineHeightControl: boolean;
+  supportsManualAlignment: boolean;
+  supportsManualLineSpacing: boolean;
+  supportsMarginControls: boolean;
+  supportsMarginLineOffset: boolean;
+}
+
 /**
  * ResolvedPaper is the single paper model callers consume.
  * It hides legacy settings fallback, uploaded background precedence, and
@@ -137,16 +154,18 @@ export interface ResolvedPaperGeometry {
  */
 export interface ResolvedPaper {
   variant: 'preset' | 'upload' | 'legacy-fallback';
+  source: ResolvedPaperSource;
   style: PaperStyle;
   background: ResolvedPaperBackground;
   guides: ResolvedPaperGuides;
   geometry: ResolvedPaperGeometry;
   preset: ResolvedBuiltinPaperPreset | null;
+  capabilities: ResolvedPaperCapabilities;
 }
 
 export interface ResolvedBuiltinPaperPreset {
   id: string;
-  style: 'lined' | 'ruled' | 'grid' | 'dot-grid' | 'cornell';
+  style: NotebookPaperPreset['style'];
   format: PaperFormat;
   orientation: PaperOrientation;
   pageSize: {
@@ -187,6 +206,21 @@ const BUILTIN_PRESET_BY_KEY = buildBuiltinPresetLookup();
 const BUILTIN_PRESET_BY_ID = buildBuiltinPresetIdLookup();
 
 export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
+  return resolvePaperDefinition(input);
+}
+
+interface PaperDefinition {
+  variant: ResolvedPaper['variant'];
+  source: ResolvedPaperSource;
+  style: PaperStyle;
+  background: ResolvedPaperBackground;
+  guides: ResolvedPaperGuides;
+  geometry: ResolvedPaperGeometry;
+  preset: ResolvedBuiltinPaperPreset | null;
+  capabilities: ResolvedPaperCapabilities;
+}
+
+function resolvePaperDefinition(input: ResolvePagePaperInput): PaperDefinition {
   const settings = input.settings ?? {};
   const pageSettings = input.pageSettings ?? {};
   const backgroundImage = resolveBackgroundImage({
@@ -353,14 +387,21 @@ export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
       })
     : null;
 
+  const variant = hasUploadBackground
+    ? 'upload'
+    : (builtinPreset || (style === 'blank' && !usedCompatibilityFallback))
+      ? 'preset'
+      : (usedCompatibilityFallback || style !== 'blank')
+      ? 'legacy-fallback'
+      : 'preset';
+  const source = resolvePaperSource({
+    hasUploadBackground,
+    builtinPreset,
+  });
+
   return {
-    variant: hasUploadBackground
-      ? 'upload'
-      : (builtinPreset || (style === 'blank' && !usedCompatibilityFallback))
-        ? 'preset'
-        : (usedCompatibilityFallback || style !== 'blank')
-        ? 'legacy-fallback'
-        : 'preset',
+    variant,
+    source,
     style,
     background: hasUploadBackground
       ? {
@@ -396,6 +437,10 @@ export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
       lineOffset,
     },
     preset: builtinPreset,
+    capabilities: resolvePaperCapabilities({
+      source,
+      style,
+    }),
   };
 }
 
@@ -416,9 +461,14 @@ function resolveExplicitBuiltinPresetPaper(input: {
   const textLeft = input.preset.style === 'ruled'
     ? (input.preset.alignment.ruledMarginPosition ?? contentBounds.left) + RULED_TEXT_INSET_PX
     : contentBounds.left;
+  const source = resolvePaperSource({
+    hasUploadBackground: false,
+    builtinPreset: input.preset,
+  });
 
   return {
     variant: 'preset',
+    source,
     style: input.preset.style,
     background: resolveExplicitBuiltinPresetBackground(input),
     guides: { kind: 'none' },
@@ -450,6 +500,10 @@ function resolveExplicitBuiltinPresetPaper(input: {
       lineOffset: Math.max(0, textTop - contentBounds.top),
     },
     preset: input.preset,
+    capabilities: resolvePaperCapabilities({
+      source,
+      style: input.preset.style,
+    }),
   };
 }
 
@@ -825,6 +879,55 @@ function builtinPresetKey(
 function resolveBuiltinPresetById(value: RawDocumentPaperSettings['paperPresetId']): ResolvedBuiltinPaperPreset | null {
   const preset = resolveNotebookPaperPresetById(value);
   return preset ? BUILTIN_PRESET_BY_ID.get(preset.id.toLowerCase()) ?? null : null;
+}
+
+function resolvePaperSource(input: {
+  hasUploadBackground: boolean;
+  builtinPreset: ResolvedBuiltinPaperPreset | null;
+}): ResolvedPaperSource {
+  if (input.hasUploadBackground) {
+    return {
+      kind: 'upload-backed',
+      presetId: null,
+    };
+  }
+
+  if (input.builtinPreset) {
+    return {
+      kind: 'preset-built-in',
+      presetId: input.builtinPreset.id,
+    };
+  }
+
+  return {
+    kind: 'generated-fallback',
+    presetId: null,
+  };
+}
+
+function resolvePaperCapabilities(input: {
+  source: ResolvedPaperSource;
+  style: PaperStyle;
+}): ResolvedPaperCapabilities {
+  const supportsMarginLineOffset =
+    input.source.kind === 'generated-fallback'
+    && (input.style === 'ruled' || input.style === 'wide-ruled' || input.style === 'narrow-ruled');
+
+  return {
+    alignmentMode: input.source.kind === 'upload-backed' ? 'user-calibrated' : 'fixed',
+    lineSpacingOwner:
+      input.source.kind === 'preset-built-in'
+        ? 'preset'
+        : input.source.kind === 'upload-backed'
+        ? 'upload'
+        : 'document',
+    supportsLineHeightControl:
+      input.source.kind === 'generated-fallback' && input.style === 'blank',
+    supportsManualAlignment: input.source.kind === 'upload-backed',
+    supportsManualLineSpacing: input.source.kind === 'upload-backed',
+    supportsMarginControls: input.source.kind === 'upload-backed',
+    supportsMarginLineOffset,
+  };
 }
 
 function isCompatibleBuiltinPreset(input: {

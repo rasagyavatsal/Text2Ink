@@ -102,6 +102,67 @@ describe('PaperEngine', () => {
     });
   });
 
+  it('reports preset-backed paper through a normalized source and capability contract', () => {
+    const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
+
+    const resolved = resolvePagePaper({
+      pageIndex: 0,
+      settings: DEFAULT_SETTINGS,
+      pageSettings,
+    });
+
+    expect(resolved.source).toEqual({
+      kind: 'preset-built-in',
+      presetId: 'lined-letter-portrait',
+    });
+    expect(resolved.capabilities).toEqual({
+      alignmentMode: 'fixed',
+      lineSpacingOwner: 'preset',
+      supportsLineHeightControl: false,
+      supportsManualAlignment: false,
+      supportsManualLineSpacing: false,
+      supportsMarginControls: false,
+      supportsMarginLineOffset: false,
+    });
+  });
+
+  it('classifies blank generated paper separately from preset-backed paper', () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      paperPresetId: null,
+      paperStyle: 'blank',
+    } as typeof DEFAULT_SETTINGS & {
+      paperPresetId: null;
+      paperStyle: 'blank';
+    };
+    const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
+
+    const resolved = resolvePagePaper({
+      pageIndex: 0,
+      settings,
+      pageSettings,
+    });
+
+    expect(resolved.variant).toBe('preset');
+    expect(resolved.source).toEqual({
+      kind: 'generated-fallback',
+      presetId: null,
+    });
+    expect(resolved.background).toEqual({
+      kind: 'solid-color',
+      color: settings.paperColor,
+    });
+    expect(resolved.capabilities).toEqual({
+      alignmentMode: 'fixed',
+      lineSpacingOwner: 'document',
+      supportsLineHeightControl: true,
+      supportsManualAlignment: false,
+      supportsManualLineSpacing: false,
+      supportsMarginControls: false,
+      supportsMarginLineOffset: false,
+    });
+  });
+
   it('resolves an explicit preset identifier ahead of legacy paper settings', () => {
     const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
     const settings = {
@@ -254,11 +315,24 @@ describe('PaperEngine', () => {
     });
 
     expect(resolved.variant).toBe('upload');
+    expect(resolved.source).toEqual({
+      kind: 'upload-backed',
+      presetId: null,
+    });
     expect(resolved.background).toEqual({
       kind: 'image',
       imageSrc: 'data:image/png;base64,page-1',
     });
     expect(resolved.guides).toEqual({ kind: 'none' });
+    expect(resolved.capabilities).toEqual({
+      alignmentMode: 'user-calibrated',
+      lineSpacingOwner: 'upload',
+      supportsLineHeightControl: false,
+      supportsManualAlignment: true,
+      supportsManualLineSpacing: true,
+      supportsMarginControls: true,
+      supportsMarginLineOffset: false,
+    });
     expect(resolved.geometry.lineOffset).toBe(7);
     expect(resolved.geometry.lineHeightPx).toBe(44);
   });

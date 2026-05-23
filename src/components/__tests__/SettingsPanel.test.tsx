@@ -236,6 +236,27 @@ describe('SettingsPanel', () => {
     expect(screen.getByRole('button', { name: /Auto-Detect Lines/i })).toBeInTheDocument();
   });
 
+  it('treats page-specific background uploads as upload-backed paper for alignment controls', () => {
+    render(
+      <SettingsPanel
+        {...defaultProps}
+        settings={{
+          ...defaultProps.settings,
+          customBackgroundImage: null,
+          customBackgroundImages: [],
+        }}
+        pageSettings={{
+          ...defaultProps.pageSettings,
+          customBackgroundImage: 'data:image/png;base64,page-only-background',
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Top Margin')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Auto-Detect Lines/i })).toBeInTheDocument();
+    expect(screen.getByText('Line Color')).toBeInTheDocument();
+  });
+
   it('shows paper color and hides line color for preset-backed built-in papers', () => {
     render(<SettingsPanel {...defaultProps} />);
 
