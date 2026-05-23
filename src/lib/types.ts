@@ -1,5 +1,33 @@
 export type PaperFormat = 'letter' | 'a4' | 'a3';
 export type PaperOrientation = 'portrait' | 'landscape';
+export type PaperStyle =
+  | 'blank'
+  | 'lined'
+  | 'wide-lined'
+  | 'narrow-lined'
+  | 'ruled'
+  | 'wide-ruled'
+  | 'narrow-ruled'
+  | 'grid'
+  | 'dot-grid'
+  | 'cornell';
+
+export type DocumentPaperSelection =
+  | {
+      kind: 'preset';
+      presetId: string;
+    }
+  | {
+      kind: 'generated';
+      style: PaperStyle;
+      format: PaperFormat;
+      orientation: PaperOrientation;
+    };
+
+export type PagePaperSelection =
+  | {
+      kind: 'inherit';
+    };
 
 // Per-page settings that can be customized for each page
 export interface TextField {
@@ -26,7 +54,7 @@ export interface PageSettings {
   customLineSpacing: number | null;
   inkColor: string;
   lineColor: string;
-  paperStyle: 'blank' | 'lined' | 'wide-lined' | 'narrow-lined' | 'ruled' | 'wide-ruled' | 'narrow-ruled' | 'grid' | 'dot-grid' | 'cornell';
+  paper: PagePaperSelection;
   textFields?: TextField[];
 }
 
@@ -45,11 +73,8 @@ export interface HandwritingSettings {
   marginBottom: number;
   marginLeft: number;
   marginRight: number;
-  paperPresetId?: string | null;
-  paperFormat: PaperFormat;
-  paperOrientation: PaperOrientation;
+  paper: DocumentPaperSelection;
   ruledMarginLineOffset: number;
-  paperStyle: 'blank' | 'lined' | 'wide-lined' | 'narrow-lined' | 'ruled' | 'wide-ruled' | 'narrow-ruled' | 'grid' | 'dot-grid' | 'cornell';
   inkColor: string;
   paperColor: string;
   lineColor: string;
@@ -116,11 +141,11 @@ export const DEFAULT_SETTINGS: HandwritingSettings = {
   marginBottom: 60,
   marginLeft: 60,
   marginRight: 60,
-  paperPresetId: 'lined-letter-portrait',
-  paperFormat: 'letter',
-  paperOrientation: 'portrait',
+  paper: {
+    kind: 'preset',
+    presetId: 'lined-letter-portrait',
+  },
   ruledMarginLineOffset: -10,
-  paperStyle: 'lined',
   inkColor: '#1a365d',
   paperColor: '#fffef5',
   lineColor: '#a8d4f0',
@@ -152,7 +177,7 @@ export const defaultPageSettingsFromHandwritingSettings = (
   customLineSpacing: settings.customLineSpacing,
   inkColor: settings.inkColor,
   lineColor: settings.lineColor,
-  paperStyle: settings.paperStyle,
+  paper: { kind: 'inherit' },
   textFields: settings.textFields || [],
 });
 

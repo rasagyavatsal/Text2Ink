@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { PaperFormat, PaperOrientation } from '../types';
 import { paginate, nextLineFrom, createMeasure, type PaginationRequest } from '../pagination';
+import { withTestPaperSelection } from '@/test/paperTestHelpers';
 
 describe('pagination', () => {
   const paginationFormatCases: Array<{
@@ -23,17 +24,18 @@ describe('pagination', () => {
     text: '',
     currentPageIndex: 0,
     renderAllPagesForExport: false,
-    settings: {
+    settings: withTestPaperSelection({
       customBackgroundImage: null,
       customBackgroundImages: [],
       lineHeight: 1.5,
       lineColor: '#a8d4f0',
       paperFormat: 'letter',
       paperOrientation: 'portrait',
+      paperPresetId: null,
       paperColor: '#fffef5',
       paperStyle: 'lined',
       ruledMarginLineOffset: -10,
-    },
+    }),
     pageSettings: [
       {
         marginTop: 50,
@@ -98,11 +100,13 @@ describe('pagination', () => {
           ...defaultReq,
           text: Array(60).fill('line').join('\n'),
           renderAllPagesForExport: true,
-          settings: {
+          settings: withTestPaperSelection({
             ...defaultReq.settings,
+            paperPresetId: null,
+            paperStyle: 'lined',
             paperFormat,
             paperOrientation,
-          },
+          }),
         });
 
         expect(res.pages[0]).toHaveLength(expectedLinesPerPage);
@@ -144,12 +148,20 @@ describe('pagination', () => {
       const resRuled = paginate({ 
         ...defaultReq, 
         text: 'hello', 
-        settings: { ...defaultReq.settings, paperStyle: 'ruled' } 
+        settings: withTestPaperSelection({
+          ...defaultReq.settings,
+          paperPresetId: null,
+          paperStyle: 'ruled',
+        }),
       });
       const resBlank = paginate({ 
         ...defaultReq, 
         text: 'hello', 
-        settings: { ...defaultReq.settings, paperStyle: 'blank' } 
+        settings: withTestPaperSelection({
+          ...defaultReq.settings,
+          paperPresetId: null,
+          paperStyle: 'blank',
+        }),
       });
       
       // The logic for ruledTextLeft changes maxWidth, but nextLineFrom uses it.
@@ -228,9 +240,13 @@ describe('pagination', () => {
         ...defaultReq,
         text: Array(40).fill('line').join('\n'),
         settings: {
-          ...defaultReq.settings,
-          paperFormat: 'a4',
-          paperOrientation: 'landscape',
+          ...withTestPaperSelection({
+            ...defaultReq.settings,
+            paperPresetId: null,
+            paperStyle: 'lined',
+            paperFormat: 'a4',
+            paperOrientation: 'landscape',
+          }),
         },
       });
 
@@ -244,9 +260,13 @@ describe('pagination', () => {
         ...defaultReq,
         text: Array(40).fill('line').join('\n'),
         settings: {
-          ...defaultReq.settings,
-          paperFormat: 'a4',
-          paperOrientation: 'landscape',
+          ...withTestPaperSelection({
+            ...defaultReq.settings,
+            paperPresetId: null,
+            paperStyle: 'lined',
+            paperFormat: 'a4',
+            paperOrientation: 'landscape',
+          }),
         },
         pageWidth: 800,
         pageHeight: 1000,

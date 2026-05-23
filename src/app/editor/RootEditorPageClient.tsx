@@ -24,7 +24,7 @@ import {
   defaultPageSettingsFromHandwritingSettings,
   LineData,
 } from '@/lib/types';
-import { loadEditorStateV1, saveEditorStateV1 } from '@/lib/editorPersistence';
+import { loadNormalizedEditorStateV1, saveEditorStateV1 } from '@/lib/editorPersistence';
 import { resolvePageLayout } from '@/lib/layout/LayoutEngine';
 import { applyPageSettingsToAll } from '@/lib/settingsHelpers';
 import {
@@ -60,7 +60,7 @@ const DEFAULT_INITIAL_STATE: EditorInitialState = {
 };
 
 const getInitialEditorState = (): EditorInitialState => {
-  const persisted = loadEditorStateV1<HandwritingSettings, PageSettings>();
+  const persisted = loadNormalizedEditorStateV1();
   if (!persisted) return DEFAULT_INITIAL_STATE;
 
   return {

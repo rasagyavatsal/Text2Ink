@@ -89,6 +89,7 @@ vi.mock('@/components/MobileEditorBottomSheet', () => ({
 
 vi.mock('@/lib/editorPersistence', () => ({
   loadEditorStateV1: vi.fn(() => null),
+  loadNormalizedEditorStateV1: vi.fn(() => null),
   saveEditorStateV1: vi.fn(),
 }));
 

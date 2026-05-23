@@ -5,6 +5,7 @@ import {
   defaultPageSettingsFromHandwritingSettings,
 } from '@/lib/types';
 import { resolvePagePaper } from '@/lib/paper/PaperEngine';
+import { withTestPaperSelection } from '@/test/paperTestHelpers';
 import { paginateDocument, resolvePageLayout } from '../LayoutEngine';
 
 describe('LayoutEngine', () => {
@@ -60,9 +61,11 @@ describe('LayoutEngine', () => {
         customLineSpacing: 44,
       };
       const settings = {
-        ...DEFAULT_SETTINGS,
+        ...withTestPaperSelection({
+          paperPresetId: null,
+          paperStyle: 'ruled',
+        }),
         customBackgroundImages: ['data:image/png;base64,page-0', 'data:image/png;base64,page-1'],
-        paperStyle: 'ruled' as const,
       };
 
       const resolved = resolvePageLayout({
@@ -143,15 +146,18 @@ describe('LayoutEngine', () => {
         currentPageIndex: 0,
         renderAllPagesForExport: false,
         settings: {
-          customBackgroundImage: null,
-          customBackgroundImages: [],
-          lineHeight: 1.5,
-          lineColor: '#a8d4f0',
-          paperFormat: 'letter',
-          paperOrientation: 'portrait',
-          paperColor: '#fffef5',
-          paperStyle: 'lined',
-          ruledMarginLineOffset: -10,
+          ...withTestPaperSelection({
+            customBackgroundImage: null,
+            customBackgroundImages: [],
+            lineHeight: 1.5,
+            lineColor: '#a8d4f0',
+            paperFormat: 'letter',
+            paperOrientation: 'portrait',
+            paperPresetId: null,
+            paperColor: '#fffef5',
+            paperStyle: 'lined',
+            ruledMarginLineOffset: -10,
+          }),
         },
         pageSettings: [
           {

@@ -114,10 +114,7 @@ export class ExportEngine {
         lineHeight: request.document.settings.lineHeight,
         lineColor: request.document.settings.lineColor,
         paperColor: request.document.settings.paperColor,
-        paperPresetId: request.document.settings.paperPresetId,
-        paperFormat: request.document.settings.paperFormat,
-        paperOrientation: request.document.settings.paperOrientation,
-        paperStyle: request.document.settings.paperStyle,
+        paper: request.document.settings.paper,
         ruledMarginLineOffset: request.document.settings.ruledMarginLineOffset,
       },
       pageSettings: normalizedPageSettings.map((pageSettings) => ({
@@ -131,7 +128,6 @@ export class ExportEngine {
         marginBottom: pageSettings.marginBottom,
         marginLeft: pageSettings.marginLeft,
         paperColor: pageSettings.paperColor,
-        paperStyle: pageSettings.paperStyle,
       })),
       fontFamily,
     });

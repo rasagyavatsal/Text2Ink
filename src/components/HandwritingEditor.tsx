@@ -214,7 +214,6 @@ export default function HandwritingEditor({
       marginBottom: number;
       marginLeft: number;
       paperColor?: string;
-      paperStyle?: PageSettings['paperStyle'];
     }> = [];
 
     for (let i = 0; i < desiredLength; i++) {
@@ -230,7 +229,6 @@ export default function HandwritingEditor({
         marginBottom: ps.marginBottom,
         marginLeft: ps.marginLeft,
         paperColor: ps.paperColor,
-        paperStyle: ps.paperStyle,
       });
     }
 
@@ -256,10 +254,7 @@ export default function HandwritingEditor({
         lineHeight: settings.lineHeight,
         lineColor: settings.lineColor,
         paperColor: settings.paperColor,
-        paperPresetId: settings.paperPresetId,
-        paperFormat: settings.paperFormat,
-        paperOrientation: settings.paperOrientation,
-        paperStyle: settings.paperStyle,
+        paper: settings.paper,
         ruledMarginLineOffset: settings.ruledMarginLineOffset,
       },
       pageSettings: desiredPageSettings,
@@ -307,12 +302,10 @@ export default function HandwritingEditor({
     resolvedFontFamily,
     settings.customBackgroundImage,
     settings.customBackgroundImages,
-    settings.paperFormat,
-    settings.paperOrientation,
+    settings.paper,
     settings.lineHeight,
     settings.lineColor,
     settings.paperColor,
-    settings.paperStyle,
     settings.ruledMarginLineOffset,
   ]);
 
@@ -656,7 +649,7 @@ export default function HandwritingEditor({
     settings.lineHeight,
     settings.lineColor,
     settings.paperColor,
-    settings.paperStyle,
+    settings.paper,
     settings.ruledMarginLineOffset,
   ]);
 

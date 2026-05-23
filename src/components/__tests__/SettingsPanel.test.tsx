@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import SettingsPanel from '../SettingsPanel';
 import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '../../lib/types';
+import { withTestPaperSelection } from '@/test/paperTestHelpers';
 
 // Mock lucide-react icons with a standard object mock
 vi.mock('lucide-react', () => {
@@ -206,7 +207,11 @@ describe('SettingsPanel', () => {
     render(
       <SettingsPanel
         {...defaultProps}
-        settings={{ ...defaultProps.settings, paperStyle: 'blank', paperPresetId: null }}
+        settings={withTestPaperSelection({
+          ...defaultProps.settings,
+          paperPresetId: null,
+          paperStyle: 'blank',
+        })}
       />,
     );
 

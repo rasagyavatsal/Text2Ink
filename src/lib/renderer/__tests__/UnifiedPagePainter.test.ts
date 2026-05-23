@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UnifiedPagePainter, PaintPageOptions } from '../UnifiedPagePainter';
 import { HandwritingSettings, PageSettings, DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '../../types';
-import { resolveNotebookPaperPresetId } from '@/lib/paper/notebookPresetCatalog';
 import { resolvePageLayout } from '@/lib/layout/LayoutEngine';
+import { withTestPaperSelection } from '@/test/paperTestHelpers';
 
 function createMockCtx() {
   return {
@@ -50,23 +50,7 @@ function defaultPaintOptions(overrides?: Partial<PaintPageOptions>): PaintPageOp
   };
 }
 
-function withResolvedPaperPreset(
-  settings: Partial<HandwritingSettings>,
-): HandwritingSettings {
-  const nextSettings = {
-    ...DEFAULT_SETTINGS,
-    ...settings,
-  };
-
-  return {
-    ...nextSettings,
-    paperPresetId: resolveNotebookPaperPresetId({
-      style: nextSettings.paperStyle,
-      format: nextSettings.paperFormat,
-      orientation: nextSettings.paperOrientation,
-    }),
-  };
-}
+const withResolvedPaperPreset = withTestPaperSelection;
 
 describe('UnifiedPagePainter', () => {
   describe('paintPage - background rendering', () => {

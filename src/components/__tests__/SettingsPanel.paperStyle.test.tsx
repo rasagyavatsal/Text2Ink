@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import SettingsPanel from '../SettingsPanel';
 import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '@/lib/types';
+import { withTestPaperSelection } from '@/test/paperTestHelpers';
 
 vi.mock('lucide-react', () => {
   const MockIcon = (props: any) => <div {...props} />;
@@ -63,11 +64,7 @@ describe('SettingsPanel paper styles', () => {
   }
 
   it('keeps paper color controls available for built-in paper styles', () => {
-    renderPanel({
-      ...DEFAULT_SETTINGS,
-      paperStyle: 'lined',
-      paperPresetId: 'lined-letter-portrait',
-    });
+    renderPanel(withTestPaperSelection({ paperPresetId: 'lined-letter-portrait' }));
 
     expect(screen.getByText('Paper Color')).toBeInTheDocument();
   });

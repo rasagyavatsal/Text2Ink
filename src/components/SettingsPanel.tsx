@@ -26,9 +26,17 @@ import {
   PAPER_ORIENTATIONS,
   LineData,
   FontOption,
+  PaperFormat,
+  PaperOrientation,
+  PaperStyle,
 } from '@/lib/types';
 import { resolvePageLayout } from '@/lib/layout/LayoutEngine';
-import { resolveNotebookPaperPresetId } from '@/lib/paper/notebookPresetCatalog';
+import {
+  resolveDocumentPaperFormat,
+  resolveDocumentPaperOrientation,
+  resolveDocumentPaperStyle,
+  updateDocumentPaperSelection,
+} from '@/lib/paper/paperSelection';
 import { cn } from '@/lib/utils';
 import { detectBackgroundLines } from '@/lib/lineDetection';
 import { 
@@ -320,6 +328,18 @@ export default function SettingsPanel({
   );
   const showManualAlignmentControls = resolvedPaper.capabilities.supportsManualAlignment;
   const showLineHeightControl = resolvedPaper.capabilities.supportsLineHeightControl;
+  const currentPaperStyle = useMemo(
+    () => resolveDocumentPaperStyle(settings.paper),
+    [settings.paper],
+  );
+  const currentPaperFormat = useMemo(
+    () => resolveDocumentPaperFormat(settings.paper),
+    [settings.paper],
+  );
+  const currentPaperOrientation = useMemo(
+    () => resolveDocumentPaperOrientation(settings.paper),
+    [settings.paper],
+  );
 
   const availableFonts = useMemo(() => HANDWRITING_FONTS.filter(f => f.value !== 'custom'), []);
   useEffect(() => {
@@ -348,16 +368,15 @@ export default function SettingsPanel({
   };
 
   const updateBuiltinSelection = (
-    patch: Partial<Pick<HandwritingSettings, 'paperStyle' | 'paperFormat' | 'paperOrientation'>>,
+    patch: Partial<{
+      style: PaperStyle;
+      format: PaperFormat;
+      orientation: PaperOrientation;
+    }>,
   ) => {
-    const nextSettings = { ...settings, ...patch };
     onSettingsChange({
-      ...nextSettings,
-      paperPresetId: resolveNotebookPaperPresetId({
-        style: nextSettings.paperStyle,
-        format: nextSettings.paperFormat,
-        orientation: nextSettings.paperOrientation,
-      }),
+      ...settings,
+      paper: updateDocumentPaperSelection(settings.paper, patch),
     });
   };
 
@@ -737,10 +756,10 @@ export default function SettingsPanel({
                     <PaperStyleCard
                       style={{ name: style.name, value: style.value }}
                       paperColor={settings.paperColor}
-                      isSelected={settings.paperStyle === style.value}
+                      isSelected={currentPaperStyle === style.value}
                       onClick={() =>
                         updateBuiltinSelection({
-                          paperStyle: style.value as HandwritingSettings['paperStyle'],
+                          style: style.value as PaperStyle,
                         })
                       }
                     />
@@ -753,10 +772,10 @@ export default function SettingsPanel({
           <div className="flex flex-col gap-3">
             <Label className="text-sm font-medium" htmlFor="paper-format">Size</Label>
             <Select
-              value={settings.paperFormat}
+              value={currentPaperFormat}
               onValueChange={(value) =>
                 updateBuiltinSelection({
-                  paperFormat: value as HandwritingSettings['paperFormat'],
+                  format: value as PaperFormat,
                 })
               }
             >
@@ -776,10 +795,10 @@ export default function SettingsPanel({
           <div className="flex flex-col gap-3">
             <Label className="text-sm font-medium" htmlFor="paper-orientation">Orientation</Label>
             <Select
-              value={settings.paperOrientation}
+              value={currentPaperOrientation}
               onValueChange={(value) =>
                 updateBuiltinSelection({
-                  paperOrientation: value as HandwritingSettings['paperOrientation'],
+                  orientation: value as PaperOrientation,
                 })
               }
             >
