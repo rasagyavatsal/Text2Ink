@@ -9,7 +9,7 @@ import {
 
 describe('notebookPresetCatalog', () => {
   it('covers lined, ruled, grid, dot-grid, and cornell assets for every supported page size and orientation', () => {
-    expect(NOTEBOOK_PAPER_PRESETS).toHaveLength(30);
+    expect(NOTEBOOK_PAPER_PRESETS).toHaveLength(54);
 
     const expectedVariants = new Set([
       'lined:letter:portrait',
@@ -18,12 +18,36 @@ describe('notebookPresetCatalog', () => {
       'lined:a4:landscape',
       'lined:a3:portrait',
       'lined:a3:landscape',
+      'wide-lined:letter:portrait',
+      'wide-lined:letter:landscape',
+      'wide-lined:a4:portrait',
+      'wide-lined:a4:landscape',
+      'wide-lined:a3:portrait',
+      'wide-lined:a3:landscape',
+      'narrow-lined:letter:portrait',
+      'narrow-lined:letter:landscape',
+      'narrow-lined:a4:portrait',
+      'narrow-lined:a4:landscape',
+      'narrow-lined:a3:portrait',
+      'narrow-lined:a3:landscape',
       'ruled:letter:portrait',
       'ruled:letter:landscape',
       'ruled:a4:portrait',
       'ruled:a4:landscape',
       'ruled:a3:portrait',
       'ruled:a3:landscape',
+      'wide-ruled:letter:portrait',
+      'wide-ruled:letter:landscape',
+      'wide-ruled:a4:portrait',
+      'wide-ruled:a4:landscape',
+      'wide-ruled:a3:portrait',
+      'wide-ruled:a3:landscape',
+      'narrow-ruled:letter:portrait',
+      'narrow-ruled:letter:landscape',
+      'narrow-ruled:a4:portrait',
+      'narrow-ruled:a4:landscape',
+      'narrow-ruled:a3:portrait',
+      'narrow-ruled:a3:landscape',
       'grid:letter:portrait',
       'grid:letter:landscape',
       'grid:a4:portrait',
@@ -76,7 +100,7 @@ describe('notebookPresetCatalog', () => {
       expect(preset.alignment.contentArea.width).toBeGreaterThan(0);
       expect(preset.alignment.contentArea.height).toBeGreaterThan(0);
 
-      if (preset.style === 'ruled') {
+      if (preset.style === 'ruled' || preset.style === 'wide-ruled' || preset.style === 'narrow-ruled') {
         expect(preset.alignment.ruledMarginPosition).toBeGreaterThan(0);
         expect(svg).toContain('#f39ca6');
       } else {
@@ -96,6 +120,16 @@ describe('notebookPresetCatalog', () => {
       format: 'letter',
       orientation: 'portrait',
     })).toBeNull();
+    expect(resolveNotebookPaperPresetId({
+      style: 'wide-lined',
+      format: 'a4',
+      orientation: 'portrait',
+    })).toBe('wide-lined-a4-portrait');
+    expect(resolveNotebookPaperPresetId({
+      style: 'narrow-ruled',
+      format: 'a3',
+      orientation: 'landscape',
+    })).toBe('narrow-ruled-a3-landscape');
     expect(resolveNotebookPaperPresetById(' GRID-A4-LANDSCAPE ')?.id).toBe('grid-a4-landscape');
   });
 });
