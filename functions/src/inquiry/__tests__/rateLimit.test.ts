@@ -26,13 +26,19 @@ describe("checkRateLimit", () => {
 
   function createMockDb(ipCount: number, emailCount: number) {
     const mockTransaction = {
-      get: vi.fn(),
-      set: vi.fn(),
-      update: vi.fn(),
+      get: vi.fn(async (ref: any) => {
+        if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+      }),
+      set: vi.fn((ref: any) => {
+        if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+      }),
+      update: vi.fn((ref: any) => {
+        if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+      }),
     }
 
     const mockDb = {
-      doc: vi.fn((path: string) => ({ id: path, path })),
+      doc: vi.fn((path: string) => ({ id: path, path, _isMockRef: true })),
       runTransaction: vi.fn(async (fn: Function) => {
         // First call in get: IP doc. Second call: email doc.
         const ipDoc = {
@@ -43,7 +49,25 @@ describe("checkRateLimit", () => {
           exists: emailCount > 0,
           data: () => ({ count: emailCount, expiresAt: { toDate: () => new Date(Date.now() + 3600000) } }),
         }
-        mockTransaction.get.mockResolvedValueOnce(ipDoc).mockResolvedValueOnce(emailDoc)
+        
+        mockTransaction.get
+          .mockImplementationOnce(async (ref: any) => {
+            if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+            return ipDoc;
+          })
+          .mockImplementationOnce(async (ref: any) => {
+            if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+            return emailDoc;
+          });
+
+        mockTransaction.set.mockImplementation((ref: any) => {
+          if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+        });
+
+        mockTransaction.update.mockImplementation((ref: any) => {
+          if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+        });
+
         await fn(mockTransaction)
       }),
     }
@@ -52,9 +76,30 @@ describe("checkRateLimit", () => {
   }
 
   it("allows submission when under both limits", async () => {
-    const { mockDb } = createMockDb(0, 0)
+    const { mockDb, mockTransaction } = createMockDb(0, 0)
     const result = await checkRateLimit(mockDb as any, ip, email)
     expect(result.allowed).toBe(true)
+
+    // Verify tx.get and tx.set were called with DocumentReferences
+    const getCalls = mockTransaction.get.mock.calls
+    const setCalls = mockTransaction.set.mock.calls
+    expect(getCalls.length).toBeGreaterThan(0)
+    expect(setCalls.length).toBeGreaterThan(0)
+    
+    getCalls.forEach(call => {
+      expect(call[0]._isMockRef).toBe(true)
+    })
+    setCalls.forEach(call => {
+      expect(call[0]._isMockRef).toBe(true)
+    })
+  })
+
+  it("rejects plain objects in mock transaction (strict mock test)", async () => {
+    const { mockTransaction } = createMockDb(0, 0)
+    
+    await expect(mockTransaction.get({ path: "test" })).rejects.toThrow("Expected DocumentReference")
+    expect(() => mockTransaction.set({ path: "test" })).toThrow("Expected DocumentReference")
+    expect(() => mockTransaction.update({ path: "test" })).toThrow("Expected DocumentReference")
   })
 
   it("rejects when IP limit exceeded", async () => {
