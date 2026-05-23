@@ -3,10 +3,17 @@ import {
   type PaginationRequest 
 } from '../lib/pagination';
 
-self.onmessage = (ev: MessageEvent<PaginationRequest>) => {
+type PaginationWorkerScope = {
+  onmessage: ((event: MessageEvent<PaginationRequest>) => void) | null;
+  postMessage: (message: ReturnType<typeof paginate>) => void;
+};
+
+const workerScope = self as unknown as PaginationWorkerScope;
+
+workerScope.onmessage = (ev: MessageEvent<PaginationRequest>) => {
   const msg = ev.data;
   if (!msg || msg.type !== 'paginate') return;
 
   const res = paginate(msg);
-  (self as any).postMessage(res);
+  workerScope.postMessage(res);
 };

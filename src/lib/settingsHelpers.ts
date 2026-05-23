@@ -28,6 +28,9 @@ export function processLineDetectionResult(
   _pageSettings: PageSettings,
   _settings: HandwritingSettings
 ): { offset: number; spacing: number } {
+  void _pageSettings;
+  void _settings;
+
   const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
   const detectedOffset = Math.round(result.lineOffset);
   const detectedSpacing = Math.round(result.lineSpacing);
@@ -70,4 +73,3 @@ export function applyPageSettingsToAll(
     textFields: page.textFields || []
   }));
 }
-

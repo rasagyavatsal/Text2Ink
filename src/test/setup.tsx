@@ -129,7 +129,6 @@ global.Image = class {
 vi.mock('next/image', () => ({
   __esModule: true,
   default: ({ priority, ...props }: any) => {
-    // eslint-disable-next-line @next/next/no-img-element
     return <img {...props} alt={props.alt || ''} data-priority={priority ? 'true' : undefined} />;
   },
 }));

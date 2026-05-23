@@ -10,7 +10,6 @@ import {
 } from '@/lib/types';
 import type { PaginationResponse } from '@/lib/pagination';
 import {
-  calculateRandomStyle,
   calculatePageStartOffsets,
   calculateLineStarts,
 } from '@/lib/editorHelpers';
@@ -74,13 +73,11 @@ export default function HandwritingEditor({
   pageSettingsByPage,
   onPageSettingsChange,
   previewScale,
-  onPreviewScaleChange,
   currentPageIndex,
   onCurrentPageChange,
   onTotalPagesChange,
   onPagesChange,
   onPaginationCompleteChange,
-  onApplyToAllPages,
   isMobileLayout = false,
   onTypingFocus,
 }: HandwritingEditorProps) {
@@ -92,7 +89,7 @@ export default function HandwritingEditor({
   const [fontMetricsVersion, setFontMetricsVersion] = useState(0);
   const [localText, setLocalText] = useState(text);
   const [pages, setPages] = useState<LineData[][]>([[]]);
-  const [isPaginationComplete, setIsPaginationComplete] = useState(true);
+  const [, setIsPaginationComplete] = useState(true);
   const [totalPages, setTotalPages] = useState(1);
   const latestPaginationRequestIdRef = useRef(0);
   const workerRef = useRef<Worker | null>(null);
@@ -185,6 +182,9 @@ export default function HandwritingEditor({
   );
 
   const resolvedFontFamily = useMemo(() => {
+    // Recompute after the font face finishes loading so CSS variable resolution stays fresh.
+    void fontMetricsVersion;
+
     if (settings.fontFamily === 'custom' && settings.customFont) {
       return `"${settings.customFont.family}", cursive`;
     }
@@ -320,11 +320,6 @@ export default function HandwritingEditor({
     onTotalPagesChange?.(totalPages);
   }, [onTotalPagesChange, totalPages]);
 
-  const applyRandomness = useCallback(
-    (charIndex: number, lineIndex: number) => calculateRandomStyle(charIndex, lineIndex, settings.randomness),
-    [settings.randomness]
-  );
-
   const syncSelectionFromTextarea = useCallback((el: HTMLTextAreaElement) => {
     const start = el.selectionStart ?? 0;
     const end = el.selectionEnd ?? start;
@@ -342,34 +337,6 @@ export default function HandwritingEditor({
       textareaRef.current.setSelectionRange(anchor, focus);
     }
   }, []);
-
-  const handleCharClick = useCallback(
-    (e: React.MouseEvent, globalCharIndex: number, isLeftHalf: boolean) => {
-      e.stopPropagation();
-      const newPosition = isLeftHalf ? globalCharIndex : globalCharIndex + 1;
-      setCursorPosition(newPosition);
-      setSelectionRange({ start: newPosition, end: newPosition });
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-        textareaRef.current.setSelectionRange(newPosition, newPosition);
-      }
-    },
-    []
-  );
-
-  const handleCharKeyDown = useCallback(
-    (e: React.KeyboardEvent, globalCharIndex: number, isLeftHalf: boolean = true) => {
-      e.stopPropagation();
-      const newPosition = isLeftHalf ? globalCharIndex : globalCharIndex + 1;
-      setCursorPosition(newPosition);
-      setSelectionRange({ start: newPosition, end: newPosition });
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-        textareaRef.current.setSelectionRange(newPosition, newPosition);
-      }
-    },
-    []
-  );
 
   const handleCharMouseDown = useCallback(
     (globalCharIndex: number, isLeftHalf: boolean) => {

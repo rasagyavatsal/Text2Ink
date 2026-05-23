@@ -62,9 +62,6 @@ function buildCharacterPositionsForLines(opts: {
       const metrics = ctx.measureText(char);
       const charWidth = metrics.width;
 
-      const actualBoundingBoxAscent = metrics.actualBoundingBoxAscent ?? fontAscent;
-      const actualBoundingBoxDescent = metrics.actualBoundingBoxDescent ?? fontDescent;
-
       let selectionY: number;
       let selectionHeight: number;
       let cursorY: number;
