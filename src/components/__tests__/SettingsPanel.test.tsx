@@ -172,9 +172,9 @@ describe('SettingsPanel', () => {
     render(<SettingsPanel {...defaultProps} />);
     
     const blankStyle = screen.getByRole('button', { name: /blank paper style/i });
-    const linedStyle = screen.getByRole('button', { name: /lined paper style/i });
-    const ruledStyle = screen.getByRole('button', { name: /ruled paper style/i });
-    const gridStyle = screen.getByRole('button', { name: /grid paper style/i });
+    const linedStyle = screen.getByRole('button', { name: /^lined \(medium\) paper style$/i });
+    const ruledStyle = screen.getByRole('button', { name: /^ruled \(medium\) paper style$/i });
+    const gridStyle = screen.getByRole('button', { name: /^grid paper style$/i });
     
     expect(blankStyle).toBeInTheDocument();
     expect(linedStyle).toBeInTheDocument();
@@ -186,7 +186,7 @@ describe('SettingsPanel', () => {
     render(<SettingsPanel {...defaultProps} />);
 
     expect(screen.getByRole('button', { name: /blank paper style/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /lined paper style/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^lined \(medium\) paper style$/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/Size/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Orientation/i)).toBeInTheDocument();
   });

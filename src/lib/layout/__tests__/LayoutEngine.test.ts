@@ -4,12 +4,18 @@ import {
   DEFAULT_SETTINGS,
   defaultPageSettingsFromHandwritingSettings,
 } from '@/lib/types';
+import { resolvePagePaper } from '@/lib/paper/PaperEngine';
 import { paginateDocument, resolvePageLayout } from '../LayoutEngine';
 
 describe('LayoutEngine', () => {
   describe('resolvePageLayout', () => {
     it('resolves built-in paper into a stable page and writing layout contract', () => {
       const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
+      const resolvedPaper = resolvePagePaper({
+        pageIndex: 0,
+        settings: DEFAULT_SETTINGS,
+        pageSettings,
+      });
 
       const resolved = resolvePageLayout({
         pageIndex: 0,
@@ -33,17 +39,16 @@ describe('LayoutEngine', () => {
       });
       expect(resolved.writing).toMatchObject({
         fontSize: pageSettings.fontSize,
-        lineHeightPx: pageSettings.fontSize * DEFAULT_SETTINGS.lineHeight,
-        firstLineTop: pageSettings.marginTop,
+        lineHeightPx: resolvedPaper.geometry.lineHeightPx,
+        firstLineTop: resolvedPaper.geometry.textTop,
         linesPerPage: Math.floor(
-          (PAGE_HEIGHT - pageSettings.marginTop - pageSettings.marginBottom)
-            / (pageSettings.fontSize * DEFAULT_SETTINGS.lineHeight),
+          resolvedPaper.geometry.contentHeight / resolvedPaper.geometry.lineHeightPx,
         ),
         textBounds: {
-          top: pageSettings.marginTop,
-          left: pageSettings.marginLeft,
-          width: PAGE_WIDTH - pageSettings.marginLeft - pageSettings.marginRight,
-          height: PAGE_HEIGHT - pageSettings.marginTop - pageSettings.marginBottom,
+          top: resolvedPaper.geometry.textTop,
+          left: resolvedPaper.geometry.textLeft,
+          width: resolvedPaper.geometry.textWidth,
+          height: resolvedPaper.geometry.contentBounds.bottom - resolvedPaper.geometry.textTop,
         },
       });
     });

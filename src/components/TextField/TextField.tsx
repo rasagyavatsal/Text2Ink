@@ -6,6 +6,7 @@ import { TextField as TextFieldType, HandwritingSettings } from '@/lib/types';
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { calculateRandomStyle } from '@/lib/editorHelpers';
 import { createMeasure } from '@/lib/pagination';
 import { cn } from '@/lib/utils';
@@ -339,7 +340,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
               {/* Font Size Section */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <label className="text-sm font-medium">Font Size</label>
+                  <Label className="label-text text-label">Font Size</Label>
                   <span className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">{field.fontSize}px</span>
                 </div>
                 <Slider
@@ -353,9 +354,10 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
 
               {/* Color Picker Section */}
               <div className="space-y-3">
-                <label className="text-sm font-medium">Text Color</label>
+                <Label className="label-text text-label" htmlFor={`text-field-color-${field.id}`}>Text Color</Label>
                 <div className="flex items-center gap-3 p-2 bg-secondary rounded-lg border border-border">
                   <input
+                    id={`text-field-color-${field.id}`}
                     type="color"
                     value={field.color}
                     onChange={(e) => onUpdate({ color: e.target.value })}
