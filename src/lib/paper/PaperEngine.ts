@@ -789,7 +789,11 @@ function buildBuiltinPresetSupport(): Record<
     },
     {
       lined: { formats: new Set<PaperFormat>(), orientations: new Set<PaperOrientation>() },
+      'wide-lined': { formats: new Set<PaperFormat>(), orientations: new Set<PaperOrientation>() },
+      'narrow-lined': { formats: new Set<PaperFormat>(), orientations: new Set<PaperOrientation>() },
       ruled: { formats: new Set<PaperFormat>(), orientations: new Set<PaperOrientation>() },
+      'wide-ruled': { formats: new Set<PaperFormat>(), orientations: new Set<PaperOrientation>() },
+      'narrow-ruled': { formats: new Set<PaperFormat>(), orientations: new Set<PaperOrientation>() },
       grid: { formats: new Set<PaperFormat>(), orientations: new Set<PaperOrientation>() },
       'dot-grid': { formats: new Set<PaperFormat>(), orientations: new Set<PaperOrientation>() },
       cornell: { formats: new Set<PaperFormat>(), orientations: new Set<PaperOrientation>() },
