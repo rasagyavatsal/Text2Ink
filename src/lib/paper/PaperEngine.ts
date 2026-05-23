@@ -195,9 +195,28 @@ export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
     pageSettings,
   });
   const hasUploadBackground = backgroundImage !== null;
-  const explicitBuiltinPreset = !hasUploadBackground
+  const paperFormatResolution = resolvePaperFormat(settings.paperFormat, DEFAULT_SETTINGS.paperFormat);
+  const paperOrientationResolution = resolvePaperOrientation(
+    settings.paperOrientation,
+    DEFAULT_SETTINGS.paperOrientation,
+  );
+  const styleResolution = resolvePaperStyle(settings.paperStyle, pageSettings.paperStyle);
+
+  let explicitBuiltinPreset = !hasUploadBackground
     ? resolveBuiltinPresetById(settings.paperPresetId)
     : null;
+
+  if (!explicitBuiltinPreset && !hasUploadBackground) {
+    const rawStyle = styleResolution.value;
+    if (rawStyle === 'wide-lined' || rawStyle === 'wide-ruled' || rawStyle === 'narrow-lined' || rawStyle === 'narrow-ruled') {
+      explicitBuiltinPreset = resolveBuiltinPreset({
+        style: rawStyle,
+        paperFormat: paperFormatResolution.value,
+        paperOrientation: paperOrientationResolution.value,
+      });
+    }
+  }
+
   const fontSizeResolution = resolvePositiveNumber(pageSettings.fontSize, DEFAULT_PAGE_SETTINGS.fontSize);
   const paperColorResolution = resolveString(
     pageSettings.paperColor,
@@ -220,18 +239,12 @@ export function resolvePagePaper(input: ResolvePagePaperInput): ResolvedPaper {
     });
   }
 
-  const paperFormatResolution = resolvePaperFormat(settings.paperFormat, DEFAULT_SETTINGS.paperFormat);
-  const paperOrientationResolution = resolvePaperOrientation(
-    settings.paperOrientation,
-    DEFAULT_SETTINGS.paperOrientation,
-  );
   const resolvedPageSize = resolvePaperPageSize(
     paperFormatResolution.value,
     paperOrientationResolution.value,
   );
   const pageWidth = resolvePositiveNumber(input.pageSize?.width, resolvedPageSize.width).value;
   const pageHeight = resolvePositiveNumber(input.pageSize?.height, resolvedPageSize.height).value;
-  const styleResolution = resolvePaperStyle(settings.paperStyle, pageSettings.paperStyle);
   const lineHeightResolution = resolvePositiveNumber(settings.lineHeight, DEFAULT_SETTINGS.lineHeight);
   const ruledMarginLineOffsetResolution = resolveFiniteNumber(
     settings.ruledMarginLineOffset,
