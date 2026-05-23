@@ -55,11 +55,12 @@ import {
 } from 'lucide-react';
 
 import {
-  validateFontFile,
+  applyPageSettingsToAll,
   generateFontFamilyName,
-  processLineDetectionResult,
   readFilesAsDataURL,
+  validateFontFile,
 } from '@/lib/settingsHelpers';
+import { normalizeUploadCalibrationResult, applyUploadCalibration } from '@/lib/uploadCalibration';
 import { resolvePaperControlsModel } from '@/lib/paper/paperControlsModel';
 
 const PaperStyleCard = ({
@@ -401,13 +402,9 @@ export default function SettingsPanel({
         return;
       }
 
-      const { offset, spacing } = processLineDetectionResult(result, pageSettings, settings);
+      const { offset, spacing } = normalizeUploadCalibrationResult(result);
 
-      onPageSettingsChange({
-        ...pageSettings,
-        customLineOffset: offset,
-        customLineSpacing: spacing,
-      });
+      onPageSettingsChange(applyUploadCalibration(pageSettings, { offset, spacing }));
       setLineDetectInfo({ offset, spacing });
     } catch {
       setLineDetectError('Failed to analyze background. Please try another image.');

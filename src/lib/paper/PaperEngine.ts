@@ -602,21 +602,18 @@ function resolvePaperPageSize(
   return { width, height };
 }
 
+import { getUploadCalibrationState } from '../uploadCalibration';
+
 function resolveBackgroundImage(input: {
   pageIndex: number;
   settings: RawDocumentPaperSettings;
   pageSettings: RawPagePaperSettings;
 }): string | null {
-  const pageSpecificBackground = Array.isArray(input.settings.customBackgroundImages)
-    ? normalizeString(input.settings.customBackgroundImages[input.pageIndex])
-    : null;
-
-  return (
-    pageSpecificBackground
-    ?? normalizeString(input.pageSettings.customBackgroundImage)
-    ?? normalizeString(input.settings.customBackgroundImage)
-    ?? null
-  );
+  return getUploadCalibrationState({
+    pageIndex: input.pageIndex,
+    settings: input.settings,
+    pageSettings: input.pageSettings,
+  }).currentBackground;
 }
 
 function resolveGuides(input: {
