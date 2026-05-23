@@ -23,22 +23,7 @@ export function generateFontFamilyName(fileName: string): string {
   return `Text2InkCustom-${safeBase || 'Font'}-${Date.now()}`;
 }
 
-export function processLineDetectionResult(
-  result: LineDetectionResult,
-  _pageSettings: PageSettings,
-  _settings: HandwritingSettings
-): { offset: number; spacing: number } {
-  void _pageSettings;
-  void _settings;
 
-  const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-  const detectedOffset = Math.round(result.lineOffset);
-  const detectedSpacing = Math.round(result.lineSpacing);
-  const clampedOffset = clamp(detectedOffset, -50, 50);
-  const clampedSpacing = clamp(detectedSpacing, 20, 120);
-
-  return { offset: clampedOffset, spacing: clampedSpacing };
-}
 
 export async function readFilesAsDataURL(files: File[]): Promise<string[]> {
   const readAsDataURL = (file: File) =>

@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { 
   validateFontFile, 
-  generateFontFamilyName, 
-  processLineDetectionResult,
+  generateFontFamilyName,
   readFilesAsDataURL,
   applyPageSettingsToAll
 } from '../settingsHelpers';
@@ -40,33 +39,7 @@ describe('settingsHelpers', () => {
     });
   });
 
-  describe('processLineDetectionResult', () => {
-    it('clamps and rounds results', () => {
-      const result = {
-        lineOffset: 12.6,
-        lineSpacing: 45.2,
-        linePositions: [12.6, 57.8],
-      };
-      const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
-      const processed = processLineDetectionResult(result, pageSettings, DEFAULT_SETTINGS);
-      
-      expect(processed.offset).toBe(13);
-      expect(processed.spacing).toBe(45);
-    });
 
-    it('respects min/max bounds', () => {
-      const result = {
-        lineOffset: 100, // max is 50
-        lineSpacing: 10,  // min is 20
-        linePositions: [],
-      };
-      const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
-      const processed = processLineDetectionResult(result, pageSettings, DEFAULT_SETTINGS);
-      
-      expect(processed.offset).toBe(50);
-      expect(processed.spacing).toBe(20);
-    });
-  });
 
   describe('readFilesAsDataURL', () => {
     it('reads files correctly', async () => {
