@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import CanvasPreview from '../CanvasPreview';
 import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '@/lib/types';
-import { resolveNotebookPaperPresetId } from '@/lib/paper/notebookPresetCatalog';
+import { withTestPaperSelection } from '@/test/paperTestHelpers';
 
 const { renderPage, paintCursorOverlay, paintSelectionOverlay } = vi.hoisted(() => ({
   renderPage: vi.fn(),
@@ -34,23 +34,7 @@ const defaultProps = {
   fontFamily: 'Caveat, cursive',
 };
 
-function withResolvedPaperPreset(
-  settings: Partial<typeof DEFAULT_SETTINGS>,
-) {
-  const nextSettings = {
-    ...DEFAULT_SETTINGS,
-    ...settings,
-  };
-
-  return {
-    ...nextSettings,
-    paperPresetId: resolveNotebookPaperPresetId({
-      style: nextSettings.paperStyle,
-      format: nextSettings.paperFormat,
-      orientation: nextSettings.paperOrientation,
-    }),
-  };
-}
+const withResolvedPaperPreset = withTestPaperSelection;
 
 describe('CanvasPreview', () => {
   beforeEach(() => {

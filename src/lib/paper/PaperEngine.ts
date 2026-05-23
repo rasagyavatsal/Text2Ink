@@ -4,6 +4,7 @@ import {
   type HandwritingSettings,
   type PaperFormat,
   type PaperOrientation,
+  type PaperStyle,
   type PageSettings,
   defaultPageSettingsFromHandwritingSettings,
 } from '@/lib/types';
@@ -15,8 +16,14 @@ import {
   resolveNotebookPaperPreset,
   resolveNotebookPaperPresetById,
 } from './notebookPresetCatalog';
-
-type PaperStyle = HandwritingSettings['paperStyle'];
+import {
+  DEFAULT_GENERATED_PAPER_SELECTION,
+  normalizeDocumentPaperSelection,
+  resolveDocumentPaperFormat,
+  resolveDocumentPaperOrientation,
+  resolveDocumentPaperPresetId,
+  resolveDocumentPaperStyle,
+} from './paperSelection';
 
 type RawDocumentPaperSettings = Partial<
   Pick<
@@ -26,13 +33,15 @@ type RawDocumentPaperSettings = Partial<
     | 'lineColor'
     | 'lineHeight'
     | 'paperColor'
-    | 'paperPresetId'
-    | 'paperStyle'
-    | 'paperFormat'
-    | 'paperOrientation'
+    | 'paper'
     | 'ruledMarginLineOffset'
   >
->;
+> & {
+  paperPresetId?: string | null;
+  paperStyle?: PaperStyle;
+  paperFormat?: PaperFormat;
+  paperOrientation?: PaperOrientation;
+};
 
 type RawPagePaperSettings = Partial<
   Pick<
@@ -47,9 +56,10 @@ type RawPagePaperSettings = Partial<
     | 'marginRight'
     | 'marginTop'
     | 'paperColor'
-    | 'paperStyle'
   >
->;
+> & {
+  paperStyle?: PaperStyle;
+};
 
 export interface ResolvePagePaperInput {
   pageIndex: number;
@@ -179,9 +189,6 @@ export interface ResolvedBuiltinPaperPreset {
 }
 
 const DEFAULT_PAGE_SETTINGS = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
-const PAPER_STYLES = new Set<PaperStyle>(['blank', 'lined', 'wide-lined', 'narrow-lined', 'ruled', 'wide-ruled', 'narrow-ruled', 'grid', 'dot-grid', 'cornell']);
-const PAPER_FORMATS = new Set<PaperFormat>(['letter', 'a4', 'a3']);
-const PAPER_ORIENTATIONS = new Set<PaperOrientation>(['portrait', 'landscape']);
 const PAPER_DIMENSIONS_PT: Record<PaperFormat, { width: number; height: number }> = {
   letter: {
     width: PAGE_WIDTH,
@@ -223,30 +230,36 @@ interface PaperDefinition {
 function resolvePaperDefinition(input: ResolvePagePaperInput): PaperDefinition {
   const settings = input.settings ?? {};
   const pageSettings = input.pageSettings ?? {};
+  const selectionResolution = normalizeDocumentPaperSelection({
+    paper: settings.paper,
+    paperPresetId: settings.paperPresetId,
+    paperStyle: settings.paperStyle,
+    paperFormat: settings.paperFormat,
+    paperOrientation: settings.paperOrientation,
+    pagePaperStyle: pageSettings.paperStyle,
+    defaultWhenMissing: DEFAULT_GENERATED_PAPER_SELECTION,
+  });
   const backgroundImage = resolveBackgroundImage({
     pageIndex: input.pageIndex,
     settings,
     pageSettings,
   });
   const hasUploadBackground = backgroundImage !== null;
-  const paperFormatResolution = resolvePaperFormat(settings.paperFormat, DEFAULT_SETTINGS.paperFormat);
-  const paperOrientationResolution = resolvePaperOrientation(
-    settings.paperOrientation,
-    DEFAULT_SETTINGS.paperOrientation,
-  );
-  const styleResolution = resolvePaperStyle(settings.paperStyle, pageSettings.paperStyle);
+  const paperFormat = resolveDocumentPaperFormat(selectionResolution.selection);
+  const paperOrientation = resolveDocumentPaperOrientation(selectionResolution.selection);
+  const style = resolveDocumentPaperStyle(selectionResolution.selection);
 
   let explicitBuiltinPreset = !hasUploadBackground
-    ? resolveBuiltinPresetById(settings.paperPresetId)
+    ? resolveBuiltinPresetById(resolveDocumentPaperPresetId(selectionResolution.selection))
     : null;
 
   if (!explicitBuiltinPreset && !hasUploadBackground) {
-    const rawStyle = styleResolution.value;
+    const rawStyle = style;
     if (rawStyle === 'wide-lined' || rawStyle === 'wide-ruled' || rawStyle === 'narrow-lined' || rawStyle === 'narrow-ruled') {
       explicitBuiltinPreset = resolveBuiltinPreset({
         style: rawStyle,
-        paperFormat: paperFormatResolution.value,
-        paperOrientation: paperOrientationResolution.value,
+        paperFormat,
+        paperOrientation,
       });
     }
   }
@@ -274,8 +287,8 @@ function resolvePaperDefinition(input: ResolvePagePaperInput): PaperDefinition {
   }
 
   const resolvedPageSize = resolvePaperPageSize(
-    paperFormatResolution.value,
-    paperOrientationResolution.value,
+    paperFormat,
+    paperOrientation,
   );
   const pageWidth = resolvePositiveNumber(input.pageSize?.width, resolvedPageSize.width).value;
   const pageHeight = resolvePositiveNumber(input.pageSize?.height, resolvedPageSize.height).value;
@@ -296,7 +309,6 @@ function resolvePaperDefinition(input: ResolvePagePaperInput): PaperDefinition {
     pageSettings.customLineSpacing,
     DEFAULT_PAGE_SETTINGS.customLineSpacing,
   );
-  const style = styleResolution.value;
   const margins = {
     top: marginTopResolution.value,
     right: marginRightResolution.value,
@@ -332,9 +344,7 @@ function resolvePaperDefinition(input: ResolvePagePaperInput): PaperDefinition {
   const textWidth = Math.max(0, pageWidth - textLeft - margins.right);
 
   const usedCompatibilityFallback =
-    paperFormatResolution.incompatible
-    || paperOrientationResolution.incompatible
-    || styleResolution.incompatible
+    selectionResolution.incompatible
     || lineHeightResolution.incompatible
     || ruledMarginLineOffsetResolution.incompatible
     || fontSizeResolution.incompatible
@@ -352,8 +362,8 @@ function resolvePaperDefinition(input: ResolvePagePaperInput): PaperDefinition {
     ? explicitBuiltinPreset
       ?? resolveBuiltinPreset({
         style,
-        paperFormat: paperFormatResolution.value,
-        paperOrientation: paperOrientationResolution.value,
+        paperFormat,
+        paperOrientation,
       })
     : null;
   const builtinPreset = isCompatibleBuiltinPreset({
@@ -580,59 +590,6 @@ function resolveBuiltinPresetBackground(input: {
   };
 }
 
-function resolvePaperFormat(
-  value: RawDocumentPaperSettings['paperFormat'],
-  fallback: PaperFormat,
-): { value: PaperFormat; usedFallback: boolean; incompatible: boolean } {
-  if (isPaperFormat(value)) {
-    return { value, usedFallback: false, incompatible: false };
-  }
-
-  return {
-    value: fallback,
-    usedFallback: true,
-    incompatible: hasExplicitValue(value),
-  };
-}
-
-function resolvePaperOrientation(
-  value: RawDocumentPaperSettings['paperOrientation'],
-  fallback: PaperOrientation,
-): { value: PaperOrientation; usedFallback: boolean; incompatible: boolean } {
-  if (isPaperOrientation(value)) {
-    return { value, usedFallback: false, incompatible: false };
-  }
-
-  return {
-    value: fallback,
-    usedFallback: true,
-    incompatible: hasExplicitValue(value),
-  };
-}
-
-function resolvePaperStyle(
-  documentStyle: RawDocumentPaperSettings['paperStyle'],
-  pageStyle: RawPagePaperSettings['paperStyle'],
-): { value: PaperStyle; usedFallback: boolean; incompatible: boolean } {
-  if (isPaperStyle(documentStyle)) {
-    return { value: documentStyle, usedFallback: false, incompatible: false };
-  }
-
-  if (isPaperStyle(pageStyle)) {
-    return {
-      value: pageStyle,
-      usedFallback: true,
-      incompatible: hasExplicitValue(documentStyle),
-    };
-  }
-
-  return {
-    value: DEFAULT_SETTINGS.paperStyle,
-    usedFallback: true,
-    incompatible: hasExplicitValue(documentStyle) || hasExplicitValue(pageStyle),
-  };
-}
-
 function resolvePaperPageSize(
   paperFormat: PaperFormat,
   paperOrientation: PaperOrientation,
@@ -791,18 +748,6 @@ function normalizeString(value: unknown): string | null {
 
 function hasExplicitValue(value: unknown): boolean {
   return value !== undefined && value !== null && !(typeof value === 'string' && value.trim().length === 0);
-}
-
-function isPaperStyle(value: unknown): value is PaperStyle {
-  return typeof value === 'string' && PAPER_STYLES.has(value as PaperStyle);
-}
-
-function isPaperFormat(value: unknown): value is PaperFormat {
-  return typeof value === 'string' && PAPER_FORMATS.has(value as PaperFormat);
-}
-
-function isPaperOrientation(value: unknown): value is PaperOrientation {
-  return typeof value === 'string' && PAPER_ORIENTATIONS.has(value as PaperOrientation);
 }
 
 function resolveBuiltinPreset(input: {

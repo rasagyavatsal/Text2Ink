@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderPageToCanvas } from '../canvasRenderer';
-import { HandwritingSettings, PageSettings, LineData } from '../types';
+import {
+  type HandwritingSettings,
+  type PageSettings,
+  type LineData,
+  defaultPageSettingsFromHandwritingSettings,
+} from '../types';
+import { withTestPaperSelection } from '@/test/paperTestHelpers';
 
 // Mock the global Image for background loading
 global.Image = class {
@@ -17,13 +23,8 @@ describe('canvasRenderer', () => {
   let mockCanvas: any;
   let mockCtx: any;
 
-  const mockSettings: HandwritingSettings = {
-    fontFamily: 'caveat',
-    fontSize: 24,
+  const mockSettings: HandwritingSettings = withTestPaperSelection({
     lineHeight: 1.5,
-    paperFormat: 'letter',
-    paperOrientation: 'portrait',
-    paperStyle: 'lined',
     lineColor: '#000000',
     paperColor: '#ffffff',
     inkColor: '#111111',
@@ -39,10 +40,10 @@ describe('canvasRenderer', () => {
     customLineSpacing: null,
     lineTilt: 0,
     customFont: null,
-  };
+  });
 
   const mockPageSettings: PageSettings = {
-    fontSize: 24,
+    ...defaultPageSettingsFromHandwritingSettings(mockSettings),
     marginTop: 50,
     marginBottom: 50,
     marginLeft: 50,
@@ -50,7 +51,6 @@ describe('canvasRenderer', () => {
     paperColor: '#ffffff',
     inkColor: '#111111',
     lineColor: '#000000',
-    paperStyle: 'lined',
     customBackgroundImage: null,
     customLineOffset: 0,
     customLineSpacing: null,
@@ -119,9 +119,11 @@ describe('canvasRenderer', () => {
       lines: mockLines,
       pageSettings: mockPageSettings,
       settings: {
-        ...mockSettings,
-        paperFormat: 'a4',
-        paperOrientation: 'landscape',
+        ...withTestPaperSelection({
+          ...mockSettings,
+          paperFormat: 'a4',
+          paperOrientation: 'landscape',
+        }),
       },
       scale,
       fontFamily: 'Caveat',
@@ -132,14 +134,6 @@ describe('canvasRenderer', () => {
   });
 
   it('applies correct vertical centering offset', async () => {
-    // Mock metrics: 
-    // ascent = 15, descent = 5
-    // fontSize = 24
-    // Line height: 24 (fontSize) * 1.5 (lineHeight) = 36px
-    // halfLeading: (36 - 24) / 2 = 6px
-    // fontAscent: 15 (from mock actualBoundingBoxAscent)
-    // Offset (baseline): 6 (halfLeading) + 15 (fontAscent) = 21px
-    
     const settingsNoRandom = { 
       ...mockSettings, 
       randomness: { ...mockSettings.randomness, enabled: false } 
@@ -156,11 +150,11 @@ describe('canvasRenderer', () => {
     });
 
     expect(mockCtx.textBaseline).toBe('alphabetic');
-    
-    // The first line starts at marginTop (50) + offset (21) = 71
+
+    // Canonical lined paper now uses preset-authored baseline geometry.
     const translateCalls = mockCtx.translate.mock.calls;
     const yValue = translateCalls[0][1];
-    expect(yValue).toBe(71);
+    expect(yValue).toBe(103.125);
   });
 
   it('renders built-in lined paper from the SVG background instead of synthetic guides', async () => {

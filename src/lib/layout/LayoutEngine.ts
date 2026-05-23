@@ -1,5 +1,11 @@
 import { resolvePagePaper } from '@/lib/paper/PaperEngine';
-import type { HandwritingSettings, PageSettings } from '@/lib/types';
+import type {
+  HandwritingSettings,
+  PageSettings,
+  PaperFormat,
+  PaperOrientation,
+  PaperStyle,
+} from '@/lib/types';
 import { createMeasure, nextLineFrom } from './textWrap';
 
 export type PaginationLineData = {
@@ -15,14 +21,16 @@ type DocumentLayoutSettings = Partial<
     | 'customBackgroundImages'
     | 'lineHeight'
     | 'paperColor'
-    | 'paperStyle'
-    | 'paperFormat'
-    | 'paperOrientation'
+    | 'paper'
     | 'lineColor'
     | 'ruledMarginLineOffset'
-    | 'paperPresetId'
   >
->;
+> & {
+  paperPresetId?: string | null;
+  paperStyle?: PaperStyle;
+  paperFormat?: PaperFormat;
+  paperOrientation?: PaperOrientation;
+};
 
 type PageLayoutSettings = Partial<
   Pick<
@@ -36,10 +44,11 @@ type PageLayoutSettings = Partial<
     | 'marginBottom'
     | 'marginLeft'
     | 'paperColor'
-    | 'paperStyle'
     | 'lineColor'
   >
->;
+> & {
+  paperStyle?: PaperStyle;
+};
 
 export interface ResolvePageLayoutInput {
   pageIndex: number;
@@ -61,7 +70,7 @@ export interface ResolvedPageLayout {
   paper: {
     variant: 'preset' | 'upload' | 'legacy-fallback';
     sourceKind: ReturnType<typeof resolvePagePaper>['source']['kind'];
-    style: HandwritingSettings['paperStyle'];
+    style: PaperStyle;
     background: ReturnType<typeof resolvePagePaper>['background'];
     guides: ReturnType<typeof resolvePagePaper>['guides'];
     presetId: string | null;

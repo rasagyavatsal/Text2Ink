@@ -1,3 +1,14 @@
+import {
+  DEFAULT_SETTINGS,
+  defaultPageSettingsFromHandwritingSettings,
+  type HandwritingSettings,
+  type PageSettings,
+} from '@/lib/types';
+import {
+  normalizeDocumentPaperSelection,
+  normalizePagePaperSelection,
+} from '@/lib/paper/paperSelection';
+
 export type EditorUiState = {
   activePanel: 'settings' | 'export';
   sidebarOpen: boolean;
@@ -70,6 +81,29 @@ export const loadEditorStateV1 = <TSettings, TPageSettings>():
   } as PersistedEditorStateV1<TSettings, TPageSettings>;
 };
 
+export const loadNormalizedEditorStateV1 = ():
+  | PersistedEditorStateV1<HandwritingSettings, PageSettings>
+  | null => {
+  const persisted = loadEditorStateV1<unknown, unknown>();
+  if (!persisted) return null;
+
+  const settings = normalizeHandwritingSettings(
+    persisted.settings,
+    persisted.pageSettingsByPage,
+  );
+  const pageSettingsByPage = persisted.pageSettingsByPage.length > 0
+    ? persisted.pageSettingsByPage.map((pageSettings) =>
+        normalizePageSettings(pageSettings, settings),
+      )
+    : [defaultPageSettingsFromHandwritingSettings(settings)];
+
+  return {
+    ...persisted,
+    settings,
+    pageSettingsByPage,
+  };
+};
+
 export const saveEditorStateV1 = <TSettings, TPageSettings>(
   next: Omit<PersistedEditorStateV1<TSettings, TPageSettings>, 'version' | 'updatedAt'>
 ): void => {
@@ -95,3 +129,65 @@ export const clearEditorState = (): void => {
     return;
   }
 };
+
+function normalizeHandwritingSettings(
+  rawSettings: unknown,
+  rawPageSettingsByPage: unknown[],
+): HandwritingSettings {
+  const settingsRecord = rawSettings && typeof rawSettings === 'object'
+    ? rawSettings as Record<string, unknown>
+    : {};
+  const {
+    paper: rawPaper,
+    paperPresetId,
+    paperStyle,
+    paperFormat,
+    paperOrientation,
+    ...rest
+  } = settingsRecord;
+  const firstLegacyPageStyle = rawPageSettingsByPage.find(
+    (pageSettings) =>
+      pageSettings
+      && typeof pageSettings === 'object'
+      && 'paperStyle' in (pageSettings as Record<string, unknown>),
+  );
+  const normalizedPaper = normalizeDocumentPaperSelection({
+    paper: rawPaper,
+    paperPresetId,
+    paperStyle,
+    paperFormat,
+    paperOrientation,
+    pagePaperStyle:
+      firstLegacyPageStyle && typeof firstLegacyPageStyle === 'object'
+        ? (firstLegacyPageStyle as Record<string, unknown>).paperStyle
+        : undefined,
+    defaultWhenMissing: DEFAULT_SETTINGS.paper,
+  });
+
+  return {
+    ...DEFAULT_SETTINGS,
+    ...(rest as Partial<HandwritingSettings>),
+    paper: normalizedPaper.selection,
+  };
+}
+
+function normalizePageSettings(
+  rawPageSettings: unknown,
+  settings: HandwritingSettings,
+): PageSettings {
+  const pageSettingsRecord = rawPageSettings && typeof rawPageSettings === 'object'
+    ? rawPageSettings as Record<string, unknown>
+    : {};
+  const {
+    paper: rawPaper,
+    paperStyle: _paperStyle,
+    ...rest
+  } = pageSettingsRecord;
+  void _paperStyle;
+
+  return {
+    ...defaultPageSettingsFromHandwritingSettings(settings),
+    ...(rest as Partial<PageSettings>),
+    paper: normalizePagePaperSelection(rawPaper),
+  };
+}

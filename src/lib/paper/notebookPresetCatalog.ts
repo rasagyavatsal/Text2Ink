@@ -1,4 +1,4 @@
-import type { HandwritingSettings, PaperFormat, PaperOrientation } from '@/lib/types';
+import type { PaperFormat, PaperOrientation, PaperStyle } from '@/lib/types';
 import notebookPresetManifest from '../../../public/paper-presets/manifest.json';
 
 export interface NotebookPaperBox {
@@ -42,7 +42,7 @@ export interface NotebookPaperPreset {
 
 export const NOTEBOOK_PAPER_PRESETS = notebookPresetManifest as NotebookPaperPreset[];
 
-export type PresetBackedPaperStyle = Extract<HandwritingSettings['paperStyle'], 'lined' | 'wide-lined' | 'narrow-lined' | 'ruled' | 'wide-ruled' | 'narrow-ruled' | 'grid' | 'dot-grid' | 'cornell'>;
+export type PresetBackedPaperStyle = Extract<PaperStyle, 'lined' | 'wide-lined' | 'narrow-lined' | 'ruled' | 'wide-ruled' | 'narrow-ruled' | 'grid' | 'dot-grid' | 'cornell'>;
 
 const PRESET_BACKED_PAPER_STYLES = new Set<PresetBackedPaperStyle>(['lined', 'wide-lined', 'narrow-lined', 'ruled', 'wide-ruled', 'narrow-ruled', 'grid', 'dot-grid', 'cornell']);
 const NOTEBOOK_PAPER_PRESET_BY_ID = new Map(
@@ -56,7 +56,7 @@ const NOTEBOOK_PAPER_PRESET_BY_KEY = new Map(
 );
 
 export function isPresetBackedPaperStyle(
-  value: HandwritingSettings['paperStyle'],
+  value: PaperStyle,
 ): value is PresetBackedPaperStyle {
   return PRESET_BACKED_PAPER_STYLES.has(value as PresetBackedPaperStyle);
 }
@@ -67,7 +67,7 @@ export function resolveNotebookPaperPresetById(value: unknown): NotebookPaperPre
 }
 
 export function resolveNotebookPaperPreset(input: {
-  style: HandwritingSettings['paperStyle'];
+  style: PaperStyle;
   format: PaperFormat;
   orientation: PaperOrientation;
 }): NotebookPaperPreset | null {
@@ -81,7 +81,7 @@ export function resolveNotebookPaperPreset(input: {
 }
 
 export function resolveNotebookPaperPresetId(input: {
-  style: HandwritingSettings['paperStyle'];
+  style: PaperStyle;
   format: PaperFormat;
   orientation: PaperOrientation;
 }): string | null {

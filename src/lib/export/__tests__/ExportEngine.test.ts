@@ -5,7 +5,7 @@ import {
   type HandwritingSettings,
   type PageSettings,
 } from '@/lib/types';
-import { resolveNotebookPaperPresetId } from '@/lib/paper/notebookPresetCatalog';
+import { withTestPaperSelection } from '@/test/paperTestHelpers';
 import { ExportEngine } from '../ExportEngine';
 
 function createDocument(overrides?: Partial<{
@@ -27,23 +27,7 @@ function createDocument(overrides?: Partial<{
   };
 }
 
-function withResolvedPaperPreset(
-  settings: Partial<HandwritingSettings>,
-): HandwritingSettings {
-  const nextSettings = {
-    ...DEFAULT_SETTINGS,
-    ...settings,
-  };
-
-  return {
-    ...nextSettings,
-    paperPresetId: resolveNotebookPaperPresetId({
-      style: nextSettings.paperStyle,
-      format: nextSettings.paperFormat,
-      orientation: nextSettings.paperOrientation,
-    }),
-  };
-}
+const withResolvedPaperPreset = withTestPaperSelection;
 
 function createMockRenderContext() {
   return {
@@ -153,13 +137,10 @@ describe('ExportEngine', () => {
     await engine.exportDocument({
       format: 'pdf',
       document: createDocument({
-        settings: {
-          ...DEFAULT_SETTINGS,
-          paperFormat: 'letter',
-          paperOrientation: 'portrait',
+        settings: withResolvedPaperPreset({
           paperPresetId: 'lined-a4-landscape',
           randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-        },
+        }),
       }),
     });
 

@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { loadEditorStateV1, saveEditorStateV1, clearEditorState } from '../editorPersistence';
+import {
+  clearEditorState,
+  loadEditorStateV1,
+  loadNormalizedEditorStateV1,
+  saveEditorStateV1,
+} from '../editorPersistence';
+import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '../types';
 
 const mockState = {
   text: 'hello',
@@ -55,6 +61,39 @@ describe('editorPersistence', () => {
     expect(loaded).toMatchObject(mockState);
     expect(loaded?.version).toBe(1);
     expect(loaded).not.toHaveProperty(legacyKey);
+  });
+
+  it('normalizes legacy paper fields into a canonical paper selection when hydrating editor state', () => {
+    const payload = {
+      version: 1,
+      updatedAt: Date.now(),
+      text: 'hello',
+      settings: {
+        ...DEFAULT_SETTINGS,
+        paper: undefined,
+        paperPresetId: 'grid-a4-landscape',
+        paperStyle: 'blank',
+        paperFormat: 'letter',
+        paperOrientation: 'portrait',
+      },
+      pageSettingsByPage: [
+        {
+          ...defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
+          paper: undefined,
+          paperStyle: 'ruled',
+        },
+      ],
+      ui: mockState.ui,
+    };
+    vi.mocked(localStorage.getItem).mockReturnValue(JSON.stringify(payload));
+
+    const loaded = loadNormalizedEditorStateV1();
+
+    expect(loaded?.settings.paper).toEqual({
+      kind: 'preset',
+      presetId: 'grid-a4-landscape',
+    });
+    expect(loaded?.pageSettingsByPage[0]?.paper).toEqual({ kind: 'inherit' });
   });
 
   it('rejects malformed or version mismatch payloads', () => {

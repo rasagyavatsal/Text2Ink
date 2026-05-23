@@ -17,12 +17,15 @@ describe('types helpers', () => {
     expect(pageSettings.customLineSpacing).toBe(DEFAULT_SETTINGS.customLineSpacing);
     expect(pageSettings.inkColor).toBe(DEFAULT_SETTINGS.inkColor);
     expect(pageSettings.lineColor).toBe(DEFAULT_SETTINGS.lineColor);
-    expect(pageSettings.paperStyle).toBe(DEFAULT_SETTINGS.paperStyle);
+    expect(pageSettings.paper).toEqual({ kind: 'inherit' });
   });
 
   it('DEFAULT_SETTINGS and constants remain internally consistent', () => {
     expect(DEFAULT_SETTINGS).toBeDefined();
-    expect(DEFAULT_SETTINGS.paperPresetId).toBe('lined-letter-portrait');
+    expect(DEFAULT_SETTINGS.paper).toEqual({
+      kind: 'preset',
+      presetId: 'lined-letter-portrait',
+    });
     expect(PAPER_STYLES).toContainEqual({ name: 'Lined (Medium)', value: 'lined' });
   });
 });

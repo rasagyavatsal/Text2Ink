@@ -15,7 +15,7 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '@/lib/types';
 import { resolvePageLayout } from '@/lib/layout/LayoutEngine';
-import { resolveNotebookPaperPresetId } from '@/lib/paper/notebookPresetCatalog';
+import { withTestPaperSelection } from '@/test/paperTestHelpers';
 import { PageRenderEngine } from '../PageRenderEngine';
 
 // ---------------------------------------------------------------------------
@@ -78,23 +78,7 @@ function createMockCanvas(ctx: CanvasRenderingContext2D) {
   return canvas;
 }
 
-function withResolvedPaperPreset(
-  settings: Partial<typeof DEFAULT_SETTINGS>,
-) {
-  const nextSettings = {
-    ...DEFAULT_SETTINGS,
-    ...settings,
-  };
-
-  return {
-    ...nextSettings,
-    paperPresetId: resolveNotebookPaperPresetId({
-      style: nextSettings.paperStyle,
-      format: nextSettings.paperFormat,
-      orientation: nextSettings.paperOrientation,
-    }),
-  };
-}
+const withResolvedPaperPreset = withTestPaperSelection;
 
 const originalDevicePixelRatio = window.devicePixelRatio;
 
