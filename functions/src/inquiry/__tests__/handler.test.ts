@@ -5,15 +5,22 @@ const { mockSendMail, mockRunTransaction, mockDb } = vi.hoisted(() => {
   const mockSendMail = vi.fn().mockResolvedValue({})
   const mockRunTransaction = vi.fn(async (fn: Function) => {
     const tx = {
-      get: vi.fn().mockResolvedValue({ exists: false, data: () => undefined }),
-      set: vi.fn(),
-      update: vi.fn(),
+      get: vi.fn(async (ref: any) => {
+        if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+        return { exists: false, data: () => undefined };
+      }),
+      set: vi.fn((ref: any) => {
+        if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+      }),
+      update: vi.fn((ref: any) => {
+        if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+      }),
     }
     await fn(tx)
   })
   const mockDb = { 
     runTransaction: mockRunTransaction,
-    doc: vi.fn((path) => ({ id: path, path }))
+    doc: vi.fn((path) => ({ id: path, path, _isMockRef: true }))
   }
   return { mockSendMail, mockRunTransaction, mockDb }
 })
@@ -76,9 +83,16 @@ describe("inquiry handler", () => {
     // Reset mockRunTransaction to default behavior
     mockRunTransaction.mockImplementation(async (fn: Function) => {
       const tx = {
-        get: vi.fn().mockResolvedValue({ exists: false, data: () => undefined }),
-        set: vi.fn(),
-        update: vi.fn(),
+        get: vi.fn(async (ref: any) => {
+          if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+          return { exists: false, data: () => undefined };
+        }),
+        set: vi.fn((ref: any) => {
+          if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+        }),
+        update: vi.fn((ref: any) => {
+          if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+        }),
       }
       await fn(tx)
     })
@@ -127,16 +141,26 @@ describe("inquiry handler", () => {
       const tx = {
         get: vi
           .fn()
-          .mockResolvedValueOnce({
-            exists: true,
-            data: () => ({ count: 5, expiresAt: { toDate: () => new Date(Date.now() + 3600000) } }),
+          .mockImplementationOnce(async (ref: any) => {
+            if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+            return {
+              exists: true,
+              data: () => ({ count: 5, expiresAt: { toDate: () => new Date(Date.now() + 3600000) } }),
+            };
           })
-          .mockResolvedValueOnce({
-            exists: false,
-            data: () => undefined,
+          .mockImplementationOnce(async (ref: any) => {
+            if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+            return {
+              exists: false,
+              data: () => undefined,
+            };
           }),
-        set: vi.fn(),
-        update: vi.fn(),
+        set: vi.fn((ref: any) => {
+          if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+        }),
+        update: vi.fn((ref: any) => {
+          if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+        }),
       }
       await fn(tx)
     })
@@ -168,5 +192,31 @@ describe("inquiry handler", () => {
     })
     await (inquiry as any)(req, res)
     expect(res.statusCode).toBe(200)
+  })
+
+  it("mock transaction rejects plain object literals (strict mock test)", async () => {
+    let mockTx: any;
+    mockRunTransaction.mockImplementationOnce(async (fn: Function) => {
+      mockTx = {
+        get: vi.fn(async (ref: any) => {
+          if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+          return { exists: false, data: () => undefined };
+        }),
+        set: vi.fn((ref: any) => {
+          if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+        }),
+        update: vi.fn((ref: any) => {
+          if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+        }),
+      };
+      // We purposefully don't call fn to just test the tx methods
+    });
+
+    // Trigger runTransaction so mockTx is populated
+    await mockDb.runTransaction(async () => {});
+
+    await expect(mockTx.get({ id: "plain" })).rejects.toThrow("Expected DocumentReference");
+    expect(() => mockTx.set({ id: "plain" })).toThrow("Expected DocumentReference");
+    expect(() => mockTx.update({ id: "plain" })).toThrow("Expected DocumentReference");
   })
 })
