@@ -70,9 +70,12 @@ export default function PrivacyPolicyPage() {
         <div className={frameClasses}>
           <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
             <div>
-              <h1 className="text-page-title font-bold tracking-tight text-foreground mb-4">
+              <h1 className="text-document-title font-bold tracking-tight text-foreground mb-4">
                 Privacy Policy
               </h1>
+              <p className="text-body-lg text-muted-foreground mb-4">
+                This policy explains what information Text2Ink collects, how we use it, and what choices you have when using the service.
+              </p>
               <p className="text-caption text-muted-foreground mb-8">
                 Effective date: May 21, 2026
               </p>

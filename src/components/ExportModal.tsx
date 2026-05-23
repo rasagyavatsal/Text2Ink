@@ -152,7 +152,7 @@ export default function ExportModal({
         ) : (
           <div className="space-y-6 py-4">
             <div className="flex flex-col gap-3">
-              <Label className="label-text text-sm font-medium" htmlFor="export-format">Format</Label>
+              <Label className="label-text text-label" htmlFor="export-format">Format</Label>
               <Select
                 value={format}
                 onValueChange={(value) => setFormat(value as ExportFormat)}

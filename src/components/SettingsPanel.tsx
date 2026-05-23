@@ -607,7 +607,7 @@ export default function SettingsPanel({
                   <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center mb-2 group-hover:bg-brand-accent/10 transition-colors">
                     <Upload className="w-4 h-4 text-muted-foreground group-hover:text-brand-accent transition-colors" />
                   </div>
-                  <span className="label-text group-hover:text-brand-accent transition-colors text-center px-2">Upload Font</span>
+                  <span className="label-text text-label group-hover:text-brand-accent transition-colors text-center px-2">Upload Font</span>
                   <input
                     type="file"
                     accept=".ttf,.otf,font/ttf,font/otf,application/x-font-ttf,application/x-font-opentype"

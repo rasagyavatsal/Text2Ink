@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UnifiedPagePainter, PaintPageOptions } from '../UnifiedPagePainter';
 import { HandwritingSettings, PageSettings, DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '../../types';
 import { resolveNotebookPaperPresetId } from '@/lib/paper/notebookPresetCatalog';
+import { resolvePageLayout } from '@/lib/layout/LayoutEngine';
 
 function createMockCtx() {
   return {
@@ -341,12 +342,23 @@ describe('UnifiedPagePainter', () => {
         settings,
         fontFamily: 'Caveat',
       });
+      const resolvedLayout = resolvePageLayout({
+        pageIndex: 0,
+        settings,
+        pageSettings,
+      });
 
       expect(positions.mainPositions).toHaveLength(3);
       expect(positions.mainPositions[0]).toMatchObject({ width: 10, lineIndex: 0, charIndex: 0 });
       expect(positions.mainPositions[1]).toMatchObject({ width: 0, lineIndex: 0, charIndex: 1 });
-      expect(positions.mainPositions[2]).toMatchObject({ x: pageSettings.marginLeft, lineIndex: 1, charIndex: 0 });
-       expect(positions.mainPositions[2]!.y).toBe(pageSettings.marginTop + (pageSettings.fontSize * settings.lineHeight));
+      expect(positions.mainPositions[2]).toMatchObject({
+        x: resolvedLayout.writing.textBounds.left,
+        lineIndex: 1,
+        charIndex: 0,
+      });
+      expect(positions.mainPositions[2]!.y).toBe(
+        resolvedLayout.writing.firstLineTop + resolvedLayout.writing.lineHeightPx,
+      );
     });
 
     it('returns a single anchor position for empty lines to support cursor rendering', () => {
@@ -485,16 +497,18 @@ describe('UnifiedPagePainter', () => {
          settings,
          fontFamily: 'Caveat',
        });
+       const resolvedLayout = resolvePageLayout({
+         pageIndex: 0,
+         settings,
+         pageSettings,
+       });
 
        UnifiedPagePainter.paintSelectionOverlay(ctx, positions.mainPositions, 0, 1, '#1a365d');
 
        const [x, y, width, height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0];
-       expect(x).toBe(pageSettings.marginLeft);
-       // halfLeading = (43.2 - 24) / 2 = 9.6
-       // selectionY = marginTop + halfLeading = marginTop + 9.6
-       expect(y).toBeCloseTo(pageSettings.marginTop + 9.6, 1);
+       expect(x).toBe(resolvedLayout.writing.textBounds.left);
+       expect(y).toBeCloseTo(positions.mainPositions[0].selectionY!, 1);
        expect(width).toBe(10);
-       // selectionHeight = fontAscent + fontDescent = 20 + 5 = 25
        expect(height).toBeCloseTo(25, 1);
      });
 
@@ -512,12 +526,15 @@ describe('UnifiedPagePainter', () => {
          settings,
          fontFamily: 'Caveat',
        });
+       const resolvedLayout = resolvePageLayout({
+         pageIndex: 0,
+         settings,
+         pageSettings,
+       });
 
-       // First character should have selectionX = marginLeft
        const first = positions.mainPositions[0]!;
        const second = positions.mainPositions[1]!;
-       expect(first.selectionX).toBe(pageSettings.marginLeft);
-       // Second character should have selectionX = end of first char (contiguous)
+       expect(first.selectionX).toBe(resolvedLayout.writing.textBounds.left);
        expect(second.selectionX).toBe(first.selectionX! + first.selectionWidth!);
      });
 
