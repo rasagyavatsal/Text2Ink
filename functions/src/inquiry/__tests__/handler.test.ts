@@ -11,7 +11,10 @@ const { mockSendMail, mockRunTransaction, mockDb } = vi.hoisted(() => {
     }
     await fn(tx)
   })
-  const mockDb = { runTransaction: mockRunTransaction }
+  const mockDb = { 
+    runTransaction: mockRunTransaction,
+    doc: vi.fn((path) => ({ id: path, path }))
+  }
   return { mockSendMail, mockRunTransaction, mockDb }
 })
 

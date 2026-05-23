@@ -19,6 +19,7 @@ interface RateLimitDoc {
 
 interface FirestoreLike {
   runTransaction(fn: (tx: TransactionLike) => Promise<void>): Promise<void>
+  doc(path: string): unknown
 }
 
 interface TransactionLike {
@@ -46,8 +47,8 @@ export async function checkRateLimit(
   let allowed = true
 
   await db.runTransaction(async (tx) => {
-    const ipRef = { _path: { segments: ["inquiryRateLimits", ipKey] } }
-    const emailRef = { _path: { segments: ["inquiryRateLimits", emailKey] } }
+    const ipRef = db.doc(`inquiryRateLimits/${ipKey}`)
+    const emailRef = db.doc(`inquiryRateLimits/${emailKey}`)
 
     const ipDoc = await tx.get(ipRef)
     const emailDoc = await tx.get(emailRef)
