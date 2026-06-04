@@ -145,17 +145,22 @@ export default function CanvasPreview({
         charPositionsRef.current = mainPositions;
 
         if (result.pendingBackground) {
+          const incrementRevision = (revision: number) => revision + 1;
+          const handleBackgroundLoad = () => {
+            if (!abortController.signal.aborted) {
+              setBackgroundRevision(incrementRevision);
+            }
+          };
+
+          const handleBackgroundError = (error: unknown) => {
+            if (!abortController.signal.aborted) {
+              console.error('Failed to load preview page background', error);
+            }
+          };
+
           void result.pendingBackground
-            .then(() => {
-              if (!abortController.signal.aborted) {
-                setBackgroundRevision((revision) => revision + 1);
-              }
-            })
-            .catch((error) => {
-              if (!abortController.signal.aborted) {
-                console.error('Failed to load preview page background', error);
-              }
-            });
+            .then(handleBackgroundLoad)
+            .catch(handleBackgroundError);
         }
 
         if (selectionStart !== selectionEnd) {

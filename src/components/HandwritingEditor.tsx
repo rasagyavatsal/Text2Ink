@@ -716,32 +716,40 @@ export default function HandwritingEditor({
             onMouseUp={isVisiblePreview ? handleSelectionEnd : undefined}
           />
 
-          {isVisiblePreview && ps.textFields?.map((field) => (
-            <div
-              key={field.id}
-              onMouseDown={(e) => e.stopPropagation()}
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <TextField
-                field={field}
-                scale={scale}
-                fontFamily={resolvedFontFamily}
-                randomness={settings.randomness}
-                onTypingFocus={onTypingFocus}
-                onUpdate={(updates) => {
-                  const nextFields = ps.textFields?.map((f) =>
-                    f.id === field.id ? { ...f, ...updates } : f
-                  );
-                  onPageSettingsChange?.({ ...ps, textFields: nextFields });
-                }}
-                onDelete={() => {
-                  const nextFields = ps.textFields?.filter((f) => f.id !== field.id);
-                  onPageSettingsChange?.({ ...ps, textFields: nextFields });
-                }}
-              />
-            </div>
-          ))}
+          {isVisiblePreview && ps.textFields?.map((field) => {
+            const handleUpdate = (updates: Parameters<React.ComponentProps<typeof TextField>['onUpdate']>[0]) => {
+              const nextFields = ps.textFields?.map((f) =>
+                f.id === field.id ? { ...f, ...updates } : f
+              );
+              onPageSettingsChange?.({ ...ps, textFields: nextFields });
+            };
+
+            const handleDelete = () => {
+              const nextFields = ps.textFields?.filter((f) => f.id !== field.id);
+              onPageSettingsChange?.({ ...ps, textFields: nextFields });
+            };
+
+            const stopPropagation = (e: React.SyntheticEvent) => e.stopPropagation();
+
+            return (
+              <div
+                key={field.id}
+                onMouseDown={stopPropagation}
+                onPointerDown={stopPropagation}
+                onClick={stopPropagation}
+              >
+                <TextField
+                  field={field}
+                  scale={scale}
+                  fontFamily={resolvedFontFamily}
+                  randomness={settings.randomness}
+                  onTypingFocus={onTypingFocus}
+                  onUpdate={handleUpdate}
+                  onDelete={handleDelete}
+                />
+              </div>
+            );
+          })}
 
           {isVisiblePreview && paper.guides.kind === 'ruled' && onSettingsChange && (
             <button

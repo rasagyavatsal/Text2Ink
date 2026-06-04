@@ -238,14 +238,17 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
           ? (next as (prevState: HandwritingSettings) => HandwritingSettings)(prevSettings)
           : next;
 
-      setPageSettingsByPage((prevPageSettings) =>
-        prevPageSettings.map((pageSettings) => ({
-          ...pageSettings,
-          inkColor: resolvedSettings.inkColor,
-          paperColor: resolvedSettings.paperColor,
-          lineColor: resolvedSettings.lineColor,
-        })),
-      );
+      const applySettingsToPage = (pageSettings: PageSettings) => ({
+        ...pageSettings,
+        inkColor: resolvedSettings.inkColor,
+        paperColor: resolvedSettings.paperColor,
+        lineColor: resolvedSettings.lineColor,
+      });
+
+      const applyToAllPages = (prevPageSettings: PageSettings[]) =>
+        prevPageSettings.map(applySettingsToPage);
+
+      setPageSettingsByPage(applyToAllPages);
 
       return resolvedSettings;
     });
