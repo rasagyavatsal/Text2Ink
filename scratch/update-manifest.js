@@ -1,4 +1,5 @@
-const fs = require('fs');
+async function run() {
+const fs = await import('node:fs');
 
 const manifestPath = 'public/paper-presets/manifest.json';
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
@@ -45,3 +46,5 @@ manifest.push(...newEntries);
 
 fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
 console.log('Added 24 entries to manifest.json');
+}
+run();
