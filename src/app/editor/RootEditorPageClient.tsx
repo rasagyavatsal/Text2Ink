@@ -33,7 +33,7 @@ import {
   computeMobileEditorSheetMetrics,
   computeMobilePreviewScale,
   DESKTOP_PREVIEW_MIN_SCALE,
-  MOBILE_EDITOR_MEDIA_QUERY,
+  getMobileEditorMediaQuery,
   MOBILE_PREVIEW_MIN_SCALE,
   MobileSheetAnchor,
   PREVIEW_MAX_SCALE,
@@ -167,7 +167,7 @@ type RootEditorShellProps = {
 function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
   const [resolvedInitialState] = useState<EditorInitialState>(initialState);
   const viewportSize = useViewportSize();
-  const isMobileEditorLayout = useMediaQuery(MOBILE_EDITOR_MEDIA_QUERY);
+  const isMobileEditorLayout = useMediaQuery(getMobileEditorMediaQuery());
 
   // The invisible header has been removed so the canvas spans to the top.
   const headerHeight = 0;
