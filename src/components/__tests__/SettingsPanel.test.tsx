@@ -30,7 +30,7 @@ vi.mock('lucide-react', () => {
 
 // Mock next/image
 vi.mock('next/image', () => ({
-  default: ({ unoptimized: _unoptimized, ...props }: any) => <img {...props} />,
+  default: ({ unoptimized: _unoptimized, ...props }: any) => <img alt="" {...props} />,
 }));
 
 describe('SettingsPanel', () => {

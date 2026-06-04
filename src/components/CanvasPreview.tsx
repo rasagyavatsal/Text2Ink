@@ -352,7 +352,6 @@ export default function CanvasPreview({
   return (
     <canvas
       ref={canvasRef}
-      role="img"
       aria-label={`Page ${pageIndex + 1} preview`}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
@@ -366,6 +365,8 @@ export default function CanvasPreview({
         height: pageHeight * previewScale,
         cursor: 'text',
       }}
-    />
+    >
+      <span role="img" aria-label={`Page ${pageIndex + 1} preview`} />
+    </canvas>
   );
 }
