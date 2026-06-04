@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Only use output: "export" when not in development mode to avoid breaking rewrites in dev.
-  ...(process.env.NODE_ENV !== "development" ? { output: "export" } : {}),
+  ...(process.env.NODE_ENV === "development" ? {} : { output: "export" }),
   images: {
     unoptimized: true,
   },

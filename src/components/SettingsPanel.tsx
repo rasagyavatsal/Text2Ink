@@ -54,7 +54,6 @@ import {
 } from 'lucide-react';
 
 import {
-  applyPageSettingsToAll,
   generateFontFamilyName,
   readFilesAsDataURL,
   validateFontFile,
@@ -320,12 +319,16 @@ export default function SettingsPanel({
   const showManualAlignmentControls = paperControls.showManualAlignmentControls;
   const showLineHeightControl = paperControls.showLineHeightControl;
 
-  const effectiveBackgroundImages =
-    (settings.customBackgroundImages?.length ?? 0) > 0
-      ? settings.customBackgroundImages
-      : settings.customBackgroundImage
-        ? [settings.customBackgroundImage]
-        : [];
+  const getEffectiveBackgroundImages = () => {
+    if ((settings.customBackgroundImages?.length ?? 0) > 0) {
+      return settings.customBackgroundImages;
+    }
+    if (settings.customBackgroundImage) {
+      return [settings.customBackgroundImage];
+    }
+    return [];
+  };
+  const effectiveBackgroundImages = getEffectiveBackgroundImages();
   const currentPaperStyle = useMemo(
     () => resolveDocumentPaperStyle(settings.paper),
     [settings.paper],

@@ -1,13 +1,13 @@
-import { LineDetectionResult } from './lineDetection';
-import { PageSettings, HandwritingSettings } from './types';
+import { PageSettings } from './types';
 
 export function validateFontFile(file: File): { format: 'truetype' | 'opentype' | null; error: string | null } {
   const lowerName = file.name.toLowerCase();
-  const format = lowerName.endsWith('.ttf')
-    ? ('truetype' as const)
-    : lowerName.endsWith('.otf')
-      ? ('opentype' as const)
-      : null;
+  let format: 'truetype' | 'opentype' | null = null;
+  if (lowerName.endsWith('.ttf')) {
+    format = 'truetype';
+  } else if (lowerName.endsWith('.otf')) {
+    format = 'opentype';
+  }
 
   if (!format) {
     return { format: null, error: 'Please upload a .ttf or .otf font file.' };

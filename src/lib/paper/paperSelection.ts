@@ -173,11 +173,12 @@ function normalizeLegacyStyleFormatOrientation(input: {
   paperOrientation?: unknown;
   pagePaperStyle?: unknown;
 }) {
-  const legacyStyle = isPaperStyle(input.paperStyle)
-    ? input.paperStyle
-    : isPaperStyle(input.pagePaperStyle)
-      ? input.pagePaperStyle
-      : DEFAULT_GENERATED_PAPER_SELECTION.style;
+  const getLegacyStyle = () => {
+    if (isPaperStyle(input.paperStyle)) return input.paperStyle;
+    if (isPaperStyle(input.pagePaperStyle)) return input.pagePaperStyle;
+    return DEFAULT_GENERATED_PAPER_SELECTION.style;
+  };
+  const legacyStyle = getLegacyStyle();
   const legacyFormat = isPaperFormat(input.paperFormat)
     ? input.paperFormat
     : DEFAULT_GENERATED_PAPER_SELECTION.format;

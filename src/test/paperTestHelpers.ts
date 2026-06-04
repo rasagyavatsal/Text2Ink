@@ -40,25 +40,29 @@ export function withTestPaperSelection(
     || paperStyle !== undefined
     || paperFormat !== undefined
     || paperOrientation !== undefined;
-  const resolvedPaper = !hasLegacyPaperOverride && paper
-    ? paper
-    : paperPresetId
-      ? {
-          kind: 'preset' as const,
-          presetId: paperPresetId,
-        }
-      : paperPresetId === null
-      ? {
-          kind: 'generated' as const,
-          style,
-          format,
-          orientation,
-        }
-      : createDocumentPaperSelection({
-          style,
-          format,
-          orientation,
-        });
+  const getResolvedPaper = () => {
+    if (!hasLegacyPaperOverride && paper) return paper;
+    if (paperPresetId) {
+      return {
+        kind: 'preset' as const,
+        presetId: paperPresetId,
+      };
+    }
+    if (paperPresetId === null) {
+      return {
+        kind: 'generated' as const,
+        style,
+        format,
+        orientation,
+      };
+    }
+    return createDocumentPaperSelection({
+      style,
+      format,
+      orientation,
+    });
+  };
+  const resolvedPaper = getResolvedPaper();
 
   return {
     ...DEFAULT_SETTINGS,
