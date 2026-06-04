@@ -98,7 +98,7 @@ describe('pagination', () => {
       ({ paperFormat, paperOrientation, expectedLinesPerPage, expectedTotalPages }) => {
         const res = paginate({
           ...defaultReq,
-          text: Array(60).fill('line').join('\n'),
+          text: new Array(60).fill('line').join('\n'),
           renderAllPagesForExport: true,
           settings: withTestPaperSelection({
             ...defaultReq.settings,
@@ -127,7 +127,7 @@ describe('pagination', () => {
       // Letter portrait contentHeight = 792 - 50 - 50 = 692
       // lineHeight = 20 * 1.5 = 30
       // linesPerPage = floor(692 / 30) = 23
-      const text = Array(40).fill('line').join('\n');
+      const text = new Array(40).fill('line').join('\n');
       const res = paginate({ ...defaultReq, text });
       
       expect(res.pages[0]).toHaveLength(23);
@@ -137,7 +137,7 @@ describe('pagination', () => {
     });
 
     it('respects renderAllPagesForExport', () => {
-      const text = Array(100).fill('line').join('\n');
+      const text = new Array(100).fill('line').join('\n');
       const res = paginate({ ...defaultReq, text, renderAllPagesForExport: true });
       
       expect(res.pages.length).toBeGreaterThan(2);
@@ -172,7 +172,7 @@ describe('pagination', () => {
     it('uses customLineSpacing when available', () => {
       const res = paginate({
         ...defaultReq,
-        text: Array(40).fill('line').join('\n'),
+        text: new Array(40).fill('line').join('\n'),
         settings: {
           ...defaultReq.settings,
           customBackgroundImage: 'data:image/png;base64,custom-paper',
@@ -187,7 +187,7 @@ describe('pagination', () => {
     it('uses page-specific uploaded paper backgrounds when resolving page geometry', () => {
       const res = paginate({
         ...defaultReq,
-        text: Array(40).fill('line').join('\n'),
+        text: new Array(40).fill('line').join('\n'),
         settings: {
           ...defaultReq.settings,
           customBackgroundImages: [
@@ -204,7 +204,7 @@ describe('pagination', () => {
     it('returns page-specific resolved layouts for upload-backed pagination', () => {
       const res = paginate({
         ...defaultReq,
-        text: Array(20).fill('line').join('\n'),
+        text: new Array(20).fill('line').join('\n'),
         renderAllPagesForExport: true,
         settings: {
           ...defaultReq.settings,
@@ -238,7 +238,7 @@ describe('pagination', () => {
     it('resolves lines per page from document paper format and orientation without a caller-supplied page box', () => {
       const res = paginate({
         ...defaultReq,
-        text: Array(40).fill('line').join('\n'),
+        text: new Array(40).fill('line').join('\n'),
         settings: {
           ...withTestPaperSelection({
             ...defaultReq.settings,
@@ -258,7 +258,7 @@ describe('pagination', () => {
     it('derives pagination from resolved paper format even when raw page dimensions are provided', () => {
       const res = paginate({
         ...defaultReq,
-        text: Array(40).fill('line').join('\n'),
+        text: new Array(40).fill('line').join('\n'),
         settings: {
           ...withTestPaperSelection({
             ...defaultReq.settings,

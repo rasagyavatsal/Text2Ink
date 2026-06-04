@@ -69,7 +69,7 @@ describe("ContactPage", () => {
 
   it("has the inquiry split layout structure on desktop", () => {
     const { container } = render(<ContactPage />)
-    const splitLayout = container.querySelector(".lg\\:grid-cols-2")
+    const splitLayout = container.querySelector(String.raw`.lg\:grid-cols-2`)
     expect(splitLayout).toBeInTheDocument()
   })
 

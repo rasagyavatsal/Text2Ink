@@ -193,7 +193,7 @@ export default function HandwritingEditor({
     if (!font) return 'cursive';
     if (typeof document === 'undefined' || typeof globalThis.window === 'undefined') return 'cursive';
 
-    const varName = font.className.match(/var\((--[^)]+)\)/)?.[1];
+    const varName = /var\((--[^)]+)\)/.exec(font.className)?.[1];
     if (!varName) return 'cursive';
 
     const scope = document.body ?? document.documentElement;
@@ -509,9 +509,9 @@ export default function HandwritingEditor({
 
       e.preventDefault();
 
-      const normalized = pastedRaw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      const normalized = pastedRaw.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
       const paragraphs = normalized.split('\n\n');
-      const reflowed = paragraphs.map((p) => p.replace(/\n/g, ' ')).join('\n\n');
+      const reflowed = paragraphs.map((p) => p.replaceAll('\n', ' ')).join('\n\n');
 
       const start = el.selectionStart ?? cursorPosition;
       const end = el.selectionEnd ?? cursorPosition;

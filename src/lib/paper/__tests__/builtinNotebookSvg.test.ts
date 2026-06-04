@@ -27,7 +27,7 @@ describe('buildBuiltinNotebookPaperDataUrl', () => {
     expect(svgContent).toContain('height="100%"');
     
     // It should not use fixed pixel dimensions for the root SVG width/height
-    const svgTag = svgContent.match(/<svg[^>]*>/)?.[0] || '';
+    const svgTag = /<svg[^>]*>/.exec(svgContent)?.[0] || '';
     expect(svgTag).not.toMatch(/width="612\.?0*"/);
     expect(svgTag).not.toMatch(/height="792\.?0*"/);
   });

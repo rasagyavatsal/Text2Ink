@@ -158,7 +158,7 @@ export class ExportEngine {
           totalPages,
         });
 
-        const pageSettings = normalizedPageSettings[pageIndex] ?? normalizedPageSettings[normalizedPageSettings.length - 1];
+        const pageSettings = normalizedPageSettings[pageIndex] ?? normalizedPageSettings.at(-1);
         const lines = pagination.pages[pageIndex] ?? [];
 
         await this.#renderPageToCanvas({
@@ -251,7 +251,7 @@ export class ExportEngine {
         });
 
         const pageSettings = input.normalizedPageSettings[pageIndex]
-          ?? input.normalizedPageSettings[input.normalizedPageSettings.length - 1];
+          ?? input.normalizedPageSettings.at(-1);
         const lines = input.paginatedPages[pageIndex] ?? [];
         const layout = input.pageLayouts[pageIndex] ?? firstLayout;
 
@@ -365,7 +365,7 @@ export function resolveHandwritingFontFamily(settings: HandwritingSettings) {
     return 'cursive';
   }
 
-  const variableName = font.className.match(/var\((--[^)]+)\)/)?.[1];
+  const variableName = /var\((--[^)]+)\)/.exec(font.className)?.[1];
   if (!variableName) {
     return 'cursive';
   }

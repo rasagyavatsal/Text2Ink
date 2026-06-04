@@ -319,7 +319,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       setPageSettingsByPage((prev) => {
         if (prev.length >= desiredLength) return prev;
         const next = [...prev];
-        const fallback = next[next.length - 1] ?? defaultPageSettingsFromHandwritingSettings(settings);
+        const fallback = next.at(-1) ?? defaultPageSettingsFromHandwritingSettings(settings);
         while (next.length < desiredLength) {
           next.push({ ...fallback });
         }

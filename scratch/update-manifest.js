@@ -9,7 +9,7 @@ const newEntries = [];
 for (const entry of manifest) {
   if (entry.style === 'lined') {
     // Generate wide-lined
-    const wideLined = JSON.parse(JSON.stringify(entry));
+    const wideLined = structuredClone(entry);
     wideLined.id = `wide-${entry.id}`;
     wideLined.style = 'wide-lined';
     wideLined.assetPath = `/paper-presets/${wideLined.id}.svg`;
@@ -17,7 +17,7 @@ for (const entry of manifest) {
     newEntries.push(wideLined);
 
     // Generate narrow-lined
-    const narrowLined = JSON.parse(JSON.stringify(entry));
+    const narrowLined = structuredClone(entry);
     narrowLined.id = `narrow-${entry.id}`;
     narrowLined.style = 'narrow-lined';
     narrowLined.assetPath = `/paper-presets/${narrowLined.id}.svg`;
@@ -25,7 +25,7 @@ for (const entry of manifest) {
     newEntries.push(narrowLined);
   } else if (entry.style === 'ruled') {
     // Generate wide-ruled
-    const wideRuled = JSON.parse(JSON.stringify(entry));
+    const wideRuled = structuredClone(entry);
     wideRuled.id = `wide-${entry.id}`;
     wideRuled.style = 'wide-ruled';
     wideRuled.assetPath = `/paper-presets/${wideRuled.id}.svg`;
@@ -33,7 +33,7 @@ for (const entry of manifest) {
     newEntries.push(wideRuled);
 
     // Generate narrow-ruled
-    const narrowRuled = JSON.parse(JSON.stringify(entry));
+    const narrowRuled = structuredClone(entry);
     narrowRuled.id = `narrow-${entry.id}`;
     narrowRuled.style = 'narrow-ruled';
     narrowRuled.assetPath = `/paper-presets/${narrowRuled.id}.svg`;
