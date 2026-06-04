@@ -18,22 +18,20 @@ import CanvasPreview from './CanvasPreview';
 import TextField from './TextField/TextField';
 
 interface HandwritingEditorProps {
-  text: string;
-  onTextChange: (text: string) => void;
-  settings: HandwritingSettings;
-  onSettingsChange?: (settings: HandwritingSettings) => void;
-  pageSettingsByPage: PageSettings[];
-  onPageSettingsChange?: (settings: PageSettings) => void;
-  previewScale: number;
-  onPreviewScaleChange: (value: number) => void;
-  currentPageIndex: number;
-  onCurrentPageChange: (pageIndex: number) => void;
-  onTotalPagesChange?: (totalPages: number) => void;
-  onPagesChange?: (pages: LineData[][]) => void;
-  onPaginationCompleteChange?: (isComplete: boolean) => void;
-  onApplyToAllPages?: () => void;
-  isMobileLayout?: boolean;
-  onTypingFocus?: () => void;
+  readonly text: string;
+  readonly onTextChange: (text: string) => void;
+  readonly settings: HandwritingSettings;
+  readonly onSettingsChange?: (settings: HandwritingSettings) => void;
+  readonly pageSettingsByPage: PageSettings[];
+  readonly onPageSettingsChange?: (settings: PageSettings) => void;
+  readonly previewScale: number;
+  readonly currentPageIndex: number;
+  readonly onCurrentPageChange: (pageIndex: number) => void;
+  readonly onTotalPagesChange?: (totalPages: number) => void;
+  readonly onPagesChange?: (pages: LineData[][]) => void;
+  readonly onPaginationCompleteChange?: (isComplete: boolean) => void;
+  readonly isMobileLayout?: boolean;
+  readonly onTypingFocus?: () => void;
 }
 
 function useDebouncedCallback<TArgs extends unknown[]>(cb: (...args: TArgs) => void, delayMs: number) {
@@ -89,7 +87,8 @@ export default function HandwritingEditor({
   const [fontMetricsVersion, setFontMetricsVersion] = useState(0);
   const [localText, setLocalText] = useState(text);
   const [pages, setPages] = useState<LineData[][]>([[]]);
-  const [, setIsPaginationComplete] = useState(true);
+  const [isPaginationComplete, setIsPaginationComplete] = useState(true);
+  void isPaginationComplete;
   const [totalPages, setTotalPages] = useState(1);
   const latestPaginationRequestIdRef = useRef(0);
   const workerRef = useRef<Worker | null>(null);

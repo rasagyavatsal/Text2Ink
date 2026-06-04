@@ -13,12 +13,12 @@ import {
 } from '@/lib/mobileEditorSheet';
 
 interface MobileEditorBottomSheetProps {
-  anchor: MobileSheetAnchor;
-  metrics: MobileEditorSheetMetrics;
-  settingsPanel: React.ReactNode;
-  onAnchorChange: (anchor: MobileSheetAnchor) => void;
-  onHandlePress: () => void;
-  onHeightChange: (height: number) => void;
+  readonly anchor: MobileSheetAnchor;
+  readonly metrics: MobileEditorSheetMetrics;
+  readonly settingsPanel: React.ReactNode;
+  readonly onAnchorChange: (anchor: MobileSheetAnchor) => void;
+  readonly onHandlePress: () => void;
+  readonly onHeightChange: (height: number) => void;
 }
 
 export default function MobileEditorBottomSheet({
