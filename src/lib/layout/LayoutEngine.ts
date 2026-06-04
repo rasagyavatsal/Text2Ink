@@ -184,7 +184,7 @@ export function paginateDocument(input: PaginateDocumentInput): PaginateDocument
   }
 
   while (cursor < textLength) {
-    const pageSettings = input.pageSettings[pageIndex] ?? input.pageSettings[input.pageSettings.length - 1];
+    const pageSettings = input.pageSettings[pageIndex] ?? input.pageSettings.at(-1);
     const layout = resolvePageLayout({
       pageIndex,
       settings: input.settings,

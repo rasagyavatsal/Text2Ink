@@ -197,7 +197,7 @@ describe('semantic design tokens', () => {
 
 describe('Tailwind @theme integration', () => {
   function extractThemeEntries(css: string): Map<string, string> {
-    const themeBlock = css.match(/@theme\s+inline\s*\{([\s\S]*?)\}/);
+    const themeBlock = /@theme\s+inline\s*\{([\s\S]*?)\}/.exec(css);
     if (!themeBlock) return new Map();
     const props = new Map<string, string>();
     const regex = /(--[\w-]+)\s*:\s*([^;]+);/g;

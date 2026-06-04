@@ -185,7 +185,7 @@ describe('ExportEngine', () => {
     }).exportDocument({
       format: 'png',
       document: createDocument({
-        text: Array(40).fill('line').join('\n'),
+        text: new Array(40).fill('line').join('\n'),
         settings,
         pageSettingsByPage: [
           defaultPageSettingsFromHandwritingSettings(settings),

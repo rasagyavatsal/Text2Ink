@@ -41,8 +41,8 @@ replacements.forEach(([regex, replacement]) => {
 });
 
 // Fix some specific cases
-content = content.replace(/border-white/g, 'border-background');
-content = content.replace(/text-primary-foreground/g, 'text-brand-accent-foreground'); // Assuming white text was mostly on brand or red buttons
+content = content.replaceAll('border-white', 'border-background');
+content = content.replaceAll('text-primary-foreground', 'text-brand-accent-foreground'); // Assuming white text was mostly on brand or red buttons
 
 fs.writeFileSync('src/components/SettingsPanel.tsx', content, 'utf8');
 console.log('Replacements done');

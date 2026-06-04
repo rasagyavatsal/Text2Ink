@@ -130,7 +130,7 @@ describe('SettingsPanel', () => {
     // Select elements that still use hardcoded classes we want to eliminate
     // Note: We're looking for common hardcoded classes mentioned in the issue
     const hardcodedElements = container.querySelectorAll(
-      '.bg-gray-100, .bg-white, .text-gray-400, .text-gray-500, .text-gray-700, .border-gray-200, .bg-\\[\\#E0A32A\\], .text-\\[\\#E0A32A\\]'
+      String.raw`.bg-gray-100, .bg-white, .text-gray-400, .text-gray-500, .text-gray-700, .border-gray-200, .bg-\[\#E0A32A\], .text-\[\#E0A32A\]`
     );
     
     if (hardcodedElements.length > 0) {

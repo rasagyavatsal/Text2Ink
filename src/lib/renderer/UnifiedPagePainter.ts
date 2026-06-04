@@ -43,9 +43,9 @@ function buildCharacterPositionsForLines(opts: {
   const positions: CharacterPosition[] = [];
   let currentLineY = startY;
 
-  for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-    const lineText = lines[lineIdx].text;
-    const lineIndex = lines[lineIdx].lineIndex;
+  for (const line of lines) {
+    const lineText = line.text;
+    const lineIndex = line.lineIndex;
     let currentX = startX;
     let prevEndX = currentX;
     let prevSelectionY = currentLineY + verticalCenteringOffset - fontAscent;
@@ -105,7 +105,7 @@ function buildCharacterPositionsForLines(opts: {
       prevEndX = currentX;
     }
 
-    if (lines[lineIdx].hasNewline) {
+    if (line.hasNewline) {
       positions.push({
         x: currentX,
         y: currentLineY,
@@ -195,11 +195,11 @@ export const UnifiedPagePainter = {
     }
 
     let currentLineY = writing.firstLineTop;
-    for (let i = 0; i < lines.length; i++) {
+    for (const line of lines) {
       this._drawTextLine(
         ctx,
-        lines[i].text,
-        lines[i].lineIndex,
+        line.text,
+        line.lineIndex,
         writing.textBounds.left,
         currentLineY,
         verticalCenteringOffset,
@@ -356,7 +356,7 @@ export const UnifiedPagePainter = {
         ctx.lineTo(x, contentBounds.top + contentHeight);
         ctx.stroke();
       }
-      ctx.globalAlpha = 1.0;
+      ctx.globalAlpha = 1;
     }
   },
 
@@ -445,7 +445,7 @@ export const UnifiedPagePainter = {
       cursorHeight = first.cursorHeight ?? first.selectionHeight ?? first.height;
     } else if (cursorIndex >= charPositions.length) {
       // After last character
-      const last = charPositions[charPositions.length - 1];
+      const last = charPositions.at(-1)!;
       cursorX = last.x + last.width;
       cursorY = last.cursorY ?? last.selectionY ?? last.y;
       cursorHeight = last.cursorHeight ?? last.selectionHeight ?? last.height;

@@ -142,7 +142,7 @@ describe('LayoutEngine', () => {
   describe('paginateDocument', () => {
     it('paginates text through resolved page layouts and returns the layouts it used', () => {
       const result = paginateDocument({
-        text: Array(40).fill('line').join('\n'),
+        text: new Array(40).fill('line').join('\n'),
         currentPageIndex: 0,
         renderAllPagesForExport: false,
         settings: {

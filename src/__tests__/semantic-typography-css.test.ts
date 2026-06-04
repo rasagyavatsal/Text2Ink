@@ -19,8 +19,8 @@ async function compileCssFor(classes: string[]): Promise<string> {
 }
 
 function getClassRule(css: string, className: string): string | null {
-  const escapedClassName = className.replace(/-/g, '\\-');
-  const match = css.match(new RegExp(`\\.${escapedClassName}\\s*\\{([\\s\\S]*?)\\}`, 'm'));
+  const escapedClassName = className.replaceAll('-', String.raw`\-`);
+  const match = new RegExp(String.raw`\.${escapedClassName}\s*\{([\s\S]*?)\}`, 'm').exec(css);
 
   return match?.[0] ?? null;
 }

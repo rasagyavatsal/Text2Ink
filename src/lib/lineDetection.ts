@@ -81,7 +81,7 @@ export function clusterPeaks(
   if (peaks.length === 0) return [];
   const clustered: Array<{ y: number; value: number }> = [];
   for (const peak of peaks) {
-    const last = clustered[clustered.length - 1];
+    const last = clustered.at(-1);
     if (!last || peak.y - last.y > maxGap) {
       clustered.push({ ...peak });
     } else if (peak.value > last.value) {
