@@ -5,6 +5,7 @@ import {
   computeMobileEditorSheetMetrics,
   computeMobilePreviewScale,
   createMobileSheetSnapPoints,
+  getMobileEditorMediaQuery,
   getMobileSheetAnchorSnapIndex,
   getMobileSheetHandleLabel,
   resolveMobileSheetSnapHeight,
@@ -125,3 +126,10 @@ describe('mobile preview scale', () => {
     expect(scaleAtDefault).toBe(scaleAtExpanded);
   });
 });
+
+describe('mobile editor media query', () => {
+  it('returns the media query based on getDesktopBreakpointPx', () => {
+    expect(getMobileEditorMediaQuery()).toBe('(max-width: 1279px)');
+  });
+});
+
