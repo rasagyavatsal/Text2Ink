@@ -89,7 +89,7 @@ class MockWorker {
   private listeners = new Set<(event: MessageEvent) => void>();
 
   postMessage = vi.fn((msg: { requestId?: number; text?: string; type?: string }) => {
-    if (!msg || msg.type !== 'paginate') return;
+    if (msg?.type !== 'paginate') return;
     const pages = buildPagesFromText(msg.text ?? '');
     const event = {
       data: {

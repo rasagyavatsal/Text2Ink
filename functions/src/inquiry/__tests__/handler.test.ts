@@ -6,14 +6,14 @@ const { mockSendMail, mockRunTransaction, mockDb } = vi.hoisted(() => {
   const mockRunTransaction = vi.fn(async (fn: Function) => {
     const tx = {
       get: vi.fn(async (ref: any) => {
-        if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+        if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
         return { exists: false, data: () => undefined };
       }),
       set: vi.fn((ref: any) => {
-        if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+        if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
       }),
       update: vi.fn((ref: any) => {
-        if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+        if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
       }),
     }
     await fn(tx)
@@ -84,14 +84,14 @@ describe("inquiry handler", () => {
     mockRunTransaction.mockImplementation(async (fn: Function) => {
       const tx = {
         get: vi.fn(async (ref: any) => {
-          if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+          if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
           return { exists: false, data: () => undefined };
         }),
         set: vi.fn((ref: any) => {
-          if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+          if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
         }),
         update: vi.fn((ref: any) => {
-          if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+          if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
         }),
       }
       await fn(tx)
@@ -142,24 +142,24 @@ describe("inquiry handler", () => {
         get: vi
           .fn()
           .mockImplementationOnce(async (ref: any) => {
-            if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+            if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
             return {
               exists: true,
               data: () => ({ count: 5, expiresAt: { toDate: () => new Date(Date.now() + 3600000) } }),
             };
           })
           .mockImplementationOnce(async (ref: any) => {
-            if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+            if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
             return {
               exists: false,
               data: () => undefined,
             };
           }),
         set: vi.fn((ref: any) => {
-          if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+          if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
         }),
         update: vi.fn((ref: any) => {
-          if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+          if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
         }),
       }
       await fn(tx)
@@ -199,14 +199,14 @@ describe("inquiry handler", () => {
     mockRunTransaction.mockImplementationOnce(async (fn: Function) => {
       mockTx = {
         get: vi.fn(async (ref: any) => {
-          if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+          if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
           return { exists: false, data: () => undefined };
         }),
         set: vi.fn((ref: any) => {
-          if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+          if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
         }),
         update: vi.fn((ref: any) => {
-          if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+          if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
         }),
       };
       // We purposefully don't call fn to just test the tx methods
