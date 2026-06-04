@@ -32,13 +32,13 @@ describe('editorPersistence', () => {
   });
 
   it('loads null when window is unavailable (server-side)', () => {
-    const originalWindow = global.window;
+    const originalWindow = globalThis.window;
     // @ts-ignore
-    delete global.window;
+    delete globalThis.window;
     
     expect(loadEditorStateV1()).toBeNull();
     
-    global.window = originalWindow;
+    globalThis.window = originalWindow;
   });
 
   it('loads null when localStorage is empty', () => {

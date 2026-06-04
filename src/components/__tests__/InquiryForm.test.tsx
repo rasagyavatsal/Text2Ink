@@ -4,12 +4,12 @@ import userEvent from "@testing-library/user-event"
 import { InquiryForm } from "../InquiryForm"
 
 const mockFetch = vi.fn()
-global.fetch = mockFetch
+globalThis.fetch = mockFetch
 
-if (typeof window !== "undefined" && window.Element) {
-  window.Element.prototype.hasPointerCapture = () => false
-  window.Element.prototype.setPointerCapture = () => {}
-  window.Element.prototype.releasePointerCapture = () => {}
+if (typeof globalThis.window !== "undefined" && globalThis.Element) {
+  globalThis.Element.prototype.hasPointerCapture = () => false
+  globalThis.Element.prototype.setPointerCapture = () => {}
+  globalThis.Element.prototype.releasePointerCapture = () => {}
 }
 
 describe("InquiryForm", () => {
@@ -169,7 +169,7 @@ describe("InquiryForm", () => {
   })
 
   it("does not use alert() for errors", async () => {
-    const alertSpy = vi.spyOn(window, "alert")
+    const alertSpy = vi.spyOn(globalThis, "alert")
     mockFetch.mockResolvedValueOnce({ ok: false, json: () => Promise.resolve({ error: "fail" }) })
 
     const user = userEvent.setup()

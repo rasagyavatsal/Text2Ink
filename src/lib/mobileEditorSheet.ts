@@ -5,8 +5,8 @@ export type MobileSheetAnchor = 'peek' | 'default' | 'expanded';
 const DEFAULT_DESKTOP_BREAKPOINT_PX = 1280;
 
 function readCssPixelToken(property: string, fallback: number): number {
-  if (typeof window === 'undefined') return fallback;
-  const value = window
+  if (typeof globalThis.window === 'undefined') return fallback;
+  const value = globalThis
     .getComputedStyle(document.documentElement)
     .getPropertyValue(property)
     .trim();

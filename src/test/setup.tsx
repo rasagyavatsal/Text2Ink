@@ -2,13 +2,13 @@ import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
 // Mock URL.createObjectURL
-if (typeof window !== 'undefined') {
-  window.URL.createObjectURL = vi.fn();
-  window.URL.revokeObjectURL = vi.fn();
+if (typeof globalThis.window !== 'undefined') {
+  globalThis.URL.createObjectURL = vi.fn();
+  globalThis.URL.revokeObjectURL = vi.fn();
 }
 
 // Mock matchMedia
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(globalThis, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation(query => ({
     matches: false,
@@ -28,11 +28,11 @@ class ResizeObserver {
   unobserve = vi.fn();
   disconnect = vi.fn();
 }
-window.ResizeObserver = ResizeObserver;
-window.HTMLElement.prototype.scrollIntoView = vi.fn();
+globalThis.ResizeObserver = ResizeObserver;
+globalThis.HTMLElement.prototype.scrollIntoView = vi.fn();
 
 // Mock HTMLCanvasElement getContext
-if (typeof window !== 'undefined') {
+if (typeof globalThis.window !== 'undefined') {
   HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
     fillRect: vi.fn(),
     clearRect: vi.fn(),
@@ -64,9 +64,9 @@ if (typeof window !== 'undefined') {
 }
 
 // Mock OffscreenCanvas if not available
-if (typeof window !== 'undefined' && !window.OffscreenCanvas) {
+if (typeof globalThis.window !== 'undefined' && !globalThis.OffscreenCanvas) {
   // @ts-ignore
-  window.OffscreenCanvas = class OffscreenCanvas {
+  globalThis.OffscreenCanvas = class OffscreenCanvas {
     constructor(width: number, height: number) {
       // @ts-ignore
       this.width = width;
@@ -109,12 +109,12 @@ if (typeof window !== 'undefined' && !window.OffscreenCanvas) {
 }
 
 // Mock requestAnimationFrame
-window.requestAnimationFrame = vi.fn(callback => setTimeout(callback, 0) as unknown as number);
-window.cancelAnimationFrame = vi.fn(id => clearTimeout(id as unknown as NodeJS.Timeout));
+globalThis.requestAnimationFrame = vi.fn(callback => setTimeout(callback, 0) as unknown as number);
+globalThis.cancelAnimationFrame = vi.fn(id => clearTimeout(id as unknown as NodeJS.Timeout));
 
 // Mock Image
 // @ts-ignore
-global.Image = class {
+globalThis.Image = class {
   onload: () => void = () => {};
   onerror: () => void = () => {};
   src: string = '';

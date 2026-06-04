@@ -39,8 +39,8 @@ const safeJsonParse = (value: string): unknown => {
 export const loadEditorStateV1 = <TSettings, TPageSettings>():
   | PersistedEditorStateV1<TSettings, TPageSettings>
   | null => {
-  if (typeof window === 'undefined') return null;
-  const raw = window.localStorage.getItem(STORAGE_KEY);
+  if (typeof globalThis.window === 'undefined') return null;
+  const raw = globalThis.localStorage.getItem(STORAGE_KEY);
   if (!raw) return null;
 
   const parsed = safeJsonParse(raw);
@@ -107,7 +107,7 @@ export const loadNormalizedEditorStateV1 = ():
 export const saveEditorStateV1 = <TSettings, TPageSettings>(
   next: Omit<PersistedEditorStateV1<TSettings, TPageSettings>, 'version' | 'updatedAt'>
 ): void => {
-  if (typeof window === 'undefined') return;
+  if (typeof globalThis.window === 'undefined') return;
   const payload: PersistedEditorStateV1<TSettings, TPageSettings> = {
     version: 1,
     updatedAt: Date.now(),
@@ -115,16 +115,16 @@ export const saveEditorStateV1 = <TSettings, TPageSettings>(
   };
 
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    globalThis.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   } catch {
     return;
   }
 };
 
 export const clearEditorState = (): void => {
-  if (typeof window === 'undefined') return;
+  if (typeof globalThis.window === 'undefined') return;
   try {
-    window.localStorage.removeItem(STORAGE_KEY);
+    globalThis.localStorage.removeItem(STORAGE_KEY);
   } catch {
     return;
   }

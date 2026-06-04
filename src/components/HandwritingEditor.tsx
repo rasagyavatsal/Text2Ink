@@ -47,7 +47,7 @@ function useDebouncedCallback<TArgs extends unknown[]>(cb: (...args: TArgs) => v
   useEffect(() => {
     return () => {
       if (timeoutRef.current !== null) {
-        window.clearTimeout(timeoutRef.current);
+        globalThis.clearTimeout(timeoutRef.current);
       }
     };
   }, []);
@@ -55,11 +55,11 @@ function useDebouncedCallback<TArgs extends unknown[]>(cb: (...args: TArgs) => v
   return useCallback(
     (...args: TArgs) => {
       if (timeoutRef.current !== null) {
-        window.clearTimeout(timeoutRef.current);
+        globalThis.clearTimeout(timeoutRef.current);
       }
-      timeoutRef.current = window.setTimeout(() => {
+      timeoutRef.current = globalThis.setTimeout(() => {
         cbRef.current(...args);
-      }, delayMs);
+      }, delayMs) as unknown as number;
     },
     [delayMs]
   );
@@ -191,13 +191,13 @@ export default function HandwritingEditor({
 
     const font = HANDWRITING_FONTS.find((f) => f.value === settings.fontFamily);
     if (!font) return 'cursive';
-    if (typeof document === 'undefined' || typeof window === 'undefined') return 'cursive';
+    if (typeof document === 'undefined' || typeof globalThis.window === 'undefined') return 'cursive';
 
     const varName = font.className.match(/var\((--[^)]+)\)/)?.[1];
     if (!varName) return 'cursive';
 
     const scope = document.body ?? document.documentElement;
-    const value = window.getComputedStyle(scope).getPropertyValue(varName).trim();
+    const value = globalThis.getComputedStyle(scope).getPropertyValue(varName).trim();
     return value || 'cursive';
   }, [fontMetricsVersion, settings.customFont, settings.fontFamily]);
 
@@ -263,7 +263,7 @@ export default function HandwritingEditor({
   }, 40);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof globalThis.window === 'undefined') return;
     if (workerRef.current) return;
 
     const worker = new Worker(new URL('../workers/paginationWorker.ts', import.meta.url), {
@@ -596,18 +596,18 @@ export default function HandwritingEditor({
       setIsDraggingMarginLine(false);
     };
 
-    window.addEventListener('pointermove', handleMove);
-    window.addEventListener('pointerup', handleUp);
-    window.addEventListener('pointercancel', handleUp);
+    globalThis.addEventListener('pointermove', handleMove);
+    globalThis.addEventListener('pointerup', handleUp);
+    globalThis.addEventListener('pointercancel', handleUp);
     return () => {
-      window.removeEventListener('pointermove', handleMove);
-      window.removeEventListener('pointerup', handleUp);
-      window.removeEventListener('pointercancel', handleUp);
+      globalThis.removeEventListener('pointermove', handleMove);
+      globalThis.removeEventListener('pointerup', handleUp);
+      globalThis.removeEventListener('pointercancel', handleUp);
     };
   }, [getPageSettings, isDraggingMarginLine, onSettingsChange, previewScale, resolveLayoutForPage, settings]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof globalThis.window === 'undefined') return;
     if (workerRef.current) return;
 
     const worker = new Worker(new URL('../workers/paginationWorker.ts', import.meta.url), {

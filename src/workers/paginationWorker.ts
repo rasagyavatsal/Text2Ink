@@ -8,7 +8,7 @@ type PaginationWorkerScope = {
   postMessage: (message: ReturnType<typeof paginate>) => void;
 };
 
-const workerScope = self as unknown as PaginationWorkerScope;
+const workerScope = globalThis as unknown as PaginationWorkerScope;
 
 workerScope.onmessage = (ev: MessageEvent<PaginationRequest>) => {
   const msg = ev.data;

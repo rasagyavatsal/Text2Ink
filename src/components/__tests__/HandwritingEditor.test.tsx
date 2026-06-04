@@ -70,7 +70,7 @@ vi.mock('../CanvasPreview', () => ({
   ),
 }));
 
-global.ResizeObserver = vi.fn().mockImplementation(() => ({
+globalThis.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
   disconnect: vi.fn(),
@@ -118,7 +118,7 @@ class MockWorker {
   });
 }
 
-global.Worker = MockWorker as unknown as typeof Worker;
+globalThis.Worker = MockWorker as unknown as typeof Worker;
 
 describe('HandwritingEditor selection behavior', () => {
   const settings: HandwritingSettings = {

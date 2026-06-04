@@ -361,7 +361,7 @@ export function resolveHandwritingFontFamily(settings: HandwritingSettings) {
     return 'cursive';
   }
 
-  if (typeof document === 'undefined' || typeof window === 'undefined') {
+  if (typeof document === 'undefined' || typeof globalThis.window === 'undefined') {
     return 'cursive';
   }
 
@@ -371,7 +371,7 @@ export function resolveHandwritingFontFamily(settings: HandwritingSettings) {
   }
 
   const scope = document.body ?? document.documentElement;
-  const value = window.getComputedStyle(scope).getPropertyValue(variableName).trim();
+  const value = globalThis.getComputedStyle(scope).getPropertyValue(variableName).trim();
   return value || 'cursive';
 }
 
