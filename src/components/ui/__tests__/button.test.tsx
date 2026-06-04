@@ -31,14 +31,14 @@ describe('Button brand variants', () => {
       render(<Button variant="brand" size={size}>{`brand-${size}`}</Button>);
       const button = screen.getByRole('button', { name: `brand-${size}` });
       expect(button.className).toMatch(/bg-brand-accent\b/);
-      expect(button.getAttribute('data-size')).toBe(size);
+      expect(button.dataset.size).toBe(size);
     });
 
     it.each(sizes)('brand-soft variant renders at size=%s', (size) => {
       render(<Button variant="brand-soft" size={size}>{`soft-${size}`}</Button>);
       const button = screen.getByRole('button', { name: `soft-${size}` });
       expect(button.className).toMatch(/bg-brand-accent\/5/);
-      expect(button.getAttribute('data-size')).toBe(size);
+      expect(button.dataset.size).toBe(size);
     });
   });
 

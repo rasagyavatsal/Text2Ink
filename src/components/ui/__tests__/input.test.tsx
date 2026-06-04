@@ -36,7 +36,7 @@ describe('Input component', () => {
   it('sets data-slot="input"', () => {
     render(<Input placeholder="Slot" />);
     const input = screen.getByPlaceholderText('Slot');
-    expect(input.getAttribute('data-slot')).toBe('input');
+    expect(input.dataset.slot).toBe('input');
   });
 
   it('forwards ref to the underlying input element', () => {
@@ -59,7 +59,7 @@ describe('Textarea component', () => {
   it('sets data-slot="textarea"', () => {
     render(<Textarea placeholder="Slot" />);
     const textarea = screen.getByPlaceholderText('Slot');
-    expect(textarea.getAttribute('data-slot')).toBe('textarea');
+    expect(textarea.dataset.slot).toBe('textarea');
   });
 
   it('merges custom className', () => {
