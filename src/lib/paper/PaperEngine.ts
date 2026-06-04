@@ -227,9 +227,11 @@ interface PaperDefinition {
   capabilities: ResolvedPaperCapabilities;
 }
 
-function resolvePaperDefinition(input: ResolvePagePaperInput): PaperDefinition {
-  const settings = input.settings ?? {};
-  const pageSettings = input.pageSettings ?? {};
+
+function resolvePaperSelectionNormalization(
+  settings: RawDocumentPaperSettings,
+  pageSettings: RawPagePaperSettings
+) {
   const selectionResolution = normalizeDocumentPaperSelection({
     paper: settings.paper,
     paperPresetId: settings.paperPresetId,
@@ -239,57 +241,46 @@ function resolvePaperDefinition(input: ResolvePagePaperInput): PaperDefinition {
     pagePaperStyle: pageSettings.paperStyle,
     defaultWhenMissing: DEFAULT_GENERATED_PAPER_SELECTION,
   });
-  const backgroundImage = resolveBackgroundImage({
-    pageIndex: input.pageIndex,
-    settings,
-    pageSettings,
-  });
-  const hasUploadBackground = backgroundImage !== null;
   const paperFormat = resolveDocumentPaperFormat(selectionResolution.selection);
   const paperOrientation = resolveDocumentPaperOrientation(selectionResolution.selection);
   const style = resolveDocumentPaperStyle(selectionResolution.selection);
+  return { selectionResolution, paperFormat, paperOrientation, style };
+}
 
+function resolvePaperPresetResolution(
+  hasUploadBackground: boolean,
+  selectionResolution: ReturnType<typeof normalizeDocumentPaperSelection>,
+  style: PaperStyle,
+  paperFormat: PaperFormat,
+  paperOrientation: PaperOrientation
+) {
   let explicitBuiltinPreset = !hasUploadBackground
     ? resolveBuiltinPresetById(resolveDocumentPaperPresetId(selectionResolution.selection))
     : null;
 
   if (!explicitBuiltinPreset && !hasUploadBackground) {
-    const rawStyle = style;
-    if (rawStyle === 'wide-lined' || rawStyle === 'wide-ruled' || rawStyle === 'narrow-lined' || rawStyle === 'narrow-ruled') {
+    if (style === 'wide-lined' || style === 'wide-ruled' || style === 'narrow-lined' || style === 'narrow-ruled') {
       explicitBuiltinPreset = resolveBuiltinPreset({
-        style: rawStyle,
+        style,
         paperFormat,
         paperOrientation,
       });
     }
   }
+  return explicitBuiltinPreset;
+}
 
-  const fontSizeResolution = resolvePositiveNumber(pageSettings.fontSize, DEFAULT_PAGE_SETTINGS.fontSize);
-  const paperColorResolution = resolveString(
-    pageSettings.paperColor,
-    settings.paperColor,
-    DEFAULT_SETTINGS.paperColor,
-  );
-  const lineColorResolution = resolveString(
-    pageSettings.lineColor,
-    settings.lineColor,
-    DEFAULT_SETTINGS.lineColor,
-  );
-
-  if (explicitBuiltinPreset) {
-    return resolveExplicitBuiltinPresetPaper({
-      preset: explicitBuiltinPreset,
-      backgroundImage,
-      fontSize: fontSizeResolution.value,
-      paperColor: paperColorResolution.value,
-      lineColor: lineColorResolution.value,
-    });
-  }
-
-  const resolvedPageSize = resolvePaperPageSize(
-    paperFormat,
-    paperOrientation,
-  );
+function resolvePaperMeasurementAndGeometry(
+  input: ResolvePagePaperInput,
+  settings: RawDocumentPaperSettings,
+  pageSettings: RawPagePaperSettings,
+  paperFormat: PaperFormat,
+  paperOrientation: PaperOrientation,
+  style: PaperStyle,
+  hasUploadBackground: boolean,
+  fontSizeResolution: { value: number; usedFallback: boolean; incompatible: boolean }
+) {
+  const resolvedPageSize = resolvePaperPageSize(paperFormat, paperOrientation);
   const pageWidth = resolvePositiveNumber(input.pageSize?.width, resolvedPageSize.width).value;
   const pageHeight = resolvePositiveNumber(input.pageSize?.height, resolvedPageSize.height).value;
   const lineHeightResolution = resolvePositiveNumber(settings.lineHeight, DEFAULT_SETTINGS.lineHeight);
@@ -343,61 +334,91 @@ function resolvePaperDefinition(input: ResolvePagePaperInput): PaperDefinition {
   const textTop = margins.top + lineOffset;
   const textWidth = Math.max(0, pageWidth - textLeft - margins.right);
 
-  const usedCompatibilityFallback =
-    selectionResolution.incompatible
-    || lineHeightResolution.incompatible
-    || ruledMarginLineOffsetResolution.incompatible
-    || fontSizeResolution.incompatible
-    || marginTopResolution.incompatible
-    || marginRightResolution.incompatible
-    || marginBottomResolution.incompatible
-    || marginLeftResolution.incompatible
-    || paperColorResolution.incompatible
-    || lineColorResolution.incompatible
-    || customLineOffsetResolution.incompatible
-    || customLineSpacingResolution.incompatible;
-  // Prefer the new preset id when it exists, otherwise deterministically
-  // map legacy built-in settings into the preset catalog inside PaperEngine.
-  const candidateBuiltinPreset = !hasUploadBackground
-    ? explicitBuiltinPreset
-      ?? resolveBuiltinPreset({
-        style,
-        paperFormat,
-        paperOrientation,
-      })
-    : null;
-  const builtinPreset = isCompatibleBuiltinPreset({
-    candidatePreset: candidateBuiltinPreset,
-    usedCompatibilityFallback,
-    style,
+  const resolutions = {
+    lineHeightResolution,
+    ruledMarginLineOffsetResolution,
+    marginTopResolution,
+    marginRightResolution,
+    marginBottomResolution,
+    marginLeftResolution,
+    customLineOffsetResolution,
+    customLineSpacingResolution,
+  };
+
+  const geometry = {
     pageWidth,
     pageHeight,
-    paperColor: paperColorResolution.value,
-    lineColor: lineColorResolution.value,
+    aspectRatio: pageWidth / pageHeight,
+    fontSize: fontSizeResolution.value,
     margins,
+    contentWidth,
+    contentHeight,
+    contentBounds,
     textTop,
     textLeft,
+    textWidth,
     lineHeightPx,
-  })
-    ? candidateBuiltinPreset
-    : null;
+    lineOffset,
+  };
 
+  return { geometry, resolutions };
+}
+
+function resolvePaperGuideAndBackground(
+  hasUploadBackground: boolean,
+  builtinPreset: ResolvedBuiltinPaperPreset | null,
+  style: PaperStyle,
+  geometry: ResolvedPaperGeometry,
+  paperColor: string,
+  lineColor: string,
+  ruledMarginLineOffset: number,
+  backgroundImage: string | null
+) {
   const presetBackground = !hasUploadBackground
     ? resolveBuiltinPresetBackground({
         builtinPreset,
         style,
-        pageWidth,
-        pageHeight,
-        paperColor: paperColorResolution.value,
-        lineColor: lineColorResolution.value,
-        margins,
-        textTop,
-        lineHeightPx,
-        ruledMarginLineOffset: ruledMarginLineOffsetResolution.value,
+        pageWidth: geometry.pageWidth,
+        pageHeight: geometry.pageHeight,
+        paperColor,
+        lineColor,
+        margins: geometry.margins,
+        textTop: geometry.textTop,
+        lineHeightPx: geometry.lineHeightPx,
+        ruledMarginLineOffset,
       })
     : null;
 
-  const variant = hasUploadBackground
+  const background: ResolvedPaperBackground = hasUploadBackground
+    ? {
+        kind: 'image',
+        imageSrc: backgroundImage!,
+      }
+    : presetBackground ?? {
+        kind: 'solid-color',
+        color: paperColor,
+      };
+
+  const guides: ResolvedPaperGuides = presetBackground
+    ? { kind: 'none' }
+    : resolveGuides({
+        hasUploadBackground,
+        style,
+        lineColor,
+        marginLeft: geometry.margins.left,
+        ruledMarginLineOffset,
+      });
+
+  return { background, guides, presetBackground };
+}
+
+function resolvePaperVariantAndSource(
+  hasUploadBackground: boolean,
+  builtinPreset: ResolvedBuiltinPaperPreset | null,
+  style: PaperStyle,
+  usedCompatibilityFallback: boolean
+) {
+  const variant: ResolvedPaper['variant'] = hasUploadBackground
     ? 'upload'
     : (builtinPreset || (style === 'blank' && !usedCompatibilityFallback))
       ? 'preset'
@@ -409,43 +430,127 @@ function resolvePaperDefinition(input: ResolvePagePaperInput): PaperDefinition {
     builtinPreset,
   });
 
+  return { variant, source };
+}
+
+function resolvePaperDefinition(input: ResolvePagePaperInput): PaperDefinition {
+  const settings = input.settings ?? {};
+  const pageSettings = input.pageSettings ?? {};
+  
+  const { selectionResolution, paperFormat, paperOrientation, style } = resolvePaperSelectionNormalization(settings, pageSettings);
+  
+  const backgroundImage = resolveBackgroundImage({
+    pageIndex: input.pageIndex,
+    settings,
+    pageSettings,
+  });
+  const hasUploadBackground = backgroundImage !== null;
+
+  const explicitBuiltinPreset = resolvePaperPresetResolution(
+    hasUploadBackground,
+    selectionResolution,
+    style,
+    paperFormat,
+    paperOrientation
+  );
+
+  const fontSizeResolution = resolvePositiveNumber(pageSettings.fontSize, DEFAULT_PAGE_SETTINGS.fontSize);
+  const paperColorResolution = resolveString(
+    pageSettings.paperColor,
+    settings.paperColor,
+    DEFAULT_SETTINGS.paperColor,
+  );
+  const lineColorResolution = resolveString(
+    pageSettings.lineColor,
+    settings.lineColor,
+    DEFAULT_SETTINGS.lineColor,
+  );
+
+  if (explicitBuiltinPreset) {
+    return resolveExplicitBuiltinPresetPaper({
+      preset: explicitBuiltinPreset,
+      backgroundImage,
+      fontSize: fontSizeResolution.value,
+      paperColor: paperColorResolution.value,
+      lineColor: lineColorResolution.value,
+    });
+  }
+
+  const { geometry, resolutions } = resolvePaperMeasurementAndGeometry(
+    input,
+    settings,
+    pageSettings,
+    paperFormat,
+    paperOrientation,
+    style,
+    hasUploadBackground,
+    fontSizeResolution
+  );
+
+  const usedCompatibilityFallback =
+    selectionResolution.incompatible
+    || resolutions.lineHeightResolution.incompatible
+    || resolutions.ruledMarginLineOffsetResolution.incompatible
+    || fontSizeResolution.incompatible
+    || resolutions.marginTopResolution.incompatible
+    || resolutions.marginRightResolution.incompatible
+    || resolutions.marginBottomResolution.incompatible
+    || resolutions.marginLeftResolution.incompatible
+    || paperColorResolution.incompatible
+    || lineColorResolution.incompatible
+    || resolutions.customLineOffsetResolution.incompatible
+    || resolutions.customLineSpacingResolution.incompatible;
+
+  const candidateBuiltinPreset = !hasUploadBackground
+    ? explicitBuiltinPreset
+      ?? resolveBuiltinPreset({
+        style,
+        paperFormat,
+        paperOrientation,
+      })
+    : null;
+
+  const builtinPreset = isCompatibleBuiltinPreset({
+    candidatePreset: candidateBuiltinPreset,
+    usedCompatibilityFallback,
+    style,
+    pageWidth: geometry.pageWidth,
+    pageHeight: geometry.pageHeight,
+    paperColor: paperColorResolution.value,
+    lineColor: lineColorResolution.value,
+    margins: geometry.margins,
+    textTop: geometry.textTop,
+    textLeft: geometry.textLeft,
+    lineHeightPx: geometry.lineHeightPx,
+  })
+    ? candidateBuiltinPreset
+    : null;
+
+  const { background, guides } = resolvePaperGuideAndBackground(
+    hasUploadBackground,
+    builtinPreset,
+    style,
+    geometry,
+    paperColorResolution.value,
+    lineColorResolution.value,
+    resolutions.ruledMarginLineOffsetResolution.value,
+    backgroundImage
+  );
+
+  const { variant, source } = resolvePaperVariantAndSource(
+    hasUploadBackground,
+    builtinPreset,
+    style,
+    usedCompatibilityFallback
+  );
+
   return {
     variant,
     source,
     style,
-    background: hasUploadBackground
-      ? {
-          kind: 'image',
-          imageSrc: backgroundImage,
-        }
-      : presetBackground ?? {
-          kind: 'solid-color',
-          color: paperColorResolution.value,
-        },
-    guides: presetBackground
-      ? { kind: 'none' }
-      : resolveGuides({
-      hasUploadBackground,
-      style,
-      lineColor: lineColorResolution.value,
-      marginLeft: margins.left,
-      ruledMarginLineOffset: ruledMarginLineOffsetResolution.value,
-      }),
-    geometry: {
-      pageWidth,
-      pageHeight,
-      aspectRatio: pageWidth / pageHeight,
-      fontSize: fontSizeResolution.value,
-      margins,
-      contentWidth,
-      contentHeight,
-      contentBounds,
-      textTop,
-      textLeft,
-      textWidth,
-      lineHeightPx,
-      lineOffset,
-    },
+    background,
+    guides,
+    geometry,
     preset: builtinPreset,
     capabilities: resolvePaperCapabilities({
       source,
@@ -453,7 +558,6 @@ function resolvePaperDefinition(input: ResolvePagePaperInput): PaperDefinition {
     }),
   };
 }
-
 function resolveExplicitBuiltinPresetPaper(input: {
   preset: ResolvedBuiltinPaperPreset;
   backgroundImage: string | null;
