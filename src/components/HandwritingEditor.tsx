@@ -183,7 +183,7 @@ export default function HandwritingEditor({
 
   const resolvedFontFamily = useMemo(() => {
     // Recompute after the font face finishes loading so CSS variable resolution stays fresh.
-    void fontMetricsVersion;
+    if (fontMetricsVersion < 0) return 'cursive';
 
     if (settings.fontFamily === 'custom' && settings.customFont) {
       return `"${settings.customFont.family}", cursive`;
