@@ -265,20 +265,20 @@ const FontCard = ({
 };
 
 interface SettingsPanelProps {
-  settings: HandwritingSettings;
-  onSettingsChange: (settings: HandwritingSettings) => void;
-  pageSettings: PageSettings;
-  onPageSettingsChange: (pageSettings: PageSettings) => void;
-  currentPageIndex: number;
-  onApplyToAllPages?: () => void;
-  previewScale: number;
-  onPreviewScaleChange: (value: number) => void;
-  onCurrentPageChange: (index: number) => void;
-  totalPages: number;
-  isPaginationComplete: boolean;
-  pages: LineData[][];
-  onClearAll: () => void;
-  showHomeLink?: boolean;
+  readonly settings: HandwritingSettings;
+  readonly onSettingsChange: (settings: HandwritingSettings) => void;
+  readonly pageSettings: PageSettings;
+  readonly onPageSettingsChange: (pageSettings: PageSettings) => void;
+  readonly currentPageIndex: number;
+  readonly onApplyToAllPages?: () => void;
+  readonly previewScale: number;
+  readonly onPreviewScaleChange: (value: number) => void;
+  readonly onCurrentPageChange: (index: number) => void;
+  readonly totalPages: number;
+  readonly isPaginationComplete: boolean;
+  readonly pages: LineData[][];
+  readonly onClearAll: () => void;
+  readonly showHomeLink?: boolean;
 }
 
 export default function SettingsPanel({

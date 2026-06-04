@@ -8,39 +8,39 @@ import { pageRenderEngine } from '@/lib/renderer/PageRenderEngine';
 import { UnifiedPagePainter, type CharacterPosition } from '@/lib/renderer/UnifiedPagePainter';
 
 export interface CanvasPreviewProps {
-  lines: LineData[];
-  pageSettings: PageSettings;
-  settings: HandwritingSettings;
-  pageIndex: number;
-  previewScale: number;
-  fontFamily: string;
+  readonly lines: LineData[];
+  readonly pageSettings: PageSettings;
+  readonly settings: HandwritingSettings;
+  readonly pageIndex: number;
+  readonly previewScale: number;
+  readonly fontFamily: string;
   /** Cursor position (global char index) - null if no cursor should be shown */
-  cursorPosition?: number | null;
+  readonly cursorPosition?: number | null;
   /** Selection range */
-  selectionStart?: number;
-  selectionEnd?: number;
+  readonly selectionStart?: number;
+  readonly selectionEnd?: number;
   /** Page start offset for mapping global char index to local */
-  pageStartOffset?: number;
+  readonly pageStartOffset?: number;
   /** Whether the editor is focused */
-  isFocused?: boolean;
+  readonly isFocused?: boolean;
   /** Called when canvas is clicked with (pageX, pageY) in page coordinates */
-  onCanvasClick?: (pageX: number, pageY: number) => void;
+  readonly onCanvasClick?: (pageX: number, pageY: number) => void;
   /** Called when a character is clicked with the global char index */
-  onCharClick?: (globalCharIndex: number, isLeftHalf: boolean) => void;
+  readonly onCharClick?: (globalCharIndex: number, isLeftHalf: boolean) => void;
   /** Called when shift-click extends a selection */
-  onCharShiftClick?: (globalCharIndex: number, isLeftHalf: boolean) => void;
+  readonly onCharShiftClick?: (globalCharIndex: number, isLeftHalf: boolean) => void;
   /** Called on double click for word selection */
-  onCharDoubleClick?: (globalCharIndex: number, isLeftHalf: boolean) => void;
+  readonly onCharDoubleClick?: (globalCharIndex: number, isLeftHalf: boolean) => void;
   /** Called on triple click for line selection */
-  onCharTripleClick?: (globalCharIndex: number, isLeftHalf: boolean) => void;
+  readonly onCharTripleClick?: (globalCharIndex: number, isLeftHalf: boolean) => void;
   /** Called when mouse is pressed on a character */
-  onCharMouseDown?: (globalCharIndex: number, isLeftHalf: boolean) => void;
+  readonly onCharMouseDown?: (globalCharIndex: number, isLeftHalf: boolean) => void;
   /** Called when mouse moves over a character during selection */
-  onCharMouseMove?: (globalCharIndex: number, isLeftHalf: boolean) => void;
+  readonly onCharMouseMove?: (globalCharIndex: number, isLeftHalf: boolean) => void;
   /** Called when mouse is released */
-  onMouseUp?: () => void;
+  readonly onMouseUp?: () => void;
   /** Expose the canvas element ref */
-  canvasRef?: React.RefObject<HTMLCanvasElement | null>;
+  readonly canvasRef?: React.RefObject<HTMLCanvasElement | null>;
 }
 
 function getPageCoordsFromCanvas(

@@ -19,17 +19,37 @@ vi.mock('@/components/ui/popover', async () => {
     children,
     open: controlledOpen,
     onOpenChange,
-  }: {
+  }: Readonly<{
     children: React.ReactNode;
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
-  }) {
+  }>) {
     const [uncontrolledOpen, setUncontrolledOpen] = React.useState(false);
     const open = controlledOpen ?? uncontrolledOpen;
-    const setOpen = onOpenChange ?? setUncontrolledOpen;
+    
+    const onOpenChangeRef = React.useRef(onOpenChange);
+    React.useEffect(() => {
+      onOpenChangeRef.current = onOpenChange;
+    }, [onOpenChange]);
+
+    const setOpenStable = React.useCallback((val: boolean) => {
+      if (onOpenChangeRef.current) {
+        onOpenChangeRef.current(val);
+      } else {
+        setUncontrolledOpen(val);
+      }
+    }, [onOpenChangeRef, setUncontrolledOpen]);
+
+    const value = React.useMemo(() => ({ open, setOpen: setOpenStable }), [open, setOpenStable]);
+    React.useEffect(() => {
+      if (!(globalThis as any).__popoverContextValues) {
+        (globalThis as any).__popoverContextValues = [];
+      }
+      (globalThis as any).__popoverContextValues.push(value);
+    });
 
     return (
-      <PopoverContext.Provider value={{ open, setOpen }}>
+      <PopoverContext.Provider value={value}>
         {children}
       </PopoverContext.Provider>
     );
@@ -38,10 +58,10 @@ vi.mock('@/components/ui/popover', async () => {
   function PopoverTrigger({
     asChild,
     children,
-  }: {
+  }: Readonly<{
     asChild?: boolean;
     children: React.ReactElement;
-  }) {
+  }>) {
     const ctx = React.useContext(PopoverContext);
 
     if (asChild && React.isValidElement(children)) {
@@ -61,7 +81,7 @@ vi.mock('@/components/ui/popover', async () => {
     );
   }
 
-  function PopoverContent({ children, ...props }: { children: React.ReactNode }) {
+  function PopoverContent({ children, ...props }: Readonly<{ children: React.ReactNode }>) {
     const ctx = React.useContext(PopoverContext);
     if (!ctx?.open) return null;
     return (
@@ -71,7 +91,7 @@ vi.mock('@/components/ui/popover', async () => {
     );
   }
 
-  function PopoverAnchor(props: React.HTMLAttributes<HTMLDivElement>) {
+  function PopoverAnchor(props: Readonly<React.HTMLAttributes<HTMLDivElement>>) {
     return <div data-testid="popover-anchor" {...props} />;
   }
 
@@ -527,5 +547,35 @@ describe('TextField', () => {
     expect(fontSizeLabel.className).toContain('label-text');
     expect(textColorLabel.className).toContain('label-text');
     expect(fontSizeLabel.className).not.toContain('text-label font-bold text-muted-foreground uppercase tracking-widest');
+  });
+
+  it('keeps Popover context value reference stable across renders', () => {
+    (globalThis as any).__popoverContextValues = [];
+
+    const { rerender } = render(
+      <TextField
+        field={mockField}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+        randomness={randomness}
+      />
+    );
+
+    rerender(
+      <TextField
+        field={mockField}
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+        scale={scale}
+        fontFamily={fontFamily}
+        randomness={randomness}
+      />
+    );
+
+    const values = (globalThis as any).__popoverContextValues;
+    expect(values.length).toBeGreaterThanOrEqual(2);
+    expect(values[0]).toBe(values[1]);
   });
 });

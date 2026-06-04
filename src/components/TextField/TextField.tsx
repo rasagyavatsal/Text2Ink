@@ -12,13 +12,13 @@ import { createMeasure } from '@/lib/pagination';
 import { cn } from '@/lib/utils';
 
 interface TextFieldProps {
-  field: TextFieldType;
-  onUpdate: (updates: Partial<TextFieldType>) => void;
-  onDelete: () => void;
-  scale: number;
-  fontFamily: string;
-  randomness: HandwritingSettings['randomness'];
-  onTypingFocus?: () => void;
+  readonly field: TextFieldType;
+  readonly onUpdate: (updates: Partial<TextFieldType>) => void;
+  readonly onDelete: () => void;
+  readonly scale: number;
+  readonly fontFamily: string;
+  readonly randomness: HandwritingSettings['randomness'];
+  readonly onTypingFocus?: () => void;
 }
 
 function calculateMinimumTextBoxSize(text: string, fontSize: number, fontFamily: string, scale: number) {
@@ -393,12 +393,12 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
         }}
       >
         {field.text.split('\n').map((line, lineIdx) => (
-          <div key={lineIdx} className="whitespace-pre">
+          <div key={`line-${lineIdx}-${line}`} className="whitespace-pre">
             {line.split('').map((char, charIdx) => {
               const randomStyle = calculateRandomStyle(charIdx, lineIdx + 1000, randomness);
               return (
                 <span
-                  key={charIdx}
+                  key={`char-${charIdx}-${char}`}
                   className="inline-block"
                   style={{
                     ...randomStyle.style,

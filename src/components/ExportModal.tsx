@@ -22,11 +22,11 @@ import { exportEngine, type ExportFormat, type ExportProgress } from '@/lib/expo
 import type { HandwritingSettings, PageSettings } from '@/lib/types';
 
 interface ExportModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  text: string;
-  settings: HandwritingSettings;
-  pageSettingsByPage: PageSettings[];
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
+  readonly text: string;
+  readonly settings: HandwritingSettings;
+  readonly pageSettingsByPage: PageSettings[];
 }
 
 export default function ExportModal({

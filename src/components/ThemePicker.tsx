@@ -8,8 +8,8 @@ import { type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 export interface ThemePickerProps {
-  className?: string;
-  variant?: VariantProps<typeof buttonVariants>['variant'];
+  readonly className?: string;
+  readonly variant?: VariantProps<typeof buttonVariants>['variant'];
 }
 
 const subscribeClientReady = () => () => {};

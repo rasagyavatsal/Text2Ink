@@ -160,8 +160,8 @@ function blurActiveTextInput() {
 }
 
 type RootEditorShellProps = {
-  initialState: EditorInitialState;
-  persistState: boolean;
+  readonly initialState: EditorInitialState;
+  readonly persistState: boolean;
 };
 
 function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
@@ -516,13 +516,11 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
           pageSettingsByPage={pageSettingsByPage}
           onPageSettingsChange={handlePageSettingsChange}
           previewScale={effectivePreviewScale}
-          onPreviewScaleChange={handlePreviewScaleChange}
           currentPageIndex={currentPageIndex}
           onCurrentPageChange={handleCurrentPageChange}
           onTotalPagesChange={handleTotalPagesChange}
           onPagesChange={setPages}
           onPaginationCompleteChange={setIsPaginationComplete}
-          onApplyToAllPages={applyCurrentPageSettingsToAll}
           isMobileLayout={isMobileEditorLayout}
           onTypingFocus={handleEditorTypingFocus}
         />
