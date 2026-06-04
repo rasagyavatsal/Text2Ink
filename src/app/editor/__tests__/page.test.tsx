@@ -200,7 +200,7 @@ describe('Root editor page', () => {
     render(<RootEditorPageClient />);
 
     const sheet = await screen.findByTestId('mobile-editor-bottom-sheet');
-    const getPreviewScale = () => Number(screen.getByTestId('handwriting-editor').getAttribute('data-preview-scale'));
+    const getPreviewScale = () => Number(screen.getByTestId('handwriting-editor').dataset.previewScale);
     const previewScrollContainer = screen.getByTestId('preview-scroll-container');
 
     expect(sheet).toHaveAttribute('data-anchor', 'peek');
@@ -237,7 +237,7 @@ describe('Root editor page', () => {
 
     await screen.findByTestId('mobile-editor-bottom-sheet');
 
-    const getPreviewScale = () => Number(screen.getByTestId('handwriting-editor').getAttribute('data-preview-scale'));
+    const getPreviewScale = () => Number(screen.getByTestId('handwriting-editor').dataset.previewScale);
     const previewScrollContainer = screen.getByTestId('preview-scroll-container');
     const parsePadding = () => Number.parseFloat(previewScrollContainer.style.paddingBottom);
     const initialScale = getPreviewScale();
