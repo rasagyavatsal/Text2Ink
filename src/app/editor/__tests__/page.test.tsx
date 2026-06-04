@@ -61,12 +61,12 @@ vi.mock('@/components/MobileEditorBottomSheet', () => ({
     settingsPanel,
   }: MockMobileEditorBottomSheetProps) {
     React.useEffect(() => {
-      const anchorHeight =
-        anchor === 'peek'
-          ? metrics.minSheetHeight
-          : anchor === 'expanded'
-            ? metrics.maxSheetHeight
-            : metrics.defaultSheetHeight;
+      let anchorHeight = metrics.defaultSheetHeight;
+      if (anchor === 'peek') {
+        anchorHeight = metrics.minSheetHeight;
+      } else if (anchor === 'expanded') {
+        anchorHeight = metrics.maxSheetHeight;
+      }
       onHeightChange(anchorHeight);
     }, [anchor, metrics.defaultSheetHeight, metrics.maxSheetHeight, metrics.minSheetHeight, onHeightChange]);
 

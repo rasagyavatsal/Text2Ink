@@ -150,12 +150,12 @@ export function getMobileSheetAnchorSnapIndex(
   snapPoints: number[],
   metrics: MobileEditorSheetMetrics,
 ) {
-  const targetHeight =
-    anchor === 'peek'
-      ? metrics.minSheetHeight
-      : anchor === 'expanded'
-        ? metrics.maxSheetHeight
-        : metrics.defaultSheetHeight;
+  const getTargetHeight = () => {
+    if (anchor === 'peek') return metrics.minSheetHeight;
+    if (anchor === 'expanded') return metrics.maxSheetHeight;
+    return metrics.defaultSheetHeight;
+  };
+  const targetHeight = getTargetHeight();
 
   return findNearestMobileSheetSnapIndex(snapPoints, metrics.maxSheetHeight, targetHeight);
 }

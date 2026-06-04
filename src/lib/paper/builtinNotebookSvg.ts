@@ -42,8 +42,19 @@ export function buildBuiltinNotebookPaperSvg(
   const rootHeight = escapeXml(options.rootHeight ?? '100%');
   const styleDefs = (style === 'grid' || style === 'dot-grid') ? buildGridDefinitions(input) : '';
   const defsMarkup = styleDefs ? '<defs>' + styleDefs + '</defs>' : '';
-  const lineMarkup = style === 'grid' ? buildGridField(input) : style === 'dot-grid' ? buildDotGridField(input) : buildHorizontalLines(input);
-  const marginMarkup = style === 'ruled' || style === 'wide-ruled' || style === 'narrow-ruled' ? buildRuledMarginLine(input) : style === 'cornell' ? buildCornellLines(input) : '';
+  const getLineMarkup = () => {
+    if (style === 'grid') return buildGridField(input);
+    if (style === 'dot-grid') return buildDotGridField(input);
+    return buildHorizontalLines(input);
+  };
+  const getMarginMarkup = () => {
+    if (style === 'ruled' || style === 'wide-ruled' || style === 'narrow-ruled') return buildRuledMarginLine(input);
+    if (style === 'cornell') return buildCornellLines(input);
+    return '';
+  };
+
+  const lineMarkup = getLineMarkup();
+  const marginMarkup = getMarginMarkup();
 
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${formatNumber(pageWidth)} ${formatNumber(pageHeight)}" width="${rootWidth}" height="${rootHeight}" shape-rendering="geometricPrecision">`,

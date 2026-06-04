@@ -254,9 +254,9 @@ function resolvePaperPresetResolution(
   paperFormat: PaperFormat,
   paperOrientation: PaperOrientation
 ) {
-  let explicitBuiltinPreset = !hasUploadBackground
-    ? resolveBuiltinPresetById(resolveDocumentPaperPresetId(selectionResolution.selection))
-    : null;
+  let explicitBuiltinPreset = hasUploadBackground
+    ? null
+    : resolveBuiltinPresetById(resolveDocumentPaperPresetId(selectionResolution.selection));
 
   if (!explicitBuiltinPreset && !hasUploadBackground) {
     if (style === 'wide-lined' || style === 'wide-ruled' || style === 'narrow-lined' || style === 'narrow-ruled') {
@@ -374,8 +374,9 @@ function resolvePaperGuideAndBackground(
   ruledMarginLineOffset: number,
   backgroundImage: string | null
 ) {
-  const presetBackground = !hasUploadBackground
-    ? resolveBuiltinPresetBackground({
+  const presetBackground = hasUploadBackground
+    ? null
+    : resolveBuiltinPresetBackground({
         builtinPreset,
         style,
         pageWidth: geometry.pageWidth,
@@ -386,8 +387,7 @@ function resolvePaperGuideAndBackground(
         textTop: geometry.textTop,
         lineHeightPx: geometry.lineHeightPx,
         ruledMarginLineOffset,
-      })
-    : null;
+      });
 
   const background: ResolvedPaperBackground = hasUploadBackground
     ? {
@@ -418,13 +418,13 @@ function resolvePaperVariantAndSource(
   style: PaperStyle,
   usedCompatibilityFallback: boolean
 ) {
-  const variant: ResolvedPaper['variant'] = hasUploadBackground
-    ? 'upload'
-    : (builtinPreset || (style === 'blank' && !usedCompatibilityFallback))
-      ? 'preset'
-      : (usedCompatibilityFallback || style !== 'blank')
-      ? 'legacy-fallback'
-      : 'preset';
+  const getVariant = (): ResolvedPaper['variant'] => {
+    if (hasUploadBackground) return 'upload';
+    if (builtinPreset || (style === 'blank' && !usedCompatibilityFallback)) return 'preset';
+    if (usedCompatibilityFallback || style !== 'blank') return 'legacy-fallback';
+    return 'preset';
+  };
+  const variant: ResolvedPaper['variant'] = getVariant();
   const source = resolvePaperSource({
     hasUploadBackground,
     builtinPreset,
@@ -501,14 +501,13 @@ function resolvePaperDefinition(input: ResolvePagePaperInput): PaperDefinition {
     || resolutions.customLineOffsetResolution.incompatible
     || resolutions.customLineSpacingResolution.incompatible;
 
-  const candidateBuiltinPreset = !hasUploadBackground
-    ? explicitBuiltinPreset
-      ?? resolveBuiltinPreset({
+  const candidateBuiltinPreset = hasUploadBackground
+    ? null
+    : (explicitBuiltinPreset ?? resolveBuiltinPreset({
         style,
         paperFormat,
         paperOrientation,
-      })
-    : null;
+      }));
 
   const builtinPreset = isCompatibleBuiltinPreset({
     candidatePreset: candidateBuiltinPreset,
@@ -959,14 +958,15 @@ function resolvePaperCapabilities(input: {
     input.source.kind === 'generated-fallback'
     && (input.style === 'ruled' || input.style === 'wide-ruled' || input.style === 'narrow-ruled');
 
+  const getLineSpacingOwner = () => {
+    if (input.source.kind === 'preset-built-in') return 'preset';
+    if (input.source.kind === 'upload-backed') return 'upload';
+    return 'document';
+  };
+
   return {
     alignmentMode: input.source.kind === 'upload-backed' ? 'user-calibrated' : 'fixed',
-    lineSpacingOwner:
-      input.source.kind === 'preset-built-in'
-        ? 'preset'
-        : input.source.kind === 'upload-backed'
-        ? 'upload'
-        : 'document',
+    lineSpacingOwner: getLineSpacingOwner(),
     supportsLineHeightControl:
       input.source.kind === 'generated-fallback' && input.style === 'blank',
     supportsManualAlignment: input.source.kind === 'upload-backed',

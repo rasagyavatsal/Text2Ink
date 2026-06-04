@@ -125,32 +125,39 @@ export default function ExportModal({
           </DialogDescription>
         </DialogHeader>
 
-        {isSuccess ? (
-          <div className="flex flex-col items-center justify-center py-6 space-y-4">
-            <CheckCircle2 className="w-12 h-12 text-success" />
-            <p className="font-medium text-center text-foreground">Export completed successfully!</p>
-            <Button variant="brand" onClick={onClose} className="mt-4 font-semibold transition-all active:scale-95 shadow-sm">
-              Close
-            </Button>
-          </div>
-        ) : exportError ? (
-          <div className="flex flex-col items-center justify-center py-6 space-y-4">
-            <AlertCircle className="w-12 h-12 text-destructive animate-in fade-in zoom-in duration-300" />
-            <p className="font-medium text-center text-destructive">Export failed</p>
-            <p className="text-sm text-muted-foreground text-center px-4 max-w-sm">
-              {exportError}
-            </p>
-            <div className="flex gap-3 mt-4 w-full justify-center">
-              <Button variant="outline" onClick={() => setExportError(null)} className="font-semibold transition-all active:scale-95">
-                Cancel
-              </Button>
-              <Button variant="brand" onClick={exportPages} className="font-semibold transition-all active:scale-95 shadow-sm">
-                Retry
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-6 py-4">
+        {(() => {
+          if (isSuccess) {
+            return (
+              <div className="flex flex-col items-center justify-center py-6 space-y-4">
+                <CheckCircle2 className="w-12 h-12 text-success" />
+                <p className="font-medium text-center text-foreground">Export completed successfully!</p>
+                <Button variant="brand" onClick={onClose} className="mt-4 font-semibold transition-all active:scale-95 shadow-sm">
+                  Close
+                </Button>
+              </div>
+            );
+          }
+          if (exportError) {
+            return (
+              <div className="flex flex-col items-center justify-center py-6 space-y-4">
+                <AlertCircle className="w-12 h-12 text-destructive animate-in fade-in zoom-in duration-300" />
+                <p className="font-medium text-center text-destructive">Export failed</p>
+                <p className="text-sm text-muted-foreground text-center px-4 max-w-sm">
+                  {exportError}
+                </p>
+                <div className="flex gap-3 mt-4 w-full justify-center">
+                  <Button variant="outline" onClick={() => setExportError(null)} className="font-semibold transition-all active:scale-95">
+                    Cancel
+                  </Button>
+                  <Button variant="brand" onClick={exportPages} className="font-semibold transition-all active:scale-95 shadow-sm">
+                    Retry
+                  </Button>
+                </div>
+              </div>
+            );
+          }
+          return (
+            <div className="space-y-6 py-4">
             <div className="flex flex-col gap-3">
               <Label className="label-text text-label" htmlFor="export-format">Format</Label>
               <Select
@@ -190,7 +197,7 @@ export default function ExportModal({
               onClick={exportPages}
               disabled={isExporting || !hasContent}
               className={`w-full font-semibold transition-all ${
-                !hasContent ? 'bg-muted text-muted-foreground border-border hover:bg-muted' : 'shadow-sm active:scale-95'
+                hasContent ? 'shadow-sm active:scale-95' : 'bg-muted text-muted-foreground border-border hover:bg-muted'
               }`}
             >
               {isExporting ? (
@@ -259,7 +266,8 @@ export default function ExportModal({
               </p>
             )}
           </div>
-        )}
+          );
+        })()}
       </DialogContent>
     </Dialog>
   );

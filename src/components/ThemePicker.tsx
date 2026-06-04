@@ -16,6 +16,12 @@ const subscribeClientReady = () => () => {};
 const getClientReadySnapshot = () => true;
 const getServerReadySnapshot = () => false;
 
+const getThemeLabel = (t: string) => {
+  if (t === 'light') return 'Light theme';
+  if (t === 'dark') return 'Dark theme';
+  return 'System theme';
+};
+
 export default function ThemePicker({ className, variant = 'outline' }: ThemePickerProps) {
   const { theme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(
@@ -29,8 +35,14 @@ export default function ThemePicker({ className, variant = 'outline' }: ThemePic
   }
 
   const currentTheme = theme || 'system';
-  const Icon = currentTheme === 'light' ? Sun : currentTheme === 'dark' ? Moon : Monitor;
-  const label = currentTheme === 'light' ? 'Light theme' : currentTheme === 'dark' ? 'Dark theme' : 'System theme';
+  const label = getThemeLabel(currentTheme);
+
+  let iconElement = <Monitor className="w-4 h-4" />;
+  if (currentTheme === 'light') {
+    iconElement = <Sun className="w-4 h-4" />;
+  } else if (currentTheme === 'dark') {
+    iconElement = <Moon className="w-4 h-4" />;
+  }
 
   const cycleTheme = () => {
     if (currentTheme === 'light') setTheme('dark');
@@ -47,7 +59,7 @@ export default function ThemePicker({ className, variant = 'outline' }: ThemePic
       title={label}
       className={cn("text-brand-accent hover:text-foreground hover:bg-muted", className)}
     >
-      <Icon className="w-4 h-4" />
+      {iconElement}
     </Button>
   );
 }
