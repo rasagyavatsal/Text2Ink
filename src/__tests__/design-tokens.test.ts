@@ -17,6 +17,18 @@ function extractCustomProperties(css: string): Map<string, string> {
   return props;
 }
 
+function extractThemeEntries(css: string): Map<string, string> {
+  const themeBlock = /@theme\s+inline\s*\{([\s\S]*?)\}/.exec(css);
+  if (!themeBlock) return new Map();
+  const props = new Map<string, string>();
+  const regex = /(--[\w-]+)\s*:\s*([^;]+);/g;
+  let match;
+  while ((match = regex.exec(themeBlock[1])) !== null) {
+    props.set(match[1], match[2].trim());
+  }
+  return props;
+}
+
 const allProps = extractCustomProperties(globalsCss);
 
 describe('primitive design tokens', () => {
@@ -196,18 +208,6 @@ describe('semantic design tokens', () => {
 });
 
 describe('Tailwind @theme integration', () => {
-  function extractThemeEntries(css: string): Map<string, string> {
-    const themeBlock = /@theme\s+inline\s*\{([\s\S]*?)\}/.exec(css);
-    if (!themeBlock) return new Map();
-    const props = new Map<string, string>();
-    const regex = /(--[\w-]+)\s*:\s*([^;]+);/g;
-    let match;
-    while ((match = regex.exec(themeBlock[1])) !== null) {
-      props.set(match[1], match[2].trim());
-    }
-    return props;
-  }
-
   const themeEntries = extractThemeEntries(globalsCss);
 
   it('maps semantic tokens into Tailwind theme', () => {

@@ -605,35 +605,7 @@ export default function HandwritingEditor({
     };
   }, [getPageSettings, isDraggingMarginLine, onSettingsChange, previewScale, resolveLayoutForPage, settings]);
 
-  useEffect(() => {
-    if (typeof globalThis.window === 'undefined') return;
-    if (workerRef.current) return;
 
-    const worker = new Worker(new URL('../workers/paginationWorker.ts', import.meta.url), {
-      type: 'module',
-    });
-    workerRef.current = worker;
-
-    const onMessage = (ev: MessageEvent<PaginationResponse>) => {
-      const msg = ev.data;
-      if (msg?.type !== 'pagination-result') return;
-      if (msg.requestId !== latestPaginationRequestIdRef.current) return;
-
-      const nextPages = msg.pages as LineData[][];
-      setPages(nextPages);
-      onPagesChange?.(nextPages);
-      setIsPaginationComplete(msg.isPaginationComplete);
-      onPaginationCompleteChange?.(msg.isPaginationComplete);
-      setTotalPages(msg.totalPages);
-    };
-
-    worker.addEventListener('message', onMessage);
-    return () => {
-      worker.removeEventListener('message', onMessage);
-      worker.terminate();
-      workerRef.current = null;
-    };
-  }, [onPagesChange, onPaginationCompleteChange]);
 
   useEffect(() => {
     debouncedRequestPagination();

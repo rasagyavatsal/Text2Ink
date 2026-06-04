@@ -20,60 +20,60 @@ describe("hashIdentifier", () => {
   })
 })
 
+function createMockDb(ipCount: number, emailCount: number) {
+  const mockTransaction = {
+    get: vi.fn(async (ref: any): Promise<any> => {
+      if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
+    }),
+    set: vi.fn((ref: any) => {
+      if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
+    }),
+    update: vi.fn((ref: any) => {
+      if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
+    }),
+  }
+
+  const mockDb = {
+    doc: vi.fn((path: string) => ({ id: path, path, _isMockRef: true })),
+    runTransaction: vi.fn(async (fn: Function) => {
+      // First call in get: IP doc. Second call: email doc.
+      const ipDoc = {
+        exists: ipCount > 0,
+        data: () => ({ count: ipCount, expiresAt: { toDate: () => new Date(Date.now() + 3600000) } }),
+      }
+      const emailDoc = {
+        exists: emailCount > 0,
+        data: () => ({ count: emailCount, expiresAt: { toDate: () => new Date(Date.now() + 3600000) } }),
+      }
+      
+      mockTransaction.get
+        .mockImplementationOnce(async (ref: any) => {
+          if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
+          return ipDoc;
+        })
+        .mockImplementationOnce(async (ref: any) => {
+          if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
+          return emailDoc;
+        });
+
+      mockTransaction.set.mockImplementation((ref: any) => {
+        if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
+      });
+
+      mockTransaction.update.mockImplementation((ref: any) => {
+        if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
+      });
+
+      await fn(mockTransaction)
+    }),
+  }
+
+  return { mockDb, mockTransaction }
+}
+
 describe("checkRateLimit", () => {
   const ip = "test-client-ip"
   const email = "test@example.com"
-
-  function createMockDb(ipCount: number, emailCount: number) {
-    const mockTransaction = {
-      get: vi.fn(async (ref: any): Promise<any> => {
-        if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
-      }),
-      set: vi.fn((ref: any) => {
-        if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
-      }),
-      update: vi.fn((ref: any) => {
-        if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
-      }),
-    }
-
-    const mockDb = {
-      doc: vi.fn((path: string) => ({ id: path, path, _isMockRef: true })),
-      runTransaction: vi.fn(async (fn: Function) => {
-        // First call in get: IP doc. Second call: email doc.
-        const ipDoc = {
-          exists: ipCount > 0,
-          data: () => ({ count: ipCount, expiresAt: { toDate: () => new Date(Date.now() + 3600000) } }),
-        }
-        const emailDoc = {
-          exists: emailCount > 0,
-          data: () => ({ count: emailCount, expiresAt: { toDate: () => new Date(Date.now() + 3600000) } }),
-        }
-        
-        mockTransaction.get
-          .mockImplementationOnce(async (ref: any) => {
-            if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
-            return ipDoc;
-          })
-          .mockImplementationOnce(async (ref: any) => {
-            if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
-            return emailDoc;
-          });
-
-        mockTransaction.set.mockImplementation((ref: any) => {
-          if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
-        });
-
-        mockTransaction.update.mockImplementation((ref: any) => {
-          if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
-        });
-
-        await fn(mockTransaction)
-      }),
-    }
-
-    return { mockDb, mockTransaction }
-  }
 
   it("allows submission when under both limits", async () => {
     const { mockDb, mockTransaction } = createMockDb(0, 0)

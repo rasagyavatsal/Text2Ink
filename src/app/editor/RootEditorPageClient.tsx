@@ -254,65 +254,44 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
     });
   }, []);
 
-  useEffect(() => {
+  const saveState = useCallback(() => {
     if (!persistState) return;
     if (typeof window === 'undefined') return;
 
-    const save = () => {
-      saveEditorStateV1<HandwritingSettings, PageSettings>({
-        text,
-        settings,
-        pageSettingsByPage,
-        ui: {
-          activePanel: 'settings', // Legacy support
-          sidebarOpen: true, // Legacy support
-          previewScale,
-          currentPageIndex,
-          editorMode: 'write',
-        },
-      });
-    };
+    saveEditorStateV1<HandwritingSettings, PageSettings>({
+      text,
+      settings,
+      pageSettingsByPage,
+      ui: {
+        activePanel: 'settings', // Legacy support
+        sidebarOpen: true, // Legacy support
+        previewScale,
+        currentPageIndex,
+        editorMode: 'write',
+      },
+    });
+  }, [
+    currentPageIndex,
+    pageSettingsByPage,
+    persistState,
+    previewScale,
+    settings,
+    text,
+  ]);
 
-    const timeout = window.setTimeout(save, 400);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const timeout = window.setTimeout(saveState, 400);
     return () => window.clearTimeout(timeout);
-  }, [
-    currentPageIndex,
-    pageSettingsByPage,
-    persistState,
-    previewScale,
-    settings,
-    text,
-  ]);
+  }, [saveState]);
 
   useEffect(() => {
-    if (!persistState) return;
     if (typeof window === 'undefined') return;
 
-    const handleUnload = () => {
-      saveEditorStateV1<HandwritingSettings, PageSettings>({
-        text,
-        settings,
-        pageSettingsByPage,
-        ui: {
-          activePanel: 'settings',
-          sidebarOpen: true,
-          previewScale,
-          currentPageIndex,
-          editorMode: 'write',
-        },
-      });
-    };
-
-    window.addEventListener('beforeunload', handleUnload);
-    return () => window.removeEventListener('beforeunload', handleUnload);
-  }, [
-    currentPageIndex,
-    pageSettingsByPage,
-    persistState,
-    previewScale,
-    settings,
-    text,
-  ]);
+    window.addEventListener('beforeunload', saveState);
+    return () => window.removeEventListener('beforeunload', saveState);
+  }, [saveState]);
 
   const ensurePageSettingsLength = useCallback(
     (desiredLength: number) => {
