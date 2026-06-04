@@ -17,7 +17,7 @@ describe('PaperEngine', () => {
 
     const resolved = resolvePagePaper({
       pageIndex: 0,
-      settings: settings as unknown as Parameters<typeof resolvePagePaper>[0]['settings'],
+      settings,
       pageSettings,
     });
 
@@ -129,7 +129,7 @@ describe('PaperEngine', () => {
 
     const resolved = resolvePagePaper({
       pageIndex: 0,
-      settings: settings as unknown as Parameters<typeof resolvePagePaper>[0]['settings'],
+      settings,
       pageSettings,
     });
 
@@ -164,7 +164,7 @@ describe('PaperEngine', () => {
 
     const resolved = resolvePagePaper({
       pageIndex: 0,
-      settings: settings as unknown as Parameters<typeof resolvePagePaper>[0]['settings'],
+      settings,
       pageSettings,
     });
 
@@ -488,7 +488,7 @@ describe('PaperEngine', () => {
       pageSettings: {
         fontSize: DEFAULT_SETTINGS.fontSize,
         marginTop: 72,
-      } as Partial<PageSettings>,
+      },
     });
 
     expect(resolved.variant).toBe('legacy-fallback');

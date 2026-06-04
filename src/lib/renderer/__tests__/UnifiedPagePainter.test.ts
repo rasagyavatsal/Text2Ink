@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { UnifiedPagePainter, PaintPageOptions } from '../UnifiedPagePainter';
-import { HandwritingSettings, PageSettings, DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '../../types';
+import { HandwritingSettings, DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '../../types';
 import { resolvePageLayout } from '@/lib/layout/LayoutEngine';
 import { withTestPaperSelection } from '@/test/paperTestHelpers';
 
@@ -340,7 +340,7 @@ describe('UnifiedPagePainter', () => {
         lineIndex: 1,
         charIndex: 0,
       });
-      expect(positions.mainPositions[2]!.y).toBe(
+      expect(positions.mainPositions[2].y).toBe(
         resolvedLayout.writing.firstLineTop + resolvedLayout.writing.lineHeightPx,
       );
     });
@@ -516,8 +516,8 @@ describe('UnifiedPagePainter', () => {
          pageSettings,
        });
 
-       const first = positions.mainPositions[0]!;
-       const second = positions.mainPositions[1]!;
+       const first = positions.mainPositions[0];
+       const second = positions.mainPositions[1];
        expect(first.selectionX).toBe(resolvedLayout.writing.textBounds.left);
        expect(second.selectionX).toBe(first.selectionX! + first.selectionWidth!);
      });
@@ -563,7 +563,7 @@ describe('UnifiedPagePainter', () => {
 
        UnifiedPagePainter.paintSelectionOverlay(ctx, positions.mainPositions, 0, 1, '#1a365d');
 
-       const [x, y, width, height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0];
+       const [, y, , height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0];
        // halfLeading = (24 - 24) / 2 = 0
        // selectionY = marginTop + 0 = marginTop
        expect(y).toBeCloseTo(pageSettings.marginTop, 1);

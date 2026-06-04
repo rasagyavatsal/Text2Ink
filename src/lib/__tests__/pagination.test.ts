@@ -154,15 +154,6 @@ describe('pagination', () => {
           paperStyle: 'ruled',
         }),
       });
-      const resBlank = paginate({ 
-        ...defaultReq, 
-        text: 'hello', 
-        settings: withTestPaperSelection({
-          ...defaultReq.settings,
-          paperPresetId: null,
-          paperStyle: 'blank',
-        }),
-      });
       
       // The logic for ruledTextLeft changes maxWidth, but nextLineFrom uses it.
       // We can't easily see internal maxWidth here without mocking createMeasure.

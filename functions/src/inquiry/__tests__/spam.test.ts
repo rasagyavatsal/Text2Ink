@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest"
+import { describe, it, expect } from "vitest"
 import { checkHoneypot, checkOrigin, ALLOWED_ORIGINS } from "../spam"
 
 describe("checkHoneypot", () => {

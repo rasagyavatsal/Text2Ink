@@ -86,7 +86,7 @@ function buildPagesFromText(text: string) {
 }
 
 class MockWorker {
-  private listeners = new Set<(event: MessageEvent) => void>();
+  private readonly listeners = new Set<(event: MessageEvent) => void>();
 
   postMessage = vi.fn((msg: { requestId?: number; text?: string; type?: string }) => {
     if (msg?.type !== 'paginate') return;
@@ -118,7 +118,7 @@ class MockWorker {
   });
 }
 
-globalThis.Worker = MockWorker as unknown as typeof Worker;
+globalThis.Worker = MockWorker as any;
 
 describe('HandwritingEditor selection behavior', () => {
   const settings: HandwritingSettings = {

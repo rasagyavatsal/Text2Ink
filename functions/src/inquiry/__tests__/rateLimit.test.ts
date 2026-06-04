@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
+import { describe, it, expect, vi } from "vitest"
 import { hashIdentifier, checkRateLimit, LIMITS } from "../rateLimit"
 
 describe("hashIdentifier", () => {
@@ -21,7 +21,7 @@ describe("hashIdentifier", () => {
 })
 
 describe("checkRateLimit", () => {
-  const ip = "192.168.1.1"
+  const ip = "test-client-ip"
   const email = "test@example.com"
 
   function createMockDb(ipCount: number, emailCount: number) {

@@ -57,7 +57,7 @@ describe('CanvasPreview', () => {
       x: 0,
       y: 0,
       toJSON: () => {},
-    } as DOMRect);
+    });
   });
 
   it('renders a canvas element', () => {

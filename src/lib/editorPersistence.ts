@@ -78,7 +78,7 @@ export const loadEditorStateV1 = <TSettings, TPageSettings>():
       currentPageIndex,
       editorMode: 'write',
     },
-  } as PersistedEditorStateV1<TSettings, TPageSettings>;
+  };
 };
 
 export const loadNormalizedEditorStateV1 = ():

@@ -146,7 +146,7 @@ describe('SettingsPanel', () => {
       ...defaultProps.settings,
       customBackgroundImage: 'data:image/png;base64,123',
     };
-    const { container } = render(<SettingsPanel {...defaultProps} settings={settingsWithBg} />);
+    render(<SettingsPanel {...defaultProps} settings={settingsWithBg} />);
 
     // Check action buttons use canonical variants
     const detectLinesButton = screen.getByRole('button', { name: /detect lines/i });

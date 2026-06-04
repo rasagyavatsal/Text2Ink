@@ -5,7 +5,7 @@ import { PageRenderEngine } from '../PageRenderEngine';
 const originalDevicePixelRatio = window.devicePixelRatio;
 
 class MockImage {
-  static instances = 0;
+  static readonly instances: MockImage[] = [];
 
   onload: (() => void) | null = null;
   onerror: (() => void) | null = null;
@@ -13,7 +13,7 @@ class MockImage {
   #src = '';
 
   constructor() {
-    MockImage.instances += 1;
+    MockImage.instances.push(this);
   }
 
   set src(value: string) {
@@ -31,8 +31,8 @@ describe('PageRenderEngine', () => {
   let mockCtx: CanvasRenderingContext2D;
 
   beforeEach(() => {
-    MockImage.instances = 0;
-    vi.stubGlobal('Image', MockImage as unknown as typeof Image);
+    MockImage.instances.length = 0;
+    vi.stubGlobal('Image', MockImage);
     Object.defineProperty(globalThis, 'devicePixelRatio', {
       configurable: true,
       value: 2,
@@ -210,6 +210,6 @@ describe('PageRenderEngine', () => {
       fontFamily: 'Caveat, cursive',
     });
 
-    expect(MockImage.instances).toBe(1);
+    expect(MockImage.instances.length).toBe(1);
   });
 });

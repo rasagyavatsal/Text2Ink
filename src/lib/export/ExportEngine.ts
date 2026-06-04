@@ -143,7 +143,7 @@ export class ExportEngine {
           canvas,
           fontFamily,
           normalizedPageSettings,
-          paginatedPages: pagination.pages as LineData[][],
+          paginatedPages: pagination.pages,
           pageLayouts: pagination.pageLayouts,
         });
       }
@@ -164,7 +164,7 @@ export class ExportEngine {
         await this.#renderPageToCanvas({
           canvas,
           pageIndex,
-          lines: lines as LineData[],
+          lines,
           pageSettings,
           settings: request.document.settings,
           scale: EXPORT_SCALE,
