@@ -12,7 +12,7 @@ const workerScope = globalThis as unknown as PaginationWorkerScope;
 
 workerScope.onmessage = (ev: MessageEvent<PaginationRequest>) => {
   const msg = ev.data;
-  if (!msg || msg.type !== 'paginate') return;
+  if (msg?.type !== 'paginate') return;
 
   const res = paginate(msg);
   workerScope.postMessage(res);

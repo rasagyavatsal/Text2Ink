@@ -273,7 +273,7 @@ export default function HandwritingEditor({
 
     const onMessage = (ev: MessageEvent<PaginationResponse>) => {
       const msg = ev.data;
-      if (!msg || msg.type !== 'pagination-result') return;
+      if (msg?.type !== 'pagination-result') return;
       if (msg.requestId !== latestPaginationRequestIdRef.current) return;
 
       const nextPages = msg.pages as LineData[][];
@@ -617,7 +617,7 @@ export default function HandwritingEditor({
 
     const onMessage = (ev: MessageEvent<PaginationResponse>) => {
       const msg = ev.data;
-      if (!msg || msg.type !== 'pagination-result') return;
+      if (msg?.type !== 'pagination-result') return;
       if (msg.requestId !== latestPaginationRequestIdRef.current) return;
 
       const nextPages = msg.pages as LineData[][];

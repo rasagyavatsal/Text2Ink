@@ -27,13 +27,13 @@ describe("checkRateLimit", () => {
   function createMockDb(ipCount: number, emailCount: number) {
     const mockTransaction = {
       get: vi.fn(async (ref: any): Promise<any> => {
-        if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+        if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
       }),
       set: vi.fn((ref: any) => {
-        if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+        if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
       }),
       update: vi.fn((ref: any) => {
-        if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+        if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
       }),
     }
 
@@ -52,20 +52,20 @@ describe("checkRateLimit", () => {
         
         mockTransaction.get
           .mockImplementationOnce(async (ref: any) => {
-            if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+            if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
             return ipDoc;
           })
           .mockImplementationOnce(async (ref: any) => {
-            if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+            if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
             return emailDoc;
           });
 
         mockTransaction.set.mockImplementation((ref: any) => {
-          if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+          if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
         });
 
         mockTransaction.update.mockImplementation((ref: any) => {
-          if (!ref || !ref._isMockRef) throw new Error("Expected DocumentReference");
+          if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
         });
 
         await fn(mockTransaction)
