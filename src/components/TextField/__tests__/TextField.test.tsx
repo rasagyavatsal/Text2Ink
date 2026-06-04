@@ -411,7 +411,7 @@ describe('TextField', () => {
       width: 16,
       height: 16,
       toJSON: () => {},
-    } as DOMRect);
+    });
 
     const { rerender } = render(
       <TextField

@@ -83,7 +83,7 @@ const withResolvedPaperPreset = withTestPaperSelection;
 const originalDevicePixelRatio = window.devicePixelRatio;
 
 beforeEach(() => {
-  vi.stubGlobal('Image', MockImage as unknown as typeof Image);
+  vi.stubGlobal('Image', MockImage);
   Object.defineProperty(globalThis, 'devicePixelRatio', {
     configurable: true,
     value: 1,
@@ -336,7 +336,7 @@ describe('PageRenderEngine preview — character positions respect resolved page
     // The first character position must be at that left edge.
     const firstPos = result.characterPositions[0];
     expect(firstPos).toBeDefined();
-    expect(firstPos!.x).toBeCloseTo(expectedTextLeft, 0);
+    expect(firstPos.x).toBeCloseTo(expectedTextLeft, 0);
   });
 
   it('character positions for A4 landscape start at A4 landscape text bounds', async () => {
@@ -366,7 +366,7 @@ describe('PageRenderEngine preview — character positions respect resolved page
 
     const firstPos = result.characterPositions[0];
     expect(firstPos).toBeDefined();
-    expect(firstPos!.x).toBeCloseTo(result.layout.writing.textBounds.left, 0);
+    expect(firstPos.x).toBeCloseTo(result.layout.writing.textBounds.left, 0);
   });
 
   it('character y position starts at firstLineTop from resolved writing layout, not a fixed offset', async () => {
@@ -397,7 +397,7 @@ describe('PageRenderEngine preview — character positions respect resolved page
     // The character y must equal firstLineTop from the resolved layout.
     const firstPos = result.characterPositions[0];
     expect(firstPos).toBeDefined();
-    expect(firstPos!.y).toBeCloseTo(result.layout.writing.firstLineTop, 0);
+    expect(firstPos.y).toBeCloseTo(result.layout.writing.firstLineTop, 0);
   });
 });
 

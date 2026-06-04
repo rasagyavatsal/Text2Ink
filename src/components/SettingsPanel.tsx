@@ -756,7 +756,7 @@ export default function SettingsPanel({
                       isSelected={currentPaperStyle === style.value}
                       onClick={() =>
                         updateBuiltinSelection({
-                          style: style.value as PaperStyle,
+                          style: style.value,
                         })
                       }
                     />

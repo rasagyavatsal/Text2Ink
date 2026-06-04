@@ -98,7 +98,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
 
     const handleDocumentPointerDown = (event: PointerEvent) => {
       const root = rootRef.current;
-      if (!root || root.contains(event.target as Node)) return;
+      if (!root || (event.target instanceof Node && root.contains(event.target))) return;
       if (isFocused || isSettingsOpen || isDragging || resizeDir) return;
       setIsSelected(false);
     };
