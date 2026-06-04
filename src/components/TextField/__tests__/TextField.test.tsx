@@ -153,7 +153,12 @@ describe('TextField', () => {
     const parentKeyDown = vi.fn();
 
     render(
-      <div onKeyDown={parentKeyDown}>
+      <div
+        role="button"
+        tabIndex={0}
+        onKeyDown={parentKeyDown}
+        aria-label="Parent container"
+      >
         <TextField
           field={mockField}
           onUpdate={mockOnUpdate}

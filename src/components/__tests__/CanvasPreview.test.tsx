@@ -61,30 +61,36 @@ describe('CanvasPreview', () => {
   });
 
   it('renders a canvas element', () => {
-    render(<CanvasPreview {...defaultProps} />);
-    const canvas = screen.getByRole('img');
-    expect(canvas).toBeDefined();
-    expect(canvas.tagName).toBe('CANVAS');
+    const { container } = render(<CanvasPreview {...defaultProps} />);
+    const canvas = container.querySelector('canvas');
+    expect(canvas).not.toBeNull();
+    expect(canvas?.tagName).toBe('CANVAS');
   });
 
   it('sets the canvas aria-label for accessibility', () => {
-    render(<CanvasPreview {...defaultProps} pageIndex={2} />);
-    const canvas = screen.getByRole('img');
-    expect(canvas.getAttribute('aria-label')).toContain('Page 3');
+    const { container } = render(<CanvasPreview {...defaultProps} pageIndex={2} />);
+    const canvas = container.querySelector('canvas');
+    expect(canvas?.getAttribute('aria-label')).toContain('Page 3');
   });
 
   it('stops pointer and mouse down from bubbling to the parent', async () => {
     const parentMouseDown = vi.fn();
     const parentPointerDown = vi.fn();
-    render(
-      <div onMouseDown={parentMouseDown} onPointerDown={parentPointerDown}>
+    const { container } = render(
+      <button
+        type="button"
+        onMouseDown={parentMouseDown}
+        onPointerDown={parentPointerDown}
+        aria-label="Parent container"
+      >
         <CanvasPreview {...defaultProps} />
-      </div>
+      </button>
     );
     await waitFor(() => expect(renderPage).toHaveBeenCalled());
 
-    fireEvent.pointerDown(screen.getByRole('img'), { pointerId: 1 });
-    fireEvent.mouseDown(screen.getByRole('img'));
+    const canvas = container.querySelector('canvas')!;
+    fireEvent.pointerDown(canvas, { pointerId: 1 });
+    fireEvent.mouseDown(canvas);
 
     expect(parentPointerDown).not.toHaveBeenCalled();
     expect(parentMouseDown).not.toHaveBeenCalled();
@@ -95,7 +101,7 @@ describe('CanvasPreview', () => {
     const onCharMouseDown = vi.fn();
     const onCharMouseMove = vi.fn();
 
-    render(
+    const { container } = render(
       <CanvasPreview
         {...defaultProps}
         onCharClick={onCharClick}
@@ -105,7 +111,7 @@ describe('CanvasPreview', () => {
     );
     await waitFor(() => expect(renderPage).toHaveBeenCalled());
 
-    const canvas = screen.getByRole('img');
+    const canvas = container.querySelector('canvas')!;
     fireEvent.pointerDown(canvas, { clientX: 4, clientY: 5, pointerId: 1 });
     fireEvent.pointerMove(canvas, { clientX: 14, clientY: 5, pointerId: 1 });
     fireEvent.pointerUp(canvas, { pointerId: 1 });
@@ -120,7 +126,7 @@ describe('CanvasPreview', () => {
     const onCharDoubleClick = vi.fn();
     const onCharTripleClick = vi.fn();
 
-    render(
+    const { container } = render(
       <CanvasPreview
         {...defaultProps}
         onCharDoubleClick={onCharDoubleClick}
@@ -129,7 +135,7 @@ describe('CanvasPreview', () => {
     );
     await waitFor(() => expect(renderPage).toHaveBeenCalled());
 
-    const canvas = screen.getByRole('img');
+    const canvas = container.querySelector('canvas')!;
     fireEvent.doubleClick(canvas, { clientX: 4, clientY: 5 });
     fireEvent.click(canvas, { clientX: 4, clientY: 5, detail: 3 });
 
@@ -140,9 +146,9 @@ describe('CanvasPreview', () => {
   it('clears drag state when mouseup happens outside the canvas', () => {
     const onCharClick = vi.fn();
 
-    render(<CanvasPreview {...defaultProps} onCharClick={onCharClick} onCharMouseMove={vi.fn()} onCharMouseDown={vi.fn()} />);
+    const { container } = render(<CanvasPreview {...defaultProps} onCharClick={onCharClick} onCharMouseMove={vi.fn()} onCharMouseDown={vi.fn()} />);
     return waitFor(() => expect(renderPage).toHaveBeenCalled()).then(() => {
-      const canvas = screen.getByRole('img');
+      const canvas = container.querySelector('canvas')!;
       fireEvent.pointerDown(canvas, { clientX: 4, clientY: 5, pointerId: 1 });
       fireEvent.pointerMove(canvas, { clientX: 14, clientY: 5, pointerId: 1 });
       fireEvent.pointerUp(globalThis as unknown as Window, { pointerId: 1 });
@@ -153,7 +159,7 @@ describe('CanvasPreview', () => {
   });
 
   it('sizes the preview canvas from the resolved document paper geometry', () => {
-    render(
+    const { container } = render(
       <CanvasPreview
         {...defaultProps}
         previewScale={1}
@@ -164,7 +170,7 @@ describe('CanvasPreview', () => {
       />
     );
 
-    const canvas = screen.getByRole('img');
+    const canvas = container.querySelector('canvas');
     expect(canvas).toHaveStyle({
       width: '841.89px',
       height: '595.28px',

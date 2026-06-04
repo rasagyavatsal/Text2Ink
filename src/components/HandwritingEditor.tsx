@@ -82,7 +82,7 @@ export default function HandwritingEditor({
   onTypingFocus,
 }: HandwritingEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const pageElsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const pageElsRef = useRef<(HTMLElement | null)[]>([]);
   const [isFocused, setIsFocused] = useState(false);
   const [cursorPosition, setCursorPosition] = useState(0);
   const [selectionRange, setSelectionRange] = useState({ start: 0, end: 0 });
@@ -472,7 +472,7 @@ export default function HandwritingEditor({
   );
 
   const handlePageClick = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
+    (e: React.MouseEvent<HTMLElement>) => {
       e.stopPropagation();
       if (justDidCanvasDragRef.current) {
         justDidCanvasDragRef.current = false;
@@ -668,19 +668,19 @@ export default function HandwritingEditor({
       const currentStartOffset = pageStartOffsets[pageIndex] ?? 0;
 
       return (
-        <div
+        <button
           key={pageIndex}
           ref={(el) => {
             if (isVisiblePreview) {
               pageElsRef.current[pageIndex] = el;
             }
           }}
-          className="relative shadow-2xl"
+          type="button"
+          className="relative shadow-2xl block text-left bg-transparent border-0 p-0 cursor-default"
           style={{
             width: page.width * scale,
             height: page.height * scale,
           }}
-          role="button"
           tabIndex={isVisiblePreview ? 0 : -1}
           aria-label={`Page ${pageIndex + 1}`}
           onClick={(e) => {
@@ -691,7 +691,7 @@ export default function HandwritingEditor({
             if (!isVisiblePreview) return;
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
-              handlePageClick(e as unknown as React.MouseEvent<HTMLDivElement>);
+              handlePageClick(e as unknown as React.MouseEvent<HTMLButtonElement>);
             }
           }}
         >
@@ -734,9 +734,13 @@ export default function HandwritingEditor({
             return (
               <div
                 key={field.id}
+                role="button"
+                tabIndex={0}
+                aria-label="Text field wrapper"
                 onMouseDown={stopPropagation}
                 onPointerDown={stopPropagation}
                 onClick={stopPropagation}
+                onKeyDown={stopPropagation}
               >
                 <TextField
                   field={field}
@@ -799,7 +803,7 @@ export default function HandwritingEditor({
               tabIndex={0}
             />
           )}
-        </div>
+        </button>
       );
     },
     [

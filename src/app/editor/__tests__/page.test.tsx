@@ -6,7 +6,7 @@ import { metadata } from '../page';
 import type { MobileEditorSheetMetrics, MobileSheetAnchor } from '@/lib/mobileEditorSheet';
 
 vi.mock('next/image', () => ({
-  default: (props: any) => <img {...props} />,
+  default: (props: any) => <img alt="" {...props} />,
 }));
 
 type MockHandwritingEditorProps = {
@@ -17,7 +17,7 @@ type MockHandwritingEditorProps = {
 vi.mock('@/components/HandwritingEditor', () => ({
   default: ({ previewScale, onTypingFocus }: MockHandwritingEditorProps) => (
     <div data-testid="handwriting-editor" data-preview-scale={previewScale}>
-      Handwriting Editor
+      <span>Handwriting Editor</span>
       <button type="button" data-testid="typing-focus" onClick={onTypingFocus}>
         Start typing
       </button>
@@ -28,7 +28,7 @@ vi.mock('@/components/HandwritingEditor', () => ({
 vi.mock('@/components/SettingsPanel', () => ({
   default: ({ onClearAll }: { onClearAll: () => void }) => (
     <div data-testid="settings-panel">
-      Settings panel
+      <span>Settings panel</span>
       <button type="button" data-testid="clear-all-trigger" onClick={onClearAll}>
         Mock Clear All
       </button>

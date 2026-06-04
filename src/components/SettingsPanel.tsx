@@ -234,10 +234,11 @@ const FontCard = ({
   customStyle?: React.CSSProperties
 }) => {
   return (
-    <div
+    <button
+      type="button"
       onClick={onClick}
       className={cn(
-        "cursor-pointer rounded-xl p-2 flex flex-col items-center gap-2 transition-all border w-full h-full",
+        "cursor-pointer rounded-xl p-2 flex flex-col items-center gap-2 transition-all border w-full h-full font-normal",
         isSelected 
           ? "border-brand-accent bg-brand-accent/5 ring-1 ring-brand-accent" 
           : "bg-background border-border hover:border-brand-accent/30 hover:bg-accent/50"
@@ -259,7 +260,7 @@ const FontCard = ({
       )}>
         {font.name}
       </span>
-    </div>
+    </button>
   );
 };
 
