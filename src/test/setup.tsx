@@ -24,9 +24,9 @@ Object.defineProperty(window, 'matchMedia', {
 
 // Mock ResizeObserver
 class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
 }
 window.ResizeObserver = ResizeObserver;
 window.HTMLElement.prototype.scrollIntoView = vi.fn();

@@ -180,10 +180,9 @@ function normalizePageSettings(
     : {};
   const {
     paper: rawPaper,
-    paperStyle: _paperStyle,
     ...rest
   } = pageSettingsRecord;
-  void _paperStyle;
+  delete rest.paperStyle;
 
   return {
     ...defaultPageSettingsFromHandwritingSettings(settings),
