@@ -1,6 +1,6 @@
 import React from 'react';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { render, screen, within } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import HomePage from '../page';

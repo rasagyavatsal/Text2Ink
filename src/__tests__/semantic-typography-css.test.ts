@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import postcss from 'postcss';
 import tailwindcss from '@tailwindcss/postcss';
 

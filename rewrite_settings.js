@@ -1,18 +1,18 @@
-const fs = require('fs');
+const fs = require('node:fs');
 
 let content = fs.readFileSync('src/components/SettingsPanel.tsx', 'utf8');
 
 const replacements = [
-  [/text-\[\#E0A32A\]/g, 'text-brand-accent'],
-  [/bg-\[\#E0A32A\]/g, 'bg-brand-accent'],
-  [/border-\[\#E0A32A\]/g, 'border-brand-accent'],
-  [/bg-\[\#E0A32A\]\/5/g, 'bg-brand-accent-soft'],
-  [/bg-\[\#E0A32A\]\/10/g, 'bg-brand-accent/10'],
-  [/bg-\[\#E0A32A\]\/20/g, 'bg-brand-accent/20'],
-  [/shadow-\[\#E0A32A\]\/20/g, 'shadow-brand-accent/20'],
-  [/hover:border-\[\#E0A32A\]/g, 'hover:border-brand-accent'],
-  [/hover:text-\[\#E0A32A\]/g, 'hover:text-brand-accent'],
-  [/hover:bg-\[\#c99225\]/g, 'hover:bg-brand-accent-hover'],
+  [/text-\[#E0A32A\]/g, 'text-brand-accent'],
+  [/bg-\[#E0A32A\]/g, 'bg-brand-accent'],
+  [/border-\[#E0A32A\]/g, 'border-brand-accent'],
+  [/bg-\[#E0A32A\]\/5/g, 'bg-brand-accent-soft'],
+  [/bg-\[#E0A32A\]\/10/g, 'bg-brand-accent/10'],
+  [/bg-\[#E0A32A\]\/20/g, 'bg-brand-accent/20'],
+  [/shadow-\[#E0A32A\]\/20/g, 'shadow-brand-accent/20'],
+  [/hover:border-\[#E0A32A\]/g, 'hover:border-brand-accent'],
+  [/hover:text-\[#E0A32A\]/g, 'hover:text-brand-accent'],
+  [/hover:bg-\[#c99225\]/g, 'hover:bg-brand-accent-hover'],
   [/bg-gray-100\/50/g, 'bg-muted/50'],
   [/bg-gray-100/g, 'bg-muted'],
   [/bg-gray-50/g, 'bg-muted/50'],

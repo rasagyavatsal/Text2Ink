@@ -14,8 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-} from '@/components/ui/dialog';
+
 import {
   HandwritingSettings,
   PageSettings,
