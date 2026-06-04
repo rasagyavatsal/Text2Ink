@@ -38,14 +38,14 @@ describe('firebase helpers', () => {
   });
 
   it('getFirebaseAnalytics returns null when window is undefined', async () => {
-    const originalWindow = global.window;
+    const originalWindow = globalThis.window;
     // @ts-ignore
-    delete global.window;
+    delete globalThis.window;
     
     const analytics = await getFirebaseAnalytics();
     expect(analytics).toBeNull();
     
-    global.window = originalWindow;
+    globalThis.window = originalWindow;
   });
 
   it('getFirebaseAnalytics returns null when not supported', async () => {

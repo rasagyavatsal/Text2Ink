@@ -145,7 +145,7 @@ describe('CanvasPreview', () => {
       const canvas = screen.getByRole('img');
       fireEvent.pointerDown(canvas, { clientX: 4, clientY: 5, pointerId: 1 });
       fireEvent.pointerMove(canvas, { clientX: 14, clientY: 5, pointerId: 1 });
-      fireEvent.pointerUp(window, { pointerId: 1 });
+      fireEvent.pointerUp(globalThis as unknown as Window, { pointerId: 1 });
       fireEvent.click(canvas, { clientX: 4, clientY: 5 });
 
       expect(onCharClick).toHaveBeenCalledWith(0, true);

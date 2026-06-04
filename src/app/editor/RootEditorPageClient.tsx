@@ -82,9 +82,9 @@ const getServerReadySnapshot = () => false;
 const DEFAULT_VIEWPORT_SIZE = { width: 390, height: 844, safeAreaBottom: 0 };
 
 function readSafeAreaBottom() {
-  if (typeof window === 'undefined') return 0;
+  if (typeof globalThis.window === 'undefined') return 0;
 
-  const value = window
+  const value = globalThis
     .getComputedStyle(document.documentElement)
     .getPropertyValue('--safe-area-inset-bottom')
     .trim();
@@ -93,7 +93,7 @@ function readSafeAreaBottom() {
 }
 
 function readViewportSize() {
-  if (typeof window === 'undefined') return DEFAULT_VIEWPORT_SIZE;
+  if (typeof globalThis.window === 'undefined') return DEFAULT_VIEWPORT_SIZE;
   const visualViewport = window.visualViewport;
   return {
     width: Math.round(visualViewport?.width ?? window.innerWidth),
@@ -106,22 +106,22 @@ function useViewportSize() {
   const [viewportSize, setViewportSize] = useState(DEFAULT_VIEWPORT_SIZE);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof globalThis.window === 'undefined') return;
 
     let frame = 0;
     const update = () => {
-      window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(() => setViewportSize(readViewportSize()));
+      globalThis.cancelAnimationFrame(frame);
+      frame = globalThis.requestAnimationFrame(() => setViewportSize(readViewportSize()));
     };
 
     update();
     window.addEventListener('resize', update);
-    window.addEventListener('orientationchange', update);
+    globalThis.addEventListener('orientationchange', update);
     window.visualViewport?.addEventListener('resize', update);
     return () => {
-      window.cancelAnimationFrame(frame);
+      globalThis.cancelAnimationFrame(frame);
       window.removeEventListener('resize', update);
-      window.removeEventListener('orientationchange', update);
+      globalThis.removeEventListener('orientationchange', update);
       window.visualViewport?.removeEventListener('resize', update);
     };
   }, []);
@@ -133,8 +133,8 @@ function useMediaQuery(query: string) {
   const [matches, setMatches] = useState(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const mediaQuery = window.matchMedia(query);
+    if (typeof globalThis.window === 'undefined') return;
+    const mediaQuery = globalThis.matchMedia(query);
     const update = () => setMatches(mediaQuery.matches);
 
     update();

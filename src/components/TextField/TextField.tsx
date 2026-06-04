@@ -192,13 +192,13 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
       setResizeDir(null);
     };
 
-    window.addEventListener('pointermove', handlePointerMove);
-    window.addEventListener('pointerup', handlePointerUp);
-    window.addEventListener('pointercancel', handlePointerUp);
+    globalThis.addEventListener('pointermove', handlePointerMove);
+    globalThis.addEventListener('pointerup', handlePointerUp);
+    globalThis.addEventListener('pointercancel', handlePointerUp);
     return () => {
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
-      window.removeEventListener('pointercancel', handlePointerUp);
+      globalThis.removeEventListener('pointermove', handlePointerMove);
+      globalThis.removeEventListener('pointerup', handlePointerUp);
+      globalThis.removeEventListener('pointercancel', handlePointerUp);
     };
   }, [isDragging, resizeDir, onUpdate, scale, minW, minH]);
 

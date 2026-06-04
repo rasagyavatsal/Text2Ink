@@ -84,14 +84,14 @@ const originalDevicePixelRatio = window.devicePixelRatio;
 
 beforeEach(() => {
   vi.stubGlobal('Image', MockImage as unknown as typeof Image);
-  Object.defineProperty(window, 'devicePixelRatio', {
+  Object.defineProperty(globalThis, 'devicePixelRatio', {
     configurable: true,
     value: 1,
   });
 });
 
 afterEach(() => {
-  Object.defineProperty(window, 'devicePixelRatio', {
+  Object.defineProperty(globalThis, 'devicePixelRatio', {
     configurable: true,
     value: originalDevicePixelRatio,
   });
@@ -624,7 +624,7 @@ describe('PageRenderEngine — returned layout reflects the paper source variant
 
 describe('PageRenderEngine — scale factor applied from engine, not from callers', () => {
   it('applies a 2× scale to canvas dimensions without a DPR multiplier in export mode', async () => {
-    Object.defineProperty(window, 'devicePixelRatio', { configurable: true, value: 3 });
+    Object.defineProperty(globalThis, 'devicePixelRatio', { configurable: true, value: 3 });
 
     const settings = {
       ...DEFAULT_SETTINGS,
@@ -655,7 +655,7 @@ describe('PageRenderEngine — scale factor applied from engine, not from caller
 
   it('applies DPR to canvas dimensions in preview mode', async () => {
     const dpr = 2;
-    Object.defineProperty(window, 'devicePixelRatio', { configurable: true, value: dpr });
+    Object.defineProperty(globalThis, 'devicePixelRatio', { configurable: true, value: dpr });
 
     const settings = {
       ...DEFAULT_SETTINGS,

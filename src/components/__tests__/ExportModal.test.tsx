@@ -115,7 +115,7 @@ describe('ExportModal', () => {
   });
 
   it('renders custom error state when export fails, retry clears it and does not call window.alert', async () => {
-    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    const alertMock = vi.spyOn(globalThis, 'alert').mockImplementation(() => {});
     const consoleErrorMock = vi.spyOn(console, 'error').mockImplementation(() => {});
     exportDocumentMock
       .mockRejectedValueOnce(new Error('Canvas rendering error'))

@@ -104,7 +104,7 @@ export class PageRenderEngine {
       return 1;
     }
 
-    if (typeof window === 'undefined') {
+    if (typeof globalThis.window === 'undefined') {
       return 1;
     }
 

@@ -37,7 +37,7 @@ type PdfWorkerScope = {
   postMessage: (message: PdfWorkerResponse, transfer?: Transferable[]) => void;
 };
 
-const workerScope = self as unknown as PdfWorkerScope;
+const workerScope = globalThis as unknown as PdfWorkerScope;
 
 function postWorkerMessage(message: PdfWorkerResponse, transfer: Transferable[] = []) {
   workerScope.postMessage(message, transfer);

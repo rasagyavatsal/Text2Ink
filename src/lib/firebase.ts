@@ -18,7 +18,7 @@ export function getFirebaseApp(): FirebaseApp {
 }
 
 export async function getFirebaseAnalytics(): Promise<Analytics | null> {
-  if (typeof window === "undefined") return null;
+  if (typeof globalThis.window === "undefined") return null;
   const supported = await isSupported();
   if (!supported) return null;
 

@@ -94,7 +94,7 @@ vi.mock('@/lib/editorPersistence', () => ({
 }));
 
 function mockMatchMedia(matches: boolean) {
-  window.matchMedia = vi.fn().mockImplementation((query) => ({
+  globalThis.matchMedia = vi.fn().mockImplementation((query) => ({
     matches,
     media: query,
     onchange: null,
@@ -109,8 +109,8 @@ function mockMatchMedia(matches: boolean) {
 describe('Root editor page', () => {
   beforeEach(() => {
     mockMatchMedia(false);
-    Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 1280 });
-    Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: 900 });
+    Object.defineProperty(globalThis, 'innerWidth', { configurable: true, writable: true, value: 1280 });
+    Object.defineProperty(globalThis, 'innerHeight', { configurable: true, writable: true, value: 900 });
   });
 
   it('renders editor shell and contact navigation on root route', () => {
@@ -149,8 +149,8 @@ describe('Root editor page', () => {
 
   it('keeps the home logo in mobile page-level top controls', async () => {
     mockMatchMedia(true);
-    Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 390 });
-    Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: 844 });
+    Object.defineProperty(globalThis, 'innerWidth', { configurable: true, writable: true, value: 390 });
+    Object.defineProperty(globalThis, 'innerHeight', { configurable: true, writable: true, value: 844 });
 
     render(<RootEditorPageClient />);
 
@@ -194,8 +194,8 @@ describe('Root editor page', () => {
 
   it('keeps preview scale stable when the mobile sheet expands and collapses', async () => {
     mockMatchMedia(true);
-    Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 390 });
-    Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: 844 });
+    Object.defineProperty(globalThis, 'innerWidth', { configurable: true, writable: true, value: 390 });
+    Object.defineProperty(globalThis, 'innerHeight', { configurable: true, writable: true, value: 844 });
 
     render(<RootEditorPageClient />);
 
@@ -230,8 +230,8 @@ describe('Root editor page', () => {
 
   it('updates preview bottom scroll space as sheet height changes without changing preview scale', async () => {
     mockMatchMedia(true);
-    Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 390 });
-    Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: 844 });
+    Object.defineProperty(globalThis, 'innerWidth', { configurable: true, writable: true, value: 390 });
+    Object.defineProperty(globalThis, 'innerHeight', { configurable: true, writable: true, value: 844 });
 
     render(<RootEditorPageClient />);
 
@@ -260,7 +260,7 @@ describe('Root editor page', () => {
   });
 
   it('opens custom confirmation dialog when clear all is triggered and resets state on confirm', async () => {
-    const confirmSpy = vi.spyOn(window, 'confirm');
+    const confirmSpy = vi.spyOn(globalThis, 'confirm');
     render(<RootEditorPageClient />);
 
     // Click the Mock Clear All button inside mocked SettingsPanel

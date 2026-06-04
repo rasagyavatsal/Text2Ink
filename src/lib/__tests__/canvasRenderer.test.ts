@@ -9,7 +9,7 @@ import {
 import { withTestPaperSelection } from '@/test/paperTestHelpers';
 
 // Mock the global Image for background loading
-global.Image = class {
+globalThis.Image = class {
   onload: () => void = () => {};
   onerror: () => void = () => {};
   src: string = '';

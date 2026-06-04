@@ -33,7 +33,7 @@ describe('PageRenderEngine', () => {
   beforeEach(() => {
     MockImage.instances = 0;
     vi.stubGlobal('Image', MockImage as unknown as typeof Image);
-    Object.defineProperty(window, 'devicePixelRatio', {
+    Object.defineProperty(globalThis, 'devicePixelRatio', {
       configurable: true,
       value: 2,
     });
@@ -72,7 +72,7 @@ describe('PageRenderEngine', () => {
   });
 
   afterEach(() => {
-    Object.defineProperty(window, 'devicePixelRatio', {
+    Object.defineProperty(globalThis, 'devicePixelRatio', {
       configurable: true,
       value: originalDevicePixelRatio,
     });
@@ -128,7 +128,7 @@ describe('PageRenderEngine', () => {
   });
 
   it('renders export pages without preview dpr scaling and includes text fields', async () => {
-    Object.defineProperty(window, 'devicePixelRatio', {
+    Object.defineProperty(globalThis, 'devicePixelRatio', {
       configurable: true,
       value: 4,
     });

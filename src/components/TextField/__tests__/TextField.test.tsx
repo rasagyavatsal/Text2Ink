@@ -108,7 +108,7 @@ describe('TextField', () => {
       clientY: { value: clientY },
       pointerId: { value: 1 },
     });
-    window.dispatchEvent(event);
+    globalThis.dispatchEvent(event);
   };
 
   beforeEach(() => {
