@@ -134,6 +134,59 @@ export function resolveDocumentPaperOrientation(selection: DocumentPaperSelectio
   return resolveNotebookPaperPresetById(selection.presetId)?.orientation ?? DEFAULT_GENERATED_PAPER_SELECTION.orientation;
 }
 
+function resolveValidModernSelection(paper: unknown): DocumentPaperSelection | null {
+  if (isDocumentPaperSelection(paper)) {
+    if (paper.kind === 'preset') {
+      const normalizedPresetId = resolveNotebookPaperPresetById(paper.presetId)?.id;
+      if (normalizedPresetId) {
+        return {
+          kind: 'preset',
+          presetId: normalizedPresetId,
+        };
+      }
+    } else {
+      return paper;
+    }
+  }
+  return null;
+}
+
+function detectLegacyFields(input: {
+  paperPresetId?: unknown;
+  paperStyle?: unknown;
+  paperFormat?: unknown;
+  paperOrientation?: unknown;
+  pagePaperStyle?: unknown;
+}): boolean {
+  return (
+    hasExplicitValue(input.paperPresetId) ||
+    hasExplicitValue(input.paperStyle) ||
+    hasExplicitValue(input.pagePaperStyle) ||
+    hasExplicitValue(input.paperFormat) ||
+    hasExplicitValue(input.paperOrientation)
+  );
+}
+
+function normalizeLegacyStyleFormatOrientation(input: {
+  paperStyle?: unknown;
+  paperFormat?: unknown;
+  paperOrientation?: unknown;
+  pagePaperStyle?: unknown;
+}) {
+  const legacyStyle = isPaperStyle(input.paperStyle)
+    ? input.paperStyle
+    : isPaperStyle(input.pagePaperStyle)
+      ? input.pagePaperStyle
+      : DEFAULT_GENERATED_PAPER_SELECTION.style;
+  const legacyFormat = isPaperFormat(input.paperFormat)
+    ? input.paperFormat
+    : DEFAULT_GENERATED_PAPER_SELECTION.format;
+  const legacyOrientation = isPaperOrientation(input.paperOrientation)
+    ? input.paperOrientation
+    : DEFAULT_GENERATED_PAPER_SELECTION.orientation;
+  return { legacyStyle, legacyFormat, legacyOrientation };
+}
+
 export function normalizeDocumentPaperSelection(input: {
   paper?: unknown;
   paperPresetId?: unknown;
@@ -146,50 +199,20 @@ export function normalizeDocumentPaperSelection(input: {
   selection: DocumentPaperSelection;
   incompatible: boolean;
 } {
-  if (isDocumentPaperSelection(input.paper)) {
-    if (input.paper.kind === 'preset') {
-      const normalizedPresetId = resolveNotebookPaperPresetById(input.paper.presetId)?.id;
-      if (normalizedPresetId) {
-        return {
-          selection: {
-            kind: 'preset',
-            presetId: normalizedPresetId,
-          },
-          incompatible: false,
-        };
-      }
-    } else {
-      return {
-        selection: input.paper,
-        incompatible: false,
-      };
-    }
+  const modern = resolveValidModernSelection(input.paper);
+  if (modern) {
+    return { selection: modern, incompatible: false };
   }
 
-  const hasLegacySelectionFields =
-    hasExplicitValue(input.paperPresetId)
-    || hasExplicitValue(input.paperStyle)
-    || hasExplicitValue(input.pagePaperStyle)
-    || hasExplicitValue(input.paperFormat)
-    || hasExplicitValue(input.paperOrientation);
-  const legacyStyle = isPaperStyle(input.paperStyle)
-    ? input.paperStyle
-    : isPaperStyle(input.pagePaperStyle)
-      ? input.pagePaperStyle
-      : DEFAULT_GENERATED_PAPER_SELECTION.style;
-  const legacyFormat = isPaperFormat(input.paperFormat)
-    ? input.paperFormat
-    : DEFAULT_GENERATED_PAPER_SELECTION.format;
-  const legacyOrientation = isPaperOrientation(input.paperOrientation)
-    ? input.paperOrientation
-    : DEFAULT_GENERATED_PAPER_SELECTION.orientation;
+  const hasLegacySelectionFields = detectLegacyFields(input);
+  const { legacyStyle, legacyFormat, legacyOrientation } = normalizeLegacyStyleFormatOrientation(input);
   const explicitLegacyPreset = resolveNotebookPaperPresetById(input.paperPresetId);
   const incompatible =
-    (input.paper !== undefined && !isDocumentPaperSelection(input.paper))
-    || (hasExplicitValue(input.paperStyle) && !isPaperStyle(input.paperStyle))
-    || (hasExplicitValue(input.pagePaperStyle) && !isPaperStyle(input.pagePaperStyle))
-    || (hasExplicitValue(input.paperFormat) && !isPaperFormat(input.paperFormat))
-    || (hasExplicitValue(input.paperOrientation) && !isPaperOrientation(input.paperOrientation));
+    (input.paper !== undefined && !isDocumentPaperSelection(input.paper)) ||
+    (hasExplicitValue(input.paperStyle) && !isPaperStyle(input.paperStyle)) ||
+    (hasExplicitValue(input.pagePaperStyle) && !isPaperStyle(input.pagePaperStyle)) ||
+    (hasExplicitValue(input.paperFormat) && !isPaperFormat(input.paperFormat)) ||
+    (hasExplicitValue(input.paperOrientation) && !isPaperOrientation(input.paperOrientation));
 
   if (explicitLegacyPreset) {
     return {
