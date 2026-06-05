@@ -15,7 +15,7 @@ import {
 import { cn } from "@/lib/utils"
 import { CheckCircle2 } from "lucide-react"
 
-const TOPICS = ["General inquiry", "Bug report", "Feature request"] as const
+import { ALLOWED_TOPICS as TOPICS, isValidEmail } from "inquiry-validation"
 
 interface FormData {
   name: string
@@ -30,22 +30,6 @@ interface FormErrors {
   topic?: string
   message?: string
   submit?: string
-}
-
-function isValidEmail(email: string): boolean {
-  const trimmed = email.trim()
-  if (trimmed.length === 0) return false
-  if (/\s/.test(trimmed)) return false
-
-  const parts = trimmed.split("@")
-  if (parts.length !== 2) return false
-
-  const [localPart, domain] = parts
-  if (localPart.length === 0 || domain.length === 0) return false
-  if (!domain.includes(".")) return false
-  if (domain.startsWith(".") || domain.endsWith(".")) return false
-
-  return true
 }
 
 function validateClient(data: FormData): FormErrors {
