@@ -7,17 +7,11 @@ import {
   defaultPageSettingsFromHandwritingSettings,
 } from '../types';
 import { withTestPaperSelection } from '@/test/paperTestHelpers';
+import { createMockCanvasContext, createMockCanvas, createMockImageClass } from '@/test/canvasTestHelpers';
 
 // Mock the global Image for background loading
-globalThis.Image = class {
-  onload: () => void = () => {};
-  onerror: () => void = () => {};
-  src: string = '';
-  crossOrigin: string = '';
-  constructor() {
-    setTimeout(() => this.onload(), 0);
-  }
-} as any;
+globalThis.Image = createMockImageClass({ triggerOnConstructor: true });
+
 
 describe('canvasRenderer', () => {
   let mockCanvas: any;
@@ -62,36 +56,15 @@ describe('canvasRenderer', () => {
   ];
 
   beforeEach(() => {
-    mockCtx = {
-      scale: vi.fn(),
-      fillRect: vi.fn(),
-      drawImage: vi.fn(),
-      beginPath: vi.fn(),
-      moveTo: vi.fn(),
-      lineTo: vi.fn(),
-      stroke: vi.fn(),
-      save: vi.fn(),
-      restore: vi.fn(),
-      translate: vi.fn(),
-      rotate: vi.fn(),
-      fillText: vi.fn(),
+    mockCtx = createMockCanvasContext({
       measureText: vi.fn().mockReturnValue({
         width: 10,
         actualBoundingBoxAscent: 15,
         actualBoundingBoxDescent: 5,
       }),
-      font: '',
-      fillStyle: '',
-      strokeStyle: '',
-      lineWidth: 0,
-      textBaseline: '',
-    };
+    });
 
-    mockCanvas = {
-      getContext: vi.fn().mockReturnValue(mockCtx),
-      width: 0,
-      height: 0,
-    };
+    mockCanvas = createMockCanvas(mockCtx);
   });
 
   it('sets correct canvas dimensions based on scale', async () => {

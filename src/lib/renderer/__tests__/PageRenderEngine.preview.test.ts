@@ -17,84 +17,25 @@ import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '@/
 import { resolvePageLayout } from '@/lib/layout/LayoutEngine';
 import { withTestPaperSelection } from '@/test/paperTestHelpers';
 import { PageRenderEngine } from '../PageRenderEngine';
+import { createMockCanvasContext, createMockCanvas, createMockImageClass, stubDevicePixelRatio, extractFillTextChars } from '@/test/canvasTestHelpers';
+
+const MockImage = createMockImageClass();
 
 // ---------------------------------------------------------------------------
 // Shared canvas mock
 // ---------------------------------------------------------------------------
 
-class MockImage {
-  onload: (() => void) | null = null;
-  onerror: (() => void) | null = null;
-  crossOrigin = '';
-  #src = '';
-
-  set src(value: string) {
-    this.#src = value;
-    queueMicrotask(() => this.onload?.());
-  }
-
-  get src() {
-    return this.#src;
-  }
-}
-
-function createMockCtx() {
-  return {
-    clearRect: vi.fn(),
-    scale: vi.fn(),
-    fillRect: vi.fn(),
-    drawImage: vi.fn(),
-    beginPath: vi.fn(),
-    moveTo: vi.fn(),
-    lineTo: vi.fn(),
-    stroke: vi.fn(),
-    save: vi.fn(),
-    restore: vi.fn(),
-    translate: vi.fn(),
-    rotate: vi.fn(),
-    fillText: vi.fn(),
-    measureText: vi.fn().mockReturnValue({
-      width: 10,
-      fontBoundingBoxAscent: 20,
-      fontBoundingBoxDescent: 5,
-      actualBoundingBoxAscent: 18,
-      actualBoundingBoxDescent: 4,
-    }),
-    font: '',
-    fillStyle: '',
-    strokeStyle: '',
-    lineWidth: 0,
-    textBaseline: 'alphabetic' as CanvasTextBaseline,
-    globalAlpha: 1,
-  } as unknown as CanvasRenderingContext2D;
-}
-
-function createMockCanvas(ctx: CanvasRenderingContext2D) {
-  const canvas = {
-    getContext: vi.fn().mockReturnValue(ctx),
-    width: 0,
-    height: 0,
-  } as unknown as HTMLCanvasElement;
-  return canvas;
-}
-
 const withResolvedPaperPreset = withTestPaperSelection;
 
-const originalDevicePixelRatio = window.devicePixelRatio;
+let cleanupDevicePixelRatio: () => void;
 
 beforeEach(() => {
   vi.stubGlobal('Image', MockImage);
-  Object.defineProperty(globalThis, 'devicePixelRatio', {
-    configurable: true,
-    value: 1,
-  });
+  cleanupDevicePixelRatio = stubDevicePixelRatio(1);
 });
 
 afterEach(() => {
-  Object.defineProperty(globalThis, 'devicePixelRatio', {
-    configurable: true,
-    value: originalDevicePixelRatio,
-  });
+  cleanupDevicePixelRatio();
   vi.unstubAllGlobals();
 });
 
@@ -136,7 +77,7 @@ async function renderPreviewPage({
 }: RenderPageArgs) {
   const finalPageSettings = pageSettings ?? defaultPageSettingsFromHandwritingSettings(settings);
   const engine = new PageRenderEngine();
-  const ctx = createMockCtx();
+  const ctx = createMockCanvasContext();
   const canvas = createMockCanvas(ctx);
 
   const result = await engine.renderPage({
@@ -161,7 +102,7 @@ async function renderExportPage({
 }: RenderPageArgs) {
   const finalPageSettings = pageSettings ?? defaultPageSettingsFromHandwritingSettings(settings);
   const engine = new PageRenderEngine();
-  const ctx = createMockCtx();
+  const ctx = createMockCanvasContext();
   const canvas = createMockCanvas(ctx);
 
   const result = await engine.renderPage({
@@ -178,10 +119,7 @@ async function renderExportPage({
   return { result, canvas, ctx };
 }
 
-function extractFillTextChars(ctx: CanvasRenderingContext2D) {
-  const fillTextCalls = (ctx.fillText as ReturnType<typeof vi.fn>).mock.calls;
-  return fillTextCalls.map((c: unknown[]) => c[0] as string);
-}
+// extractFillTextChars imported from canvasTestHelpers
 
 async function renderCharacterPositionHelper({
   settings,
