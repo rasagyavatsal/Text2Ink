@@ -1,66 +1,18 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import SettingsPanel from '../SettingsPanel';
-import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '@/lib/types';
+import { screen } from '@testing-library/react';
+import './settingsPanelTestMocks';
+import { renderSettingsPanel } from './settingsPanelTestUtils';
+import { DEFAULT_SETTINGS } from '@/lib/types';
 import { withTestPaperSelection } from '@/test/paperTestHelpers';
 
-vi.mock('lucide-react', () => {
-  const MockIcon = (props: any) => <div {...props} />;
-  return {
-    Type: MockIcon,
-    Palette: MockIcon,
-    FileText: MockIcon,
-    Wand2: MockIcon,
-    Upload: MockIcon,
-    X: MockIcon,
-    Minus: MockIcon,
-    Plus: MockIcon,
-    ChevronLeft: MockIcon,
-    ChevronRight: MockIcon,
-    ChevronDownIcon: MockIcon,
-    ChevronUpIcon: MockIcon,
-    CheckIcon: MockIcon,
-    Trash2: MockIcon,
-    Settings2: MockIcon,
-    Grid: MockIcon,
-  };
-});
-
-vi.mock('next/image', () => ({
-  default: ({ unoptimized: _unoptimized, ...props }: any) => <img alt="" {...props} />,
-}));
-
 describe('SettingsPanel paper styles', () => {
-  const mockOnSettingsChange = vi.fn();
-  const mockOnPageSettingsChange = vi.fn();
-  const mockOnPreviewScaleChange = vi.fn();
-  const mockOnCurrentPageChange = vi.fn();
-  const mockOnClearAll = vi.fn();
-  const mockOnApplyToAllPages = vi.fn();
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   function renderPanel(settings = DEFAULT_SETTINGS) {
-    return render(
-      <SettingsPanel
-        settings={settings}
-        onSettingsChange={mockOnSettingsChange}
-        pageSettings={defaultPageSettingsFromHandwritingSettings(settings)}
-        onPageSettingsChange={mockOnPageSettingsChange}
-        currentPageIndex={0}
-        onApplyToAllPages={mockOnApplyToAllPages}
-        previewScale={1}
-        onPreviewScaleChange={mockOnPreviewScaleChange}
-        onCurrentPageChange={mockOnCurrentPageChange}
-        totalPages={1}
-        isPaginationComplete
-        pages={[[]] as any}
-        onClearAll={mockOnClearAll}
-      />,
-    );
+    return renderSettingsPanel({ settings });
   }
 
   it('keeps paper color controls available for built-in paper styles', () => {
