@@ -10,194 +10,116 @@ import {
   expectNotPageSpecific,
 } from '../test/cssTokenTestHelpers';
 
+type TokenGroup = {
+  name: string;
+  tokens: string[];
+};
+
 const globalsCss = readGlobalsCss();
 const allProps = extractCustomProperties(globalsCss);
 
-const primitiveTokenGroups = [
-  {
-    name: 'space scale',
-    tokens: [
-      '--space-0',
-      '--space-1',
-      '--space-1-5',
-      '--space-2',
-      '--space-2-5',
-      '--space-3',
-      '--space-4',
-      '--space-5',
-      '--space-6',
-      '--space-8',
-      '--space-10',
-      '--space-12',
-      '--space-16',
-    ],
-  },
-  {
-    name: 'radius scale',
-    tokens: [
-      '--radius-sm',
-      '--radius-md',
-      '--radius-lg',
-      '--radius-xl',
-      '--radius-2xl',
-      '--radius-full',
-    ],
-  },
-  {
-    name: 'size scale',
-    tokens: [
-      '--size-icon-xs',
-      '--size-icon-sm',
-      '--size-icon-md',
-      '--size-icon-lg',
-      '--size-control-sm',
-      '--size-control-md',
-      '--size-control-lg',
-    ],
-  },
-  {
-    name: 'typography scale',
-    tokens: [
-      '--text-size-2xs',
-      '--text-size-xs',
-      '--text-size-sm',
-      '--text-size-base',
-      '--text-size-lg',
-      '--text-size-xl',
-      '--text-size-2xl',
-      '--text-size-3xl',
-      '--text-size-4xl',
-      '--text-size-5xl',
-      '--text-size-6xl',
-      '--text-size-7xl',
-    ],
-  },
-  {
-    name: 'width scale',
-    tokens: [
-      '--width-panel',
-      '--width-content',
-    ],
-  },
-  {
-    name: 'typography tokens',
-    tokens: [
-      '--type-brand-mark-size',
-      '--type-display-title-size',
-      '--type-page-title-size',
-      '--type-document-title-size',
-      '--type-section-title-size',
-      '--type-overlay-title-size',
-      '--type-body-lg-size',
-      '--type-body-size',
-      '--type-supporting-size',
-      '--type-caption-size',
-    ],
-  },
-  {
-    name: 'breakpoint scale',
-    tokens: [
-      '--breakpoint-sm',
-      '--breakpoint-md',
-      '--breakpoint-lg',
-      '--breakpoint-xl',
-    ],
-  },
-];
+const cssNameList = (source: string): string[] => source.trim().split(/\s+/);
 
-const semanticTokenGroups = [
-  {
-    name: 'layout tokens',
-    tokens: [
-      '--layout-panel-width',
-      '--layout-content-width',
-      '--layout-header-height',
-      '--layout-controls-gap',
-      '--layout-chrome-gap',
-      '--layout-chrome-padding-y',
-      '--layout-footer-padding-y',
-      '--layout-page-padding-x',
-      '--layout-page-padding-y',
-      '--layout-section-rhythm',
-    ],
-  },
-  {
-    name: 'surface tokens',
-    tokens: [
-      '--surface-page-padding',
-      '--surface-card-padding',
-      '--surface-section-gap',
-      '--surface-input-height',
-    ],
-  },
-  {
-    name: 'control tokens',
-    tokens: [
-      '--control-height-sm',
-      '--control-height-md',
-      '--control-height-lg',
-      '--control-icon-size',
-      '--control-gap',
-    ],
-  },
-  {
-    name: 'panel tokens',
-    tokens: [
-      '--panel-width',
-      '--panel-padding',
-      '--panel-gap',
-    ],
-  },
-];
+const createTokenGroups = (sources: Record<string, string>): TokenGroup[] =>
+  Object.entries(sources).map(([name, source]) => ({
+    name,
+    tokens: cssNameList(source),
+  }));
 
-describe('primitive design tokens', () => {
-  for (const { name, tokens } of primitiveTokenGroups) {
+function defineTokenDefinitionTests(groups: TokenGroup[]): void {
+  for (const { name, tokens } of groups) {
     describe(name, () => {
       it.each(tokens)('defines %s', (token) => {
         expectTokensDefined(allProps, [token]);
       });
     });
   }
+}
+
+const primitiveTokenGroups = createTokenGroups({
+  'space scale': `
+    --space-0 --space-1 --space-1-5 --space-2 --space-2-5 --space-3
+    --space-4 --space-5 --space-6 --space-8 --space-10 --space-12 --space-16
+  `,
+  'radius scale': `
+    --radius-sm --radius-md --radius-lg --radius-xl --radius-2xl --radius-full
+  `,
+  'size scale': `
+    --size-icon-xs --size-icon-sm --size-icon-md --size-icon-lg
+    --size-control-sm --size-control-md --size-control-lg
+  `,
+  'typography scale': `
+    --text-size-2xs --text-size-xs --text-size-sm --text-size-base --text-size-lg
+    --text-size-xl --text-size-2xl --text-size-3xl --text-size-4xl
+    --text-size-5xl --text-size-6xl --text-size-7xl
+  `,
+  'width scale': '--width-panel --width-content',
+  'typography tokens': `
+    --type-brand-mark-size --type-display-title-size --type-page-title-size
+    --type-document-title-size --type-section-title-size --type-overlay-title-size
+    --type-body-lg-size --type-body-size --type-supporting-size --type-caption-size
+  `,
+  'breakpoint scale': '--breakpoint-sm --breakpoint-md --breakpoint-lg --breakpoint-xl',
+});
+
+const semanticTokenGroups = createTokenGroups({
+  'layout tokens': `
+    --layout-panel-width --layout-content-width --layout-header-height
+    --layout-controls-gap --layout-chrome-gap --layout-chrome-padding-y
+    --layout-footer-padding-y --layout-page-padding-x --layout-page-padding-y
+    --layout-section-rhythm
+  `,
+  'surface tokens': `
+    --surface-page-padding --surface-card-padding --surface-section-gap
+    --surface-input-height
+  `,
+  'control tokens': `
+    --control-height-sm --control-height-md --control-height-lg
+    --control-icon-size --control-gap
+  `,
+  'panel tokens': '--panel-width --panel-padding --panel-gap',
+});
+
+const primitiveValuePrefixes = cssNameList(`
+  --space- --radius- --size- --breakpoint-
+`);
+
+const semanticTokenPrefixes = cssNameList(`
+  --layout- --surface- --control- --panel- --type-
+`);
+
+const expectedThemeTokens = cssNameList(`
+  --spacing-panel --spacing-section --spacing-controls --spacing-chrome
+  --spacing-chrome-y --spacing-footer --spacing-page-x --spacing-page-y
+  --height-control-sm --height-control-md --height-control-lg --height-input
+  --width-panel --container-content --text-label --text-brand-mark
+  --text-display-title --text-page-title --text-document-title --text-section-title
+  --text-overlay-title --text-body-lg --text-body --text-supporting --text-caption
+`);
+
+const themeReferencePrefixes = cssNameList(`
+  --spacing- --height- --width-panel --container- --font-size-
+`);
+
+describe('primitive design tokens', () => {
+  defineTokenDefinitionTests(primitiveTokenGroups);
 
   it('all primitive tokens have non-empty values', () => {
-    const primitives = filterProps(allProps, [
-      '--space-',
-      '--radius-',
-      '--size-',
-      '--breakpoint-',
-    ]);
+    const primitives = filterProps(allProps, primitiveValuePrefixes);
     expectNonEmptyValues(primitives);
   });
 });
 
 describe('semantic design tokens', () => {
-  for (const { name, tokens } of semanticTokenGroups) {
-    describe(name, () => {
-      it.each(tokens)('defines %s', (token) => {
-        expectTokensDefined(allProps, [token]);
-      });
-    });
-  }
+  defineTokenDefinitionTests(semanticTokenGroups);
 
   it('semantic tokens reference primitive tokens via var()', () => {
-    const semanticEntries = filterProps(allProps, [
-      '--layout-',
-      '--surface-',
-      '--control-',
-      '--panel-',
-      '--type-',
-    ]);
+    const semanticEntries = filterProps(allProps, semanticTokenPrefixes);
     expectReferencePrimitive(semanticEntries);
   });
 
   it('semantic tokens are pattern-level, not page-specific', () => {
-    const semanticKeys = filterProps(allProps, [
-      '--layout-',
-      '--surface-',
-      '--control-',
-      '--panel-',
-      '--type-',
-    ]).map(([key]) => key);
+    const semanticKeys = filterProps(allProps, semanticTokenPrefixes).map(([key]) => key);
     expectNotPageSpecific(semanticKeys);
   });
 });
@@ -206,44 +128,11 @@ describe('Tailwind @theme integration', () => {
   const themeEntries = extractThemeEntries(globalsCss);
 
   it('maps semantic tokens into Tailwind theme', () => {
-    const expectedThemeTokens = [
-      '--spacing-panel',
-      '--spacing-section',
-      '--spacing-controls',
-      '--spacing-chrome',
-      '--spacing-chrome-y',
-      '--spacing-footer',
-      '--spacing-page-x',
-      '--spacing-page-y',
-      '--height-control-sm',
-      '--height-control-md',
-      '--height-control-lg',
-      '--height-input',
-      '--width-panel',
-      '--container-content',
-      '--text-label',
-      '--text-brand-mark',
-      '--text-display-title',
-      '--text-page-title',
-      '--text-document-title',
-      '--text-section-title',
-      '--text-overlay-title',
-      '--text-body-lg',
-      '--text-body',
-      '--text-supporting',
-      '--text-caption',
-    ];
     expectTokensDefined(themeEntries, expectedThemeTokens);
   });
 
   it('theme entries reference CSS custom properties via var()', () => {
-    const themeList = filterProps(themeEntries, [
-      '--spacing-',
-      '--height-',
-      '--width-panel',
-      '--container-',
-      '--font-size-',
-    ]);
+    const themeList = filterProps(themeEntries, themeReferencePrefixes);
     expectReferencePrimitive(themeList);
   });
 });
