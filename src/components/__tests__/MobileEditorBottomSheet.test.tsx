@@ -23,30 +23,37 @@ vi.mock('@/components/Version', () => ({
   default: () => <span>Version</span>,
 }));
 
+const DEFAULT_MOBILE_SHEET_METRICS = {
+  viewportHeight: 800,
+  viewportWidth: 400,
+  headerHeight: 60,
+  minSheetHeight: 100,
+  defaultSheetHeight: 400,
+  maxSheetHeight: 700,
+  minPreviewHeight: 200,
+};
+
+const renderMobileEditorBottomSheet = (
+  overrides?: Partial<React.ComponentProps<typeof MobileEditorBottomSheet>>
+) => {
+  const defaultProps = {
+    anchor: 'default' as const,
+    metrics: DEFAULT_MOBILE_SHEET_METRICS,
+    settingsPanel: <div>Settings</div>,
+    onAnchorChange: () => {},
+    onHandlePress: () => {},
+    onHeightChange: () => {},
+  };
+  return render(<MobileEditorBottomSheet {...defaultProps} {...overrides} />);
+};
+
 describe('MobileEditorBottomSheet', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('uses semantic theme tokens instead of hardcoded colors', () => {
-    const { container } = render(
-      <MobileEditorBottomSheet
-        anchor="default"
-        metrics={{
-          viewportHeight: 800,
-          viewportWidth: 400,
-          headerHeight: 60,
-          minSheetHeight: 100,
-          defaultSheetHeight: 400,
-          maxSheetHeight: 700,
-          minPreviewHeight: 200,
-        }}
-        settingsPanel={<div>Settings</div>}
-        onAnchorChange={() => {}}
-        onHandlePress={() => {}}
-        onHeightChange={() => {}}
-      />
-    );
+    const { container } = renderMobileEditorBottomSheet();
     
     const html = container.innerHTML;
     
@@ -66,24 +73,7 @@ describe('MobileEditorBottomSheet', () => {
   });
 
   it('uses theme-adaptive ring offset backgrounds for focus states', () => {
-    const { container } = render(
-      <MobileEditorBottomSheet
-        anchor="default"
-        metrics={{
-          viewportHeight: 800,
-          viewportWidth: 400,
-          headerHeight: 60,
-          minSheetHeight: 100,
-          defaultSheetHeight: 400,
-          maxSheetHeight: 700,
-          minPreviewHeight: 200,
-        }}
-        settingsPanel={<div>Settings</div>}
-        onAnchorChange={() => {}}
-        onHandlePress={() => {}}
-        onHeightChange={() => {}}
-      />
-    );
+    const { container } = renderMobileEditorBottomSheet();
     
     // Any element with focus-visible:ring-offset-2 should also have focus-visible:ring-offset-background
     const buttons = container.querySelectorAll('button');
@@ -96,35 +86,22 @@ describe('MobileEditorBottomSheet', () => {
 
   it('starts at the peek anchor instead of the default anchor', async () => {
     const onHeightChange = vi.fn();
-    const metrics = {
-      viewportHeight: 800,
-      viewportWidth: 400,
-      headerHeight: 60,
-      minSheetHeight: 100,
-      defaultSheetHeight: 400,
-      maxSheetHeight: 700,
-      minPreviewHeight: 200,
-    };
 
-    render(
-      <MobileEditorBottomSheet
-        anchor="peek"
-        metrics={metrics}
-        settingsPanel={<div>Settings</div>}
-        onAnchorChange={() => {}}
-        onHandlePress={() => {}}
-        onHeightChange={onHeightChange}
-      />
-    );
+    renderMobileEditorBottomSheet({
+      anchor: 'peek',
+      onHeightChange,
+    });
 
     const sheetProps = sheetMock.mock.calls[0]?.[0];
-    const snapPoints = createMobileSheetSnapPoints(metrics);
+    const snapPoints = createMobileSheetSnapPoints(DEFAULT_MOBILE_SHEET_METRICS);
 
-    expect(sheetProps.initialSnap).toBe(getMobileSheetAnchorSnapIndex('peek', snapPoints, metrics));
+    expect(sheetProps.initialSnap).toBe(
+      getMobileSheetAnchorSnapIndex('peek', snapPoints, DEFAULT_MOBILE_SHEET_METRICS)
+    );
 
     await waitFor(() => {
-      expect(onHeightChange).toHaveBeenCalledWith(metrics.minSheetHeight);
+      expect(onHeightChange).toHaveBeenCalledWith(DEFAULT_MOBILE_SHEET_METRICS.minSheetHeight);
     });
-    expect(onHeightChange).not.toHaveBeenCalledWith(metrics.defaultSheetHeight);
+    expect(onHeightChange).not.toHaveBeenCalledWith(DEFAULT_MOBILE_SHEET_METRICS.defaultSheetHeight);
   });
 });
