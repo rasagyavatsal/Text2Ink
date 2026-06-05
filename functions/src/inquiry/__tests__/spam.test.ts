@@ -11,7 +11,7 @@ describe("checkHoneypot", () => {
   })
 
   it("returns spam when honeypot field is filled", () => {
-    expect(checkHoneypot("http://spam.com")).toBe(true)
+    expect(checkHoneypot("https://spam.example")).toBe(true)
   })
 })
 

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import httpMocks from "node-mocks-http"
 
 const { mockSendMail, mockRunTransaction, mockDb } = vi.hoisted(() => {
+  process.env.ALLOWED_ORIGINS = "https://localhost:3000,https://text2ink.com"
   const mockSendMail = vi.fn().mockResolvedValue({})
   const mockRunTransaction = vi.fn(async (fn: Function) => {
     const tx = {
@@ -65,7 +66,7 @@ function createReqRes(options: {
     method: (options.method || "POST") as any,
     body: options.body || validBody,
     headers: {
-      origin: options.origin || "http://localhost:3000",
+      origin: options.origin || "https://localhost:3000",
       ...options.headers,
     },
   })
@@ -78,7 +79,7 @@ describe("inquiry handler", () => {
     vi.clearAllMocks()
     process.env.EMAIL_USER = "test@gmail.com"
     process.env.EMAIL_PASS = "test-pass"
-    process.env.ALLOWED_ORIGINS = "http://localhost:3000,https://text2ink.com"
+    process.env.ALLOWED_ORIGINS = "https://localhost:3000,https://text2ink.com"
     process.env.INQUIRY_HMAC_SECRET = "test-secret"
     // Reset mockRunTransaction to default behavior
     mockRunTransaction.mockImplementation(async (fn: Function) => {
@@ -120,7 +121,7 @@ describe("inquiry handler", () => {
 
   it("returns 200 and silently drops honeypot submissions", async () => {
     const { req, res } = createReqRes({
-      body: { ...validBody, website: "http://spam.com" },
+      body: { ...validBody, website: "https://spam.example" },
     })
     await (inquiry as any)(req, res)
     expect(res.statusCode).toBe(200)
