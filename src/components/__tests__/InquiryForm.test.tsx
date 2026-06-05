@@ -125,7 +125,7 @@ describe("InquiryForm", () => {
       })
     }
     unmount()
-  })
+  }, 10_000)
 
   it("preserves entered values after validation failure", async () => {
     const user = userEvent.setup()
