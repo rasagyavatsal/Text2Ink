@@ -25,6 +25,38 @@ describe("InquiryForm", () => {
     fireEvent.click(topicOption)
   }
 
+  const VALID_INQUIRY_FORM = {
+    name: "Jane Doe",
+    email: "jane@example.com",
+    topic: "General inquiry",
+    message: "I have a question about your product.",
+  }
+
+  const fillInquiryForm = async (user: any, overrides?: Partial<typeof VALID_INQUIRY_FORM>) => {
+    const data = { ...VALID_INQUIRY_FORM, ...overrides }
+    if (data.name) {
+      await user.type(screen.getByLabelText(/name/i), data.name)
+    }
+    if (data.email) {
+      await user.type(screen.getByLabelText(/email/i), data.email)
+    }
+    if (data.topic) {
+      await selectTopic(user, data.topic)
+    }
+    if (data.message) {
+      await user.type(screen.getByLabelText(/message/i), data.message)
+    }
+  }
+
+  const submitInquiryForm = async (user: any) => {
+    await user.click(screen.getByRole("button", { name: /send inquiry/i }))
+  }
+
+  const fillAndSubmitInquiryForm = async (user: any, overrides?: Partial<typeof VALID_INQUIRY_FORM>) => {
+    await fillInquiryForm(user, overrides)
+    await submitInquiryForm(user)
+  }
+
   it("renders all required fields", () => {
     render(<InquiryForm />)
 
@@ -116,12 +148,7 @@ describe("InquiryForm", () => {
     const user = userEvent.setup()
     render(<InquiryForm />)
 
-    await user.type(screen.getByLabelText(/name/i), "Jane Doe")
-    await user.type(screen.getByLabelText(/email/i), "jane@example.com")
-    await selectTopic(user, "General inquiry")
-    await user.type(screen.getByLabelText(/message/i), "I have a question about your product.")
-
-    await user.click(screen.getByRole("button", { name: /send inquiry/i }))
+    await fillAndSubmitInquiryForm(user)
 
     await waitFor(() => {
       expect(screen.getByText(/thank you/i)).toBeInTheDocument()
@@ -143,11 +170,7 @@ describe("InquiryForm", () => {
     render(<InquiryForm />)
 
     // Fill and submit
-    await user.type(screen.getByLabelText(/name/i), "Jane Doe")
-    await user.type(screen.getByLabelText(/email/i), "jane@example.com")
-    await selectTopic(user, "General inquiry")
-    await user.type(screen.getByLabelText(/message/i), "I have a question about your product.")
-    await user.click(screen.getByRole("button", { name: /send inquiry/i }))
+    await fillAndSubmitInquiryForm(user)
 
     await waitFor(() => {
       expect(screen.getByText(/thank you/i)).toBeInTheDocument()
@@ -171,11 +194,7 @@ describe("InquiryForm", () => {
     const user = userEvent.setup()
     render(<InquiryForm />)
 
-    await user.type(screen.getByLabelText(/name/i), "Jane Doe")
-    await user.type(screen.getByLabelText(/email/i), "jane@example.com")
-    await selectTopic(user, "General inquiry")
-    await user.type(screen.getByLabelText(/message/i), "I have a question about your product.")
-    await user.click(screen.getByRole("button", { name: /send inquiry/i }))
+    await fillAndSubmitInquiryForm(user)
 
     await waitFor(() => {
       expect(screen.getByText("Too many inquiries. Please try again later.")).toBeInTheDocument()
@@ -195,11 +214,7 @@ describe("InquiryForm", () => {
     const user = userEvent.setup()
     render(<InquiryForm />)
 
-    await user.type(screen.getByLabelText(/name/i), "Jane Doe")
-    await user.type(screen.getByLabelText(/email/i), "jane@example.com")
-    await selectTopic(user, "General inquiry")
-    await user.type(screen.getByLabelText(/message/i), "I have a question about your product.")
-    await user.click(screen.getByRole("button", { name: /send inquiry/i }))
+    await fillAndSubmitInquiryForm(user)
 
     await waitFor(() => {
       expect(screen.getByText(/something went wrong/i)).toBeInTheDocument()
@@ -213,11 +228,7 @@ describe("InquiryForm", () => {
     const user = userEvent.setup()
     render(<InquiryForm />)
 
-    await user.type(screen.getByLabelText(/name/i), "Jane Doe")
-    await user.type(screen.getByLabelText(/email/i), "jane@example.com")
-    await selectTopic(user, "General inquiry")
-    await user.type(screen.getByLabelText(/message/i), "I have a question about your product.")
-    await user.click(screen.getByRole("button", { name: /send inquiry/i }))
+    await fillAndSubmitInquiryForm(user)
 
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalled()
