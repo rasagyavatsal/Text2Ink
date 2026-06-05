@@ -2,34 +2,9 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const globalsCss = fs.readFileSync(
-  path.resolve(__dirname, '../app/globals.css'),
-  'utf-8'
-);
+import { readGlobalsCss, extractCustomProperties } from '../test/cssTokenTestHelpers';
 
-function extractCustomProperties(css: string): Map<string, string> {
-  const props = new Map<string, string>();
-  const lines = css.split('\n');
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    if (!line.startsWith('--')) {
-      continue;
-    }
-    const colonIndex = line.indexOf(':');
-    if (colonIndex === -1) {
-      continue;
-    }
-    const semicolonIndex = line.indexOf(';', colonIndex);
-    if (semicolonIndex === -1) {
-      continue;
-    }
-    const name = line.substring(0, colonIndex).trim();
-    const value = line.substring(colonIndex + 1, semicolonIndex).trim();
-    props.set(name, value);
-  }
-  return props;
-}
-
+const globalsCss = readGlobalsCss();
 const allProps = extractCustomProperties(globalsCss);
 
 function readSource(relPath: string): string {

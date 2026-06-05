@@ -1,94 +1,63 @@
 import { describe, it, expect } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
+import {
+  readGlobalsCss,
+  extractCustomProperties,
+  extractThemeEntries,
+  expectTokensDefined,
+  filterProps,
+  expectNonEmptyValues,
+  expectReferencePrimitive,
+  expectNotPageSpecific,
+} from '../test/cssTokenTestHelpers';
 
-const globalsCss = fs.readFileSync(
-  path.resolve(__dirname, '../app/globals.css'),
-  'utf-8'
-);
-
-function extractCustomProperties(css: string): Map<string, string> {
-  const props = new Map<string, string>();
-  const lines = css.split('\n');
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    if (!line.startsWith('--')) {
-      continue;
-    }
-    const colonIndex = line.indexOf(':');
-    if (colonIndex === -1) {
-      continue;
-    }
-    const semicolonIndex = line.indexOf(';', colonIndex);
-    if (semicolonIndex === -1) {
-      continue;
-    }
-    const name = line.substring(0, colonIndex).trim();
-    const value = line.substring(colonIndex + 1, semicolonIndex).trim();
-    props.set(name, value);
-  }
-  return props;
-}
-
-function extractThemeEntries(css: string): Map<string, string> {
-  const themeIndex = css.indexOf('@theme');
-  if (themeIndex === -1) return new Map();
-
-  const openBraceIndex = css.indexOf('{', themeIndex);
-  if (openBraceIndex === -1) return new Map();
-
-  let braceCount = 1;
-  let closeBraceIndex = -1;
-  for (let i = openBraceIndex + 1; i < css.length; i++) {
-    if (css[i] === '{') {
-      braceCount++;
-    } else if (css[i] === '}') {
-      braceCount--;
-      if (braceCount === 0) {
-        closeBraceIndex = i;
-        break;
-      }
-    }
-  }
-
-  if (closeBraceIndex === -1) return new Map();
-
-  const themeBlockContent = css.substring(openBraceIndex + 1, closeBraceIndex);
-  return extractCustomProperties(themeBlockContent);
-}
-
+const globalsCss = readGlobalsCss();
 const allProps = extractCustomProperties(globalsCss);
 
-describe('primitive design tokens', () => {
-  describe('space scale', () => {
-    it.each([
-      '--space-0', '--space-1', '--space-1-5', '--space-2', '--space-2-5',
-      '--space-3', '--space-4', '--space-5', '--space-6', '--space-8',
-      '--space-10', '--space-12', '--space-16',
-    ])('defines %s', (token) => {
-      expect(allProps.has(token)).toBe(true);
-    });
-  });
-
-  describe('radius scale', () => {
-    it.each([
-      '--radius-sm', '--radius-md', '--radius-lg', '--radius-xl', '--radius-2xl', '--radius-full',
-    ])('defines %s', (token) => {
-      expect(allProps.has(token)).toBe(true);
-    });
-  });
-
-  describe('size scale', () => {
-    it.each([
-      '--size-icon-xs', '--size-icon-sm', '--size-icon-md', '--size-icon-lg',
-      '--size-control-sm', '--size-control-md', '--size-control-lg',
-    ])('defines %s', (token) => {
-      expect(allProps.has(token)).toBe(true);
-    });
-  });
-
-  describe('typography scale', () => {
-    it.each([
+const primitiveTokenGroups = [
+  {
+    name: 'space scale',
+    tokens: [
+      '--space-0',
+      '--space-1',
+      '--space-1-5',
+      '--space-2',
+      '--space-2-5',
+      '--space-3',
+      '--space-4',
+      '--space-5',
+      '--space-6',
+      '--space-8',
+      '--space-10',
+      '--space-12',
+      '--space-16',
+    ],
+  },
+  {
+    name: 'radius scale',
+    tokens: [
+      '--radius-sm',
+      '--radius-md',
+      '--radius-lg',
+      '--radius-xl',
+      '--radius-2xl',
+      '--radius-full',
+    ],
+  },
+  {
+    name: 'size scale',
+    tokens: [
+      '--size-icon-xs',
+      '--size-icon-sm',
+      '--size-icon-md',
+      '--size-icon-lg',
+      '--size-control-sm',
+      '--size-control-md',
+      '--size-control-lg',
+    ],
+  },
+  {
+    name: 'typography scale',
+    tokens: [
       '--text-size-2xs',
       '--text-size-xs',
       '--text-size-sm',
@@ -101,22 +70,18 @@ describe('primitive design tokens', () => {
       '--text-size-5xl',
       '--text-size-6xl',
       '--text-size-7xl',
-    ])('defines %s', (token) => {
-      expect(allProps.has(token)).toBe(true);
-    });
-  });
-
-  describe('width scale', () => {
-    it.each([
+    ],
+  },
+  {
+    name: 'width scale',
+    tokens: [
       '--width-panel',
       '--width-content',
-    ])('defines %s', (token) => {
-      expect(allProps.has(token)).toBe(true);
-    });
-  });
-
-  describe('typography tokens', () => {
-    it.each([
+    ],
+  },
+  {
+    name: 'typography tokens',
+    tokens: [
       '--type-brand-mark-size',
       '--type-display-title-size',
       '--type-page-title-size',
@@ -127,36 +92,23 @@ describe('primitive design tokens', () => {
       '--type-body-size',
       '--type-supporting-size',
       '--type-caption-size',
-    ])('defines %s', (token) => {
-      expect(allProps.has(token)).toBe(true);
-    });
-  });
+    ],
+  },
+  {
+    name: 'breakpoint scale',
+    tokens: [
+      '--breakpoint-sm',
+      '--breakpoint-md',
+      '--breakpoint-lg',
+      '--breakpoint-xl',
+    ],
+  },
+];
 
-  describe('breakpoint scale', () => {
-    it.each([
-      '--breakpoint-sm', '--breakpoint-md', '--breakpoint-lg', '--breakpoint-xl',
-    ])('defines %s', (token) => {
-      expect(allProps.has(token)).toBe(true);
-    });
-  });
-
-  it('all primitive tokens have non-empty values', () => {
-    const primitives = [...allProps.entries()].filter(([key]) =>
-      key.startsWith('--space-') ||
-      key.startsWith('--radius-') ||
-      key.startsWith('--size-') ||
-      key.startsWith('--breakpoint-')
-    );
-    expect(primitives.length).toBeGreaterThan(0);
-    for (const [, value] of primitives) {
-      expect(value).not.toBe('');
-    }
-  });
-});
-
-describe('semantic design tokens', () => {
-  describe('layout tokens', () => {
-    it.each([
+const semanticTokenGroups = [
+  {
+    name: 'layout tokens',
+    tokens: [
       '--layout-panel-width',
       '--layout-content-width',
       '--layout-header-height',
@@ -167,71 +119,86 @@ describe('semantic design tokens', () => {
       '--layout-page-padding-x',
       '--layout-page-padding-y',
       '--layout-section-rhythm',
-    ])('defines %s', (token) => {
-      expect(allProps.has(token)).toBe(true);
-    });
-  });
-
-  describe('surface tokens', () => {
-    it.each([
+    ],
+  },
+  {
+    name: 'surface tokens',
+    tokens: [
       '--surface-page-padding',
       '--surface-card-padding',
       '--surface-section-gap',
       '--surface-input-height',
-    ])('defines %s', (token) => {
-      expect(allProps.has(token)).toBe(true);
-    });
-  });
-
-  describe('control tokens', () => {
-    it.each([
+    ],
+  },
+  {
+    name: 'control tokens',
+    tokens: [
       '--control-height-sm',
       '--control-height-md',
       '--control-height-lg',
       '--control-icon-size',
       '--control-gap',
-    ])('defines %s', (token) => {
-      expect(allProps.has(token)).toBe(true);
-    });
-  });
-
-  describe('panel tokens', () => {
-    it.each([
+    ],
+  },
+  {
+    name: 'panel tokens',
+    tokens: [
       '--panel-width',
       '--panel-padding',
       '--panel-gap',
-    ])('defines %s', (token) => {
-      expect(allProps.has(token)).toBe(true);
+    ],
+  },
+];
+
+describe('primitive design tokens', () => {
+  for (const { name, tokens } of primitiveTokenGroups) {
+    describe(name, () => {
+      it.each(tokens)('defines %s', (token) => {
+        expectTokensDefined(allProps, [token]);
+      });
     });
+  }
+
+  it('all primitive tokens have non-empty values', () => {
+    const primitives = filterProps(allProps, [
+      '--space-',
+      '--radius-',
+      '--size-',
+      '--breakpoint-',
+    ]);
+    expectNonEmptyValues(primitives);
   });
+});
+
+describe('semantic design tokens', () => {
+  for (const { name, tokens } of semanticTokenGroups) {
+    describe(name, () => {
+      it.each(tokens)('defines %s', (token) => {
+        expectTokensDefined(allProps, [token]);
+      });
+    });
+  }
 
   it('semantic tokens reference primitive tokens via var()', () => {
-    const semanticEntries = [...allProps.entries()].filter(([key]) =>
-      key.startsWith('--layout-') ||
-      key.startsWith('--surface-') ||
-      key.startsWith('--control-') ||
-      key.startsWith('--panel-') ||
-      key.startsWith('--type-')
-    );
-    expect(semanticEntries.length).toBeGreaterThan(0);
-    for (const [, value] of semanticEntries) {
-      expect(value).toMatch(/var\(--/);
-    }
+    const semanticEntries = filterProps(allProps, [
+      '--layout-',
+      '--surface-',
+      '--control-',
+      '--panel-',
+      '--type-',
+    ]);
+    expectReferencePrimitive(semanticEntries);
   });
 
   it('semantic tokens are pattern-level, not page-specific', () => {
-    const semanticKeys = [...allProps.keys()].filter((key) =>
-      key.startsWith('--layout-') ||
-      key.startsWith('--surface-') ||
-      key.startsWith('--control-') ||
-      key.startsWith('--panel-') ||
-      key.startsWith('--type-')
-    );
-    for (const key of semanticKeys) {
-      expect(key).not.toMatch(/--(?:layout|surface|control|panel)-editor-/);
-      expect(key).not.toMatch(/--(?:layout|surface|control|panel)-contact-/);
-      expect(key).not.toMatch(/--type-(?:home|landing|contact|footer|modal|privacy|terms)-/);
-    }
+    const semanticKeys = filterProps(allProps, [
+      '--layout-',
+      '--surface-',
+      '--control-',
+      '--panel-',
+      '--type-',
+    ]).map(([key]) => key);
+    expectNotPageSpecific(semanticKeys);
   });
 });
 
@@ -266,23 +233,18 @@ describe('Tailwind @theme integration', () => {
       '--text-supporting',
       '--text-caption',
     ];
-    for (const token of expectedThemeTokens) {
-      expect(themeEntries.has(token)).toBe(true);
-    }
+    expectTokensDefined(themeEntries, expectedThemeTokens);
   });
 
   it('theme entries reference CSS custom properties via var()', () => {
-    for (const [key, value] of themeEntries) {
-      if (
-        key.startsWith('--spacing-') ||
-        key.startsWith('--height-') ||
-        key.startsWith('--width-panel') ||
-        key.startsWith('--container-') ||
-        key.startsWith('--font-size-')
-      ) {
-        expect(value).toMatch(/var\(--/);
-      }
-    }
+    const themeList = filterProps(themeEntries, [
+      '--spacing-',
+      '--height-',
+      '--width-panel',
+      '--container-',
+      '--font-size-',
+    ]);
+    expectReferencePrimitive(themeList);
   });
 });
 
@@ -313,4 +275,3 @@ describe('CSS helper extraction', () => {
     expect(extractedTheme.has('--test-outside')).toBe(false);
   });
 });
-
