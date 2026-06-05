@@ -9,10 +9,23 @@ const globalsCss = fs.readFileSync(
 
 function extractCustomProperties(css: string): Map<string, string> {
   const props = new Map<string, string>();
-  const regex = /(--[\w-]+)\s*:\s*([^;]+);/g;
-  let match;
-  while ((match = regex.exec(css)) !== null) {
-    props.set(match[1], match[2].trim());
+  const lines = css.split('\n');
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line.startsWith('--')) {
+      continue;
+    }
+    const colonIndex = line.indexOf(':');
+    if (colonIndex === -1) {
+      continue;
+    }
+    const semicolonIndex = line.indexOf(';', colonIndex);
+    if (semicolonIndex === -1) {
+      continue;
+    }
+    const name = line.substring(0, colonIndex).trim();
+    const value = line.substring(colonIndex + 1, semicolonIndex).trim();
+    props.set(name, value);
   }
   return props;
 }
