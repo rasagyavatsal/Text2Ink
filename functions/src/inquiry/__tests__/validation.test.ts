@@ -44,46 +44,23 @@ describe("validateInquiry", () => {
       expect(result.ok).toBe(true)
     })
 
-    it("rejects email with missing @", () => {
-      const result = validateInquiry({ ...validPayload, email: "person.example.com" })
+    const expectInvalidEmail = (email: string) => {
+      const result = validateInquiry({ ...validPayload, email })
       expect(result.ok).toBe(false)
-    })
+    }
 
-    it("rejects email with multiple @ characters", () => {
-      const result = validateInquiry({ ...validPayload, email: "person@another@example.com" })
-      expect(result.ok).toBe(false)
-    })
-
-    it("rejects email with missing local part", () => {
-      const result = validateInquiry({ ...validPayload, email: "@example.com" })
-      expect(result.ok).toBe(false)
-    })
-
-    it("rejects email with missing domain", () => {
-      const result = validateInquiry({ ...validPayload, email: "person@" })
-      expect(result.ok).toBe(false)
-    })
-
-    it("rejects email with domain without a dot", () => {
-      const result = validateInquiry({ ...validPayload, email: "person@example" })
-      expect(result.ok).toBe(false)
-    })
-
-    it("rejects email with domain starting with a dot", () => {
-      const result = validateInquiry({ ...validPayload, email: "person@.example.com" })
-      expect(result.ok).toBe(false)
-    })
-
-    it("rejects email with domain ending with a dot", () => {
-      const result = validateInquiry({ ...validPayload, email: "person@example.com." })
-      expect(result.ok).toBe(false)
-    })
-
-    it("rejects email with whitespace inside the email", () => {
-      const result = validateInquiry({ ...validPayload, email: "person @example.com" })
-      expect(result.ok).toBe(false)
-      const result2 = validateInquiry({ ...validPayload, email: "person@ex ample.com" })
-      expect(result2.ok).toBe(false)
+    it.each([
+      ["missing @", "person.example.com"],
+      ["multiple @", "person@another@example.com"],
+      ["missing local part", "@example.com"],
+      ["missing domain", "person@"],
+      ["domain without dot", "person@example"],
+      ["domain starting with dot", "person@.example.com"],
+      ["domain ending with dot", "person@example.com."],
+      ["whitespace before @", "person @example.com"],
+      ["whitespace inside domain", "person@ex ample.com"],
+    ])("rejects email with %s (%s)", (_, email) => {
+      expectInvalidEmail(email)
     })
 
     it("rejects a very long invalid email string quickly", () => {
