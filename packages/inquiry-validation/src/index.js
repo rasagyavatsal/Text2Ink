@@ -1,18 +1,16 @@
-export const ALLOWED_TOPICS = [
+const ALLOWED_TOPICS = [
   "General inquiry",
   "Bug report",
   "Feature request",
-] as const
+]
 
-export type Topic = (typeof ALLOWED_TOPICS)[number]
-
-export const LIMITS = {
+const LIMITS = {
   name: { min: 2, max: 100 },
   email: { max: 254 },
   message: { min: 10, max: 5000 },
-} as const
+}
 
-export function isValidEmail(email: string): boolean {
+function isValidEmail(email) {
   const trimmed = email.trim()
   if (trimmed.length === 0) return false
   if (/\s/.test(trimmed)) return false
@@ -27,3 +25,7 @@ export function isValidEmail(email: string): boolean {
 
   return true
 }
+
+exports.ALLOWED_TOPICS = ALLOWED_TOPICS
+exports.LIMITS = LIMITS
+exports.isValidEmail = isValidEmail
