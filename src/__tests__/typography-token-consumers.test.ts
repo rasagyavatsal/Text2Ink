@@ -36,19 +36,25 @@ describe('shared typography consumers use semantic tokens', () => {
   it('legal route hierarchy consumes shared document, section, and supporting tokens', () => {
     const privacySource = readSource('app/privacy-policy/page.tsx');
     const termsSource = readSource('app/terms-of-service/page.tsx');
+    const legalPageSource = readSource('components/patterns/LegalPage.tsx');
 
     for (const source of [privacySource, termsSource]) {
       expect(source).not.toMatch(/text-4xl font-bold tracking-tight text-foreground sm:text-5xl/);
       expect(source).not.toMatch(/text-2xl font-semibold tracking-tight text-foreground/);
       expect(source).not.toMatch(/text-base leading-7 text-muted-foreground sm:text-lg/);
       expect(source).not.toMatch(/text-sm text-muted-foreground/);
-
-      expect(source).toMatch(/text-document-title/);
-      expect(source).toMatch(/text-section-title/);
-      expect(source).toMatch(/text-body-lg/);
-      expect(source).toMatch(/text-body/);
-      expect(source).toMatch(/text-caption/);
     }
+
+    expect(legalPageSource).not.toMatch(/text-4xl font-bold tracking-tight text-foreground sm:text-5xl/);
+    expect(legalPageSource).not.toMatch(/text-2xl font-semibold tracking-tight text-foreground/);
+    expect(legalPageSource).not.toMatch(/text-base leading-7 text-muted-foreground sm:text-lg/);
+    expect(legalPageSource).not.toMatch(/text-sm text-muted-foreground/);
+
+    expect(legalPageSource).toMatch(/text-document-title/);
+    expect(legalPageSource).toMatch(/text-section-title/);
+    expect(legalPageSource).toMatch(/text-body-lg/);
+    expect(legalPageSource).toMatch(/text-body/);
+    expect(legalPageSource).toMatch(/text-caption/);
   });
 
   it('footer metadata surfaces consume supporting and caption tokens', () => {
