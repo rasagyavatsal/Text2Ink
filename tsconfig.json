@@ -19,8 +19,7 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"],
-      "inquiry-validation": ["./packages/inquiry-validation/src/index.ts"]
+      "@/*": ["./src/*"]
     }
   },
   "include": [
