@@ -14,11 +14,9 @@ const privacyPageSource = fs.readFileSync(
 );
 
 describe('PrivacyPolicyPage', () => {
-  it('keeps the legal page frame local to the route module', () => {
+  it('uses the shared LegalPage component', () => {
     expect(privacyPageSource).not.toMatch(/StandardPageShell/);
-    expect(privacyPageSource).toMatch(/<header\b/);
-    expect(privacyPageSource).toMatch(/<main\b/);
-    expect(privacyPageSource).toMatch(/<footer\b/);
+    expect(privacyPageSource).toMatch(/LegalPage/);
   });
 
   it('publishes canonical metadata for the legal route', () => {

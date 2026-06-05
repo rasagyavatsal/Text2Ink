@@ -14,11 +14,9 @@ const termsPageSource = fs.readFileSync(
 );
 
 describe('TermsOfServicePage', () => {
-  it('keeps the legal page frame local to the route module', () => {
+  it('uses the shared LegalPage component', () => {
     expect(termsPageSource).not.toMatch(/StandardPageShell/);
-    expect(termsPageSource).toMatch(/<header\b/);
-    expect(termsPageSource).toMatch(/<main\b/);
-    expect(termsPageSource).toMatch(/<footer\b/);
+    expect(termsPageSource).toMatch(/LegalPage/);
   });
 
   it('publishes canonical metadata for the legal route', () => {
