@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { UnifiedPagePainter, PaintPageOptions } from '../UnifiedPagePainter';
-import { HandwritingSettings, DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '../../types';
+import { HandwritingSettings, DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings, PaperStyle } from '../../types';
 import { resolvePageLayout } from '@/lib/layout/LayoutEngine';
 import { withTestPaperSelection } from '@/test/paperTestHelpers';
 import { createMockCanvasContext, extractFillTextChars } from '@/test/canvasTestHelpers';
@@ -27,6 +27,51 @@ function defaultPaintOptions(overrides?: Partial<PaintPageOptions>): PaintPageOp
 }
 
 const withResolvedPaperPreset = withTestPaperSelection;
+
+function createNonRandomSettings(overrides?: Partial<HandwritingSettings>): HandwritingSettings {
+  return {
+    ...DEFAULT_SETTINGS,
+    randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 },
+    ...overrides,
+  };
+}
+
+function paintWithPaperStyle(style: PaperStyle) {
+  const ctx = createMockCtx();
+  const settings = withResolvedPaperPreset({ paperStyle: style });
+  const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
+  const opts = defaultPaintOptions({ ctx, settings, pageSettings });
+  UnifiedPagePainter.paintPage(opts);
+  return ctx;
+}
+
+function computeSelectionPositionsForText(
+  text: string,
+  overrides?: {
+    settings?: Partial<HandwritingSettings>;
+    pageSettings?: Partial<ReturnType<typeof defaultPageSettingsFromHandwritingSettings>>;
+  }
+) {
+  const ctx = createMockCtx();
+  const settings = createNonRandomSettings(overrides?.settings);
+  const pageSettings = {
+    ...defaultPageSettingsFromHandwritingSettings(settings),
+    ...overrides?.pageSettings,
+  };
+  const positions = UnifiedPagePainter.computeCharacterPositions({
+    ctx,
+    lines: [{ text, lineIndex: 0, hasNewline: false }],
+    pageSettings,
+    settings,
+    fontFamily: 'Caveat',
+  });
+  const resolvedLayout = resolvePageLayout({
+    pageIndex: 0,
+    settings,
+    pageSettings,
+  });
+  return { ctx, settings, pageSettings, positions, resolvedLayout };
+}
 
 describe('UnifiedPagePainter', () => {
   describe('paintPage - background rendering', () => {
@@ -57,58 +102,24 @@ describe('UnifiedPagePainter', () => {
   });
 
   describe('paintPage - paper lines', () => {
-    it('does not draw synthetic guides for built-in lined paper style', () => {
-      const ctx = createMockCtx();
-      const settings = withResolvedPaperPreset({ paperStyle: 'lined' as const });
-      const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-      const opts = defaultPaintOptions({ ctx, settings, pageSettings });
-
-      UnifiedPagePainter.paintPage(opts);
-
+    it.each([
+      { style: 'lined' as const, checkStroke: true },
+      { style: 'blank' as const, checkStroke: false },
+      { style: 'grid' as const, checkStroke: true },
+      { style: 'ruled' as const, checkStroke: true },
+    ])('does not draw synthetic guides/lines for $style paper style', ({ style, checkStroke }) => {
+      const ctx = paintWithPaperStyle(style);
       expect(ctx.beginPath).not.toHaveBeenCalled();
-      expect(ctx.stroke).not.toHaveBeenCalled();
-    });
-
-    it('does not draw paper lines for blank paper style', () => {
-      const ctx = createMockCtx();
-      const settings = withResolvedPaperPreset({ paperStyle: 'blank' as const });
-      const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-      const opts = defaultPaintOptions({ ctx, settings, pageSettings });
-
-      UnifiedPagePainter.paintPage(opts);
-
-      expect(ctx.beginPath).not.toHaveBeenCalled();
-    });
-
-    it('does not draw synthetic guides for built-in grid paper style', () => {
-      const ctx = createMockCtx();
-      const settings = withResolvedPaperPreset({ paperStyle: 'grid' as const });
-      const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-      const opts = defaultPaintOptions({ ctx, settings, pageSettings });
-
-      UnifiedPagePainter.paintPage(opts);
-
-      expect(ctx.beginPath).not.toHaveBeenCalled();
-      expect(ctx.stroke).not.toHaveBeenCalled();
-    });
-
-    it('does not draw a synthetic margin line for ruled paper style', () => {
-      const ctx = createMockCtx();
-      const settings = withResolvedPaperPreset({ paperStyle: 'ruled' as const });
-      const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-      const opts = defaultPaintOptions({ ctx, settings, pageSettings });
-
-      UnifiedPagePainter.paintPage(opts);
-
-      expect(ctx.beginPath).not.toHaveBeenCalled();
-      expect(ctx.stroke).not.toHaveBeenCalled();
+      if (checkStroke) {
+        expect(ctx.stroke).not.toHaveBeenCalled();
+      }
     });
   });
 
   describe('paintPage - text rendering', () => {
     it('renders each non-space character via fillText', () => {
       const ctx = createMockCtx();
-      const settings = { ...DEFAULT_SETTINGS, randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 } };
+      const settings = createNonRandomSettings();
       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
       const opts = defaultPaintOptions({
         ctx,
@@ -126,7 +137,7 @@ describe('UnifiedPagePainter', () => {
 
     it('skips spaces when rendering characters', () => {
       const ctx = createMockCtx();
-      const settings = { ...DEFAULT_SETTINGS, randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 } };
+      const settings = createNonRandomSettings();
       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
       const opts = defaultPaintOptions({
         ctx,
@@ -160,7 +171,7 @@ describe('UnifiedPagePainter', () => {
         ctx,
         pageSettings,
         lines: [{ text: 'X', lineIndex: 0, hasNewline: false }],
-        settings: { ...DEFAULT_SETTINGS, randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 } },
+        settings: createNonRandomSettings(),
       });
 
       UnifiedPagePainter.paintPage(opts);
@@ -179,7 +190,7 @@ describe('UnifiedPagePainter', () => {
       // Render at scale 1 and scale 4, both should draw text at the same logical coords
       const ctx1 = createMockCtx();
       const ctx2 = createMockCtx();
-      const settings = { ...DEFAULT_SETTINGS, randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 } };
+      const settings = createNonRandomSettings();
       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
       const lines = [{ text: 'A', lineIndex: 0, hasNewline: false }];
 
@@ -216,7 +227,7 @@ describe('UnifiedPagePainter', () => {
 
     it('does not apply rotation when randomness is disabled', () => {
       const ctx = createMockCtx();
-      const settings = { ...DEFAULT_SETTINGS, randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 }, lineTilt: 0 };
+      const settings = createNonRandomSettings({ lineTilt: 0 });
       const pageSettings = { ...defaultPageSettingsFromHandwritingSettings(settings), lineTilt: 0 };
       const opts = defaultPaintOptions({
         ctx,
@@ -234,7 +245,7 @@ describe('UnifiedPagePainter', () => {
   describe('paintPage - line tilt', () => {
     it('applies line tilt rotation once at the start of text block, not per character', () => {
       const ctx = createMockCtx();
-      const settings = { ...DEFAULT_SETTINGS, randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 } };
+      const settings = createNonRandomSettings();
       const pageSettings = { ...defaultPageSettingsFromHandwritingSettings(settings), lineTilt: 5 };
       const opts = defaultPaintOptions({
         ctx,
@@ -253,7 +264,7 @@ describe('UnifiedPagePainter', () => {
 
   describe('computeCharacterPositions', () => {
     it('returns position data for each character in all lines', () => {
-      const settings = { ...DEFAULT_SETTINGS, randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 } };
+      const settings = createNonRandomSettings();
       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
       const ctx = createMockCtx();
       const lines = [
@@ -282,10 +293,7 @@ describe('UnifiedPagePainter', () => {
     });
 
     it('includes explicit newline positions so caret indices stay aligned with textarea text', () => {
-      const settings = {
-        ...DEFAULT_SETTINGS,
-        randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 },
-      };
+      const settings = createNonRandomSettings();
       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
       const ctx = createMockCtx();
       const lines = [
@@ -441,114 +449,52 @@ describe('UnifiedPagePainter', () => {
       expect(ctx.fillRect).not.toHaveBeenCalled();
     });
 
-     it('aligns the selection highlight with the caret height and position', () => {
-       const ctx = createMockCtx();
-       const settings = {
-         ...DEFAULT_SETTINGS,
-         randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 },
-       };
-       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-       const positions = UnifiedPagePainter.computeCharacterPositions({
-         ctx,
-         lines: [{ text: 'A', lineIndex: 0, hasNewline: false }],
-         pageSettings,
-         settings,
-         fontFamily: 'Caveat',
-       });
-       const resolvedLayout = resolvePageLayout({
-         pageIndex: 0,
-         settings,
-         pageSettings,
-       });
+      it('aligns the selection highlight with the caret height and position', () => {
+        const { ctx, positions, resolvedLayout } = computeSelectionPositionsForText('A');
 
-       UnifiedPagePainter.paintSelectionOverlay(ctx, positions.mainPositions, 0, 1, '#1a365d');
+        UnifiedPagePainter.paintSelectionOverlay(ctx, positions.mainPositions, 0, 1, '#1a365d');
 
-       const [x, y, width, height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0];
-       expect(x).toBe(resolvedLayout.writing.textBounds.left);
-       expect(y).toBeCloseTo(positions.mainPositions[0].selectionY!, 1);
-       expect(width).toBe(10);
-       expect(height).toBeCloseTo(25, 1);
-     });
+        const [x, y, width, height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0];
+        expect(x).toBe(resolvedLayout.writing.textBounds.left);
+        expect(y).toBeCloseTo(positions.mainPositions[0].selectionY!, 1);
+        expect(width).toBe(10);
+        expect(height).toBeCloseTo(25, 1);
+      });
 
-     it('computes selectionX that absorbs preceding spacing gap', () => {
-       const ctx = createMockCtx();
-       const settings = {
-         ...DEFAULT_SETTINGS,
-         randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 },
-       };
-       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-       const positions = UnifiedPagePainter.computeCharacterPositions({
-         ctx,
-         lines: [{ text: 'AB', lineIndex: 0, hasNewline: false }],
-         pageSettings,
-         settings,
-         fontFamily: 'Caveat',
-       });
-       const resolvedLayout = resolvePageLayout({
-         pageIndex: 0,
-         settings,
-         pageSettings,
-       });
+      it('computes selectionX that absorbs preceding spacing gap', () => {
+        const { positions, resolvedLayout } = computeSelectionPositionsForText('AB');
 
-       const first = positions.mainPositions[0];
-       const second = positions.mainPositions[1];
-       expect(first.selectionX).toBe(resolvedLayout.writing.textBounds.left);
-       expect(second.selectionX).toBe(first.selectionX! + first.selectionWidth!);
-     });
+        const first = positions.mainPositions[0];
+        const second = positions.mainPositions[1];
+        expect(first.selectionX).toBe(resolvedLayout.writing.textBounds.left);
+        expect(second.selectionX).toBe(first.selectionX! + first.selectionWidth!);
+      });
 
-     it('computes selectionWidth for contiguous highlight rects', () => {
-       const ctx = createMockCtx();
-       const settings = {
-         ...DEFAULT_SETTINGS,
-         randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 },
-       };
-       const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-       const positions = UnifiedPagePainter.computeCharacterPositions({
-         ctx,
-         lines: [{ text: 'A', lineIndex: 0, hasNewline: false }],
-         pageSettings,
-         settings,
-         fontFamily: 'Caveat',
-       });
+      it('computes selectionWidth for contiguous highlight rects', () => {
+        const { positions } = computeSelectionPositionsForText('A');
 
-       // selectionWidth should equal the character width
-       expect(positions.mainPositions[0].selectionWidth).toBe(10);
-     });
+        // selectionWidth should equal the character width
+        expect(positions.mainPositions[0].selectionWidth).toBe(10);
+      });
 
-     it('aligns selection highlight correctly at low line spacing', () => {
-       const ctx = createMockCtx();
-       const settings = {
-         ...DEFAULT_SETTINGS,
-         randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 },
-         customBackgroundImage: 'data:image/png;base64,abc', // Enable customLineSpacing
-       };
-       const pageSettings = {
-         ...defaultPageSettingsFromHandwritingSettings(settings),
-         customLineSpacing: 24, // Same as fontSize, minimal line spacing
-         fontSize: 24,
-       };
-       const positions = UnifiedPagePainter.computeCharacterPositions({
-         ctx,
-         lines: [{ text: 'A', lineIndex: 0, hasNewline: false }],
-         pageSettings,
-         settings,
-         fontFamily: 'Caveat',
-       });
+      it('aligns selection highlight correctly at low line spacing', () => {
+        const { ctx, pageSettings, positions } = computeSelectionPositionsForText('A', {
+          settings: { customBackgroundImage: 'data:image/png;base64,abc' },
+          pageSettings: { customLineSpacing: 24, fontSize: 24 },
+        });
 
-       UnifiedPagePainter.paintSelectionOverlay(ctx, positions.mainPositions, 0, 1, '#1a365d');
+        UnifiedPagePainter.paintSelectionOverlay(ctx, positions.mainPositions, 0, 1, '#1a365d');
 
-       const [, y, , height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0];
-       // halfLeading = (24 - 24) / 2 = 0
-       // selectionY = marginTop + 0 = marginTop
-       expect(y).toBeCloseTo(pageSettings.marginTop, 1);
-       expect(height).toBeCloseTo(25, 1); // fontAscent + fontDescent = 20 + 5 = 25
-     });
+        const [, y, , height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0];
+        expect(y).toBeCloseTo(pageSettings.marginTop, 1);
+        expect(height).toBeCloseTo(25, 1);
+      });
    });
 
    describe('paintPage - text field rendering', () => {
     it('renders text fields character-by-character when renderTextFields is true', () => {
       const ctx = createMockCtx();
-      const settings = { ...DEFAULT_SETTINGS, randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 } };
+      const settings = createNonRandomSettings();
       const pageSettings = {
         ...defaultPageSettingsFromHandwritingSettings(settings),
         textFields: [{
