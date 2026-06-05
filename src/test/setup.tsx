@@ -31,16 +31,18 @@ class ResizeObserver {
 globalThis.ResizeObserver = ResizeObserver;
 globalThis.HTMLElement.prototype.scrollIntoView = vi.fn();
 
-// Mock HTMLCanvasElement getContext
-if (typeof globalThis.window !== 'undefined') {
-  HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
+function createCanvas2DContextMock(options?: { isOffscreen?: boolean }) {
+  const isOffscreen = options?.isOffscreen ?? false;
+  return {
     fillRect: vi.fn(),
     clearRect: vi.fn(),
-    getImageData: vi.fn((x, y, w, h) => ({
-      data: new Uint8ClampedArray(w * h * 4),
-      width: w,
-      height: h,
-    })),
+    getImageData: isOffscreen
+      ? vi.fn(() => ({ data: new Uint8ClampedArray() }))
+      : vi.fn((x: number, y: number, w: number, h: number) => ({
+          data: new Uint8ClampedArray(w * h * 4),
+          width: w,
+          height: h,
+        })),
     putImageData: vi.fn(),
     createImageData: vi.fn(),
     setTransform: vi.fn(),
@@ -60,7 +62,12 @@ if (typeof globalThis.window !== 'undefined') {
     transform: vi.fn(),
     rect: vi.fn(),
     clip: vi.fn(),
-  })) as any;
+  };
+}
+
+// Mock HTMLCanvasElement getContext
+if (typeof globalThis.window !== 'undefined') {
+  HTMLCanvasElement.prototype.getContext = vi.fn(() => createCanvas2DContextMock()) as any;
 }
 
 // Mock OffscreenCanvas if not available
@@ -74,30 +81,7 @@ if (typeof globalThis.window !== 'undefined' && !globalThis.OffscreenCanvas) {
       this.height = height;
     }
     getContext() {
-      return {
-        fillRect: vi.fn(),
-        clearRect: vi.fn(),
-        getImageData: vi.fn(() => ({ data: new Uint8ClampedArray() })),
-        putImageData: vi.fn(),
-        createImageData: vi.fn(),
-        setTransform: vi.fn(),
-        drawImage: vi.fn(),
-        save: vi.fn(),
-        restore: vi.fn(),
-        beginPath: vi.fn(),
-        moveTo: vi.fn(),
-        lineTo: vi.fn(),
-        stroke: vi.fn(),
-        translate: vi.fn(),
-        scale: vi.fn(),
-        rotate: vi.fn(),
-        arc: vi.fn(),
-        fill: vi.fn(),
-        measureText: vi.fn((text: string) => ({ width: text.length * 10 })),
-        transform: vi.fn(),
-        rect: vi.fn(),
-        clip: vi.fn(),
-      };
+      return createCanvas2DContextMock({ isOffscreen: true });
     }
     convertToBlob() {
       return Promise.resolve(new Blob());
