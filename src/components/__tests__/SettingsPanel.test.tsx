@@ -1,71 +1,19 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
+import './settingsPanelTestMocks';
+import { renderSettingsPanel, createSettingsPanelProps } from './settingsPanelTestUtils';
 import SettingsPanel from '../SettingsPanel';
 import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '../../lib/types';
 import { withTestPaperSelection } from '@/test/paperTestHelpers';
 
-// Mock lucide-react icons with a standard object mock
-vi.mock('lucide-react', () => {
-  const MockIcon = (props: any) => <div {...props} />;
-  return {
-    Type: MockIcon,
-    Palette: MockIcon,
-    FileText: MockIcon,
-    Wand2: MockIcon,
-    Upload: MockIcon,
-    X: MockIcon,
-    Minus: MockIcon,
-    Plus: MockIcon,
-    ChevronLeft: MockIcon,
-    ChevronRight: MockIcon,
-    ChevronDownIcon: MockIcon,
-    ChevronUpIcon: MockIcon,
-    CheckIcon: MockIcon,
-    Trash2: MockIcon,
-    Settings2: MockIcon,
-    Grid: MockIcon,
-  };
-});
-
-// Mock next/image
-vi.mock('next/image', () => ({
-  default: ({ unoptimized: _unoptimized, ...props }: any) => <img alt="" {...props} />,
-}));
-
 describe('SettingsPanel', () => {
-  const settings = DEFAULT_SETTINGS;
-  const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-  
-  const mockOnSettingsChange = vi.fn();
-  const mockOnPageSettingsChange = vi.fn();
-  const mockOnPreviewScaleChange = vi.fn();
-  const mockOnCurrentPageChange = vi.fn();
-  const mockOnClearAll = vi.fn();
-  const mockOnApplyToAllPages = vi.fn();
-
-  const defaultProps = {
-    settings,
-    onSettingsChange: mockOnSettingsChange,
-    pageSettings,
-    onPageSettingsChange: mockOnPageSettingsChange,
-    currentPageIndex: 0,
-    onApplyToAllPages: mockOnApplyToAllPages,
-    previewScale: 1,
-    onPreviewScaleChange: mockOnPreviewScaleChange,
-    onCurrentPageChange: mockOnCurrentPageChange,
-    totalPages: 1,
-    isPaginationComplete: true,
-    pages: [[]] as any,
-    onClearAll: mockOnClearAll,
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('renders the General section with "Add Text Box" button', () => {
-    render(<SettingsPanel {...defaultProps} />);
+    renderSettingsPanel();
 
     const homeLink = screen.getByRole('link', { name: /text2ink home/i });
     const logo = screen.getByAltText(/text2ink logo/i);
@@ -88,19 +36,19 @@ describe('SettingsPanel', () => {
   });
 
   it('can hide the home logo link', () => {
-    render(<SettingsPanel {...defaultProps} showHomeLink={false} />);
+    renderSettingsPanel({ showHomeLink: false });
 
     expect(screen.queryByRole('link', { name: /text2ink home/i })).not.toBeInTheDocument();
     expect(screen.queryByAltText(/text2ink logo/i)).not.toBeInTheDocument();
   });
 
   it('calls onPageSettingsChange when "Add Text Box" is clicked', () => {
-    render(<SettingsPanel {...defaultProps} />);
+    const { props } = renderSettingsPanel();
     
     const addTextBoxButton = screen.getByRole('button', { name: /Add Text Box/i });
     fireEvent.click(addTextBoxButton);
     
-    expect(mockOnPageSettingsChange).toHaveBeenCalledWith(expect.objectContaining({
+    expect(props.onPageSettingsChange).toHaveBeenCalledWith(expect.objectContaining({
       textFields: expect.arrayContaining([
         expect.objectContaining({
           text: '',
@@ -109,14 +57,14 @@ describe('SettingsPanel', () => {
     }));
     
     // Verify it has an id (UUID)
-    const calledWith = mockOnPageSettingsChange.mock.calls[0][0];
+    const calledWith = (props.onPageSettingsChange as any).mock.calls[0][0];
     expect(calledWith.textFields[0].id).toBeDefined();
     expect(typeof calledWith.textFields[0].id).toBe('string');
     expect(calledWith.textFields[0].id.length).toBeGreaterThan(0);
   });
 
   it('does not have a separate "Text Fields" heading', () => {
-    render(<SettingsPanel {...defaultProps} />);
+    renderSettingsPanel();
     
     // We expect "Text Fields" heading to be gone
     const headings = screen.queryAllByRole('heading', { level: 3 });
@@ -125,7 +73,7 @@ describe('SettingsPanel', () => {
   });
 
   it('uses semantic tokens instead of hardcoded gray/white/hex colors', () => {
-    const { container } = render(<SettingsPanel {...defaultProps} />);
+    const { container } = renderSettingsPanel();
     
     // Select elements that still use hardcoded classes we want to eliminate
     // Note: We're looking for common hardcoded classes mentioned in the issue
@@ -143,10 +91,10 @@ describe('SettingsPanel', () => {
 
   it('uses canonical primitives for layout and styling', () => {
     const settingsWithBg = {
-      ...defaultProps.settings,
+      ...DEFAULT_SETTINGS,
       customBackgroundImage: 'data:image/png;base64,123',
     };
-    render(<SettingsPanel {...defaultProps} settings={settingsWithBg} />);
+    renderSettingsPanel({ settings: settingsWithBg });
 
     // Check action buttons use canonical variants
     const detectLinesButton = screen.getByRole('button', { name: /detect lines/i });
@@ -166,11 +114,10 @@ describe('SettingsPanel', () => {
     const zoomInButton = screen.getByRole('button', { name: /zoom in/i });
     expect(zoomInButton).toHaveAttribute('data-variant', 'ghost');
     expect(zoomInButton).toHaveAttribute('data-size', 'icon');
-
   });
 
   it('renders paper style buttons for the built-in paper presets', () => {
-    render(<SettingsPanel {...defaultProps} />);
+    renderSettingsPanel();
     
     const blankStyle = screen.getByRole('button', { name: /blank paper style/i });
     const linedStyle = screen.getByRole('button', { name: /^lined \(medium\) paper style$/i });
@@ -184,7 +131,7 @@ describe('SettingsPanel', () => {
   });
 
   it('keeps paper style, size, and orientation controls available in the layout section', () => {
-    render(<SettingsPanel {...defaultProps} />);
+    renderSettingsPanel();
 
     expect(screen.getByRole('button', { name: /blank paper style/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^lined \(medium\) paper style$/i })).toBeInTheDocument();
@@ -193,7 +140,7 @@ describe('SettingsPanel', () => {
   });
 
   it('hides preset-owned alignment controls for preset-backed built-in papers', () => {
-    render(<SettingsPanel {...defaultProps} />);
+    renderSettingsPanel();
 
     expect(screen.queryByText('Line Height')).not.toBeInTheDocument();
     expect(screen.queryByText('Top Margin')).not.toBeInTheDocument();
@@ -204,16 +151,13 @@ describe('SettingsPanel', () => {
   });
 
   it('keeps blank-paper line height controls available without upload-only margin sliders', () => {
-    render(
-      <SettingsPanel
-        {...defaultProps}
-        settings={withTestPaperSelection({
-          ...defaultProps.settings,
-          paperPresetId: null,
-          paperStyle: 'blank',
-        })}
-      />,
-    );
+    renderSettingsPanel({
+      settings: withTestPaperSelection({
+        ...DEFAULT_SETTINGS,
+        paperPresetId: null,
+        paperStyle: 'blank',
+      }),
+    });
 
     expect(screen.getByText('Line Height')).toBeInTheDocument();
     expect(screen.queryByText('Top Margin')).not.toBeInTheDocument();
@@ -224,38 +168,39 @@ describe('SettingsPanel', () => {
 
   it('keeps custom background upload visible and only shows line detection when a background exists', () => {
     // First render with no custom background
-    const { rerender } = render(<SettingsPanel {...defaultProps} />);
+    const { rerender, props } = renderSettingsPanel();
     
     expect(screen.getByText(/Upload PNG or JPG/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Auto-Detect Lines/i })).not.toBeInTheDocument();
 
     // Now render with a custom background
     const settingsWithBg = {
-      ...defaultProps.settings,
+      ...DEFAULT_SETTINGS,
       customBackgroundImage: 'data:image/png;base64,mock',
       customBackgroundImages: ['data:image/png;base64,mock'],
     };
-    rerender(<SettingsPanel {...defaultProps} settings={settingsWithBg} />);
+    const newProps = createSettingsPanelProps({
+      ...props,
+      settings: settingsWithBg,
+    });
+    rerender(<SettingsPanel {...newProps as any} />);
     
     // Should show Auto-Detect Lines in Custom mode since we have a background
     expect(screen.getByRole('button', { name: /Auto-Detect Lines/i })).toBeInTheDocument();
   });
 
   it('treats page-specific background uploads as upload-backed paper for alignment controls', () => {
-    render(
-      <SettingsPanel
-        {...defaultProps}
-        settings={{
-          ...defaultProps.settings,
-          customBackgroundImage: null,
-          customBackgroundImages: [],
-        }}
-        pageSettings={{
-          ...defaultProps.pageSettings,
-          customBackgroundImage: 'data:image/png;base64,page-only-background',
-        }}
-      />,
-    );
+    renderSettingsPanel({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        customBackgroundImage: null,
+        customBackgroundImages: [],
+      },
+      pageSettings: {
+        ...defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
+        customBackgroundImage: 'data:image/png;base64,page-only-background',
+      },
+    });
 
     expect(screen.getByText('Top Margin')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Auto-Detect Lines/i })).toBeInTheDocument();
@@ -263,7 +208,7 @@ describe('SettingsPanel', () => {
   });
 
   it('shows paper color and hides line color for preset-backed built-in papers', () => {
-    render(<SettingsPanel {...defaultProps} />);
+    renderSettingsPanel();
 
     expect(screen.getByText('Paper Color')).toBeInTheDocument();
     expect(screen.queryByText('Line Color')).not.toBeInTheDocument();
