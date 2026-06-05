@@ -6,64 +6,92 @@ function readSource(relPath: string): string {
   return fs.readFileSync(path.resolve(__dirname, `../${relPath}`), 'utf-8');
 }
 
+interface TokenRules {
+  forbidden?: (string | RegExp)[];
+  required?: (string | RegExp)[];
+}
+
+function expectSourceUsesTokenRules(relPath: string, rules: TokenRules) {
+  const source = readSource(relPath);
+  if (rules.forbidden) {
+    for (const pattern of rules.forbidden) {
+      if (pattern instanceof RegExp) {
+        expect(source).not.toMatch(pattern);
+      } else {
+        expect(source).not.toMatch(new RegExp(pattern));
+      }
+    }
+  }
+  if (rules.required) {
+    for (const pattern of rules.required) {
+      if (pattern instanceof RegExp) {
+        expect(source).toMatch(pattern);
+      } else {
+        expect(source).toMatch(new RegExp(pattern));
+      }
+    }
+  }
+}
+
+const SHARED_FRAMING_RULES: TokenRules = {
+  forbidden: [
+    /max-w-6xl\b/,
+    'px-4 sm:px-6',
+    'py-3 sm:py-4',
+    'py-12 sm:py-16 md:py-20',
+    /mt-12\b/,
+  ],
+  required: [
+    'max-w-content',
+    'px-page-x',
+    'py-chrome-y',
+    'py-page-y',
+    'mt-section',
+  ],
+};
+
 describe('shared layout consumers use token-backed framing utilities', () => {
-  it('HomePage consumes shared width, gutter, and rhythm tokens', () => {
-    const source = readSource('app/page.tsx');
-
-    expect(source).not.toMatch(/max-w-6xl\b/);
-    expect(source).not.toMatch(/px-4 sm:px-6/);
-    expect(source).not.toMatch(/py-3 sm:py-4/);
-    expect(source).not.toMatch(/py-12 sm:py-16 md:py-20/);
-    expect(source).not.toMatch(/mt-12\b/);
-
-    expect(source).toMatch(/max-w-content/);
-    expect(source).toMatch(/px-page-x/);
-    expect(source).toMatch(/py-chrome-y/);
-    expect(source).toMatch(/py-page-y/);
-    expect(source).toMatch(/mt-section/);
-  });
-
-  it('ContactPage consumes shared width, gutter, and rhythm tokens', () => {
-    const source = readSource('app/contact/page.tsx');
-
-    expect(source).not.toMatch(/max-w-6xl\b/);
-    expect(source).not.toMatch(/px-4 sm:px-6/);
-    expect(source).not.toMatch(/py-3 sm:py-4/);
-    expect(source).not.toMatch(/py-12 sm:py-16 md:py-20/);
-    expect(source).not.toMatch(/mt-12\b/);
-
-    expect(source).toMatch(/max-w-content/);
-    expect(source).toMatch(/px-page-x/);
-    expect(source).toMatch(/py-chrome-y/);
-    expect(source).toMatch(/py-page-y/);
-    expect(source).toMatch(/mt-section/);
+  it.each([
+    {
+      name: 'HomePage',
+      path: 'app/page.tsx',
+    },
+    {
+      name: 'ContactPage',
+      path: 'app/contact/page.tsx',
+    },
+  ])('$name consumes shared width, gutter, and rhythm tokens', ({ path }) => {
+    expectSourceUsesTokenRules(path, SHARED_FRAMING_RULES);
   });
 
   it('SiteHeader consumes shared chrome gap tokens', () => {
-    const source = readSource('components/patterns/SiteHeader.tsx');
-
-    expect(source).not.toMatch(/gap-3 sm:gap-4/);
-    expect(source).toMatch(/gap-chrome/);
+    expectSourceUsesTokenRules('components/patterns/SiteHeader.tsx', {
+      forbidden: ['gap-3 sm:gap-4'],
+      required: ['gap-chrome'],
+    });
   });
 
   it('HomePage consumes shared section rhythm tokens', () => {
-    const source = readSource('app/page.tsx');
-
-    expect(source).not.toMatch(/gap-12 sm:gap-16/);
-    expect(source).toMatch(/gap-section/);
+    expectSourceUsesTokenRules('app/page.tsx', {
+      forbidden: ['gap-12 sm:gap-16'],
+      required: ['gap-section'],
+    });
   });
 
   it('RootEditorPageClient consumes shared gutter, section, and chrome tokens', () => {
-    const source = readSource('app/editor/RootEditorPageClient.tsx');
-
-    expect(source).not.toMatch(/px-4 sm:px-6/);
-    expect(source).not.toMatch(/py-3 sm:py-4/);
-    expect(source).not.toMatch(/gap-3 sm:gap-4/);
-    expect(source).not.toMatch(/py-12 px-6/);
-
-    expect(source).toMatch(/px-page-x/);
-    expect(source).toMatch(/py-chrome-y/);
-    expect(source).toMatch(/gap-chrome/);
-    expect(source).toMatch(/py-section/);
+    expectSourceUsesTokenRules('app/editor/RootEditorPageClient.tsx', {
+      forbidden: [
+        'px-4 sm:px-6',
+        'py-3 sm:py-4',
+        'gap-3 sm:gap-4',
+        'py-12 px-6',
+      ],
+      required: [
+        'px-page-x',
+        'py-chrome-y',
+        'gap-chrome',
+        'py-section',
+      ],
+    });
   });
 });
