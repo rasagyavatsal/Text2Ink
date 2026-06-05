@@ -9,24 +9,52 @@ const globalsCss = fs.readFileSync(
 
 function extractCustomProperties(css: string): Map<string, string> {
   const props = new Map<string, string>();
-  const regex = /(--[\w-]+)\s*:\s*([^;]+);/g;
-  let match;
-  while ((match = regex.exec(css)) !== null) {
-    props.set(match[1], match[2].trim());
+  const lines = css.split('\n');
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line.startsWith('--')) {
+      continue;
+    }
+    const colonIndex = line.indexOf(':');
+    if (colonIndex === -1) {
+      continue;
+    }
+    const semicolonIndex = line.indexOf(';', colonIndex);
+    if (semicolonIndex === -1) {
+      continue;
+    }
+    const name = line.substring(0, colonIndex).trim();
+    const value = line.substring(colonIndex + 1, semicolonIndex).trim();
+    props.set(name, value);
   }
   return props;
 }
 
 function extractThemeEntries(css: string): Map<string, string> {
-  const themeBlock = /@theme\s+inline\s*\{([\s\S]*?)\}/.exec(css);
-  if (!themeBlock) return new Map();
-  const props = new Map<string, string>();
-  const regex = /(--[\w-]+)\s*:\s*([^;]+);/g;
-  let match;
-  while ((match = regex.exec(themeBlock[1])) !== null) {
-    props.set(match[1], match[2].trim());
+  const themeIndex = css.indexOf('@theme');
+  if (themeIndex === -1) return new Map();
+
+  const openBraceIndex = css.indexOf('{', themeIndex);
+  if (openBraceIndex === -1) return new Map();
+
+  let braceCount = 1;
+  let closeBraceIndex = -1;
+  for (let i = openBraceIndex + 1; i < css.length; i++) {
+    if (css[i] === '{') {
+      braceCount++;
+    } else if (css[i] === '}') {
+      braceCount--;
+      if (braceCount === 0) {
+        closeBraceIndex = i;
+        break;
+      }
+    }
   }
-  return props;
+
+  if (closeBraceIndex === -1) return new Map();
+
+  const themeBlockContent = css.substring(openBraceIndex + 1, closeBraceIndex);
+  return extractCustomProperties(themeBlockContent);
 }
 
 const allProps = extractCustomProperties(globalsCss);
@@ -257,3 +285,32 @@ describe('Tailwind @theme integration', () => {
     }
   });
 });
+
+describe('CSS helper extraction', () => {
+  it('extracts custom properties correctly from css string', () => {
+    const css = `
+      :root {
+        --test-prop-1: value1;
+        --test-prop-2: value2;
+      }
+    `;
+    const extracted = extractCustomProperties(css);
+    expect(extracted.get('--test-prop-1')).toBe('value1');
+    expect(extracted.get('--test-prop-2')).toBe('value2');
+  });
+
+  it('extracts theme block entries using brace boundaries', () => {
+    const css = `
+      @theme inline {
+        --test-theme-1: theme-val1;
+        --test-theme-2: theme-val2;
+      }
+      --test-outside: outside-val;
+    `;
+    const extractedTheme = extractThemeEntries(css);
+    expect(extractedTheme.get('--test-theme-1')).toBe('theme-val1');
+    expect(extractedTheme.get('--test-theme-2')).toBe('theme-val2');
+    expect(extractedTheme.has('--test-outside')).toBe(false);
+  });
+});
+
