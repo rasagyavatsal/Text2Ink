@@ -99,207 +99,140 @@ afterEach(() => {
 });
 
 // ---------------------------------------------------------------------------
-// Tracer bullet: Letter portrait — the canonical default
+// Helpers
+// ---------------------------------------------------------------------------
+
+interface CreatePreviewSettingsArgs {
+  paperFormat?: 'letter' | 'a4' | 'a3';
+  paperOrientation?: 'portrait' | 'landscape';
+  overrides?: Record<string, any>;
+}
+
+function createPreviewSettings({
+  paperFormat = 'letter',
+  paperOrientation = 'portrait',
+  overrides = {},
+}: CreatePreviewSettingsArgs = {}) {
+  return withResolvedPaperPreset({
+    paperFormat,
+    paperOrientation,
+    randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
+    ...overrides,
+  });
+}
+
+interface RenderPageArgs {
+  settings: any;
+  pageSettings?: any;
+  lines?: any[];
+  scale?: number;
+}
+
+async function renderPreviewPage({
+  settings,
+  pageSettings,
+  lines = [],
+  scale = 1,
+}: RenderPageArgs) {
+  const finalPageSettings = pageSettings ?? defaultPageSettingsFromHandwritingSettings(settings);
+  const engine = new PageRenderEngine();
+  const ctx = createMockCtx();
+  const canvas = createMockCanvas(ctx);
+
+  const result = await engine.renderPage({
+    canvas,
+    mode: 'preview',
+    pageIndex: 0,
+    lines,
+    pageSettings: finalPageSettings,
+    settings,
+    scale,
+    fontFamily: 'Caveat, cursive',
+  });
+
+  return { result, canvas, ctx };
+}
+
+async function renderExportPage({
+  settings,
+  pageSettings,
+  lines = [],
+  scale = 1,
+}: RenderPageArgs) {
+  const finalPageSettings = pageSettings ?? defaultPageSettingsFromHandwritingSettings(settings);
+  const engine = new PageRenderEngine();
+  const ctx = createMockCtx();
+  const canvas = createMockCanvas(ctx);
+
+  const result = await engine.renderPage({
+    canvas,
+    mode: 'export',
+    pageIndex: 0,
+    lines,
+    pageSettings: finalPageSettings,
+    settings,
+    scale,
+    fontFamily: 'Caveat, cursive',
+  });
+
+  return { result, canvas, ctx };
+}
+
+function extractFillTextChars(ctx: CanvasRenderingContext2D) {
+  const fillTextCalls = (ctx.fillText as ReturnType<typeof vi.fn>).mock.calls;
+  return fillTextCalls.map((c: unknown[]) => c[0] as string);
+}
+
+async function renderCharacterPositionHelper({
+  settings,
+  pageSettings,
+  char,
+}: {
+  settings: any;
+  pageSettings?: any;
+  char: string;
+}) {
+  const { result } = await renderPreviewPage({
+    settings,
+    pageSettings,
+    lines: [{ text: char, lineIndex: 0, hasNewline: false }],
+  });
+  return {
+    firstPos: result.characterPositions[0],
+    layout: result.layout,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Page sizing tests using resolved geometry
 // ---------------------------------------------------------------------------
 
 describe('PageRenderEngine preview — page sizing uses resolved geometry', () => {
-  it('sets canvas dimensions from resolved Letter portrait page size (612 × 792)', async () => {
-    const settings = withResolvedPaperPreset({
-      paperFormat: 'letter' as const,
-      paperOrientation: 'portrait' as const,
-      randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    });
-    const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-    const engine = new PageRenderEngine();
-    const ctx = createMockCtx();
-    const canvas = createMockCanvas(ctx);
-    const scale = 1;
+  it.each([
+    { format: 'letter' as const, orientation: 'portrait' as const, expectedWidth: 612, expectedHeight: 792, precision: 0, isLandscape: false, assertCanvas: true },
+    { format: 'a4' as const, orientation: 'portrait' as const, expectedWidth: 595.28, expectedHeight: 841.89, precision: 1, isLandscape: false, assertCanvas: true },
+    { format: 'a4' as const, orientation: 'landscape' as const, expectedWidth: 841.89, expectedHeight: 595.28, precision: 1, isLandscape: true, assertCanvas: true },
+    { format: 'a3' as const, orientation: 'portrait' as const, expectedWidth: 841.89, expectedHeight: 1190.55, precision: 1, isLandscape: false, assertCanvas: true },
+    { format: 'a3' as const, orientation: 'landscape' as const, expectedWidth: 1190.55, expectedHeight: 841.89, precision: 1, isLandscape: true, assertCanvas: true },
+    { format: 'letter' as const, orientation: 'landscape' as const, expectedWidth: 792, expectedHeight: 612, precision: 0, isLandscape: true, assertCanvas: false },
+  ])(
+    'sets canvas dimensions from resolved $format $orientation page size',
+    async ({ format, orientation, expectedWidth, expectedHeight, precision, isLandscape, assertCanvas }) => {
+      const settings = createPreviewSettings({ paperFormat: format, paperOrientation: orientation });
+      const { result, canvas } = await renderPreviewPage({ settings });
 
-    const result = await engine.renderPage({
-      canvas,
-      mode: 'preview',
-      pageIndex: 0,
-      lines: [],
-      pageSettings,
-      settings,
-      scale,
-      fontFamily: 'Caveat, cursive',
-    });
+      if (isLandscape) {
+        expect(result.layout.page.width).toBeGreaterThan(result.layout.page.height);
+      }
+      expect(result.layout.page.width).toBeCloseTo(expectedWidth, precision);
+      expect(result.layout.page.height).toBeCloseTo(expectedHeight, precision);
 
-    // Dimensions must come from resolved layout, not hard-coded constants.
-    expect(result.layout.page.width).toBeCloseTo(612, 0);
-    expect(result.layout.page.height).toBeCloseTo(792, 0);
-    // Canvas pixels = page points × scale (DPR is 1 in this test).
-    expect(canvas.width).toBe(Math.ceil(result.layout.page.width * scale));
-    expect(canvas.height).toBe(Math.ceil(result.layout.page.height * scale));
-  });
-
-  // -------------------------------------------------------------------------
-  // A4 portrait
-  // -------------------------------------------------------------------------
-
-  it('sets canvas dimensions from resolved A4 portrait page size (≈595 × 842)', async () => {
-    const settings = withResolvedPaperPreset({
-      paperFormat: 'a4' as const,
-      paperOrientation: 'portrait' as const,
-      randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    });
-    const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-    const engine = new PageRenderEngine();
-    const ctx = createMockCtx();
-    const canvas = createMockCanvas(ctx);
-    const scale = 1;
-
-    const result = await engine.renderPage({
-      canvas,
-      mode: 'preview',
-      pageIndex: 0,
-      lines: [],
-      pageSettings,
-      settings,
-      scale,
-      fontFamily: 'Caveat, cursive',
-    });
-
-    expect(result.layout.page.width).toBeCloseTo(595.28, 1);
-    expect(result.layout.page.height).toBeCloseTo(841.89, 1);
-    expect(canvas.width).toBe(Math.ceil(result.layout.page.width * scale));
-    expect(canvas.height).toBe(Math.ceil(result.layout.page.height * scale));
-  });
-
-  // -------------------------------------------------------------------------
-  // A4 landscape — page is rotated relative to portrait
-  // -------------------------------------------------------------------------
-
-  it('sets canvas dimensions from resolved A4 landscape page size (≈842 × 595)', async () => {
-    const settings = withResolvedPaperPreset({
-      paperFormat: 'a4' as const,
-      paperOrientation: 'landscape' as const,
-      randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    });
-    const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-    const engine = new PageRenderEngine();
-    const ctx = createMockCtx();
-    const canvas = createMockCanvas(ctx);
-    const scale = 1;
-
-    const result = await engine.renderPage({
-      canvas,
-      mode: 'preview',
-      pageIndex: 0,
-      lines: [],
-      pageSettings,
-      settings,
-      scale,
-      fontFamily: 'Caveat, cursive',
-    });
-
-    // Landscape: width > height
-    expect(result.layout.page.width).toBeGreaterThan(result.layout.page.height);
-    expect(result.layout.page.width).toBeCloseTo(841.89, 1);
-    expect(result.layout.page.height).toBeCloseTo(595.28, 1);
-    expect(canvas.width).toBe(Math.ceil(result.layout.page.width * scale));
-    expect(canvas.height).toBe(Math.ceil(result.layout.page.height * scale));
-  });
-
-  // -------------------------------------------------------------------------
-  // A3 portrait
-  // -------------------------------------------------------------------------
-
-  it('sets canvas dimensions from resolved A3 portrait page size (≈842 × 1191)', async () => {
-    const settings = withResolvedPaperPreset({
-      paperFormat: 'a3' as const,
-      paperOrientation: 'portrait' as const,
-      randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    });
-    const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-    const engine = new PageRenderEngine();
-    const ctx = createMockCtx();
-    const canvas = createMockCanvas(ctx);
-    const scale = 1;
-
-    const result = await engine.renderPage({
-      canvas,
-      mode: 'preview',
-      pageIndex: 0,
-      lines: [],
-      pageSettings,
-      settings,
-      scale,
-      fontFamily: 'Caveat, cursive',
-    });
-
-    expect(result.layout.page.width).toBeCloseTo(841.89, 1);
-    expect(result.layout.page.height).toBeCloseTo(1190.55, 1);
-    expect(canvas.width).toBe(Math.ceil(result.layout.page.width * scale));
-    expect(canvas.height).toBe(Math.ceil(result.layout.page.height * scale));
-  });
-
-  // -------------------------------------------------------------------------
-  // A3 landscape
-  // -------------------------------------------------------------------------
-
-  it('sets canvas dimensions from resolved A3 landscape page size (≈1191 × 842)', async () => {
-    const settings = withResolvedPaperPreset({
-      paperFormat: 'a3' as const,
-      paperOrientation: 'landscape' as const,
-      randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    });
-    const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-    const engine = new PageRenderEngine();
-    const ctx = createMockCtx();
-    const canvas = createMockCanvas(ctx);
-    const scale = 1;
-
-    const result = await engine.renderPage({
-      canvas,
-      mode: 'preview',
-      pageIndex: 0,
-      lines: [],
-      pageSettings,
-      settings,
-      scale,
-      fontFamily: 'Caveat, cursive',
-    });
-
-    expect(result.layout.page.width).toBeGreaterThan(result.layout.page.height);
-    expect(result.layout.page.width).toBeCloseTo(1190.55, 1);
-    expect(result.layout.page.height).toBeCloseTo(841.89, 1);
-    expect(canvas.width).toBe(Math.ceil(result.layout.page.width * scale));
-    expect(canvas.height).toBe(Math.ceil(result.layout.page.height * scale));
-  });
-
-  // -------------------------------------------------------------------------
-  // Letter landscape
-  // -------------------------------------------------------------------------
-
-  it('sets canvas dimensions from resolved Letter landscape page size (≈792 × 612)', async () => {
-    const settings = withResolvedPaperPreset({
-      paperFormat: 'letter' as const,
-      paperOrientation: 'landscape' as const,
-      randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    });
-    const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-    const engine = new PageRenderEngine();
-    const ctx = createMockCtx();
-    const canvas = createMockCanvas(ctx);
-    const scale = 1;
-
-    const result = await engine.renderPage({
-      canvas,
-      mode: 'preview',
-      pageIndex: 0,
-      lines: [],
-      pageSettings,
-      settings,
-      scale,
-      fontFamily: 'Caveat, cursive',
-    });
-
-    expect(result.layout.page.width).toBeGreaterThan(result.layout.page.height);
-    expect(result.layout.page.width).toBeCloseTo(792, 0);
-    expect(result.layout.page.height).toBeCloseTo(612, 0);
-  });
+      if (assertCanvas) {
+        expect(canvas.width).toBe(Math.ceil(result.layout.page.width));
+        expect(canvas.height).toBe(Math.ceil(result.layout.page.height));
+      }
+    }
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -308,96 +241,36 @@ describe('PageRenderEngine preview — page sizing uses resolved geometry', () =
 
 describe('PageRenderEngine preview — character positions respect resolved page bounds', () => {
   it('character positions for A4 portrait start at the A4 text bounds left edge, not Letter left edge', async () => {
-    const settings = withResolvedPaperPreset({
-      paperFormat: 'a4' as const,
-      paperOrientation: 'portrait' as const,
-      randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    });
-    const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-    const engine = new PageRenderEngine();
-    const ctx = createMockCtx();
-    const canvas = createMockCanvas(ctx);
+    const settings = createPreviewSettings({ paperFormat: 'a4' as const, paperOrientation: 'portrait' as const });
+    const { firstPos, layout } = await renderCharacterPositionHelper({ settings, char: 'A' });
 
-    const result = await engine.renderPage({
-      canvas,
-      mode: 'preview',
-      pageIndex: 0,
-      lines: [{ text: 'A', lineIndex: 0, hasNewline: false }],
-      pageSettings,
-      settings,
-      scale: 1,
-      fontFamily: 'Caveat, cursive',
-    });
-
-    // Text bounds left must come from the resolved layout for A4, not a hard-coded Letter value.
-    const expectedTextLeft = result.layout.writing.textBounds.left;
+    const expectedTextLeft = layout.writing.textBounds.left;
     expect(expectedTextLeft).toBe(85);
 
-    // The first character position must be at that left edge.
-    const firstPos = result.characterPositions[0];
     expect(firstPos).toBeDefined();
     expect(firstPos.x).toBeCloseTo(expectedTextLeft, 0);
   });
 
   it('character positions for A4 landscape start at A4 landscape text bounds', async () => {
-    const settings = withResolvedPaperPreset({
-      paperFormat: 'a4' as const,
-      paperOrientation: 'landscape' as const,
-      randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    });
-    const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-    const engine = new PageRenderEngine();
-    const ctx = createMockCtx();
-    const canvas = createMockCanvas(ctx);
+    const settings = createPreviewSettings({ paperFormat: 'a4' as const, paperOrientation: 'landscape' as const });
+    const { firstPos, layout } = await renderCharacterPositionHelper({ settings, char: 'B' });
 
-    const result = await engine.renderPage({
-      canvas,
-      mode: 'preview',
-      pageIndex: 0,
-      lines: [{ text: 'B', lineIndex: 0, hasNewline: false }],
-      pageSettings,
-      settings,
-      scale: 1,
-      fontFamily: 'Caveat, cursive',
-    });
+    expect(layout.page.width).toBeGreaterThan(layout.page.height);
 
-    // Layout must reflect landscape dimensions.
-    expect(result.layout.page.width).toBeGreaterThan(result.layout.page.height);
-
-    const firstPos = result.characterPositions[0];
     expect(firstPos).toBeDefined();
-    expect(firstPos.x).toBeCloseTo(result.layout.writing.textBounds.left, 0);
+    expect(firstPos.x).toBeCloseTo(layout.writing.textBounds.left, 0);
   });
 
   it('character y position starts at firstLineTop from resolved writing layout, not a fixed offset', async () => {
-    const settings = withResolvedPaperPreset({
-      paperFormat: 'a4' as const,
-      paperOrientation: 'portrait' as const,
-      randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    });
+    const settings = createPreviewSettings({ paperFormat: 'a4' as const, paperOrientation: 'portrait' as const });
     const pageSettings = {
       ...defaultPageSettingsFromHandwritingSettings(settings),
       marginTop: 80,
     };
-    const engine = new PageRenderEngine();
-    const ctx = createMockCtx();
-    const canvas = createMockCanvas(ctx);
+    const { firstPos, layout } = await renderCharacterPositionHelper({ settings, pageSettings, char: 'C' });
 
-    const result = await engine.renderPage({
-      canvas,
-      mode: 'preview',
-      pageIndex: 0,
-      lines: [{ text: 'C', lineIndex: 0, hasNewline: false }],
-      pageSettings,
-      settings,
-      scale: 1,
-      fontFamily: 'Caveat, cursive',
-    });
-
-    // The character y must equal firstLineTop from the resolved layout.
-    const firstPos = result.characterPositions[0];
     expect(firstPos).toBeDefined();
-    expect(firstPos.y).toBeCloseTo(result.layout.writing.firstLineTop, 0);
+    expect(firstPos.y).toBeCloseTo(layout.writing.firstLineTop, 0);
   });
 });
 
@@ -406,45 +279,29 @@ describe('PageRenderEngine preview — character positions respect resolved page
 // ---------------------------------------------------------------------------
 
 describe('resolvePageLayout — ruled-margin interaction bounds come from resolved geometry', () => {
-  /**
-   * PaperEngine bakes ruled paper guides into the SVG background image, so
-   * paper.guides.kind is always 'none' for built-in ruled presets — the drag
-   * affordance in HandwritingEditor is effectively unreachable for those.
-   *
-   * The important invariant is that the drag-clamp ceiling (page.width) and
-   * the marginLeft that HandwritingEditor reads for computing the new offset
-   * come from the resolved layout, not from fixed constants.
-   */
   it('resolved page.width for Letter portrait is 612 (the drag ceiling for margin-line drag)', () => {
-    const settings = withResolvedPaperPreset({
-      paperStyle: 'ruled' as const,
-      paperFormat: 'letter' as const,
-      paperOrientation: 'portrait' as const,
+    const settings = createPreviewSettings({
+      paperFormat: 'letter',
+      paperOrientation: 'portrait',
+      overrides: { paperStyle: 'ruled' },
     });
     const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
     const layout = resolvePageLayout({ pageIndex: 0, settings, pageSettings });
 
-    // HandwritingEditor uses layout.page.width as the drag ceiling.
     expect(layout.page.width).toBeCloseTo(612, 0);
-    // And writing.textBounds.left as the baseline for offset calculation.
     expect(layout.writing.textBounds.left).toBeGreaterThan(0);
     expect(layout.writing.textBounds.left).toBeLessThan(layout.page.width);
   });
 
   it('marginLineX for A4 portrait ruled paper stays within A4 page bounds', () => {
-    const settings = withResolvedPaperPreset({
-      paperStyle: 'ruled' as const,
-      paperFormat: 'a4' as const,
-      paperOrientation: 'portrait' as const,
-      ruledMarginLineOffset: -10,
+    const settings = createPreviewSettings({
+      paperFormat: 'a4',
+      paperOrientation: 'portrait',
+      overrides: { paperStyle: 'ruled', ruledMarginLineOffset: -10 },
     });
     const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
     const layout = resolvePageLayout({ pageIndex: 0, settings, pageSettings });
 
-    // For the A4 upload/legacy-fallback case (custom backgrounds), guides are present
-    // only when no built-in preset absorbs them.  If the preset resolves, guides.kind
-    // is 'none' because the preset SVG carries the margin line.  Either way, the page
-    // width should be the A4 width.
     expect(layout.page.width).toBeCloseTo(595.28, 1);
 
     if (layout.paper.guides.kind === 'ruled') {
@@ -454,18 +311,16 @@ describe('resolvePageLayout — ruled-margin interaction bounds come from resolv
   });
 
   it('drag-bound clamping uses resolved page width for A3 landscape paper', () => {
-    const settings = withResolvedPaperPreset({
-      paperStyle: 'ruled' as const,
-      paperFormat: 'a3' as const,
-      paperOrientation: 'landscape' as const,
+    const settings = createPreviewSettings({
+      paperFormat: 'a3',
+      paperOrientation: 'landscape',
+      overrides: { paperStyle: 'ruled' },
     });
     const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
     const layout = resolvePageLayout({ pageIndex: 0, settings, pageSettings });
 
-    // HandwritingEditor uses layout.page.width as the drag ceiling.
     const maxDragX = layout.page.width;
     expect(maxDragX).toBeCloseTo(1190.55, 1);
-    // That must be wider than the Letter page width (612).
     expect(maxDragX).toBeGreaterThan(792);
   });
 });
@@ -475,88 +330,51 @@ describe('resolvePageLayout — ruled-margin interaction bounds come from resolv
 // ---------------------------------------------------------------------------
 
 describe('PageRenderEngine export — text-field rendering works on non-Letter pages', () => {
-  it('renders a text field on an A4 landscape export page', async () => {
-    const settings = withResolvedPaperPreset({
-      paperFormat: 'a4' as const,
-      paperOrientation: 'landscape' as const,
-      randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    });
-    const pageSettings = {
-      ...defaultPageSettingsFromHandwritingSettings(settings),
-      textFields: [
-        {
-          id: 'field-a4',
-          text: 'X',
-          x: 50,
-          y: 50,
-          width: 100,
-          height: 30,
-          color: '#111111',
-          fontSize: 20,
-        },
-      ],
-    };
-    const engine = new PageRenderEngine();
-    const ctx = createMockCtx();
-    const canvas = createMockCanvas(ctx);
-
-    await engine.renderPage({
-      canvas,
-      mode: 'export',
-      pageIndex: 0,
-      lines: [],
-      pageSettings,
-      settings,
-      scale: 1,
-      fontFamily: 'Caveat, cursive',
-    });
-
-    // The text field character 'X' must be rendered.
-    const fillTextCalls = (ctx.fillText as ReturnType<typeof vi.fn>).mock.calls;
-    const chars = fillTextCalls.map((c: unknown[]) => c[0]);
-    expect(chars).toContain('X');
-  });
-
-  it('renders a text field on an A3 portrait export page', async () => {
-    const settings = withResolvedPaperPreset({
-      paperFormat: 'a3' as const,
-      paperOrientation: 'portrait' as const,
-      randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
-    });
-    const pageSettings = {
-      ...defaultPageSettingsFromHandwritingSettings(settings),
-      textFields: [
-        {
-          id: 'field-a3',
-          text: 'Z',
-          x: 100,
-          y: 100,
-          width: 100,
-          height: 30,
-          color: '#222222',
-          fontSize: 18,
-        },
-      ],
-    };
-    const engine = new PageRenderEngine();
-    const ctx = createMockCtx();
-    const canvas = createMockCanvas(ctx);
-
-    await engine.renderPage({
-      canvas,
-      mode: 'export',
-      pageIndex: 0,
-      lines: [],
-      pageSettings,
-      settings,
-      scale: 1,
-      fontFamily: 'Caveat, cursive',
-    });
-
-    const fillTextCalls = (ctx.fillText as ReturnType<typeof vi.fn>).mock.calls;
-    const chars = fillTextCalls.map((c: unknown[]) => c[0]);
-    expect(chars).toContain('Z');
-  });
+  it.each([
+    {
+      format: 'a4' as const,
+      orientation: 'landscape' as const,
+      char: 'X',
+      fieldId: 'field-a4',
+      fieldX: 50,
+      fieldY: 50,
+      fontSize: 20,
+      color: '#111111',
+    },
+    {
+      format: 'a3' as const,
+      orientation: 'portrait' as const,
+      char: 'Z',
+      fieldId: 'field-a3',
+      fieldX: 100,
+      fieldY: 100,
+      fontSize: 18,
+      color: '#222222',
+    },
+  ])(
+    'renders a text field on an $format $orientation export page',
+    async ({ format, orientation, char, fieldId, fieldX, fieldY, fontSize, color }) => {
+      const settings = createPreviewSettings({ paperFormat: format, paperOrientation: orientation });
+      const pageSettings = {
+        ...defaultPageSettingsFromHandwritingSettings(settings),
+        textFields: [
+          {
+            id: fieldId,
+            text: char,
+            x: fieldX,
+            y: fieldY,
+            width: 100,
+            height: 30,
+            color,
+            fontSize,
+          },
+        ],
+      };
+      const { ctx } = await renderExportPage({ settings, pageSettings });
+      const chars = extractFillTextChars(ctx);
+      expect(chars).toContain(char);
+    }
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -565,27 +383,12 @@ describe('PageRenderEngine export — text-field rendering works on non-Letter p
 
 describe('PageRenderEngine — returned layout reflects the paper source variant', () => {
   it('returns a preset variant layout for a standard lined Letter portrait render', async () => {
-    const settings = withResolvedPaperPreset({
-      paperFormat: 'letter' as const,
-      paperOrientation: 'portrait' as const,
-      paperStyle: 'lined' as const,
-      randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
+    const settings = createPreviewSettings({
+      paperFormat: 'letter',
+      paperOrientation: 'portrait',
+      overrides: { paperStyle: 'lined' },
     });
-    const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-    const engine = new PageRenderEngine();
-    const ctx = createMockCtx();
-    const canvas = createMockCanvas(ctx);
-
-    const result = await engine.renderPage({
-      canvas,
-      mode: 'preview',
-      pageIndex: 0,
-      lines: [],
-      pageSettings,
-      settings,
-      scale: 1,
-      fontFamily: 'Caveat, cursive',
-    });
+    const { result } = await renderPreviewPage({ settings });
 
     expect(result.layout.paper.variant).toBe('preset');
     expect(result.layout.paper.presetId).not.toBeNull();
@@ -597,21 +400,7 @@ describe('PageRenderEngine — returned layout reflects the paper source variant
       customBackgroundImage: 'data:image/png;base64,abc123',
       randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
     };
-    const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-    const engine = new PageRenderEngine();
-    const ctx = createMockCtx();
-    const canvas = createMockCanvas(ctx);
-
-    const result = await engine.renderPage({
-      canvas,
-      mode: 'preview',
-      pageIndex: 0,
-      lines: [],
-      pageSettings,
-      settings,
-      scale: 1,
-      fontFamily: 'Caveat, cursive',
-    });
+    const { result } = await renderPreviewPage({ settings });
 
     expect(result.layout.paper.variant).toBe('upload');
     expect(result.layout.paper.background.kind).toBe('image');
@@ -630,24 +419,9 @@ describe('PageRenderEngine — scale factor applied from engine, not from caller
       ...DEFAULT_SETTINGS,
       randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
     };
-    const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-    const engine = new PageRenderEngine();
-    const ctx = createMockCtx();
-    const canvas = createMockCanvas(ctx);
     const scale = 2;
+    const { result, canvas, ctx } = await renderExportPage({ settings, scale });
 
-    const result = await engine.renderPage({
-      canvas,
-      mode: 'export',
-      pageIndex: 0,
-      lines: [],
-      pageSettings,
-      settings,
-      scale,
-      fontFamily: 'Caveat, cursive',
-    });
-
-    // Export mode must NOT apply DPR — canvas = pageWidth × scale only.
     expect(canvas.width).toBe(Math.ceil(result.layout.page.width * scale));
     expect(canvas.height).toBe(Math.ceil(result.layout.page.height * scale));
     expect(ctx.scale).toHaveBeenCalledWith(scale, scale);
@@ -661,22 +435,8 @@ describe('PageRenderEngine — scale factor applied from engine, not from caller
       ...DEFAULT_SETTINGS,
       randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
     };
-    const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
-    const engine = new PageRenderEngine();
-    const ctx = createMockCtx();
-    const canvas = createMockCanvas(ctx);
     const scale = 1.5;
-
-    const result = await engine.renderPage({
-      canvas,
-      mode: 'preview',
-      pageIndex: 0,
-      lines: [],
-      pageSettings,
-      settings,
-      scale,
-      fontFamily: 'Caveat, cursive',
-    });
+    const { result, canvas, ctx } = await renderPreviewPage({ settings, scale });
 
     const renderScale = scale * dpr;
     expect(canvas.width).toBe(Math.ceil(result.layout.page.width * renderScale));
