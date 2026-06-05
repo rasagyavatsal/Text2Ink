@@ -25,7 +25,21 @@ interface ValidationError {
 
 export type ValidationResult = ValidationSuccess | ValidationError
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+export function isValidEmail(email: string): boolean {
+  const trimmed = email.trim()
+  if (trimmed.length === 0) return false
+  if (/\s/.test(trimmed)) return false
+
+  const parts = trimmed.split("@")
+  if (parts.length !== 2) return false
+
+  const [localPart, domain] = parts
+  if (localPart.length === 0 || domain.length === 0) return false
+  if (!domain.includes(".")) return false
+  if (domain.startsWith(".") || domain.endsWith(".")) return false
+
+  return true
+}
 
 export function validateInquiry(raw: unknown): ValidationResult {
   if (!raw || typeof raw !== "object") {
@@ -45,7 +59,7 @@ export function validateInquiry(raw: unknown): ValidationResult {
 
   if (!email) errors.email = "Email is required"
   else if (email.length > 254) errors.email = "Email must be at most 254 characters"
-  else if (!EMAIL_RE.test(email)) errors.email = "Invalid email format"
+  else if (!isValidEmail(email)) errors.email = "Invalid email format"
 
   if (!topic) errors.topic = "Topic is required"
   else if (!ALLOWED_TOPICS.includes(topic as Topic))

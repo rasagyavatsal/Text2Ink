@@ -57,6 +57,44 @@ describe("InquiryForm", () => {
     expect(mockFetch).not.toHaveBeenCalled()
   })
 
+  it("validates email format on the client side based on deterministic rules", async () => {
+    const user = userEvent.setup()
+    const { unmount } = render(<InquiryForm />)
+
+    // Test a few invalid cases
+    const invalidEmails = [
+      "person.example.com",
+      "person@another@example.com",
+      "person@.example.com",
+      "person@example.com.",
+      "person @example.com",
+    ]
+
+    for (const email of invalidEmails) {
+      const nameInput = screen.getByLabelText(/name/i)
+      const emailInput = screen.getByLabelText(/email/i)
+      const messageInput = screen.getByLabelText(/message/i)
+      const submitBtn = screen.getByRole("button", { name: /send inquiry/i })
+
+      // Clear fields if needed
+      await user.clear(nameInput)
+      await user.clear(emailInput)
+      await user.clear(messageInput)
+
+      await user.type(nameInput, "Jane Doe")
+      await user.type(emailInput, email)
+      await selectTopic(user, "General inquiry")
+      await user.type(messageInput, "This is a valid long enough message.")
+
+      await user.click(submitBtn)
+
+      await waitFor(() => {
+        expect(screen.getByText(/invalid email format/i)).toBeInTheDocument()
+      })
+    }
+    unmount()
+  })
+
   it("preserves entered values after validation failure", async () => {
     const user = userEvent.setup()
     render(<InquiryForm />)
