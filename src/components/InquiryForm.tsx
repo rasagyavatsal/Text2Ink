@@ -32,11 +32,27 @@ interface FormErrors {
   submit?: string
 }
 
+function isValidEmail(email: string): boolean {
+  const trimmed = email.trim()
+  if (trimmed.length === 0) return false
+  if (/\s/.test(trimmed)) return false
+
+  const parts = trimmed.split("@")
+  if (parts.length !== 2) return false
+
+  const [localPart, domain] = parts
+  if (localPart.length === 0 || domain.length === 0) return false
+  if (!domain.includes(".")) return false
+  if (domain.startsWith(".") || domain.endsWith(".")) return false
+
+  return true
+}
+
 function validateClient(data: FormData): FormErrors {
   const errors: FormErrors = {}
   if (data.name.trim().length < 2) errors.name = "Name must be at least 2 characters"
   if (!data.email.trim()) errors.email = "Email is required"
-  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim()))
+  else if (!isValidEmail(data.email))
     errors.email = "Invalid email format"
   if (!data.topic) errors.topic = "Topic is required"
   if (data.message.trim().length < 10) errors.message = "Message must be at least 10 characters"
