@@ -3,36 +3,12 @@ import { UnifiedPagePainter, PaintPageOptions } from '../UnifiedPagePainter';
 import { HandwritingSettings, DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '../../types';
 import { resolvePageLayout } from '@/lib/layout/LayoutEngine';
 import { withTestPaperSelection } from '@/test/paperTestHelpers';
+import { createMockCanvasContext, extractFillTextChars } from '@/test/canvasTestHelpers';
 
 function createMockCtx() {
-  return {
-    scale: vi.fn(),
-    fillRect: vi.fn(),
-    drawImage: vi.fn(),
-    beginPath: vi.fn(),
-    moveTo: vi.fn(),
-    lineTo: vi.fn(),
-    stroke: vi.fn(),
-    save: vi.fn(),
-    restore: vi.fn(),
-    translate: vi.fn(),
-    rotate: vi.fn(),
-    fillText: vi.fn(),
-    measureText: vi.fn().mockReturnValue({
-      width: 10,
-      fontBoundingBoxAscent: 20,
-      fontBoundingBoxDescent: 5,
-      actualBoundingBoxAscent: 18,
-      actualBoundingBoxDescent: 4,
-    }),
-    font: '',
-    fillStyle: '',
-    strokeStyle: '',
-    lineWidth: 0,
-    textBaseline: '' as CanvasTextBaseline,
-    globalAlpha: 1,
+  return createMockCanvasContext({
     canvas: { width: 0, height: 0 },
-  } as unknown as CanvasRenderingContext2D;
+  });
 }
 
 function defaultPaintOptions(overrides?: Partial<PaintPageOptions>): PaintPageOptions {
@@ -143,8 +119,7 @@ describe('UnifiedPagePainter', () => {
 
       UnifiedPagePainter.paintPage(opts);
 
-      const fillTextCalls = (ctx.fillText as ReturnType<typeof vi.fn>).mock.calls;
-      const chars = fillTextCalls.map((c: any[]) => c[0]);
+      const chars = extractFillTextChars(ctx);
       expect(chars).toContain('H');
       expect(chars).toContain('i');
     });
@@ -162,8 +137,7 @@ describe('UnifiedPagePainter', () => {
 
       UnifiedPagePainter.paintPage(opts);
 
-      const fillTextCalls = (ctx.fillText as ReturnType<typeof vi.fn>).mock.calls;
-      const chars = fillTextCalls.map((c: any[]) => c[0]);
+      const chars = extractFillTextChars(ctx);
       expect(chars).toContain('A');
       expect(chars).toContain('B');
       expect(chars).not.toContain(' ');
@@ -592,8 +566,7 @@ describe('UnifiedPagePainter', () => {
 
       UnifiedPagePainter.paintPage(opts);
 
-      const fillTextCalls = (ctx.fillText as ReturnType<typeof vi.fn>).mock.calls;
-      const chars = fillTextCalls.map((c: any[]) => c[0]);
+      const chars = extractFillTextChars(ctx);
       expect(chars).toContain('H');
       expect(chars).toContain('i');
       

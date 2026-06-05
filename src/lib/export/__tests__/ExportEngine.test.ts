@@ -6,6 +6,7 @@ import {
   type PageSettings,
 } from '@/lib/types';
 import { withTestPaperSelection } from '@/test/paperTestHelpers';
+import { createMockCanvasContext } from '@/test/canvasTestHelpers';
 import { ExportEngine } from '../ExportEngine';
 
 function createDocument(overrides?: Partial<{
@@ -30,31 +31,13 @@ function createDocument(overrides?: Partial<{
 const withResolvedPaperPreset = withTestPaperSelection;
 
 function createMockRenderContext() {
-  return {
-    clearRect: vi.fn(),
-    scale: vi.fn(),
-    fillRect: vi.fn(),
-    drawImage: vi.fn(),
-    beginPath: vi.fn(),
-    moveTo: vi.fn(),
-    lineTo: vi.fn(),
-    stroke: vi.fn(),
-    save: vi.fn(),
-    restore: vi.fn(),
-    translate: vi.fn(),
-    rotate: vi.fn(),
-    fillText: vi.fn(),
+  return createMockCanvasContext({
     measureText: vi.fn().mockReturnValue({
       width: 10,
       actualBoundingBoxAscent: 15,
       actualBoundingBoxDescent: 5,
     }),
-    font: '',
-    fillStyle: '',
-    strokeStyle: '',
-    lineWidth: 0,
-    textBaseline: 'alphabetic',
-  } as unknown as CanvasRenderingContext2D;
+  });
 }
 
 describe('ExportEngine', () => {

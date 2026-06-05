@@ -1,81 +1,41 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '@/lib/types';
 import { PageRenderEngine } from '../PageRenderEngine';
+import { createMockCanvasContext, createMockCanvas, createMockImageClass, stubDevicePixelRatio } from '@/test/canvasTestHelpers';
 
-const originalDevicePixelRatio = window.devicePixelRatio;
-
-class MockImage {
-  static readonly instances: MockImage[] = [];
-
-  onload: (() => void) | null = null;
-  onerror: (() => void) | null = null;
-  crossOrigin = '';
-  #src = '';
-
-  constructor() {
-    MockImage.instances.push(this);
+const mockImageInstances: any[] = [];
+const MockImage = createMockImageClass({ instances: mockImageInstances });
+Object.defineProperty(MockImage, 'instances', {
+  get() {
+    return mockImageInstances;
   }
+});
 
-  set src(value: string) {
-    this.#src = value;
-    queueMicrotask(() => this.onload?.());
-  }
-
-  get src() {
-    return this.#src;
-  }
-}
 
 describe('PageRenderEngine', () => {
   let mockCanvas: HTMLCanvasElement;
   let mockCtx: CanvasRenderingContext2D;
 
-  beforeEach(() => {
-    MockImage.instances.length = 0;
-    vi.stubGlobal('Image', MockImage);
-    Object.defineProperty(globalThis, 'devicePixelRatio', {
-      configurable: true,
-      value: 2,
-    });
+  let cleanupDevicePixelRatio: () => void;
 
-    mockCtx = {
-      clearRect: vi.fn(),
-      scale: vi.fn(),
-      fillRect: vi.fn(),
-      drawImage: vi.fn(),
-      beginPath: vi.fn(),
-      moveTo: vi.fn(),
-      lineTo: vi.fn(),
-      stroke: vi.fn(),
-      save: vi.fn(),
-      restore: vi.fn(),
-      translate: vi.fn(),
-      rotate: vi.fn(),
-      fillText: vi.fn(),
+  beforeEach(() => {
+    mockImageInstances.length = 0;
+    vi.stubGlobal('Image', MockImage);
+    cleanupDevicePixelRatio = stubDevicePixelRatio(2);
+
+    mockCtx = createMockCanvasContext({
       measureText: vi.fn().mockReturnValue({
         width: 10,
         actualBoundingBoxAscent: 15,
         actualBoundingBoxDescent: 5,
       }),
-      font: '',
-      fillStyle: '',
-      strokeStyle: '',
-      lineWidth: 0,
-      textBaseline: 'alphabetic',
-    } as unknown as CanvasRenderingContext2D;
+    });
 
-    mockCanvas = {
-      getContext: vi.fn().mockReturnValue(mockCtx),
-      width: 0,
-      height: 0,
-    } as unknown as HTMLCanvasElement;
+    mockCanvas = createMockCanvas(mockCtx);
   });
 
   afterEach(() => {
-    Object.defineProperty(globalThis, 'devicePixelRatio', {
-      configurable: true,
-      value: originalDevicePixelRatio,
-    });
+    cleanupDevicePixelRatio();
     vi.unstubAllGlobals();
   });
 
