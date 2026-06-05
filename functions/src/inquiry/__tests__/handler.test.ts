@@ -1,29 +1,43 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import httpMocks from "node-mocks-http"
 
-const { mockSendMail, mockRunTransaction, mockDb } = vi.hoisted(() => {
+const { mockSendMail, mockRunTransaction, mockDb, createStrictMockTransaction, installDefaultTransactionMock } = vi.hoisted(() => {
   process.env.ALLOWED_ORIGINS = "https://localhost:3000,https://text2ink.com"
   const mockSendMail = vi.fn().mockResolvedValue({})
-  const mockRunTransaction = vi.fn(async (fn: Function) => {
-    const tx = {
-      get: vi.fn(async (ref: any) => {
-        if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
-        return { exists: false, data: () => undefined };
-      }),
-      set: vi.fn((ref: any) => {
-        if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
-      }),
-      update: vi.fn((ref: any) => {
-        if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
-      }),
-    }
-    await fn(tx)
-  })
+  const mockRunTransaction = vi.fn()
+
+  const createStrictMockTransaction = (snapshots?: any[]) => {
+    let callIndex = 0
+    const get = vi.fn(async (ref: any) => {
+      if (!ref?._isMockRef) throw new Error("Expected DocumentReference")
+      if (snapshots && callIndex < snapshots.length) {
+        return snapshots[callIndex++]
+      }
+      return { exists: false, data: () => undefined }
+    })
+    const set = vi.fn((ref: any) => {
+      if (!ref?._isMockRef) throw new Error("Expected DocumentReference")
+    })
+    const update = vi.fn((ref: any) => {
+      if (!ref?._isMockRef) throw new Error("Expected DocumentReference")
+    })
+    return { get, set, update }
+  }
+
+  const installDefaultTransactionMock = () => {
+    mockRunTransaction.mockImplementation(async (fn: Function) => {
+      const tx = createStrictMockTransaction()
+      await fn(tx)
+    })
+  }
+
+  installDefaultTransactionMock()
+
   const mockDb = { 
     runTransaction: mockRunTransaction,
     doc: vi.fn((path) => ({ id: path, path, _isMockRef: true }))
   }
-  return { mockSendMail, mockRunTransaction, mockDb }
+  return { mockSendMail, mockRunTransaction, mockDb, createStrictMockTransaction, installDefaultTransactionMock }
 })
 
 vi.mock("firebase-functions/v2/https", () => ({
@@ -81,22 +95,7 @@ describe("inquiry handler", () => {
     process.env.EMAIL_PASS = "test-pass"
     process.env.ALLOWED_ORIGINS = "https://localhost:3000,https://text2ink.com"
     process.env.INQUIRY_HMAC_SECRET = "test-secret"
-    // Reset mockRunTransaction to default behavior
-    mockRunTransaction.mockImplementation(async (fn: Function) => {
-      const tx = {
-        get: vi.fn(async (ref: any) => {
-          if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
-          return { exists: false, data: () => undefined };
-        }),
-        set: vi.fn((ref: any) => {
-          if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
-        }),
-        update: vi.fn((ref: any) => {
-          if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
-        }),
-      }
-      await fn(tx)
-    })
+    installDefaultTransactionMock()
   })
 
   it("returns 405 for non-POST requests", async () => {
@@ -139,30 +138,16 @@ describe("inquiry handler", () => {
 
   it("returns 429 when rate limit exceeded", async () => {
     mockRunTransaction.mockImplementationOnce(async (fn: Function) => {
-      const tx = {
-        get: vi
-          .fn()
-          .mockImplementationOnce(async (ref: any) => {
-            if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
-            return {
-              exists: true,
-              data: () => ({ count: 5, expiresAt: { toDate: () => new Date(Date.now() + 3600000) } }),
-            };
-          })
-          .mockImplementationOnce(async (ref: any) => {
-            if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
-            return {
-              exists: false,
-              data: () => undefined,
-            };
-          }),
-        set: vi.fn((ref: any) => {
-          if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
-        }),
-        update: vi.fn((ref: any) => {
-          if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
-        }),
-      }
+      const tx = createStrictMockTransaction([
+        {
+          exists: true,
+          data: () => ({ count: 5, expiresAt: { toDate: () => new Date(Date.now() + 3600000) } }),
+        },
+        {
+          exists: false,
+          data: () => undefined,
+        },
+      ])
       await fn(tx)
     })
 
@@ -198,20 +183,9 @@ describe("inquiry handler", () => {
   it("mock transaction rejects plain object literals (strict mock test)", async () => {
     let mockTx: any;
     mockRunTransaction.mockImplementationOnce(async (fn: Function) => {
-      mockTx = {
-        get: vi.fn(async (ref: any) => {
-          if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
-          return { exists: false, data: () => undefined };
-        }),
-        set: vi.fn((ref: any) => {
-          if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
-        }),
-        update: vi.fn((ref: any) => {
-          if (!ref?._isMockRef) throw new Error("Expected DocumentReference");
-        }),
-      };
+      mockTx = createStrictMockTransaction()
       // We purposefully don't call fn to just test the tx methods
-    });
+    })
 
     // Trigger runTransaction so mockTx is populated
     await mockDb.runTransaction(async () => {});
