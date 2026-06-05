@@ -61,6 +61,46 @@ import {
 import { normalizeUploadCalibrationResult, applyUploadCalibration } from '@/lib/uploadCalibration';
 import { resolvePaperControlsModel } from '@/lib/paper/paperControlsModel';
 
+const PAPER_LINE_PREVIEW_MAP: Record<
+  string,
+  { transparentStop: string; backgroundSize: string }
+> = {
+  'lined': { transparentStop: '11px', backgroundSize: '100% 12px' },
+  'wide-lined': { transparentStop: '16px', backgroundSize: '100% 17px' },
+  'narrow-lined': { transparentStop: '8px', backgroundSize: '100% 9px' },
+  'ruled': { transparentStop: '11px', backgroundSize: '100% 12px' },
+  'wide-ruled': { transparentStop: '16px', backgroundSize: '100% 17px' },
+  'narrow-ruled': { transparentStop: '8px', backgroundSize: '100% 9px' },
+};
+
+const PaperLinePreview = ({
+  variant,
+  isRuled,
+}: {
+  variant: string;
+  isRuled: boolean;
+}) => {
+  const config = PAPER_LINE_PREVIEW_MAP[variant];
+  if (!config) return null;
+
+  return (
+    <div className="w-full h-full relative">
+      <div 
+        className={cn(isRuled ? "absolute inset-0" : "w-full h-full")}
+        style={{
+          backgroundImage: `linear-gradient(to bottom, transparent ${config.transparentStop}, rgba(169, 190, 205, 0.6) ${config.transparentStop})`,
+          backgroundSize: config.backgroundSize,
+          paddingTop: '18px',
+          backgroundClip: 'content-box'
+        }}
+      ></div>
+      {isRuled && (
+        <div className="absolute left-[18%] top-0 bottom-0 w-px bg-[#f39ca6]/90 z-10"></div>
+      )}
+    </div>
+  );
+};
+
 const PaperStyleCard = ({
   style,
   paperColor,
@@ -97,80 +137,11 @@ const PaperStyleCard = ({
         {style.value === 'blank' && (
            <div className="w-full h-full"></div>
         )}
-        {style.value === 'lined' && (
-           <div 
-             className="w-full h-full"
-             style={{
-               backgroundImage: 'linear-gradient(to bottom, transparent 11px, rgba(169, 190, 205, 0.6) 11px)',
-               backgroundSize: '100% 12px',
-               paddingTop: '18px',
-               backgroundClip: 'content-box'
-             }}
-           ></div>
-        )}
-        {style.value === 'wide-lined' && (
-           <div 
-             className="w-full h-full"
-             style={{
-               backgroundImage: 'linear-gradient(to bottom, transparent 16px, rgba(169, 190, 205, 0.6) 16px)',
-               backgroundSize: '100% 17px',
-               paddingTop: '18px',
-               backgroundClip: 'content-box'
-             }}
-           ></div>
-        )}
-        {style.value === 'narrow-lined' && (
-           <div 
-             className="w-full h-full"
-             style={{
-               backgroundImage: 'linear-gradient(to bottom, transparent 8px, rgba(169, 190, 205, 0.6) 8px)',
-               backgroundSize: '100% 9px',
-               paddingTop: '18px',
-               backgroundClip: 'content-box'
-             }}
-           ></div>
-        )}
-        {style.value === 'ruled' && (
-           <div className="w-full h-full relative">
-             <div 
-               className="absolute inset-0"
-               style={{
-                 backgroundImage: 'linear-gradient(to bottom, transparent 11px, rgba(169, 190, 205, 0.6) 11px)',
-                 backgroundSize: '100% 12px',
-                 paddingTop: '18px',
-                 backgroundClip: 'content-box'
-               }}
-             ></div>
-             <div className="absolute left-[18%] top-0 bottom-0 w-px bg-[#f39ca6]/90 z-10"></div>
-           </div>
-        )}
-        {style.value === 'wide-ruled' && (
-           <div className="w-full h-full relative">
-             <div 
-               className="absolute inset-0"
-               style={{
-                 backgroundImage: 'linear-gradient(to bottom, transparent 16px, rgba(169, 190, 205, 0.6) 16px)',
-                 backgroundSize: '100% 17px',
-                 paddingTop: '18px',
-                 backgroundClip: 'content-box'
-               }}
-             ></div>
-             <div className="absolute left-[18%] top-0 bottom-0 w-px bg-[#f39ca6]/90 z-10"></div>
-           </div>
-        )}
-        {style.value === 'narrow-ruled' && (
-           <div className="w-full h-full relative">
-             <div 
-               className="absolute inset-0"
-               style={{
-                 backgroundImage: 'linear-gradient(to bottom, transparent 8px, rgba(169, 190, 205, 0.6) 8px)',
-                 backgroundSize: '100% 9px',
-                 paddingTop: '18px',
-                 backgroundClip: 'content-box'
-               }}
-             ></div>
-             <div className="absolute left-[18%] top-0 bottom-0 w-px bg-[#f39ca6]/90 z-10"></div>
-           </div>
+        {PAPER_LINE_PREVIEW_MAP[style.value] && (
+          <PaperLinePreview
+            variant={style.value}
+            isRuled={style.value.includes('ruled')}
+          />
         )}
         {style.value === 'grid' && (
            <div 
