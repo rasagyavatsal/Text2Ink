@@ -94,10 +94,9 @@ function readSafeAreaBottom() {
 
 function readViewportSize() {
   if (typeof globalThis.window === 'undefined') return DEFAULT_VIEWPORT_SIZE;
-  const visualViewport = window.visualViewport;
   return {
-    width: Math.round(visualViewport?.width ?? window.innerWidth),
-    height: Math.round(visualViewport?.height ?? window.innerHeight),
+    width: Math.round(window.innerWidth),
+    height: Math.round(window.innerHeight),
     safeAreaBottom: readSafeAreaBottom(),
   };
 }
@@ -114,15 +113,20 @@ function useViewportSize() {
       frame = globalThis.requestAnimationFrame(() => setViewportSize(readViewportSize()));
     };
 
+    const handleVisualViewportResize = () => {
+      if (window.visualViewport && window.visualViewport.scale !== 1) return;
+      update();
+    };
+
     update();
     window.addEventListener('resize', update);
     globalThis.addEventListener('orientationchange', update);
-    window.visualViewport?.addEventListener('resize', update);
+    window.visualViewport?.addEventListener('resize', handleVisualViewportResize);
     return () => {
       globalThis.cancelAnimationFrame(frame);
       window.removeEventListener('resize', update);
       globalThis.removeEventListener('orientationchange', update);
-      window.visualViewport?.removeEventListener('resize', update);
+      window.visualViewport?.removeEventListener('resize', handleVisualViewportResize);
     };
   }, []);
 
