@@ -17,8 +17,8 @@
     "predeploy": "npm run build"
   },
   "dependencies": {
+    "firebase-admin": "^12.7.0",
     "firebase-functions": "^4.6.0",
-    "inquiry-validation": "file:../packages/inquiry-validation",
     "nodemailer": "^8.0.5"
   },
   "devDependencies": {
