@@ -1,5 +1,5 @@
 import { beforeEach, describe, it, expect, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, act } from '@testing-library/react';
 import React, { type ReactNode } from 'react';
 import RootEditorPageClient from '../RootEditorPageClient';
 import { metadata } from '../page';
@@ -257,6 +257,40 @@ describe('Root editor page', () => {
       expect(parsePadding()).toBeLessThan(expandedPadding);
     });
     expect(getPreviewScale()).toBe(initialScale);
+  });
+
+  it('does not recompute layout or scale during pinch zoom', async () => {
+    mockMatchMedia(true);
+    Object.defineProperty(globalThis, 'innerWidth', { configurable: true, writable: true, value: 390 });
+    Object.defineProperty(globalThis, 'innerHeight', { configurable: true, writable: true, value: 844 });
+    
+    const visualViewport = new EventTarget() as any;
+    visualViewport.width = 390;
+    visualViewport.height = 844;
+    visualViewport.scale = 1;
+    Object.defineProperty(globalThis, 'visualViewport', { configurable: true, writable: true, value: visualViewport });
+
+    render(<RootEditorPageClient />);
+
+    await screen.findByTestId('mobile-editor-bottom-sheet');
+    const getPreviewScale = () => Number(screen.getByTestId('handwriting-editor').dataset.previewScale);
+    const initialScale = getPreviewScale();
+
+    const previewScrollContainer = screen.getByTestId('preview-scroll-container');
+    const parsePadding = () => Number.parseFloat(previewScrollContainer.style.paddingBottom);
+    const initialPadding = parsePadding();
+
+    await act(async () => {
+      visualViewport.width = 195;
+      visualViewport.height = 422;
+      visualViewport.scale = 2;
+      visualViewport.dispatchEvent(new Event('resize'));
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(getPreviewScale()).toBe(initialScale);
+    expect(parsePadding()).toBe(initialPadding);
   });
 
   it('opens custom confirmation dialog when clear all is triggered and resets state on confirm', async () => {
