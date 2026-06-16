@@ -166,7 +166,7 @@
   --layout-page-padding-x: var(--space-4);
   --layout-page-padding-y: var(--space-12);
   --layout-section-rhythm: var(--space-12);
-  --layout-public-gutter: max(var(--space-5), calc(50vw - (var(--layout-content-width) / 2)));
+  --layout-public-gutter: clamp(var(--space-4), 2vw, var(--space-10));
 
   /* Semantic tokens: surface intent */
   --surface-page-padding: var(--layout-page-padding-x);
