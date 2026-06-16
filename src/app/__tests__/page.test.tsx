@@ -111,4 +111,17 @@ describe('HomePage', () => {
     }
     expect(hasMaxWidth).toBe(false);
   });
+
+  it('renders the how to use section', () => {
+    render(<HomePage />);
+    expect(screen.getByRole('heading', { name: /how to use text2ink/i })).toBeInTheDocument();
+    expect(screen.getByText(/Create a handwritten document by typing your content/i)).toBeInTheDocument();
+
+    expect(screen.getByRole('heading', { name: /open the editor and type/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /choose handwriting/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /set up paper/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /add page details/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /tune realism/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /review and export/i })).toBeInTheDocument();
+  });
 });
