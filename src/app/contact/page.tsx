@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 }
 
 export default function ContactPage() {
-  const frameClasses = "mx-auto w-full max-w-content px-page-x"
+  const frameClasses = "mx-auto w-full max-w-content"
 
   return (
     <div className="min-h-screen bg-background">
