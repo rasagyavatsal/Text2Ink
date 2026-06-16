@@ -40,10 +40,10 @@ const SHARED_FRAMING_RULES: TokenRules = {
     'py-3 sm:py-4',
     'py-12 sm:py-16 md:py-20',
     /mt-12\b/,
+    'px-page-x',
   ],
   required: [
     'max-w-content',
-    'px-page-x',
     'py-chrome-y',
     'py-page-y',
     'mt-section',
@@ -59,6 +59,10 @@ describe('shared layout consumers use token-backed framing utilities', () => {
     {
       name: 'ContactPage',
       path: 'app/contact/page.tsx',
+    },
+    {
+      name: 'LegalPage',
+      path: 'components/patterns/LegalPage.tsx',
     },
   ])('$name consumes shared width, gutter, and rhythm tokens', ({ path }) => {
     expectSourceUsesTokenRules(path, SHARED_FRAMING_RULES);

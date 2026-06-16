@@ -17,7 +17,7 @@ export default function LegalPage({
   effectiveDate,
   sections,
 }: LegalPageProps) {
-  const frameClasses = 'mx-auto w-full max-w-content px-page-x';
+  const frameClasses = 'mx-auto w-full max-w-content';
 
   return (
     <div className="min-h-screen bg-background">
