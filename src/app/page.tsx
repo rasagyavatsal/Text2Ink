@@ -14,7 +14,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-background">
+      <header className="sticky top-0 z-50 border-b border-border bg-background">
         <div className={`${frameClasses} py-chrome-y`}>
           <SiteHeader
             cta={(
