@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
-  const frameClasses = 'mx-auto w-full max-w-content px-public-gutter';
+  const frameClasses = 'w-full px-public-gutter';
 
   return (
     <div className="min-h-screen bg-background">

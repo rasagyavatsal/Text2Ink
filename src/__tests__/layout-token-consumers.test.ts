@@ -35,6 +35,7 @@ function expectSourceUsesTokenRules(relPath: string, rules: TokenRules) {
 
 const SHARED_FRAMING_RULES: TokenRules = {
   forbidden: [
+    /max-w-content\b/,
     /max-w-6xl\b/,
     'px-4 sm:px-6',
     'py-3 sm:py-4',
@@ -43,7 +44,6 @@ const SHARED_FRAMING_RULES: TokenRules = {
     'px-page-x',
   ],
   required: [
-    'max-w-content',
     'py-chrome-y',
     'py-page-y',
     'mt-section',
