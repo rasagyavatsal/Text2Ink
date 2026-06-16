@@ -92,4 +92,23 @@ describe('HomePage', () => {
     expect(secondImg).toHaveAttribute('src', '/Sample-handwriting-preview2.png');
     expect(secondImg).toHaveAttribute('alt', 'Handwriting preview 2');
   });
+
+  it('renders the preview images grid without a width constraint wrapper', () => {
+    const { container } = render(<HomePage />);
+    const pictures = container.querySelectorAll('picture');
+    const grid = pictures[0].closest('.grid');
+    expect(grid).toBeInTheDocument();
+    
+    let current = grid;
+    let hasMaxWidth = false;
+    while (current && current.tagName !== 'MAIN') {
+      if (current.classList && current.classList.contains('max-w-content')) {
+        hasMaxWidth = true;
+        break;
+      }
+      // Workaround for TypeScript saying parentElement might be null and not an Element in DOM
+      current = current.parentElement as Element | null;
+    }
+    expect(hasMaxWidth).toBe(false);
+  });
 });
