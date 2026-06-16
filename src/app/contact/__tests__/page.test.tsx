@@ -29,10 +29,8 @@ describe("ContactPage", () => {
     render(<ContactPage />)
     const header = screen.getByRole("banner")
     expect(header).toBeInTheDocument()
-    // Text2Ink is split across spans: Text, 2, Ink
-    expect(within(header).getByText("Text")).toBeInTheDocument()
-    expect(within(header).getByText("2")).toBeInTheDocument()
-    expect(within(header).getByText("Ink")).toBeInTheDocument()
+    // Text2Ink is now a single string
+    expect(within(header).getByText("Text2Ink")).toBeInTheDocument()
   })
 
   it("renders ThemePicker and Back to Editor in the header", () => {
