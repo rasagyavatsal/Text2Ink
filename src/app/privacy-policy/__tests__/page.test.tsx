@@ -31,9 +31,7 @@ describe('PrivacyPolicyPage', () => {
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
 
     const header = screen.getByRole('banner');
-    expect(within(header).getByText('Text')).toBeInTheDocument();
-    expect(within(header).getByText('2')).toBeInTheDocument();
-    expect(within(header).getByText('Ink')).toBeInTheDocument();
+    expect(within(header).getByText('Text2Ink')).toBeInTheDocument();
 
     const backLink = screen.getByRole('link', { name: /back to editor/i });
     expect(backLink).toHaveAttribute('href', '/editor');

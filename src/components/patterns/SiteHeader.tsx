@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import ThemePicker from '../ThemePicker';
 import { Button } from '@/components/ui/button';
 
@@ -13,20 +12,9 @@ export default function SiteHeader({ cta, hideContactLink }: SiteHeaderProps = {
     <div className="flex items-center justify-between w-full">
       <Link
         href="/"
-        className="flex items-center gap-2 text-brand-mark font-bold font-dancing-script hover:text-brand-accent transition-colors"
+        className="text-brand-mark font-bold font-dancing-script hover:text-brand-accent transition-colors"
       >
-        <Image
-          src="/logo-without-background.png"
-          alt="Text2Ink Logo"
-          width={32}
-          height={32}
-          className="w-8 h-8 object-contain"
-        />
-        <div>
-          <span className="text-brand-accent">Text</span>
-          <span className="text-foreground">2</span>
-          <span className="text-brand-accent">Ink</span>
-        </div>
+        Text2Ink
       </Link>
       <div className="flex items-center gap-chrome">
         <ThemePicker />

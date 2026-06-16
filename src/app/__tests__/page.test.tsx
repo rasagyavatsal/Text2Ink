@@ -29,9 +29,7 @@ describe('HomePage', () => {
     expect(header).toBeInTheDocument();
     
     // Check for logo text
-    expect(within(header).getByText('Text')).toBeInTheDocument();
-    expect(within(header).getByText('2')).toBeInTheDocument();
-    expect(within(header).getByText('Ink')).toBeInTheDocument();
+    expect(within(header).getByText('Text2Ink')).toBeInTheDocument();
 
     // Check for Contact link
     const contactLink = screen.getByRole('link', { name: /contact/i });
