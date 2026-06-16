@@ -67,7 +67,7 @@ const semanticTokenGroups = createTokenGroups({
     --layout-panel-width --layout-content-width --layout-header-height
     --layout-controls-gap --layout-chrome-gap --layout-chrome-padding-y
     --layout-footer-padding-y --layout-page-padding-x --layout-page-padding-y
-    --layout-section-rhythm
+    --layout-section-rhythm --layout-public-gutter
   `,
   'surface tokens': `
     --surface-page-padding --surface-card-padding --surface-section-gap
@@ -91,7 +91,7 @@ const semanticTokenPrefixes = cssNameList(`
 const expectedThemeTokens = cssNameList(`
   --spacing-panel --spacing-section --spacing-controls --spacing-chrome
   --spacing-chrome-y --spacing-footer --spacing-page-x --spacing-page-y
-  --height-control-sm --height-control-md --height-control-lg --height-input
+  --spacing-public-gutter --height-control-sm --height-control-md --height-control-lg --height-input
   --width-panel --container-content --text-label --text-brand-mark
   --text-display-title --text-page-title --text-document-title --text-section-title
   --text-overlay-title --text-body-lg --text-body --text-supporting --text-caption

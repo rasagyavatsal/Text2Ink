@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
-  const frameClasses = 'mx-auto w-full max-w-content';
+  const frameClasses = 'mx-auto w-full max-w-content px-public-gutter';
 
   return (
     <div className="min-h-screen bg-background">
@@ -45,7 +45,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mt-4">
+        <div className="w-full px-public-gutter grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mt-4">
           <div className="rounded-2xl overflow-hidden border border-border shadow-sm bg-card flex items-center justify-center">
                 <picture className="w-full h-auto flex">
                   <source srcSet="/Sample-handwriting-preview1.avif" type="image/avif" media="(min-width: 640px)" />
