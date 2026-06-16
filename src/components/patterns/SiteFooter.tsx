@@ -16,11 +16,6 @@ export default function SiteFooter() {
           height={32}
           className="w-8 h-8 object-contain"
         />
-        <div>
-          <span className="text-brand-accent">Text</span>
-          <span className="text-foreground">2</span>
-          <span className="text-brand-accent">Ink</span>
-        </div>
       </Link>
       <div className="flex flex-col items-center md:items-end gap-2">
         <nav aria-label="Legal">

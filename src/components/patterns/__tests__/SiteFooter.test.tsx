@@ -37,4 +37,15 @@ describe('SiteFooter', () => {
     // Version
     expect(screen.getByTestId('version')).toBeInTheDocument();
   });
+
+  it('renders only the logo image in the brand link without wordmark text', () => {
+    render(<SiteFooter />);
+    
+    // Logo image should be present
+    expect(screen.getByRole('img', { name: /text2ink logo/i })).toBeInTheDocument();
+    
+    // Wordmark text should not be present
+    expect(screen.queryByText('Text')).not.toBeInTheDocument();
+    expect(screen.queryByText('Ink')).not.toBeInTheDocument();
+  });
 });
