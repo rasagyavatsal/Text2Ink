@@ -28,25 +28,25 @@ export default function HomePage() {
         </div>
       </header>
 
-      <main className="py-page-y">
+      <main className="py-page-y flex flex-col items-center gap-section w-full">
         <div className={frameClasses}>
-          <div className="flex flex-col items-center gap-section w-full">
-            <div className="text-center flex flex-col items-center gap-6 max-w-3xl">
-              <h1 className="text-display-title font-bold tracking-tight text-foreground">
-                Text to Handwriting converter
-              </h1>
-              <p className="text-body-lg text-muted-foreground">
-                Because life&apos;s too short to handwrite assignments.
-              </p>
-              <Button variant="brand" size="lg" className="mt-2 shadow-sm" asChild>
-                <Link href="/editor">
-                  Open Editor
-                </Link>
-              </Button>
-            </div>
+          <div className="text-center flex flex-col items-center gap-6 max-w-3xl mx-auto">
+            <h1 className="text-display-title font-bold tracking-tight text-foreground">
+              Text to Handwriting converter
+            </h1>
+            <p className="text-body-lg text-muted-foreground">
+              Because life&apos;s too short to handwrite assignments.
+            </p>
+            <Button variant="brand" size="lg" className="mt-2 shadow-sm" asChild>
+              <Link href="/editor">
+                Open Editor
+              </Link>
+            </Button>
+          </div>
+        </div>
 
-            <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mt-4">
-              <div className="rounded-2xl overflow-hidden border border-border shadow-sm bg-card flex items-center justify-center">
+        <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mt-4">
+          <div className="rounded-2xl overflow-hidden border border-border shadow-sm bg-card flex items-center justify-center">
                 <picture className="w-full h-auto flex">
                   <source srcSet="/Sample-handwriting-preview1.avif" type="image/avif" media="(min-width: 640px)" />
                   <source srcSet="/Sample-handwriting-preview1-mobile.avif" type="image/avif" />
@@ -71,8 +71,6 @@ export default function HomePage() {
                 </picture>
               </div>
             </div>
-          </div>
-        </div>
       </main>
 
       <footer className="border-t border-border bg-background py-footer mt-section">
