@@ -58,6 +58,7 @@
   --spacing-footer: var(--layout-footer-padding-y);
   --spacing-page-x: var(--layout-page-padding-x);
   --spacing-page-y: var(--layout-page-padding-y);
+  --spacing-public-gutter: var(--layout-public-gutter);
 
   /* Height: semantic tokens available as h-* utilities */
   --height-control-sm: var(--control-height-sm);
@@ -165,6 +166,7 @@
   --layout-page-padding-x: var(--space-4);
   --layout-page-padding-y: var(--space-12);
   --layout-section-rhythm: var(--space-12);
+  --layout-public-gutter: max(var(--space-5), calc(50vw - (var(--layout-content-width) / 2)));
 
   /* Semantic tokens: surface intent */
   --surface-page-padding: var(--layout-page-padding-x);

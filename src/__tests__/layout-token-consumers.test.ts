@@ -47,6 +47,7 @@ const SHARED_FRAMING_RULES: TokenRules = {
     'py-chrome-y',
     'py-page-y',
     'mt-section',
+    'px-public-gutter',
   ],
 };
 
