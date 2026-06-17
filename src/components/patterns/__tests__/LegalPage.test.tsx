@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import LegalPage from '../LegalPage';
@@ -8,6 +10,11 @@ vi.mock('@/components/patterns/SiteHeader', () => ({
 vi.mock('@/components/patterns/SiteFooter', () => ({
   default: () => <div data-testid="site-footer" />,
 }));
+
+const legalPageSource = fs.readFileSync(
+  path.resolve(__dirname, '../LegalPage.tsx'),
+  'utf-8'
+);
 
 describe('LegalPage', () => {
   it('renders table of contents from section list and section content', () => {
@@ -37,5 +44,13 @@ describe('LegalPage', () => {
 
     const link2 = screen.getByRole('link', { name: 'Section 2' });
     expect(link2).toHaveAttribute('href', '#section-2');
+  });
+
+  it('uses px-public-gutter', () => {
+    expect(legalPageSource).toMatch(/px-public-gutter/);
+  });
+
+  it('no longer uses the old max-w-4xl legal body wrapper', () => {
+    expect(legalPageSource).not.toMatch(/max-w-4xl/);
   });
 });

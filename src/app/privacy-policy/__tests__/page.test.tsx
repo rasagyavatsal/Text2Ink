@@ -37,26 +37,28 @@ describe('PrivacyPolicyPage', () => {
     expect(backLink).toHaveAttribute('href', '/editor');
 
     expect(
-      screen.getByRole('heading', { level: 1, name: /privacy policy/i })
+      screen.getByRole('heading', { level: 1, name: 'Privacy Policy' })
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/this policy explains what information text2ink handles, why it is used/i)
+      screen.getByText(/this policy explains what information text2ink handles, why it is used, and what choices you have/i)
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { name: /what stays in your browser/i })
+      screen.getByText(/effective date: June 16, 2026/i)
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { name: /uploads and exports/i })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { name: /analytics/i })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { name: /contact inquiries/i })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { name: /your choices and requests/i })
-    ).toBeInTheDocument();
+
+    expect(screen.getByRole('heading', { name: 'What stays in your browser' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Uploads and exports' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Analytics' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Contact inquiries' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Your choices and requests' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Contact' })).toBeInTheDocument();
+
+    expect(screen.getByRole('navigation', { name: /table of contents/i })).toBeInTheDocument();
+    const tocLink = screen.getByRole('link', { name: 'Uploads and exports' });
+    expect(tocLink).toHaveAttribute('href', '#uploads-and-exports');
+
+    const sectionHeading = screen.getByRole('heading', { name: 'Uploads and exports' });
+    expect(sectionHeading.closest('section')).toHaveAttribute('id', 'uploads-and-exports');
 
     expect(
       screen.getByRole('link', { name: /terms of service/i })

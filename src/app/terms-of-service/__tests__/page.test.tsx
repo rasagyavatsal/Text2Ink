@@ -37,26 +37,28 @@ describe('TermsOfServicePage', () => {
     expect(backLink).toHaveAttribute('href', '/editor');
 
     expect(
-      screen.getByRole('heading', { level: 1, name: /terms of service/i })
+      screen.getByRole('heading', { level: 1, name: 'Terms of Service' })
     ).toBeInTheDocument();
     expect(
       screen.getByText(/these terms explain how you may use text2ink/i)
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { name: /what text2ink does/i })
+      screen.getByText(/effective date: June 16, 2026/i)
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { name: /your content/i })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { name: /acceptable use/i })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { name: /exports and availability/i })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { name: /changes to these terms/i })
-    ).toBeInTheDocument();
+
+    expect(screen.getByRole('heading', { name: 'What Text2Ink does' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Your content' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Acceptable use' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Exports and availability' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Changes to these terms' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Contact' })).toBeInTheDocument();
+
+    expect(screen.getByRole('navigation', { name: /table of contents/i })).toBeInTheDocument();
+    const tocLink = screen.getByRole('link', { name: 'Acceptable use' });
+    expect(tocLink).toHaveAttribute('href', '#acceptable-use');
+
+    const sectionHeading = screen.getByRole('heading', { name: 'Acceptable use' });
+    expect(sectionHeading.closest('section')).toHaveAttribute('id', 'acceptable-use');
 
     expect(
       screen.getByRole('link', { name: /privacy policy/i })
