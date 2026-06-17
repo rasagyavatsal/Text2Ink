@@ -32,7 +32,7 @@ describe('HomePage', () => {
     expect(within(header).getByText('Text2Ink')).toBeInTheDocument();
 
     // Check for Contact link
-    const contactLink = screen.getByRole('link', { name: /contact/i });
+    const contactLink = within(header).getByRole('link', { name: /contact/i });
     expect(contactLink).toBeInTheDocument();
     expect(contactLink).toHaveAttribute('href', '/contact');
 
@@ -69,9 +69,9 @@ describe('HomePage', () => {
 
     expect(screen.getByText(/create realistic handwritten pages from typed text/i)).toBeInTheDocument();
     
-    // There should be two "Open Editor" links (one in header, one in hero)
+    // There should be three "Open Editor" links (one in header, one in hero, one in footer)
     const ctaLinks = screen.getAllByRole('link', { name: /open editor/i });
-    expect(ctaLinks.length).toBe(2);
+    expect(ctaLinks.length).toBe(3);
     expect(ctaLinks[1]).toHaveAttribute('href', '/editor');
     expect(ctaLinks[1]).toHaveAttribute('data-variant', 'brand');
     expect(ctaLinks[1]).toHaveAttribute('data-size', 'lg');
