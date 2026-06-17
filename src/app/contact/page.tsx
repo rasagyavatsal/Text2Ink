@@ -37,45 +37,25 @@ export default function ContactPage() {
 
       <main className="py-page-y">
         <div className={frameClasses}>
-          <div className="w-full">
-            {/* Inquiry Split Layout — desktop: two columns, mobile: stacked */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
-              {/* Left: Email info */}
-              <div className="lg:sticky lg:top-24">
-                <h1 className="text-page-title font-bold tracking-tight text-foreground mb-6">
-                  Email me
-                </h1>
-                <p className="text-body-lg text-muted-foreground mb-8">
-                  Have a question, found a bug, or want to request a feature?
-                  Fill out the form and I&apos;ll get back to you.
-                </p>
-                <a
-                  href="mailto:rasagyavatsal16@gmail.com"
-                  className="hidden lg:inline-flex items-center gap-2 text-brand-accent hover:text-brand-accent-hover font-medium transition-colors group"
-                >
-                  <Mail className="w-5 h-5 transition-transform group-hover:-translate-y-0.5" data-testid="mail-icon" aria-hidden="true" />
-                  rasagyavatsal16@gmail.com
-                </a>
-              </div>
-
-              {/* Right: Inquiry form */}
-              <div>
-                <InquiryForm />
-
-                {/* Mobile-only fallback email below form */}
-                <div className="lg:hidden mt-8 text-center sm:text-left">
-                  <p className="text-supporting text-muted-foreground mb-3">
-                    Or email directly:
-                  </p>
-                  <a
-                    href="mailto:rasagyavatsal16@gmail.com"
-                    className="inline-flex items-center justify-center sm:justify-start gap-2 text-brand-accent hover:text-brand-accent-hover font-medium transition-colors group"
-                  >
-                    <Mail className="w-4 h-4 transition-transform group-hover:-translate-y-0.5" aria-hidden="true" />
-                    rasagyavatsal16@gmail.com
-                  </a>
-                </div>
-              </div>
+          <div className="mx-auto w-full max-w-xl">
+            <h1 className="text-page-title font-bold tracking-tight text-foreground mb-6">
+              Email me
+            </h1>
+            <p className="text-body-lg text-muted-foreground mb-8">
+              Have a question, bug report, or feature request? I&apos;ll get back to you.
+            </p>
+            <InquiryForm />
+            <div className="mt-8">
+              <p className="text-supporting text-muted-foreground mb-3">
+                Or email directly:
+              </p>
+              <a
+                href="mailto:rasagyavatsal16@gmail.com"
+                className="inline-flex items-center gap-2 text-brand-accent hover:text-brand-accent-hover font-medium transition-colors group"
+              >
+                <Mail className="w-4 h-4 transition-transform group-hover:-translate-y-0.5" data-testid="mail-icon" aria-hidden="true" />
+                rasagyavatsal16@gmail.com
+              </a>
             </div>
           </div>
         </div>
