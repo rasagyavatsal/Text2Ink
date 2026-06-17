@@ -6,7 +6,7 @@ import SiteFooter from '@/components/patterns/SiteFooter';
 
 export const metadata: Metadata = {
   title: 'Text to Handwriting Converter',
-  description: "Because life's too short to handwrite assignments.",
+  description: 'Create realistic handwritten pages from typed text for assignments, class notes, study materials, and notebook-style images.',
 };
 
 export default function HomePage() {
@@ -40,7 +40,7 @@ export default function HomePage() {
               </span>
             </h1>
             <p className="text-body-lg text-muted-foreground max-w-3xl">
-              Because life&apos;s too short to handwrite assignments.
+              Create realistic handwritten pages from typed text for assignments, class notes, study materials, and notebook-style images.
             </p>
             <Button variant="brand" size="lg" className="mt-2 shadow-sm" asChild>
               <Link href="/editor">
