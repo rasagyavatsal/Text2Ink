@@ -40,19 +40,22 @@ describe('PrivacyPolicyPage', () => {
       screen.getByRole('heading', { level: 1, name: /privacy policy/i })
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/this policy explains what information text2ink collects/i)
+      screen.getByText(/this policy explains what information text2ink handles, why it is used/i)
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { name: /editor drafts and local storage/i })
+      screen.getByRole('heading', { name: /what stays in your browser/i })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { name: /analytics and product measurement/i })
+      screen.getByRole('heading', { name: /uploads and exports/i })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { name: /contact form submissions/i })
+      screen.getByRole('heading', { name: /analytics/i })
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/firebase analytics, google analytics, and contentsquare/i)
+      screen.getByRole('heading', { name: /contact inquiries/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /your choices and requests/i })
     ).toBeInTheDocument();
 
     expect(
