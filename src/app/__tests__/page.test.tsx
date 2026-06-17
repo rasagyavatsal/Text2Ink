@@ -67,7 +67,7 @@ describe('HomePage', () => {
     expect(heroHeading.querySelectorAll('span')).toHaveLength(1);
     expect(heroHeading.querySelector('br')).toBeInTheDocument();
 
-    expect(screen.getByText(/because life's too short to handwrite assignments/i)).toBeInTheDocument();
+    expect(screen.getByText(/create realistic handwritten pages from typed text/i)).toBeInTheDocument();
     
     // There should be two "Open Editor" links (one in header, one in hero)
     const ctaLinks = screen.getAllByRole('link', { name: /open editor/i });
