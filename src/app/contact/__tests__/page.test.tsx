@@ -48,10 +48,10 @@ describe("ContactPage", () => {
     expect(screen.getByTestId("inquiry-form")).toBeInTheDocument()
   })
 
-  it("displays the correct fallback email", () => {
+  it("displays the correct fallback email and removes the duplicated desktop placement", () => {
     render(<ContactPage />)
     const emailLinks = screen.getAllByText("rasagyavatsal16@gmail.com")
-    expect(emailLinks.length).toBeGreaterThanOrEqual(1)
+    expect(emailLinks).toHaveLength(1)
     expect(screen.queryByText("rasagyavatsal@outlook.com")).not.toBeInTheDocument()
   })
 
@@ -60,15 +60,25 @@ describe("ContactPage", () => {
     expect(screen.getByText("Email me")).toBeInTheDocument()
   })
 
+  it("renders the concise and personal intro copy", () => {
+    render(<ContactPage />)
+    expect(
+      screen.getByText(/question, bug report, or feature request.*I'll get back to you/i)
+    ).toBeInTheDocument()
+  })
+
   it("renders the Mail icon with the email address", () => {
     render(<ContactPage />)
     expect(screen.getByTestId("mail-icon")).toBeInTheDocument()
   })
 
-  it("has the inquiry split layout structure on desktop", () => {
+  it("has a single centered column layout", () => {
     const { container } = render(<ContactPage />)
     const splitLayout = container.querySelector(String.raw`.lg\:grid-cols-2`)
-    expect(splitLayout).toBeInTheDocument()
+    expect(splitLayout).not.toBeInTheDocument()
+    const centeredColumn = container.querySelector(String.raw`.mx-auto`)
+    expect(centeredColumn).toBeInTheDocument()
+    expect(centeredColumn?.className).toContain("max-w-")
   })
 
   it("renders the footer with copyright", () => {
