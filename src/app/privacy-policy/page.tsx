@@ -14,30 +14,37 @@ export const metadata: Metadata = {
 
 const sections = [
   {
+    id: 'information-we-collect',
     title: 'Information we collect',
     body: 'Text2Ink is designed so that most handwriting generation happens in your browser. We do not require user accounts, and we do not ask for payment information to use the editor.',
   },
   {
+    id: 'editor-drafts-and-local-storage',
     title: 'Editor drafts and local storage',
     body: 'When you use the editor, Text2Ink stores your typed text, handwriting settings, page settings, and some editor interface state in your browser local storage so your session can be restored on the same device. Those drafts stay on your device unless you choose to export or share them yourself.',
   },
   {
+    id: 'analytics-and-product-measurement',
     title: 'Analytics and product measurement',
     body: 'Text2Ink uses Firebase Analytics, Google Analytics, and Contentsquare to understand aggregate usage, performance, and page interaction patterns. These services may collect technical information such as browser details, device data, referrers, and activity on the site.',
   },
   {
+    id: 'contact-form-submissions',
     title: 'Contact form submissions',
     body: 'If you send an inquiry, we collect the name, email address, topic, and message you submit. Inquiry requests are validated, checked for spam, rate-limited using hashed IP and email identifiers, and then delivered to the Text2Ink operator by email so we can respond.',
   },
   {
+    id: 'how-we-use-information',
     title: 'How we use information',
     body: 'We use information to operate the site, improve editor reliability, understand product usage, prevent abuse, and respond to support, bug, and feature-request messages.',
   },
   {
+    id: 'your-choices',
     title: 'Your choices',
     body: 'You can clear locally stored editor drafts from your browser storage, avoid submitting the contact form if you do not want to share inquiry details, and use browser tools or extensions that limit analytics collection.',
   },
   {
+    id: 'contact',
     title: 'Contact',
     body: 'Questions about this policy can be sent through the contact page or by email at rasagyavatsal16@gmail.com.',
   },
