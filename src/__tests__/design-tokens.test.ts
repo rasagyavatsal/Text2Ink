@@ -64,7 +64,7 @@ const primitiveTokenGroups = createTokenGroups({
 
 const semanticTokenGroups = createTokenGroups({
   'layout tokens': `
-    --layout-panel-width --layout-content-width --layout-header-height
+    --layout-panel-width --layout-content-width --layout-document-width --layout-header-height
     --layout-controls-gap --layout-chrome-gap --layout-chrome-padding-y
     --layout-footer-padding-y --layout-page-padding-x --layout-page-padding-y
     --layout-section-rhythm --layout-public-gutter
@@ -92,7 +92,7 @@ const expectedThemeTokens = cssNameList(`
   --spacing-panel --spacing-section --spacing-controls --spacing-chrome
   --spacing-chrome-y --spacing-footer --spacing-page-x --spacing-page-y
   --spacing-public-gutter --height-control-sm --height-control-md --height-control-lg --height-input
-  --width-panel --container-content --text-label --text-brand-mark
+  --width-panel --container-content --container-document --text-label --text-brand-mark
   --text-display-title --text-page-title --text-document-title --text-section-title
   --text-overlay-title --text-body-lg --text-body --text-supporting --text-caption
 `);

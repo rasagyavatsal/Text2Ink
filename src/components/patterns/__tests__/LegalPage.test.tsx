@@ -53,4 +53,9 @@ describe('LegalPage', () => {
   it('no longer uses the old max-w-4xl legal body wrapper', () => {
     expect(legalPageSource).not.toMatch(/max-w-4xl/);
   });
+
+  it('centers the TOC/content group with a max-w-document container', () => {
+    expect(legalPageSource).toMatch(/max-w-document/);
+    expect(legalPageSource).toMatch(/mx-auto/);
+  });
 });
