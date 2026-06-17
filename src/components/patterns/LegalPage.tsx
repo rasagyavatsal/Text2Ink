@@ -38,8 +38,8 @@ export default function LegalPage({
 
       <main className="py-page-y">
         <div className={frameClasses}>
-          <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
-            <div>
+          <div className="flex w-full flex-col gap-8">
+            <div className="max-w-3xl">
               <h1 className="text-document-title font-bold tracking-tight text-foreground mb-4">
                 {title}
               </h1>
@@ -51,19 +51,17 @@ export default function LegalPage({
               </p>
             </div>
 
-            <div className="rounded-3xl border border-border bg-card p-6 shadow-sm sm:p-8">
-              <div className="space-y-8">
-                {sections.map((section) => (
-                  <section key={section.title} className="space-y-3">
-                    <h2 className="text-section-title font-semibold tracking-tight text-foreground">
-                      {section.title}
-                    </h2>
-                    <p className="text-body leading-7 text-muted-foreground">
-                      {section.body}
-                    </p>
-                  </section>
-                ))}
-              </div>
+            <div className="max-w-3xl space-y-8">
+              {sections.map((section) => (
+                <section key={section.title} className="space-y-3">
+                  <h2 className="text-section-title font-semibold tracking-tight text-foreground">
+                    {section.title}
+                  </h2>
+                  <p className="text-body leading-7 text-muted-foreground">
+                    {section.body}
+                  </p>
+                </section>
+              ))}
             </div>
           </div>
         </div>
