@@ -14,34 +14,29 @@ export const metadata: Metadata = {
 
 const sections = [
   {
-    id: 'information-we-collect',
-    title: 'Information we collect',
-    body: 'Text2Ink is designed so that most handwriting generation happens in your browser. We do not require user accounts, and we do not ask for payment information to use the editor.',
+    id: 'what-stays-in-your-browser',
+    title: 'What stays in your browser',
+    body: 'Text2Ink does not require an account or payment to use the editor.\n\nThe editor saves your current work in your browser’s local storage under `text2ink.editor.state` so the same device can restore your session. That saved editor state can include typed text, handwriting settings, page settings, text boxes, custom font data, uploaded background images, preview scale, and current page position.\n\nThis editor state remains in your browser until it is overwritten, cleared by you, or removed by your browser. You can remove it by clearing site data for Text2Ink in your browser.',
   },
   {
-    id: 'editor-drafts-and-local-storage',
-    title: 'Editor drafts and local storage',
-    body: 'When you use the editor, Text2Ink stores your typed text, handwriting settings, page settings, and some editor interface state in your browser local storage so your session can be restored on the same device. Those drafts stay on your device unless you choose to export or share them yourself.',
+    id: 'uploads-and-exports',
+    title: 'Uploads and exports',
+    body: 'When you upload a custom font or background image, your browser reads the file so Text2Ink can render it in the editor and exports. Those files can be stored locally as part of your saved editor state.\n\nExports are generated from your editor state. You decide what to download, keep, submit, or share after exporting.',
   },
   {
-    id: 'analytics-and-product-measurement',
-    title: 'Analytics and product measurement',
-    body: 'Text2Ink uses Firebase Analytics, Google Analytics, and Contentsquare to understand aggregate usage, performance, and page interaction patterns. These services may collect technical information such as browser details, device data, referrers, and activity on the site.',
+    id: 'analytics',
+    title: 'Analytics',
+    body: 'Text2Ink loads Firebase Analytics and Contentsquare to understand aggregate usage, performance, and page interaction patterns.\n\nThese services may collect technical and usage information such as browser details, device information, referrers, pages visited, and interactions on the site. Text2Ink uses this information to understand how the site is used and improve reliability and usability.',
   },
   {
-    id: 'contact-form-submissions',
-    title: 'Contact form submissions',
-    body: 'If you send an inquiry, we collect the name, email address, topic, and message you submit. Inquiry requests are validated, checked for spam, rate-limited using hashed IP and email identifiers, and then delivered to the Text2Ink operator by email so we can respond.',
+    id: 'contact-inquiries',
+    title: 'Contact inquiries',
+    body: 'If you send a message through the contact form, Text2Ink collects the name, email address, topic, and message you submit so we can receive and respond to your inquiry.\n\nInquiry submissions are validated, checked for spam, and rate-limited. Rate limiting stores hashed IP and email identifiers, request counts, and expiry timestamps in Firestore. The current Firebase configuration does not show an automatic Firestore TTL deletion policy for those rate-limit records.\n\nInquiry emails are delivered to the Text2Ink operator by email using SMTP.',
   },
   {
-    id: 'how-we-use-information',
-    title: 'How we use information',
-    body: 'We use information to operate the site, improve editor reliability, understand product usage, prevent abuse, and respond to support, bug, and feature-request messages.',
-  },
-  {
-    id: 'your-choices',
-    title: 'Your choices',
-    body: 'You can clear locally stored editor drafts from your browser storage, avoid submitting the contact form if you do not want to share inquiry details, and use browser tools or extensions that limit analytics collection.',
+    id: 'your-choices-and-requests',
+    title: 'Your choices and requests',
+    body: 'You can avoid sharing contact details by not submitting the contact form. You can limit analytics collection with browser settings, privacy tools, or extensions. You can remove locally saved editor work by clearing Text2Ink site data in your browser.\n\nYou can contact Text2Ink to ask about access, correction, deletion, or other privacy questions related to information you have provided. Text2Ink will respond to requests as required by applicable law.',
   },
   {
     id: 'contact',
@@ -54,8 +49,8 @@ export default function PrivacyPolicyPage() {
   return (
     <LegalPage
       title="Privacy Policy"
-      intro="This policy explains what information Text2Ink collects, how we use it, and what choices you have when using the service."
-      effectiveDate="May 21, 2026"
+      intro="This policy explains what information Text2Ink handles, why it is used, and what choices you have."
+      effectiveDate="June 16, 2026"
       sections={sections}
     />
   );
