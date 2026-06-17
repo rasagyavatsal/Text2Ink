@@ -40,16 +40,22 @@ describe('TermsOfServicePage', () => {
       screen.getByRole('heading', { level: 1, name: /terms of service/i })
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/these terms govern your use of text2ink/i)
+      screen.getByText(/these terms explain how you may use text2ink/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /what text2ink does/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /your content/i })
     ).toBeInTheDocument();
     expect(
       screen.getByRole('heading', { name: /acceptable use/i })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { name: /exported content and responsibility/i })
+      screen.getByRole('heading', { name: /exports and availability/i })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { name: /changes to the service/i })
+      screen.getByRole('heading', { name: /changes to these terms/i })
     ).toBeInTheDocument();
 
     expect(

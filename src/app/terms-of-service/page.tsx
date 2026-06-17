@@ -14,29 +14,29 @@ export const metadata: Metadata = {
 
 const sections = [
   {
-    id: 'using-text2ink',
-    title: 'Using Text2Ink',
-    body: 'Text2Ink lets you convert typed text into handwriting-style pages and export the results for your own notes, drafts, assignments, and creative work. You may use the service only in compliance with applicable law and these terms.',
+    id: 'what-text2ink-does',
+    title: 'What Text2Ink does',
+    body: 'Text2Ink is a web editor that converts typed text into handwriting-style pages. It lets you customize handwriting, paper, colors, margins, text boxes, backgrounds, and export the result as PDF, PNG, or JPG.\n\nYou can use the editor without creating an account or making a payment.',
+  },
+  {
+    id: 'your-content',
+    title: 'Your content',
+    body: 'You are responsible for the text, files, fonts, images, and other content you use with Text2Ink.\n\nText2Ink does not review your content for accuracy, ownership, permissions, or whether it meets any school, workplace, platform, or submission rules. Do not upload or use content unless you have the rights and permission to use it.',
   },
   {
     id: 'acceptable-use',
     title: 'Acceptable use',
-    body: 'You may not use Text2Ink to violate academic, workplace, or platform rules, infringe another person’s rights, distribute malware, abuse the contact form, or interfere with the service. We may limit or block usage that creates security, legal, or reliability risk.',
+    body: 'Use Text2Ink only for lawful purposes.\n\nDo not use Text2Ink to deceive someone, impersonate someone, violate academic or workplace rules, infringe another person’s rights, distribute harmful content, attack the service, abuse the contact form, or interfere with other users or the service.',
   },
   {
-    id: 'exported-content-and-responsibility',
-    title: 'Exported content and responsibility',
-    body: 'You are responsible for the text you enter, the handwriting-style exports you generate, and how you use them. Text2Ink provides formatting and export tools, but it does not review your content for accuracy, ownership, or suitability for any submission requirement.',
+    id: 'exports-and-availability',
+    title: 'Exports and availability',
+    body: 'Exports are generated from your browser and editor state. You are responsible for reviewing exported files before using or submitting them.\n\nText2Ink may change, improve, limit, suspend, or discontinue parts of the service. We aim to keep the editor useful, but we do not guarantee uninterrupted availability, perfect rendering, compatibility with every browser or device, or preservation of locally saved drafts.',
   },
   {
-    id: 'availability-and-updates',
-    title: 'Availability and updates',
-    body: 'We may change, improve, suspend, or discontinue parts of Text2Ink at any time. We aim to keep the editor available, but we do not guarantee uninterrupted access, perfect rendering on every browser, or preservation of locally stored drafts.',
-  },
-  {
-    id: 'changes-to-the-service',
-    title: 'Changes to the service',
-    body: 'If we make material changes to these terms, we may update this page and the effective date below. Your continued use of Text2Ink after those changes means you accept the revised terms.',
+    id: 'changes-to-these-terms',
+    title: 'Changes to these terms',
+    body: 'We may update these terms when the service or policy needs change. Updates will be posted on this page with a new effective date.\n\nYour continued use of Text2Ink after an update means you accept the revised terms.',
   },
   {
     id: 'contact',
@@ -49,8 +49,8 @@ export default function TermsOfServicePage() {
   return (
     <LegalPage
       title="Terms of Service"
-      intro="These terms govern your use of Text2Ink, the rules for acceptable use, and your responsibilities when you export handwriting-style pages."
-      effectiveDate="May 21, 2026"
+      intro="These terms explain how you may use Text2Ink and what you are responsible for when you create and export handwriting-style pages."
+      effectiveDate="June 16, 2026"
       sections={sections}
     />
   );
