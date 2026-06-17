@@ -54,7 +54,19 @@ describe('HomePage', () => {
 
   it('renders the hero section', () => {
     render(<HomePage />);
-    expect(screen.getByRole('heading', { name: /text to handwriting converter/i })).toBeInTheDocument();
+    const heroHeading = screen.getByRole('heading', {
+      name: 'Convert typed text into realistic handwriting',
+    });
+    expect(heroHeading).toBeInTheDocument();
+
+    const highlightedText = within(heroHeading).getByText('realistic handwriting');
+    expect(highlightedText.tagName).toBe('SPAN');
+    expect(highlightedText).toHaveClass('font-[family-name:var(--font-ff-comma)]');
+    expect(highlightedText).toHaveClass('text-amber-600');
+    expect(heroHeading).toHaveClass('whitespace-nowrap');
+    expect(heroHeading.querySelectorAll('span')).toHaveLength(1);
+    expect(heroHeading.querySelector('br')).toBeInTheDocument();
+
     expect(screen.getByText(/because life's too short to handwrite assignments/i)).toBeInTheDocument();
     
     // There should be two "Open Editor" links (one in header, one in hero)

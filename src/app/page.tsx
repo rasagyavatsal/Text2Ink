@@ -30,11 +30,16 @@ export default function HomePage() {
 
       <main className="py-page-y flex flex-col items-center gap-section w-full">
         <div className={frameClasses}>
-          <div className="text-center flex flex-col items-center gap-6 max-w-3xl mx-auto">
-            <h1 className="text-display-title font-bold tracking-tight text-foreground">
-              Text to Handwriting converter
+          <div className="text-center flex flex-col items-center gap-6 max-w-7xl mx-auto">
+            <h1 className="text-display-title font-bold tracking-tight text-foreground leading-tight whitespace-nowrap">
+              Convert typed text into
+              <br />
+              {' '}
+              <span className="font-[family-name:var(--font-ff-comma)] text-amber-600 dark:text-amber-300">
+                realistic handwriting
+              </span>
             </h1>
-            <p className="text-body-lg text-muted-foreground">
+            <p className="text-body-lg text-muted-foreground max-w-3xl">
               Because life&apos;s too short to handwrite assignments.
             </p>
             <Button variant="brand" size="lg" className="mt-2 shadow-sm" asChild>
