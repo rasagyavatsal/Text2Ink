@@ -38,11 +38,30 @@ describe('SiteFooter', () => {
     expect(screen.getByTestId('version')).toBeInTheDocument();
   });
 
+  it('renders product navigation links for Open Editor and Contact', () => {
+    render(<SiteFooter />);
+
+    const editorLink = screen.getByRole('link', { name: /open editor/i });
+    expect(editorLink).toBeInTheDocument();
+    expect(editorLink).toHaveAttribute('href', '/editor');
+
+    const contactLink = screen.getByRole('link', { name: /contact/i });
+    expect(contactLink).toBeInTheDocument();
+    expect(contactLink).toHaveAttribute('href', '/contact');
+  });
+
   it('renders only the logo image in the brand link without wordmark text', () => {
     render(<SiteFooter />);
     
     // Logo image should be present
-    expect(screen.getByRole('img', { name: /text2ink logo/i })).toBeInTheDocument();
+    const logoImg = screen.getByRole('img', { name: /text2ink logo/i });
+    expect(logoImg).toBeInTheDocument();
+    
+    // Check sizing classes
+    expect(logoImg).toHaveClass('w-14');
+    expect(logoImg).toHaveClass('h-14');
+    expect(logoImg).toHaveClass('md:w-16');
+    expect(logoImg).toHaveClass('md:h-16');
     
     // Wordmark text should not be present
     expect(screen.queryByText('Text')).not.toBeInTheDocument();
