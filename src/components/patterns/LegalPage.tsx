@@ -38,49 +38,51 @@ export default function LegalPage({
 
       <main className="py-page-y">
         <div className={frameClasses}>
-          <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 items-start">
-            <aside className="w-full lg:w-64 lg:shrink-0 lg:sticky lg:top-32">
-              <nav aria-label="Table of contents" className="flex flex-col gap-2">
-                <h2 className="font-semibold text-foreground mb-2">Table of contents</h2>
-                <ul className="flex flex-col gap-2">
+          <div className="mx-auto w-full max-w-document">
+            <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 items-start">
+              <aside className="w-full lg:w-64 lg:shrink-0 lg:sticky lg:top-32">
+                <nav aria-label="Table of contents" className="flex flex-col gap-2">
+                  <h2 className="font-semibold text-foreground mb-2">Table of contents</h2>
+                  <ul className="flex flex-col gap-2">
+                    {sections.map((section) => (
+                      <li key={section.id}>
+                        <Link
+                          href={`#${section.id}`}
+                          className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+                        >
+                          {section.title}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              </aside>
+
+              <div className="flex w-full flex-col gap-8 max-w-3xl">
+                <div>
+                  <h1 className="text-document-title font-bold tracking-tight text-foreground mb-4">
+                    {title}
+                  </h1>
+                  <p className="text-body-lg text-muted-foreground mb-4">
+                    {intro}
+                  </p>
+                  <p className="text-caption text-muted-foreground mb-8">
+                    Effective date: {effectiveDate}
+                  </p>
+                </div>
+
+                <div className="space-y-8">
                   {sections.map((section) => (
-                    <li key={section.id}>
-                      <Link 
-                        href={`#${section.id}`}
-                        className="text-muted-foreground hover:text-foreground text-sm transition-colors"
-                      >
+                    <section key={section.id} id={section.id} className="space-y-3 scroll-mt-32">
+                      <h2 className="text-section-title font-semibold tracking-tight text-foreground">
                         {section.title}
-                      </Link>
-                    </li>
+                      </h2>
+                      <p className="text-body leading-7 text-muted-foreground">
+                        {section.body}
+                      </p>
+                    </section>
                   ))}
-                </ul>
-              </nav>
-            </aside>
-
-            <div className="flex w-full flex-col gap-8 max-w-3xl">
-              <div>
-                <h1 className="text-document-title font-bold tracking-tight text-foreground mb-4">
-                  {title}
-                </h1>
-                <p className="text-body-lg text-muted-foreground mb-4">
-                  {intro}
-                </p>
-                <p className="text-caption text-muted-foreground mb-8">
-                  Effective date: {effectiveDate}
-                </p>
-              </div>
-
-              <div className="space-y-8">
-                {sections.map((section) => (
-                  <section key={section.id} id={section.id} className="space-y-3 scroll-mt-32">
-                    <h2 className="text-section-title font-semibold tracking-tight text-foreground">
-                      {section.title}
-                    </h2>
-                    <p className="text-body leading-7 text-muted-foreground">
-                      {section.body}
-                    </p>
-                  </section>
-                ))}
+                </div>
               </div>
             </div>
           </div>

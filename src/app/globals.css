@@ -71,6 +71,7 @@
 
   /* Container: semantic tokens available as max-w-* utilities */
   --container-content: var(--layout-content-width);
+  --container-document: var(--layout-document-width);
 
   /* Inset: semantic tokens available as left-*, right-*, top-*, bottom-* utilities */
   --inset-panel: var(--panel-width);
@@ -128,6 +129,7 @@
   /* Primitive tokens: width scale */
   --width-panel: 24rem;
   --width-content: 72rem;
+  --width-document: 64rem;
 
   /* Primitive tokens: breakpoint scale */
   --breakpoint-sm: 640px;
@@ -158,6 +160,7 @@
   /* Semantic tokens: layout intent */
   --layout-panel-width: var(--width-panel);
   --layout-content-width: var(--width-content);
+  --layout-document-width: var(--width-document);
   --layout-header-height: var(--size-control-lg);
   --layout-controls-gap: var(--space-4);
   --layout-chrome-gap: var(--space-3);
