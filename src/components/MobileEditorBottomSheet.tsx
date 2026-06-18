@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Sheet, type SheetRef } from 'react-modal-sheet';
 import {
   classifyMobileSheetAnchor,
@@ -50,25 +50,25 @@ function PageZoomControls({
   onPreviewScaleChange,
 }: PageZoomControlsProps) {
   return (
-    <div className="flex items-center justify-center gap-2">
+    <div className="flex w-full items-center justify-center gap-2 px-3">
       {/* Page Controls */}
       <div className="flex items-center gap-1">
         <Button
           variant="ghost"
-          size="icon"
+          size="icon-lg"
           onClick={() => onCurrentPageChange(Math.max(0, currentPageIndex - 1))}
           disabled={currentPageIndex === 0}
-          className="h-8 w-8 text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
+          className="text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
           aria-label="Previous page"
         >
           <ChevronLeft className="w-4 h-4" />
         </Button>
-        <span className="text-xs font-semibold text-foreground min-w-[70px] text-center select-none">
+        <span className="min-w-[70px] select-none text-center text-xs font-semibold text-foreground">
           Page {currentPageIndex + 1} of {totalPages}
         </span>
         <Button
           variant="ghost"
-          size="icon"
+          size="icon-lg"
           onClick={() =>
             onCurrentPageChange(
               isPaginationComplete
@@ -77,7 +77,7 @@ function PageZoomControls({
             )
           }
           disabled={isPaginationComplete && currentPageIndex >= pages.length - 1}
-          className="h-8 w-8 text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
+          className="text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
           aria-label="Next page"
         >
           <ChevronRight className="w-4 h-4" />
@@ -91,21 +91,21 @@ function PageZoomControls({
       <div className="flex items-center gap-1">
         <Button
           variant="ghost"
-          size="icon"
+          size="icon-lg"
           onClick={() => onPreviewScaleChange(Number((previewScale - 0.1).toFixed(2)))}
-          className="h-8 w-8 text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
+          className="text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
           aria-label="Zoom out"
         >
           <Minus className="w-4 h-4" />
         </Button>
-        <span className="text-xs font-semibold text-foreground min-w-[45px] text-center select-none">
+        <span className="min-w-[45px] select-none text-center text-xs font-semibold text-foreground">
           {Math.round(previewScale * 100)}%
         </span>
         <Button
           variant="ghost"
-          size="icon"
+          size="icon-lg"
           onClick={() => onPreviewScaleChange(Number((previewScale + 0.1).toFixed(2)))}
-          className="h-8 w-8 text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
+          className="text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
           aria-label="Zoom in"
         >
           <Plus className="w-4 h-4" />
@@ -132,10 +132,16 @@ export default function MobileEditorBottomSheet({
 }: MobileEditorBottomSheetProps) {
   const sheetRef = useRef<SheetRef | null>(null);
   const observedAnchorRef = useRef<MobileSheetAnchor | null>(null);
+  const sheetReadyRef = useRef(false);
+  const [isSheetReady, setIsSheetReady] = useState(false);
   const snapPoints = useMemo(() => createMobileSheetSnapPoints(metrics), [metrics]);
-  const initialSnap = useMemo(
-    () => getMobileSheetAnchorSnapIndex(anchor, snapPoints, metrics),
-    [anchor, metrics, snapPoints],
+  const sheetStyleVars = useMemo(
+    () =>
+      ({
+        '--mobile-editor-sheet-max-height': `${metrics.maxSheetHeight}px`,
+        '--mobile-editor-sheet-peek-height': `${metrics.minSheetHeight}px`,
+      }) as React.CSSProperties,
+    [metrics.maxSheetHeight, metrics.minSheetHeight],
   );
 
   const updateHeightFromSnapIndex = useCallback(
@@ -158,8 +164,27 @@ export default function MobileEditorBottomSheet({
 
     const index = getMobileSheetAnchorSnapIndex(anchor, snapPoints, metrics);
     const height = resolveMobileSheetSnapHeight(snapPoints[index] ?? metrics.minSheetHeight, metrics.maxSheetHeight);
-    sheetRef.current?.snapTo(index);
     onHeightChange(height);
+
+    const timeout = globalThis.setTimeout(() => {
+      const sheet = sheetRef.current;
+
+      if (!sheet) {
+        if (!sheetReadyRef.current) {
+          sheetReadyRef.current = true;
+          setIsSheetReady(true);
+        }
+        return;
+      }
+
+      sheet.snapTo(index);
+      if (!sheetReadyRef.current) {
+        sheetReadyRef.current = true;
+        setIsSheetReady(true);
+      }
+    }, 100);
+
+    return () => globalThis.clearTimeout(timeout);
   }, [anchor, metrics, onHeightChange, snapPoints]);
 
   const handleDrag = useCallback(() => {
@@ -176,91 +201,68 @@ export default function MobileEditorBottomSheet({
     onAnchorChange('peek');
   }, [metrics, onAnchorChange, onHeightChange, snapPoints]);
 
-  const currentHeight = useMemo(() => {
-    if (anchor === 'peek') return metrics.minSheetHeight;
-    if (anchor === 'expanded') return metrics.maxSheetHeight;
-    return metrics.defaultSheetHeight;
-  }, [anchor, metrics]);
-
   const handleLabel = getMobileSheetHandleLabel(anchor);
 
   return (
-    <Sheet
-      ref={sheetRef}
-      isOpen
-      avoidKeyboard
-      disableDismiss
-      disableScrollLocking
-      initialSnap={initialSnap}
-      snapPoints={snapPoints}
-      className="mobile-editor-sheet"
-      dragCloseThreshold={0}
-      dragVelocityThreshold={850}
-      onClose={handleClose}
-      onDrag={handleDrag}
-      onSnap={updateHeightFromSnapIndex}
-    >
-      <Sheet.Container
-        className="mobile-editor-sheet__container border-t border-border bg-background shadow-2xl"
-        style={
-          {
-            '--mobile-editor-sheet-max-height': `${metrics.maxSheetHeight}px`,
-            '--mobile-editor-sheet-peek-height': `${metrics.minSheetHeight}px`,
-            '--mobile-editor-sheet-current-height': `${currentHeight}px`,
-          } as React.CSSProperties
-        }
+    <>
+      <Sheet
+        ref={sheetRef}
+        isOpen
+        avoidKeyboard
+        disableDismiss
+        disableScrollLocking
+        snapPoints={snapPoints}
+        className={`mobile-editor-sheet${isSheetReady ? '' : ' mobile-editor-sheet--preparing'}`}
+        dragCloseThreshold={0}
+        dragVelocityThreshold={850}
+        onClose={handleClose}
+        onDrag={handleDrag}
+        onSnap={updateHeightFromSnapIndex}
       >
-        <Sheet.Header className="mobile-editor-sheet__header bg-background">
-          <button
-            type="button"
-            className="flex min-h-10 w-full touch-none items-center justify-center rounded-t-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-            aria-label={handleLabel}
-            aria-expanded={anchor !== 'peek'}
-            onClick={onHandlePress}
-          >
-            <span className="h-1.5 w-14 rounded-full bg-border" aria-hidden="true" />
-          </button>
-          {anchor === 'peek' && (
-            <div className="flex items-center justify-center gap-2 pb-3 pt-1 border-b border-border/50">
-              <PageZoomControls
-                currentPageIndex={currentPageIndex}
-                totalPages={totalPages}
-                isPaginationComplete={isPaginationComplete}
-                pages={pages}
-                previewScale={previewScale}
-                onCurrentPageChange={onCurrentPageChange}
-                onPreviewScaleChange={onPreviewScaleChange}
-              />
-            </div>
-          )}
-        </Sheet.Header>
-
-        <Sheet.Content
-          disableDrag
-          className="min-h-0 bg-background"
-          scrollClassName="mobile-editor-sheet__scroller"
+        <Sheet.Container
+          className="mobile-editor-sheet__container border-t border-border bg-background shadow-2xl"
+          style={sheetStyleVars}
         >
-          <div className="min-h-full bg-background">
-            <div className="min-h-0">
-              {anchor !== 'peek' && settingsPanel}
-            </div>
-          </div>
-        </Sheet.Content>
+          <Sheet.Header className="mobile-editor-sheet__header bg-background">
+            <button
+              type="button"
+              className="flex min-h-10 w-full touch-none items-center justify-center rounded-t-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              aria-label={handleLabel}
+              aria-expanded={anchor !== 'peek'}
+              onClick={onHandlePress}
+            >
+              <span className="h-1.5 w-14 rounded-full bg-border" aria-hidden="true" />
+            </button>
+          </Sheet.Header>
 
-        {anchor !== 'peek' && (
-          <div className="mobile-editor-sheet__footer">
-            <PageZoomControls
-              currentPageIndex={currentPageIndex}
-              totalPages={totalPages}
-              isPaginationComplete={isPaginationComplete}
-              pages={pages}
-              previewScale={previewScale}
-              onCurrentPageChange={onCurrentPageChange}
-              onPreviewScaleChange={onPreviewScaleChange}
-            />
-          </div>
-        )}
-      </Sheet.Container>
-    </Sheet>
+          <Sheet.Content
+            disableDrag
+            className="mobile-editor-sheet__content min-h-0 bg-background"
+            scrollClassName="mobile-editor-sheet__scroller"
+          >
+            <div className="min-h-full bg-background">
+              <div className="min-h-0">
+                {anchor !== 'peek' && settingsPanel}
+              </div>
+            </div>
+          </Sheet.Content>
+        </Sheet.Container>
+      </Sheet>
+
+      <div
+        className={`mobile-editor-sheet__footer${isSheetReady ? '' : ' mobile-editor-sheet__footer--preparing'}`}
+        style={sheetStyleVars}
+      >
+        <PageZoomControls
+          currentPageIndex={currentPageIndex}
+          totalPages={totalPages}
+          isPaginationComplete={isPaginationComplete}
+          pages={pages}
+          previewScale={previewScale}
+          onCurrentPageChange={onCurrentPageChange}
+          onPreviewScaleChange={onPreviewScaleChange}
+        />
+      </div>
+    </>
   );
 }

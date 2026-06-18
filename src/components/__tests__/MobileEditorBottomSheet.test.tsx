@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, waitFor } from '@testing-library/react';
 import React from 'react';
 import MobileEditorBottomSheet from '../MobileEditorBottomSheet';
-import { createMobileSheetSnapPoints, getMobileSheetAnchorSnapIndex } from '@/lib/mobileEditorSheet';
 
 const { sheetMock } = vi.hoisted(() => ({
   sheetMock: vi.fn(({ children }: any) => children),
@@ -91,7 +90,7 @@ describe('MobileEditorBottomSheet', () => {
     });
   });
 
-  it('starts at the peek anchor instead of the default anchor', async () => {
+  it('starts by reporting the peek anchor height instead of the default height', async () => {
     const onHeightChange = vi.fn();
 
     renderMobileEditorBottomSheet({
@@ -100,11 +99,8 @@ describe('MobileEditorBottomSheet', () => {
     });
 
     const sheetProps = sheetMock.mock.calls[0]?.[0];
-    const snapPoints = createMobileSheetSnapPoints(DEFAULT_MOBILE_SHEET_METRICS);
 
-    expect(sheetProps.initialSnap).toBe(
-      getMobileSheetAnchorSnapIndex('peek', snapPoints, DEFAULT_MOBILE_SHEET_METRICS)
-    );
+    expect(sheetProps.initialSnap).toBeUndefined();
 
     await waitFor(() => {
       expect(onHeightChange).toHaveBeenCalledWith(DEFAULT_MOBILE_SHEET_METRICS.minSheetHeight);
@@ -115,7 +111,7 @@ describe('MobileEditorBottomSheet', () => {
   it('renders page and zoom controls in peek state and hides settings content', () => {
     const onCurrentPageChange = vi.fn();
     const onPreviewScaleChange = vi.fn();
-    const { getByText, queryByText, getByLabelText } = renderMobileEditorBottomSheet({
+    const { container, getByText, queryByText, getByLabelText } = renderMobileEditorBottomSheet({
       anchor: 'peek',
       currentPageIndex: 0,
       totalPages: 3,
@@ -139,6 +135,13 @@ describe('MobileEditorBottomSheet', () => {
     expect(getByText('120%')).toBeDefined();
     expect(getByLabelText('Zoom out')).toBeDefined();
     expect(getByLabelText('Zoom in')).toBeDefined();
+
+    const header = container.querySelector('.mobile-editor-sheet__header');
+    const footer = container.querySelector('.mobile-editor-sheet__footer');
+    expect(header?.textContent).not.toContain('Page 1 of 3');
+    expect(header?.textContent).not.toContain('120%');
+    expect(footer?.textContent).toContain('Page 1 of 3');
+    expect(footer?.textContent).toContain('120%');
 
     // Settings content is hidden in peek state
     expect(queryByText('Settings Content')).toBeNull();
@@ -165,7 +168,7 @@ describe('MobileEditorBottomSheet', () => {
     expect(getByText('120%')).toBeDefined();
   });
 
-  it('passes correct sheet heights via CSS custom variables to Sheet.Container', () => {
+  it('passes max and peek sheet heights via CSS custom variables to Sheet.Container', () => {
     const { container } = renderMobileEditorBottomSheet({
       anchor: 'default',
       metrics: DEFAULT_MOBILE_SHEET_METRICS,
@@ -174,9 +177,8 @@ describe('MobileEditorBottomSheet', () => {
     const sheetContainer = container.querySelector('.mobile-editor-sheet__container');
     expect(sheetContainer).not.toBeNull();
     const styles = (sheetContainer as HTMLElement).style;
-    expect(styles.getPropertyValue('--mobile-editor-sheet-current-height')).toBe(
-      `${DEFAULT_MOBILE_SHEET_METRICS.defaultSheetHeight}px`
-    );
+    expect(styles.getPropertyValue('--mobile-editor-sheet-max-height')).toBe(`${DEFAULT_MOBILE_SHEET_METRICS.maxSheetHeight}px`);
+    expect(styles.getPropertyValue('--mobile-editor-sheet-peek-height')).toBe(`${DEFAULT_MOBILE_SHEET_METRICS.minSheetHeight}px`);
+    expect(styles.getPropertyValue('--mobile-editor-sheet-current-height')).toBe('');
   });
 });
-

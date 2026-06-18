@@ -114,10 +114,10 @@ describe('SettingsPanel', () => {
     const applyAllButton = screen.getByRole('button', { name: /apply to all pages/i });
     expect(applyAllButton).toHaveAttribute('data-variant', 'brand');
 
-    // Zoom buttons should be ghost
-    const zoomInButton = screen.getByRole('button', { name: /zoom in/i });
-    expect(zoomInButton).toHaveAttribute('data-variant', 'ghost');
-    expect(zoomInButton).toHaveAttribute('data-size', 'icon');
+    // Page and zoom controls belong to the mobile bottom sheet footer, not the settings panel.
+    expect(screen.queryByRole('button', { name: /zoom in/i })).not.toBeInTheDocument();
+    expect(screen.queryByText('Zoom')).not.toBeInTheDocument();
+    expect(screen.queryByText('Page Navigation')).not.toBeInTheDocument();
   });
 
   it('renders paper style buttons for the built-in paper presets', () => {
@@ -234,6 +234,8 @@ describe('SettingsPanel', () => {
     expect(paperButton).toBeInTheDocument();
     expect(alignButton).toBeInTheDocument();
     expect(moreButton).toBeInTheDocument();
+    expect(screen.queryByText('Zoom')).not.toBeInTheDocument();
+    expect(screen.queryByText('Page Navigation')).not.toBeInTheDocument();
 
     // Verify clicking one calls scrollIntoView
     const textSection = document.getElementById('section-text');
@@ -264,4 +266,3 @@ describe('SettingsPanel', () => {
     expect(clearEverythingButton.className).toContain('text-destructive');
   });
 });
-

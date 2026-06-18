@@ -336,33 +336,52 @@
 
 @layer components {
   .mobile-editor-sheet__container {
-    height: var(--mobile-editor-sheet-current-height, var(--mobile-editor-sheet-max-height)) !important;
+    --mobile-editor-sheet-footer-height: calc(var(--mobile-editor-sheet-peek-height) - var(--metric-sheet-handle-height));
+    height: var(--mobile-editor-sheet-max-height) !important;
     max-height: var(--mobile-editor-sheet-max-height) !important;
     overflow: hidden;
   }
 
+  .mobile-editor-sheet--preparing {
+    opacity: 0;
+    pointer-events: none;
+  }
+
   .mobile-editor-sheet__header {
-    min-height: var(--mobile-editor-sheet-peek-height);
+    min-height: var(--metric-sheet-handle-height);
+    flex-shrink: 0;
+  }
+
+  .mobile-editor-sheet__content {
+    min-height: 0;
   }
 
   .mobile-editor-sheet__scroller {
     overscroll-behavior: contain;
-    padding-bottom: calc(var(--safe-area-inset-bottom) + 72px);
+    padding-bottom: var(--mobile-editor-sheet-footer-height);
   }
 
   .mobile-editor-sheet__footer {
-    position: absolute;
+    --mobile-editor-sheet-footer-height: calc(var(--mobile-editor-sheet-peek-height) - var(--metric-sheet-handle-height));
+    position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 20;
+    z-index: 10000;
+    pointer-events: auto;
+    min-height: var(--mobile-editor-sheet-footer-height);
     background-color: var(--background);
     border-top: 1px solid var(--border);
-    padding-top: var(--space-3);
-    padding-bottom: calc(var(--space-3) + var(--safe-area-inset-bottom));
+    padding-top: var(--space-1);
+    padding-bottom: calc(var(--space-1) + var(--safe-area-inset-bottom));
     display: flex;
     justify-content: center;
     align-items: center;
+  }
+
+  .mobile-editor-sheet__footer--preparing {
+    opacity: 0;
+    pointer-events: none;
   }
 
   .label-text {
