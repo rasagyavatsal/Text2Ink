@@ -61,9 +61,13 @@ describe('HomePage', () => {
 
     const highlightedText = within(heroHeading).getByText('realistic handwriting');
     expect(highlightedText.tagName).toBe('SPAN');
+    expect(heroHeading).not.toHaveClass('font-bold');
+    expect(heroHeading).toHaveClass('font-normal');
+    expect(highlightedText).toHaveClass('font-bold');
     expect(highlightedText).toHaveClass('font-[family-name:var(--font-ff-comma)]');
     expect(highlightedText).toHaveClass('text-amber-600');
-    expect(heroHeading).toHaveClass('whitespace-nowrap');
+    expect(heroHeading).toHaveClass('whitespace-normal');
+    expect(heroHeading).toHaveClass('md:whitespace-nowrap');
     expect(heroHeading.querySelectorAll('span')).toHaveLength(1);
     expect(heroHeading.querySelector('br')).toBeInTheDocument();
 
