@@ -30,6 +30,91 @@ interface MobileEditorBottomSheetProps {
   readonly onPreviewScaleChange: (scale: number) => void;
 }
 
+interface PageZoomControlsProps {
+  readonly currentPageIndex: number;
+  readonly totalPages: number;
+  readonly isPaginationComplete: boolean;
+  readonly pages: unknown[][];
+  readonly previewScale: number;
+  readonly onCurrentPageChange: (index: number) => void;
+  readonly onPreviewScaleChange: (scale: number) => void;
+}
+
+function PageZoomControls({
+  currentPageIndex,
+  totalPages,
+  isPaginationComplete,
+  pages,
+  previewScale,
+  onCurrentPageChange,
+  onPreviewScaleChange,
+}: PageZoomControlsProps) {
+  return (
+    <div className="flex items-center justify-center gap-2">
+      {/* Page Controls */}
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onCurrentPageChange(Math.max(0, currentPageIndex - 1))}
+          disabled={currentPageIndex === 0}
+          className="h-8 w-8 text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
+          aria-label="Previous page"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        <span className="text-xs font-semibold text-foreground min-w-[70px] text-center select-none">
+          Page {currentPageIndex + 1} of {totalPages}
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() =>
+            onCurrentPageChange(
+              isPaginationComplete
+                ? Math.min(pages.length - 1, currentPageIndex + 1)
+                : currentPageIndex + 1
+            )
+          }
+          disabled={isPaginationComplete && currentPageIndex >= pages.length - 1}
+          className="h-8 w-8 text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
+          aria-label="Next page"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+      </div>
+
+      {/* Divider */}
+      <div className="w-px h-5 bg-border mx-1" />
+
+      {/* Zoom Controls */}
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onPreviewScaleChange(Number((previewScale - 0.1).toFixed(2)))}
+          className="h-8 w-8 text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
+          aria-label="Zoom out"
+        >
+          <Minus className="w-4 h-4" />
+        </Button>
+        <span className="text-xs font-semibold text-foreground min-w-[45px] text-center select-none">
+          {Math.round(previewScale * 100)}%
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onPreviewScaleChange(Number((previewScale + 0.1).toFixed(2)))}
+          className="h-8 w-8 text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
+          aria-label="Zoom in"
+        >
+          <Plus className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function MobileEditorBottomSheet({
   anchor,
   metrics,
@@ -130,66 +215,15 @@ export default function MobileEditorBottomSheet({
           </button>
           {anchor === 'peek' && (
             <div className="flex items-center justify-center gap-2 pb-3 pt-1 border-b border-border/50">
-              {/* Page Controls */}
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onCurrentPageChange(Math.max(0, currentPageIndex - 1))}
-                  disabled={currentPageIndex === 0}
-                  className="h-8 w-8 text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
-                  aria-label="Previous page"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <span className="text-xs font-semibold text-foreground min-w-[70px] text-center select-none">
-                  Page {currentPageIndex + 1} of {totalPages}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() =>
-                    onCurrentPageChange(
-                      isPaginationComplete
-                        ? Math.min(pages.length - 1, currentPageIndex + 1)
-                        : currentPageIndex + 1
-                    )
-                  }
-                  disabled={isPaginationComplete && currentPageIndex >= pages.length - 1}
-                  className="h-8 w-8 text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
-                  aria-label="Next page"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-
-              {/* Divider */}
-              <div className="w-px h-5 bg-border mx-1" />
-
-              {/* Zoom Controls */}
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onPreviewScaleChange(Number((previewScale - 0.1).toFixed(2)))}
-                  className="h-8 w-8 text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
-                  aria-label="Zoom out"
-                >
-                  <Minus className="w-4 h-4" />
-                </Button>
-                <span className="text-xs font-semibold text-foreground min-w-[45px] text-center select-none">
-                  {Math.round(previewScale * 100)}%
-                </span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onPreviewScaleChange(Number((previewScale + 0.1).toFixed(2)))}
-                  className="h-8 w-8 text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
-                  aria-label="Zoom in"
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
+              <PageZoomControls
+                currentPageIndex={currentPageIndex}
+                totalPages={totalPages}
+                isPaginationComplete={isPaginationComplete}
+                pages={pages}
+                previewScale={previewScale}
+                onCurrentPageChange={onCurrentPageChange}
+                onPreviewScaleChange={onPreviewScaleChange}
+              />
             </div>
           )}
         </Sheet.Header>
@@ -205,6 +239,20 @@ export default function MobileEditorBottomSheet({
             </div>
           </div>
         </Sheet.Content>
+
+        {anchor !== 'peek' && (
+          <div className="mobile-editor-sheet__footer">
+            <PageZoomControls
+              currentPageIndex={currentPageIndex}
+              totalPages={totalPages}
+              isPaginationComplete={isPaginationComplete}
+              pages={pages}
+              previewScale={previewScale}
+              onCurrentPageChange={onCurrentPageChange}
+              onPreviewScaleChange={onPreviewScaleChange}
+            />
+          </div>
+        )}
       </Sheet.Container>
     </Sheet>
   );
