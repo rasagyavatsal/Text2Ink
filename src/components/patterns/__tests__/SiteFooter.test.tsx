@@ -67,4 +67,22 @@ describe('SiteFooter', () => {
     expect(screen.queryByText('Text')).not.toBeInTheDocument();
     expect(screen.queryByText('Ink')).not.toBeInTheDocument();
   });
+
+  it('has increased tap targets and mobile optimizations', () => {
+    render(<SiteFooter />);
+    
+    const links = screen.getAllByRole('link');
+    const navLinks = links.filter(link => {
+      const href = link.getAttribute('href');
+      return href && href !== '/';
+    });
+
+    expect(navLinks.length).toBeGreaterThan(0);
+    navLinks.forEach(link => {
+      expect(link).toHaveClass('block');
+      expect(link).toHaveClass('py-2');
+      expect(link).toHaveClass('md:py-1');
+    });
+  });
 });
+

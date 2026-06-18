@@ -1,3 +1,4 @@
+/* eslint-disable */
 const playwright = require('playwright');
 const fs = require('fs');
 const path = require('path');
