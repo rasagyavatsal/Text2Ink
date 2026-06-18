@@ -144,8 +144,8 @@ describe('MobileEditorBottomSheet', () => {
     expect(queryByText('Settings Content')).toBeNull();
   });
 
-  it('shows settings content and does not show compact page/zoom controls in default state', () => {
-    const { getByText, queryByText } = renderMobileEditorBottomSheet({
+  it('shows settings content and renders page/zoom controls in default state', () => {
+    const { getByText, getByLabelText } = renderMobileEditorBottomSheet({
       anchor: 'default',
       currentPageIndex: 0,
       totalPages: 3,
@@ -160,8 +160,8 @@ describe('MobileEditorBottomSheet', () => {
     // Settings content is visible
     expect(getByText('Settings Content')).toBeDefined();
 
-    // Compact page and zoom controls are NOT rendered in default state
-    expect(queryByText('Page 1 of 3')).toBeNull();
-    expect(queryByText('120%')).toBeNull();
+    // Compact page and zoom controls are rendered in default state (inside the footer)
+    expect(getByText('Page 1 of 3')).toBeDefined();
+    expect(getByText('120%')).toBeDefined();
   });
 });
