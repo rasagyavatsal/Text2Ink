@@ -12,7 +12,8 @@ const viewports = [
 const paths = [
   { name: 'home', url: 'http://localhost:3000/' },
   { name: 'contact', url: 'http://localhost:3000/contact' },
-  { name: 'terms', url: 'http://localhost:3000/terms-of-service' }
+  { name: 'terms', url: 'http://localhost:3000/terms-of-service' },
+  { name: 'editor', url: 'http://localhost:3000/editor' }
 ];
 
 async function capture() {
@@ -30,7 +31,7 @@ async function capture() {
       const page = await context.newPage();
       try {
         console.log(`Navigating to ${pagePath.url} with viewport ${viewport.name} (${viewport.width}x${viewport.height})...`);
-        await page.goto(pagePath.url, { waitUntil: 'networkidle' });
+        await page.goto(pagePath.url, { waitUntil: 'load' });
         
         // Wait an extra second for any animations or next-themes mount
         await page.waitForTimeout(1000);

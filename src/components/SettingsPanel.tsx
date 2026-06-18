@@ -236,6 +236,118 @@ const FontCard = ({
   );
 };
 
+interface ControlRowProps {
+  readonly label: string;
+  readonly valueDisplay?: React.ReactNode;
+  readonly actions?: React.ReactNode;
+  readonly children?: React.ReactNode;
+  readonly htmlFor?: string;
+  readonly gapClass?: string;
+}
+
+const ControlRow = ({
+  label,
+  valueDisplay,
+  actions,
+  children,
+  htmlFor,
+  gapClass = "gap-2",
+}: ControlRowProps) => {
+  return (
+    <div className={cn("flex flex-col", gapClass)}>
+      <div className="flex justify-between items-center">
+        <Label htmlFor={htmlFor} className="text-sm font-medium">
+          {label}
+        </Label>
+        <div className="flex items-center gap-3">
+          {actions}
+          {valueDisplay !== undefined && (
+            <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
+              {valueDisplay}
+            </div>
+          )}
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+};
+
+interface SliderRowProps {
+  readonly label: string;
+  readonly value: number;
+  readonly onValueChange: (value: number) => void;
+  readonly min: number;
+  readonly max: number;
+  readonly step?: number;
+  readonly formatValue?: (value: number) => React.ReactNode;
+  readonly actions?: React.ReactNode;
+  readonly disabled?: boolean;
+  readonly gapClass?: string;
+}
+
+const SliderRow = ({
+  label,
+  value,
+  onValueChange,
+  min,
+  max,
+  step = 1,
+  formatValue,
+  actions,
+  disabled = false,
+  gapClass = "gap-2",
+}: SliderRowProps) => {
+  return (
+    <ControlRow
+      label={label}
+      valueDisplay={formatValue ? formatValue(value) : value}
+      actions={actions}
+      gapClass={gapClass}
+    >
+      <Slider
+        disabled={disabled}
+        value={[value]}
+        onValueChange={([val]) => onValueChange(val)}
+        min={min}
+        max={max}
+        step={step}
+      />
+    </ControlRow>
+  );
+};
+
+interface ColorPickerRowProps {
+  readonly label: string;
+  readonly value: string;
+  readonly onChange: (value: string) => void;
+  readonly gapClass?: string;
+}
+
+const ColorPickerRow = ({
+  label,
+  value,
+  onChange,
+  gapClass = "gap-3",
+}: ColorPickerRowProps) => {
+  return (
+    <div className={cn("flex flex-col", gapClass)}>
+      <Label className="text-sm font-medium">{label}</Label>
+      <div className="flex items-center gap-3 p-2 bg-secondary border border-border rounded-lg">
+        <input
+          type="color"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-8 h-8 rounded-md cursor-pointer border-0 p-0 bg-transparent"
+        />
+        <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
+          {value}
+        </span>
+      </div>
+    </div>
+  );
+};
+
 interface SettingsPanelProps {
   readonly settings: HandwritingSettings;
   readonly onSettingsChange: (settings: HandwritingSettings) => void;
@@ -426,11 +538,7 @@ export default function SettingsPanel({
         </div>
 
         <div className="space-y-6">
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Fonts</Label>
-            </div>
-            
+          <ControlRow label="Fonts" gapClass="gap-3">
             <div className="relative w-full overflow-hidden">
               <div className="grid grid-rows-2 grid-flow-col gap-3 auto-cols-[calc(45%-0.375rem)] overflow-x-auto pb-4 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {availableFonts.map((font) => (
@@ -447,10 +555,9 @@ export default function SettingsPanel({
                 ))}
               </div>
             </div>
-          </div>
+          </ControlRow>
 
-          <div className="flex flex-col gap-2">
-            <Label className="text-sm font-medium">Custom Font</Label>
+          <ControlRow label="Custom Font">
             <div className="grid grid-cols-2 gap-3">
               {settings.customFont ? (
                 <div className="relative group">
@@ -540,38 +647,22 @@ export default function SettingsPanel({
                 <p className="text-sm font-semibold text-destructive uppercase">{customFontError}</p>
               )}
             </div>
-          </div>
+          </ControlRow>
 
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between items-center">
-              <Label className="text-sm font-medium">Font Size</Label>
-              <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                {pageSettings.fontSize}px
-              </div>
-            </div>
-            <Slider
-              value={[pageSettings.fontSize]}
-              onValueChange={([value]) => updatePageSetting('fontSize', value)}
-              min={14}
-              max={48}
-              step={1}
-            />
-          </div>
+          <SliderRow
+            label="Font Size"
+            value={pageSettings.fontSize}
+            onValueChange={(value) => updatePageSetting('fontSize', value)}
+            min={14}
+            max={48}
+            formatValue={(value) => `${value}px`}
+          />
 
-          <div className="flex flex-col gap-3">
-            <Label className="text-sm font-medium">Ink Color</Label>
-            <div className="flex items-center gap-3 p-2 bg-secondary border border-border rounded-lg">
-              <input
-                type="color"
-                value={settings.inkColor}
-                onChange={(e) => updateSetting('inkColor', e.target.value)}
-                className="w-8 h-8 rounded-md cursor-pointer border-0 p-0 bg-transparent"
-              />
-              <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                {settings.inkColor}
-              </span>
-            </div>
-          </div>
+          <ColorPickerRow
+            label="Ink Color"
+            value={settings.inkColor}
+            onChange={(value) => updateSetting('inkColor', value)}
+          />
         </div>
       </div>
 
@@ -585,11 +676,7 @@ export default function SettingsPanel({
         </div>
 
         <div className="space-y-6">
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Paper Style</Label>
-            </div>
-            
+          <ControlRow label="Paper Style" gapClass="gap-3">
             <div className="relative w-full overflow-hidden">
               <div className="grid grid-rows-2 grid-flow-col gap-3 auto-cols-[calc(45%-0.375rem)] overflow-x-auto pb-4 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {PAPER_STYLES.map((style) => (
@@ -608,10 +695,9 @@ export default function SettingsPanel({
                 ))}
               </div>
             </div>
-          </div>
+          </ControlRow>
 
-          <div className="flex flex-col gap-3">
-            <Label className="text-sm font-medium" htmlFor="paper-format">Size</Label>
+          <ControlRow label="Size" htmlFor="paper-format" gapClass="gap-3">
             <Select
               value={currentPaperFormat}
               onValueChange={(value) =>
@@ -631,10 +717,9 @@ export default function SettingsPanel({
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </ControlRow>
 
-          <div className="flex flex-col gap-3">
-            <Label className="text-sm font-medium" htmlFor="paper-orientation">Orientation</Label>
+          <ControlRow label="Orientation" htmlFor="paper-orientation" gapClass="gap-3">
             <Select
               value={currentPaperOrientation}
               onValueChange={(value) =>
@@ -654,10 +739,9 @@ export default function SettingsPanel({
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </ControlRow>
 
-          <div className="flex flex-col gap-2">
-            <Label className="text-sm font-medium">Custom Background Image</Label>
+          <ControlRow label="Custom Background Image">
             <div className="space-y-3">
               {effectiveBackgroundImages.length > 0 && (
                 <div className="space-y-2">
@@ -733,10 +817,9 @@ export default function SettingsPanel({
                 />
               </label>
             </div>
-          </div>
+          </ControlRow>
 
-          <div className="flex flex-col gap-3">
-            <Label className="text-sm font-medium">Paper Color</Label>
+          <ControlRow label="Paper Color" gapClass="gap-3">
             <div className="flex flex-wrap gap-2 p-2 bg-secondary border border-border rounded-lg">
               {PAPER_COLORS.map((color) => (
                 <button
@@ -751,23 +834,14 @@ export default function SettingsPanel({
                 />
               ))}
             </div>
-          </div>
+          </ControlRow>
 
           {paperControls.paperMode === 'upload' && (
-            <div className="flex flex-col gap-3">
-              <Label className="text-sm font-medium">Line Color</Label>
-              <div className="flex items-center gap-3 p-2 bg-secondary border border-border rounded-lg">
-                <input
-                  type="color"
-                  value={settings.lineColor}
-                  onChange={(e) => updateSetting('lineColor', e.target.value)}
-                  className="w-8 h-8 rounded-md cursor-pointer border-0 p-0 bg-transparent"
-                />
-                <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  {settings.lineColor}
-                </span>
-              </div>
-            </div>
+            <ColorPickerRow
+              label="Line Color"
+              value={settings.lineColor}
+              onChange={(value) => updateSetting('lineColor', value)}
+            />
           )}
         </div>
       </div>
@@ -783,104 +857,72 @@ export default function SettingsPanel({
 
         <div className="space-y-6">
           {showLineHeightControl && (
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center">
-                <Label className="text-sm font-medium">Line Height</Label>
-                <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                  {settings.lineHeight.toFixed(1)}
-                </div>
-              </div>
-              <Slider
-                value={[settings.lineHeight]}
-                onValueChange={([value]) => updateSetting('lineHeight', value)}
-                min={1.2}
-                max={3}
-                step={0.1}
-              />
-            </div>
+            <SliderRow
+              label="Line Height"
+              value={settings.lineHeight}
+              onValueChange={(value) => updateSetting('lineHeight', value)}
+              min={1.2}
+              max={3}
+              step={0.1}
+              formatValue={(value) => value.toFixed(1)}
+            />
           )}
 
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between items-center">
-              <Label className="text-sm font-medium">Line Tilt</Label>
-              <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                {pageSettings.lineTilt}°
-              </div>
-            </div>
-            <Slider
-              value={[pageSettings.lineTilt]}
-              onValueChange={([value]) => updatePageSetting('lineTilt', value)}
-              min={-15}
-              max={15}
-              step={0.5}
-            />
-          </div>
+          <SliderRow
+            label="Line Tilt"
+            value={pageSettings.lineTilt}
+            onValueChange={(value) => updatePageSetting('lineTilt', value)}
+            min={-15}
+            max={15}
+            step={0.5}
+            formatValue={(value) => `${value}°`}
+          />
 
           {showManualAlignmentControls && (
             <div className="grid grid-cols-2 gap-x-4 gap-y-8 pt-4 border-t border-border/50">
-              <div className="flex flex-col gap-3">
-                <div className="flex justify-between items-center">
-                  <Label className="text-sm font-medium">Top Margin</Label>
-                  <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                    {pageSettings.marginTop}px
-                  </div>
-                </div>
-                <Slider
-                  value={[pageSettings.marginTop]}
-                  onValueChange={([value]) => updatePageSetting('marginTop', value)}
-                  min={20}
-                  max={120}
-                  step={5}
-                />
-              </div>
+              <SliderRow
+                label="Top Margin"
+                value={pageSettings.marginTop}
+                onValueChange={(value) => updatePageSetting('marginTop', value)}
+                min={20}
+                max={120}
+                step={5}
+                formatValue={(value) => `${value}px`}
+                gapClass="gap-3"
+              />
 
-              <div className="flex flex-col gap-3">
-                <div className="flex justify-between items-center">
-                  <Label className="text-sm font-medium">Bottom Margin</Label>
-                  <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                    {pageSettings.marginBottom}px
-                  </div>
-                </div>
-                <Slider
-                  value={[pageSettings.marginBottom]}
-                  onValueChange={([value]) => updatePageSetting('marginBottom', value)}
-                  min={20}
-                  max={120}
-                  step={5}
-                />
-              </div>
+              <SliderRow
+                label="Bottom Margin"
+                value={pageSettings.marginBottom}
+                onValueChange={(value) => updatePageSetting('marginBottom', value)}
+                min={20}
+                max={120}
+                step={5}
+                formatValue={(value) => `${value}px`}
+                gapClass="gap-3"
+              />
 
-              <div className="flex flex-col gap-3">
-                <div className="flex justify-between items-center">
-                  <Label className="text-sm font-medium">Left Margin</Label>
-                  <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                    {pageSettings.marginLeft}px
-                  </div>
-                </div>
-                <Slider
-                  value={[pageSettings.marginLeft]}
-                  onValueChange={([value]) => updatePageSetting('marginLeft', value)}
-                  min={20}
-                  max={120}
-                  step={5}
-                />
-              </div>
+              <SliderRow
+                label="Left Margin"
+                value={pageSettings.marginLeft}
+                onValueChange={(value) => updatePageSetting('marginLeft', value)}
+                min={20}
+                max={120}
+                step={5}
+                formatValue={(value) => `${value}px`}
+                gapClass="gap-3"
+              />
 
-              <div className="flex flex-col gap-3">
-                <div className="flex justify-between items-center">
-                  <Label className="text-sm font-medium">Right Margin</Label>
-                  <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                    {pageSettings.marginRight}px
-                  </div>
-                </div>
-                <Slider
-                  value={[pageSettings.marginRight]}
-                  onValueChange={([value]) => updatePageSetting('marginRight', value)}
-                  min={20}
-                  max={120}
-                  step={5}
-                />
-              </div>
+              <SliderRow
+                label="Right Margin"
+                value={pageSettings.marginRight}
+                onValueChange={(value) => updatePageSetting('marginRight', value)}
+                min={20}
+                max={120}
+                step={5}
+                formatValue={(value) => `${value}px`}
+                gapClass="gap-3"
+              />
             </div>
           )}
 
@@ -905,49 +947,39 @@ export default function SettingsPanel({
                 )}
               </div>
 
-              <div className="flex flex-col gap-3">
-                <div className="flex justify-between items-center">
-                  <Label className="text-sm font-medium">Line Offset (Y Position)</Label>
-                  <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                    {pageSettings.customLineOffset}px
-                  </div>
-                </div>
-                <Slider
-                  value={[pageSettings.customLineOffset]}
-                  onValueChange={([value]) => updatePageSetting('customLineOffset', value)}
-                  min={-50}
-                  max={50}
-                  step={1}
-                />
-              </div>
+              <SliderRow
+                label="Line Offset (Y Position)"
+                value={pageSettings.customLineOffset}
+                onValueChange={(value) => updatePageSetting('customLineOffset', value)}
+                min={-50}
+                max={50}
+                step={1}
+                formatValue={(value) => `${value}px`}
+                gapClass="gap-3"
+              />
 
-              <div className="flex flex-col gap-3">
-                <div className="flex justify-between items-center">
-                  <Label className="text-sm font-medium">Custom Line Spacing</Label>
-                  <div className="flex items-center gap-3">
-                    {pageSettings.customLineSpacing !== null && (
-                      <Button
-                        variant="link"
-                        onClick={() => updatePageSetting('customLineSpacing', null)}
-                        className="text-xs font-semibold text-brand-accent uppercase tracking-wider p-0 h-auto hover:no-underline"
-                      >
-                        Reset
-                      </Button>
-                    )}
-                    <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                      {paperControls.effectiveSpacingValue ?? 'Auto'}
-                    </div>
-                  </div>
-                </div>
-                <Slider
-                  disabled={!paperControls.isSpacingEditable}
-                  value={[paperControls.effectiveSpacingValue ?? Math.round(pageSettings.fontSize * settings.lineHeight)]}
-                  onValueChange={([value]) => updatePageSetting('customLineSpacing', value)}
-                  min={20}
-                  max={120}
-                  step={1}
-                />
-              </div>
+              <SliderRow
+                label="Custom Line Spacing"
+                value={paperControls.effectiveSpacingValue ?? Math.round(pageSettings.fontSize * settings.lineHeight)}
+                onValueChange={(value) => updatePageSetting('customLineSpacing', value)}
+                min={20}
+                max={120}
+                step={1}
+                disabled={!paperControls.isSpacingEditable}
+                formatValue={() => paperControls.effectiveSpacingValue ?? 'Auto'}
+                actions={
+                  pageSettings.customLineSpacing !== null && (
+                    <Button
+                      variant="link"
+                      onClick={() => updatePageSetting('customLineSpacing', null)}
+                      className="text-xs font-semibold text-brand-accent uppercase tracking-wider p-0 h-auto hover:no-underline"
+                    >
+                      Reset
+                    </Button>
+                  )
+                }
+                gapClass="gap-3"
+              />
             </div>
           )}
         </div>
@@ -974,53 +1006,42 @@ export default function SettingsPanel({
 
           {settings.randomness.enabled && (
             <div className="space-y-6 pt-2">
-              <div className="flex flex-col gap-3">
-                <div className="flex justify-between items-center">
-                  <Label className="text-sm font-medium">Letter Spacing Variation</Label>
-                  <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                    {settings.randomness.spacing.toFixed(1)}
-                  </div>
-                </div>
-                <Slider
-                  value={[settings.randomness.spacing]}
-                  onValueChange={([value]) => updateRandomness('spacing', value)}
-                  min={0}
-                  max={5}
-                  step={0.1}
-                />
-              </div>
+          {settings.randomness.enabled && (
+            <div className="space-y-6 pt-2">
+              <SliderRow
+                label="Letter Spacing Variation"
+                value={settings.randomness.spacing}
+                onValueChange={(value) => updateRandomness('spacing', value)}
+                min={0}
+                max={5}
+                step={0.1}
+                formatValue={(value) => value.toFixed(1)}
+                gapClass="gap-3"
+              />
 
-              <div className="flex flex-col gap-3">
-                <div className="flex justify-between items-center">
-                  <Label className="text-sm font-medium">Baseline Variation</Label>
-                  <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                    {settings.randomness.baseline.toFixed(1)}
-                  </div>
-                </div>
-                <Slider
-                  value={[settings.randomness.baseline]}
-                  onValueChange={([value]) => updateRandomness('baseline', value)}
-                  min={0}
-                  max={3}
-                  step={0.1}
-                />
-              </div>
+              <SliderRow
+                label="Baseline Variation"
+                value={settings.randomness.baseline}
+                onValueChange={(value) => updateRandomness('baseline', value)}
+                min={0}
+                max={3}
+                step={0.1}
+                formatValue={(value) => value.toFixed(1)}
+                gapClass="gap-3"
+              />
 
-              <div className="flex flex-col gap-3">
-                <div className="flex justify-between items-center">
-                  <Label className="text-sm font-medium">Rotation Variation</Label>
-                  <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                    {settings.randomness.rotation.toFixed(1)}°
-                  </div>
-                </div>
-                <Slider
-                  value={[settings.randomness.rotation]}
-                  onValueChange={([value]) => updateRandomness('rotation', value)}
-                  min={0}
-                  max={3}
-                  step={0.1}
-                />
-              </div>
+              <SliderRow
+                label="Rotation Variation"
+                value={settings.randomness.rotation}
+                onValueChange={(value) => updateRandomness('rotation', value)}
+                min={0}
+                max={3}
+                step={0.1}
+                formatValue={(value) => `${value.toFixed(1)}°`}
+                gapClass="gap-3"
+              />
+            </div>
+          )}
             </div>
           )}
         </div>
@@ -1036,8 +1057,7 @@ export default function SettingsPanel({
         </div>
 
         <div className="space-y-6">
-          <div className="flex flex-col gap-3">
-            <Label className="text-sm font-medium">Zoom</Label>
+          <ControlRow label="Zoom" gapClass="gap-3">
             <div className="flex items-center gap-1 bg-secondary border border-border p-1.5 rounded-lg">
               <Button
                 variant="ghost"
@@ -1061,10 +1081,9 @@ export default function SettingsPanel({
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
-          </div>
+          </ControlRow>
 
-          <div className="flex flex-col gap-3">
-            <Label className="text-sm font-medium">Page Navigation</Label>
+          <ControlRow label="Page Navigation" gapClass="gap-3">
             <div className="flex items-center justify-between bg-secondary border border-border p-1.5 rounded-lg">
               <Button
                 variant="ghost"
@@ -1096,7 +1115,7 @@ export default function SettingsPanel({
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
-          </div>
+          </ControlRow>
 
           <div className="pt-2 space-y-4">
             <Button
