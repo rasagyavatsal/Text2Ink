@@ -4,9 +4,9 @@ import Version from '@/components/Version';
 
 export default function SiteFooter() {
   return (
-    <div className="w-full flex flex-col gap-8 py-4">
+    <div className="w-full flex flex-col gap-6 md:gap-8 py-4 md:py-6">
       {/* Level 1: Main Content Row */}
-      <div className="flex flex-col md:flex-row md:justify-between items-start gap-8 w-full">
+      <div className="flex flex-col md:flex-row md:justify-between items-start gap-6 md:gap-8 w-full">
         {/* Brand/Logo Column */}
         <div className="flex items-center">
           <Link
@@ -24,16 +24,16 @@ export default function SiteFooter() {
         </div>
 
         {/* Columns for Navigation */}
-        <div className="flex flex-col sm:flex-row gap-8 sm:gap-16">
+        <div className="flex flex-row gap-12 sm:gap-16">
           {/* Product Navigation Column */}
           <div className="flex flex-col gap-3">
             <h4 className="text-supporting font-semibold text-foreground">Product</h4>
             <nav aria-label="Product">
-              <ul className="flex flex-col gap-2 text-supporting text-muted-foreground">
+              <ul className="flex flex-col gap-1 text-supporting text-muted-foreground">
                 <li>
                   <Link
                     href="/editor"
-                    className="transition-colors hover:text-brand-accent"
+                    className="block py-2 md:py-1 transition-colors hover:text-brand-accent"
                   >
                     Open Editor
                   </Link>
@@ -41,7 +41,7 @@ export default function SiteFooter() {
                 <li>
                   <Link
                     href="/contact"
-                    className="transition-colors hover:text-brand-accent"
+                    className="block py-2 md:py-1 transition-colors hover:text-brand-accent"
                   >
                     Contact
                   </Link>
@@ -54,11 +54,11 @@ export default function SiteFooter() {
           <div className="flex flex-col gap-3">
             <h4 className="text-supporting font-semibold text-foreground">Legal</h4>
             <nav aria-label="Legal">
-              <ul className="flex flex-col gap-2 text-supporting text-muted-foreground">
+              <ul className="flex flex-col gap-1 text-supporting text-muted-foreground">
                 <li>
                   <Link
                     href="/terms-of-service"
-                    className="transition-colors hover:text-brand-accent"
+                    className="block py-2 md:py-1 transition-colors hover:text-brand-accent"
                   >
                     Terms of Service
                   </Link>
@@ -66,7 +66,7 @@ export default function SiteFooter() {
                 <li>
                   <Link
                     href="/privacy-policy"
-                    className="transition-colors hover:text-brand-accent"
+                    className="block py-2 md:py-1 transition-colors hover:text-brand-accent"
                   >
                     Privacy Policy
                   </Link>
@@ -81,8 +81,8 @@ export default function SiteFooter() {
       <hr className="border-t border-border w-full" />
 
       {/* Level 2: Metadata Row */}
-      <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center gap-4 w-full">
-        <p className="text-caption text-muted-foreground">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 w-full">
+        <p className="text-caption text-muted-foreground break-words max-w-[280px] xs:max-w-none">
           © {new Date().getFullYear()} Text2Ink. All rights reserved.
         </p>
         <Version />
