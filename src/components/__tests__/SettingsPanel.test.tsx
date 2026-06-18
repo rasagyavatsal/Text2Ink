@@ -242,4 +242,26 @@ describe('SettingsPanel', () => {
     fireEvent.click(textButton);
     expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
   });
+
+  it('verifies rebalanced document actions in the Actions section (resolves #273)', () => {
+    renderSettingsPanel();
+
+    // Verify all three actions are present
+    const applyButton = screen.getByRole('button', { name: /Apply to all pages/i });
+    const addTextBoxButton = screen.getByRole('button', { name: /Add Text Box/i });
+    const clearEverythingButton = screen.getByRole('button', { name: /Clear Everything/i });
+
+    expect(applyButton).toBeInTheDocument();
+    expect(addTextBoxButton).toBeInTheDocument();
+    expect(clearEverythingButton).toBeInTheDocument();
+
+    // Verify helper copy below "Add Text Box" does not exist
+    expect(screen.queryByText(/Add draggable text boxes/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/dates, names, or signatures/i)).not.toBeInTheDocument();
+
+    // Verify Clear Everything button uses secondary styling (outline variant) and is destructive
+    expect(clearEverythingButton).toHaveAttribute('data-variant', 'outline');
+    expect(clearEverythingButton.className).toContain('text-destructive');
+  });
 });
+
