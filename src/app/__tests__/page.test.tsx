@@ -67,9 +67,12 @@ describe('HomePage', () => {
     expect(highlightedText).toHaveClass('font-[family-name:var(--font-ff-comma)]');
     expect(highlightedText).toHaveClass('text-amber-600');
     expect(heroHeading).toHaveClass('whitespace-normal');
-    expect(heroHeading).toHaveClass('md:whitespace-nowrap');
+    expect(heroHeading).toHaveClass('lg:whitespace-nowrap');
     expect(heroHeading.querySelectorAll('span')).toHaveLength(1);
-    expect(heroHeading.querySelector('br')).toBeInTheDocument();
+    
+    const brElement = heroHeading.querySelector('br');
+    expect(brElement).toBeInTheDocument();
+    expect(brElement).toHaveClass('sm:hidden');
 
     expect(screen.getByText(/create realistic handwritten pages from typed text/i)).toBeInTheDocument();
     
@@ -79,6 +82,16 @@ describe('HomePage', () => {
     expect(ctaLinks[1]).toHaveAttribute('href', '/editor');
     expect(ctaLinks[1]).toHaveAttribute('data-variant', 'brand');
     expect(ctaLinks[1]).toHaveAttribute('data-size', 'lg');
+  });
+
+  it('renders the preview images grid with responsive margin top spacing', () => {
+    const { container } = render(<HomePage />);
+    const pictures = container.querySelectorAll('picture');
+    const grid = pictures[0].closest('.grid');
+    expect(grid).toBeInTheDocument();
+    expect(grid).toHaveClass('mt-6');
+    expect(grid).toHaveClass('sm:mt-8');
+    expect(grid).toHaveClass('lg:mt-10');
   });
 
   it('renders the preview images with responsive picture sources', () => {

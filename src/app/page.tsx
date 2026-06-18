@@ -31,9 +31,9 @@ export default function HomePage() {
       <main className="py-page-y flex flex-col items-center gap-section w-full">
         <div className={frameClasses}>
           <div className="text-center flex flex-col items-center gap-6 max-w-7xl mx-auto">
-            <h1 className="text-page-title sm:text-display-title font-normal tracking-tight text-foreground leading-tight whitespace-normal md:whitespace-nowrap">
+            <h1 className="text-page-title sm:text-display-title font-normal tracking-tight text-foreground leading-tight whitespace-normal lg:whitespace-nowrap">
               Convert typed text into
-              <br />
+              <br className="sm:hidden" />
               {' '}
               <span className="font-bold font-[family-name:var(--font-ff-comma)] text-amber-600 dark:text-amber-300">
                 realistic handwriting
@@ -50,7 +50,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="w-full px-public-gutter grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mt-4">
+        <div className="w-full px-public-gutter grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mt-6 sm:mt-8 lg:mt-10">
           <div className="rounded-2xl overflow-hidden border border-border shadow-sm bg-card flex items-center justify-center">
                 <picture className="w-full h-auto flex">
                   <source srcSet="/Sample-handwriting-preview1.avif" type="image/avif" media="(min-width: 640px)" />
