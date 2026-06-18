@@ -39,7 +39,7 @@ import {
   PREVIEW_MAX_SCALE,
 } from '@/lib/mobileEditorSheet';
 import { cn } from '@/lib/utils';
-import { Download } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react';
 
 const MemoSettingsPanel = React.memo(SettingsPanel);
 
@@ -411,6 +411,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       pages={pages}
       onClearAll={handleClearAll}
       showHomeLink
+      isMobileLayout={false}
     />
   );
 
@@ -430,6 +431,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       pages={pages}
       onClearAll={handleClearAll}
       showHomeLink={false}
+      isMobileLayout={true}
     />
   );
 
@@ -541,6 +543,73 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
 
           <main className="flex-1 min-h-0 relative">
             {canvas}
+            {!isMobileEditorLayout && (
+              <div
+                data-testid="canvas-toolbar"
+                className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 bg-background/95 backdrop-blur-sm border border-border shadow-lg p-1.5 rounded-xl"
+              >
+                {/* Page Navigation */}
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleCurrentPageChange(Math.max(0, currentPageIndex - 1))}
+                    disabled={currentPageIndex === 0}
+                    className="h-8 w-8 text-muted-foreground hover:text-brand-accent transition-all"
+                    aria-label="Previous page"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <span className="text-xs font-semibold text-foreground min-w-[70px] text-center select-none">
+                    Page {currentPageIndex + 1} of {totalPages}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() =>
+                      handleCurrentPageChange(
+                        isPaginationComplete
+                          ? Math.min(pages.length - 1, currentPageIndex + 1)
+                          : currentPageIndex + 1
+                      )
+                    }
+                    disabled={isPaginationComplete && currentPageIndex >= pages.length - 1}
+                    className="h-8 w-8 text-muted-foreground hover:text-brand-accent transition-all"
+                    aria-label="Next page"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {/* Divider */}
+                <div className="w-px h-5 bg-border mx-1" />
+
+                {/* Zoom Controls */}
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handlePreviewScaleChange(Number((effectivePreviewScale - 0.1).toFixed(2)))}
+                    className="h-8 w-8 text-muted-foreground hover:text-brand-accent transition-all"
+                    aria-label="Zoom out"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </Button>
+                  <span className="text-xs font-semibold text-foreground min-w-[45px] text-center select-none">
+                    {Math.round(effectivePreviewScale * 100)}%
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handlePreviewScaleChange(Number((effectivePreviewScale + 0.1).toFixed(2)))}
+                    className="h-8 w-8 text-muted-foreground hover:text-brand-accent transition-all"
+                    aria-label="Zoom in"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </main>
         </div>
 

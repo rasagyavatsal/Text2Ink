@@ -331,4 +331,34 @@ describe('Root editor page', () => {
 
     confirmSpy.mockRestore();
   });
+
+  it('renders canvas toolbar on desktop and wires zoom controls correctly', () => {
+    render(<RootEditorPageClient />);
+
+    const canvasToolbar = screen.getByTestId('canvas-toolbar');
+    expect(canvasToolbar).toBeInTheDocument();
+
+    const zoomOutBtn = screen.getByRole('button', { name: /zoom out/i });
+    const zoomInBtn = screen.getByRole('button', { name: /zoom in/i });
+    expect(zoomOutBtn).toBeInTheDocument();
+    expect(zoomInBtn).toBeInTheDocument();
+
+    const editor = screen.getByTestId('handwriting-editor');
+    const initialScale = Number(editor.dataset.previewScale);
+
+    fireEvent.click(zoomOutBtn);
+    expect(Number(editor.dataset.previewScale)).toBe(Number((initialScale - 0.1).toFixed(2)));
+
+    fireEvent.click(zoomInBtn);
+    expect(Number(editor.dataset.previewScale)).toBe(initialScale);
+  });
+
+  it('does not render canvas toolbar on mobile', () => {
+    mockMatchMedia(true);
+    Object.defineProperty(globalThis, 'innerWidth', { configurable: true, writable: true, value: 390 });
+    Object.defineProperty(globalThis, 'innerHeight', { configurable: true, writable: true, value: 844 });
+
+    render(<RootEditorPageClient />);
+    expect(screen.queryByTestId('canvas-toolbar')).not.toBeInTheDocument();
+  });
 });

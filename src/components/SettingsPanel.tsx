@@ -363,6 +363,7 @@ interface SettingsPanelProps {
   readonly pages: LineData[][];
   readonly onClearAll: () => void;
   readonly showHomeLink?: boolean;
+  readonly isMobileLayout?: boolean;
 }
 
 export default function SettingsPanel({
@@ -380,6 +381,7 @@ export default function SettingsPanel({
   pages,
   onClearAll,
   showHomeLink = true,
+  isMobileLayout = false,
 }: SettingsPanelProps) {
   const [customFontError, setCustomFontError] = useState<string | null>(null);
   const [lineDetecting, setLineDetecting] = useState(false);
@@ -1057,65 +1059,69 @@ export default function SettingsPanel({
         </div>
 
         <div className="space-y-6">
-          <ControlRow label="Zoom" gapClass="gap-3">
-            <div className="flex items-center gap-1 bg-secondary border border-border p-1.5 rounded-lg">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onPreviewScaleChange(Number((previewScale - 0.1).toFixed(2)))}
-                className="text-muted-foreground hover:text-brand-accent transition-all"
-                aria-label="Zoom out"
-              >
-                <Minus className="w-4 h-4" />
-              </Button>
-              <div className="flex-1 text-center text-sm font-semibold text-foreground">
-                {Math.round(previewScale * 100)}%
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onPreviewScaleChange(Number((previewScale + 0.1).toFixed(2)))}
-                className="text-muted-foreground hover:text-brand-accent transition-all"
-                aria-label="Zoom in"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-          </ControlRow>
+          {isMobileLayout && (
+            <>
+              <ControlRow label="Zoom" gapClass="gap-3">
+                <div className="flex items-center gap-1 bg-secondary border border-border p-1.5 rounded-lg">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onPreviewScaleChange(Number((previewScale - 0.1).toFixed(2)))}
+                    className="text-muted-foreground hover:text-brand-accent transition-all"
+                    aria-label="Zoom out"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </Button>
+                  <div className="flex-1 text-center text-sm font-semibold text-foreground">
+                    {Math.round(previewScale * 100)}%
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onPreviewScaleChange(Number((previewScale + 0.1).toFixed(2)))}
+                    className="text-muted-foreground hover:text-brand-accent transition-all"
+                    aria-label="Zoom in"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </ControlRow>
 
-          <ControlRow label="Page Navigation" gapClass="gap-3">
-            <div className="flex items-center justify-between bg-secondary border border-border p-1.5 rounded-lg">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onCurrentPageChange(Math.max(0, currentPageIndex - 1))}
-                disabled={currentPageIndex === 0}
-                className="text-muted-foreground hover:text-brand-accent transition-all"
-                aria-label="Previous page"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <div className="text-sm font-semibold text-foreground">
-                Page {currentPageIndex + 1} of {totalPages}
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() =>
-                  onCurrentPageChange(
-                    isPaginationComplete
-                      ? Math.min(pages.length - 1, currentPageIndex + 1)
-                      : currentPageIndex + 1
-                  )
-                }
-                disabled={isPaginationComplete && currentPageIndex >= pages.length - 1}
-                className="text-muted-foreground hover:text-brand-accent transition-all"
-                aria-label="Next page"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </ControlRow>
+              <ControlRow label="Page Navigation" gapClass="gap-3">
+                <div className="flex items-center justify-between bg-secondary border border-border p-1.5 rounded-lg">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onCurrentPageChange(Math.max(0, currentPageIndex - 1))}
+                    disabled={currentPageIndex === 0}
+                    className="text-muted-foreground hover:text-brand-accent transition-all"
+                    aria-label="Previous page"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <div className="text-sm font-semibold text-foreground">
+                    Page {currentPageIndex + 1} of {totalPages}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() =>
+                      onCurrentPageChange(
+                        isPaginationComplete
+                          ? Math.min(pages.length - 1, currentPageIndex + 1)
+                          : currentPageIndex + 1
+                      )
+                    }
+                    disabled={isPaginationComplete && currentPageIndex >= pages.length - 1}
+                    className="text-muted-foreground hover:text-brand-accent transition-all"
+                    aria-label="Next page"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </ControlRow>
+            </>
+          )}
 
           <div className="pt-2 space-y-4">
             <Button
