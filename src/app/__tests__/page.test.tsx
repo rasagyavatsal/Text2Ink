@@ -84,7 +84,7 @@ describe('HomePage', () => {
     expect(ctaLinks[1]).toHaveAttribute('data-size', 'lg');
   });
 
-  it('renders the preview images grid with responsive margin top spacing', () => {
+  it('renders the preview images grid with responsive spacing and gaps', () => {
     const { container } = render(<HomePage />);
     const pictures = container.querySelectorAll('picture');
     const grid = pictures[0].closest('.grid');
@@ -92,6 +92,50 @@ describe('HomePage', () => {
     expect(grid).toHaveClass('mt-6');
     expect(grid).toHaveClass('sm:mt-8');
     expect(grid).toHaveClass('lg:mt-10');
+    expect(grid).toHaveClass('gap-4');
+    expect(grid).toHaveClass('sm:gap-6');
+    expect(grid).toHaveClass('md:gap-8');
+  });
+
+  it('renders the preview image cards with responsive border radius', () => {
+    const { container } = render(<HomePage />);
+    const pictures = container.querySelectorAll('picture');
+    const firstCard = pictures[0].closest('.rounded-xl, .rounded-2xl');
+    const secondCard = pictures[1].closest('.rounded-xl, .rounded-2xl');
+    expect(firstCard).toBeInTheDocument();
+    expect(firstCard).toHaveClass('rounded-xl');
+    expect(firstCard).toHaveClass('sm:rounded-2xl');
+    expect(secondCard).toBeInTheDocument();
+    expect(secondCard).toHaveClass('rounded-xl');
+    expect(secondCard).toHaveClass('sm:rounded-2xl');
+  });
+
+  it('renders the how to use section with responsive spacing and readable instruction cards', () => {
+    render(<HomePage />);
+    const section = screen.getByRole('heading', { name: /how to use text2ink/i }).closest('section');
+    expect(section).toBeInTheDocument();
+    expect(section).toHaveClass('mt-10');
+    expect(section).toHaveClass('sm:mt-16');
+    expect(section).toHaveClass('md:mt-24');
+
+    // Spacing around the header of the section
+    const headerWrapper = screen.getByRole('heading', { name: /how to use text2ink/i }).parentElement;
+    expect(headerWrapper).toHaveClass('mb-8');
+    expect(headerWrapper).toHaveClass('sm:mb-10');
+    expect(headerWrapper).toHaveClass('md:mb-12');
+
+    // Instruction cards padding and readability
+    const cards = section?.querySelectorAll('.grid > div');
+    expect(cards?.length).toBe(6);
+    cards?.forEach((card) => {
+      // Consistent padding across phone and tablet layouts
+      expect(card).toHaveClass('p-5');
+      expect(card).toHaveClass('sm:p-6');
+      
+      // Readable line lengths across breakpoints
+      const p = card.querySelector('p');
+      expect(p).toHaveClass('max-w-prose');
+    });
   });
 
   it('renders the preview images with responsive picture sources', () => {
