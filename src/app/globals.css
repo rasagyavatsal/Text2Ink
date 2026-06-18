@@ -336,7 +336,7 @@
 
 @layer components {
   .mobile-editor-sheet__container {
-    height: var(--mobile-editor-sheet-max-height) !important;
+    height: var(--mobile-editor-sheet-current-height, var(--mobile-editor-sheet-max-height)) !important;
     max-height: var(--mobile-editor-sheet-max-height) !important;
     overflow: hidden;
   }

@@ -176,6 +176,12 @@ export default function MobileEditorBottomSheet({
     onAnchorChange('peek');
   }, [metrics, onAnchorChange, onHeightChange, snapPoints]);
 
+  const currentHeight = useMemo(() => {
+    if (anchor === 'peek') return metrics.minSheetHeight;
+    if (anchor === 'expanded') return metrics.maxSheetHeight;
+    return metrics.defaultSheetHeight;
+  }, [anchor, metrics]);
+
   const handleLabel = getMobileSheetHandleLabel(anchor);
 
   return (
@@ -200,6 +206,7 @@ export default function MobileEditorBottomSheet({
           {
             '--mobile-editor-sheet-max-height': `${metrics.maxSheetHeight}px`,
             '--mobile-editor-sheet-peek-height': `${metrics.minSheetHeight}px`,
+            '--mobile-editor-sheet-current-height': `${currentHeight}px`,
           } as React.CSSProperties
         }
       >
