@@ -119,8 +119,8 @@ export function InquiryForm() {
 
   if (isSuccess) {
     return (
-      <Card className="w-full">
-        <CardContent className="flex flex-col items-center justify-center py-12 space-y-4 text-center">
+      <Card className="w-full py-4 sm:py-6">
+        <CardContent className="flex flex-col items-center justify-center px-4 sm:px-6 py-8 sm:py-12 space-y-4 text-center">
           <CheckCircle2 className="w-16 h-16 text-success" />
           <div className="space-y-2">
             <h3 className="font-semibold text-xl">Thank you</h3>
@@ -137,11 +137,11 @@ export function InquiryForm() {
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
+    <Card className="w-full py-4 sm:py-6">
+      <CardHeader className="px-4 sm:px-6">
         <CardTitle>Send a message</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 sm:px-6">
         <form onSubmit={handleSubmit} noValidate className="space-y-5">
       {/* Honeypot — hidden from users */}
       <input
@@ -161,7 +161,7 @@ export function InquiryForm() {
           value={formData.name}
           onChange={(e) => handleChange("name", e.target.value)}
           placeholder="Your name"
-          className={cn("mt-1.5", errors.name && "border-destructive")}
+          className={cn("mt-1.5 h-11! sm:h-control-md!", errors.name && "border-destructive")}
           maxLength={100}
         />
         {errors.name && <p className="text-sm text-destructive mt-1">{errors.name}</p>}
@@ -175,7 +175,7 @@ export function InquiryForm() {
           value={formData.email}
           onChange={(e) => handleChange("email", e.target.value)}
           placeholder="you@example.com"
-          className={cn("mt-1.5", errors.email && "border-destructive")}
+          className={cn("mt-1.5 h-11! sm:h-control-md!", errors.email && "border-destructive")}
           maxLength={254}
         />
         {errors.email && <p className="text-sm text-destructive mt-1">{errors.email}</p>}
@@ -189,7 +189,7 @@ export function InquiryForm() {
         >
           <SelectTrigger
             id="inquiry-topic"
-            className={cn("mt-1.5", errors.topic && "border-destructive")}
+            className={cn("mt-1.5 h-11! sm:h-control-md!", errors.topic && "border-destructive")}
           >
             <SelectValue placeholder="Select a topic" />
           </SelectTrigger>
@@ -213,7 +213,7 @@ export function InquiryForm() {
           placeholder="How can we help?"
           rows={5}
           spellCheck={false}
-          className={cn("mt-1.5 min-h-[80px]", errors.message && "border-destructive")}
+          className={cn("mt-1.5 min-h-[80px] py-3! sm:py-2!", errors.message && "border-destructive")}
           maxLength={5000}
         />
         {errors.message && <p className="text-sm text-destructive mt-1">{errors.message}</p>}
@@ -223,7 +223,7 @@ export function InquiryForm() {
         <p className="text-sm text-destructive text-center mt-2">{errors.submit}</p>
       )}
 
-      <Button type="submit" className="w-full mt-2" size="lg" disabled={isSubmitting}>
+      <Button type="submit" className="w-full mt-2 h-11! sm:h-control-lg!" size="lg" disabled={isSubmitting}>
         {isSubmitting ? "Sending..." : "Send inquiry"}
       </Button>
         </form>
