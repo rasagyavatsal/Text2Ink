@@ -98,7 +98,7 @@ describe('SettingsPanel', () => {
       ...DEFAULT_SETTINGS,
       customBackgroundImage: 'data:image/png;base64,123',
     };
-    renderSettingsPanel({ settings: settingsWithBg });
+    renderSettingsPanel({ settings: settingsWithBg, isMobileLayout: true });
 
     // Check action buttons use canonical variants
     const detectLinesButton = screen.getByRole('button', { name: /detect lines/i });
