@@ -45,4 +45,19 @@ describe('SiteHeader', () => {
     
     expect(screen.getByRole('button', { name: /test cta/i })).toBeInTheDocument();
   });
+
+  it('applies responsive control height overrides and larger interactive targets for mobile and tablet', () => {
+    const { container } = render(<SiteHeader cta={<button className="original-cta">CTA</button>} />);
+    
+    // Check for responsive CSS variable override on the container
+    const headerContainer = container.firstChild;
+    expect(headerContainer).toHaveClass('[--control-height-md:2.75rem]');
+    expect(headerContainer).toHaveClass('lg:[--control-height-md:2.25rem]');
+
+    // Check for larger brand logo touch target classes
+    const brandLink = screen.getByRole('link', { name: /text2ink/i });
+    expect(brandLink).toHaveClass('min-h-11');
+    expect(brandLink).toHaveClass('py-1');
+  });
 });
+
