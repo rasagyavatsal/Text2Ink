@@ -273,4 +273,42 @@ describe("InquiryForm", () => {
     expect(emailInput).toHaveAttribute("data-slot", "input")
     expect(messageTextarea).toHaveAttribute("data-slot", "textarea")
   })
+
+  it("applies responsive mobile padding to Card content and header", () => {
+    const { container } = render(<InquiryForm />)
+    const cardHeader = container.querySelector('[data-slot="card-header"]')
+    const cardContent = container.querySelector('[data-slot="card-content"]')
+
+    expect(cardHeader?.className).toMatch(/px-4/)
+    expect(cardHeader?.className).toMatch(/sm:px-6/)
+    expect(cardContent?.className).toMatch(/px-4/)
+    expect(cardContent?.className).toMatch(/sm:px-6/)
+  })
+
+  it("increases control heights/paddings for touch targets on mobile", () => {
+    render(<InquiryForm />)
+
+    const nameInput = screen.getByLabelText(/name/i)
+    const emailInput = screen.getByLabelText(/email/i)
+    const topicTrigger = screen.getByRole("combobox", { name: /topic/i })
+    const messageTextarea = screen.getByLabelText(/message/i)
+    const submitBtn = screen.getByRole("button", { name: /send inquiry/i })
+
+    // Check height classes for inputs/select/button
+    expect(nameInput.className).toMatch(/h-11!/)
+    expect(nameInput.className).toMatch(/sm:h-control-md!/)
+
+    expect(emailInput.className).toMatch(/h-11!/)
+    expect(emailInput.className).toMatch(/sm:h-control-md!/)
+
+    expect(topicTrigger.className).toMatch(/h-11!/)
+    expect(topicTrigger.className).toMatch(/sm:h-control-md!/)
+
+    expect(submitBtn.className).toMatch(/h-11!/)
+    expect(submitBtn.className).toMatch(/sm:h-control-lg!/)
+
+    // Check padding classes for textarea
+    expect(messageTextarea.className).toMatch(/py-3!/)
+    expect(messageTextarea.className).toMatch(/sm:py-2!/)
+  })
 })

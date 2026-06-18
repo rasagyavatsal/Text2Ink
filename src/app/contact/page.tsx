@@ -38,23 +38,23 @@ export default function ContactPage() {
       <main className="py-page-y">
         <div className={frameClasses}>
           <div className="mx-auto w-full max-w-xl">
-            <h1 className="text-page-title font-bold tracking-tight text-foreground mb-6">
+            <h1 className="text-page-title font-bold tracking-tight text-foreground mb-4 sm:mb-6">
               Email me
             </h1>
-            <p className="text-body-lg text-muted-foreground mb-8">
+            <p className="text-body-lg text-muted-foreground mb-6 sm:mb-8">
               Have a question, bug report, or feature request? I&apos;ll get back to you.
             </p>
             <InquiryForm />
-            <div className="mt-8">
-              <p className="text-supporting text-muted-foreground mb-3">
+            <div className="mt-6 sm:mt-8">
+              <p className="text-supporting text-muted-foreground mb-2 sm:mb-3">
                 Or email directly:
               </p>
               <a
                 href="mailto:rasagyavatsal16@gmail.com"
-                className="inline-flex items-center gap-2 text-brand-accent hover:text-brand-accent-hover font-medium transition-colors group"
+                className="inline-flex items-center gap-2 text-brand-accent hover:text-brand-accent-hover font-medium transition-colors group break-all"
               >
-                <Mail className="w-4 h-4 transition-transform group-hover:-translate-y-0.5" data-testid="mail-icon" aria-hidden="true" />
-                rasagyavatsal16@gmail.com
+                <Mail className="w-4 h-4 shrink-0 transition-transform group-hover:-translate-y-0.5" data-testid="mail-icon" aria-hidden="true" />
+                <span className="break-all">rasagyavatsal16@gmail.com</span>
               </a>
             </div>
           </div>

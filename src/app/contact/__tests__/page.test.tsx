@@ -55,21 +55,29 @@ describe("ContactPage", () => {
     expect(screen.queryByText("rasagyavatsal@outlook.com")).not.toBeInTheDocument()
   })
 
-  it("renders Email me heading", () => {
+  it("renders Email me heading with responsive spacing", () => {
     render(<ContactPage />)
-    expect(screen.getByText("Email me")).toBeInTheDocument()
+    const heading = screen.getByRole("heading", { name: "Email me" })
+    expect(heading).toBeInTheDocument()
+    expect(heading.className).toMatch(/mb-4/)
+    expect(heading.className).toMatch(/sm:mb-6/)
   })
 
-  it("renders the concise and personal intro copy", () => {
+  it("renders the concise and personal intro copy with responsive spacing", () => {
     render(<ContactPage />)
-    expect(
-      screen.getByText(/question, bug report, or feature request.*I'll get back to you/i)
-    ).toBeInTheDocument()
+    const intro = screen.getByText(/question, bug report, or feature request.*I'll get back to you/i)
+    expect(intro).toBeInTheDocument()
+    expect(intro.className).toMatch(/mb-6/)
+    expect(intro.className).toMatch(/sm:mb-8/)
   })
 
-  it("renders the Mail icon with the email address", () => {
+  it("renders the Mail icon with the email address and handles wrapping", () => {
     render(<ContactPage />)
     expect(screen.getByTestId("mail-icon")).toBeInTheDocument()
+    const emailLink = screen.getByRole("link", { name: /rasagyavatsal16@gmail.com/i })
+    expect(emailLink.className).toMatch(/break-all/)
+    const emailText = emailLink.querySelector("span")
+    expect(emailText?.className).toMatch(/break-all/)
   })
 
   it("has a single centered column layout", () => {
