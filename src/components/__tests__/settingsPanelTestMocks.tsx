@@ -21,6 +21,7 @@ vi.mock('lucide-react', () => {
     Trash2: MockIcon,
     Settings2: MockIcon,
     Grid: MockIcon,
+    Sliders: MockIcon,
   };
 });
 
