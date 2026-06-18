@@ -40,7 +40,6 @@ import { cn } from '@/lib/utils';
 import { detectBackgroundLines } from '@/lib/lineDetection';
 import { 
   Type, 
-  Palette, 
   FileText, 
   Wand2, 
   Upload, 
@@ -50,8 +49,10 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Trash2,
-  Settings2
+  Settings2,
+  Sliders
 } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 import {
   generateFontFamilyName,
@@ -398,7 +399,7 @@ export default function SettingsPanel({
   };
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="p-6 space-y-6">
       {showHomeLink ? (
         <div className="flex items-center">
           <Link
@@ -417,121 +418,11 @@ export default function SettingsPanel({
         </div>
       ) : null}
 
-      {/* General Controls Section */}
-      <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-5">
-          <Settings2 className="w-5 h-5 text-brand-accent" />
-          <h2 className="text-section-title font-semibold tracking-tight text-foreground">General</h2>
-        </div>
-
-        <div className="space-y-6">
-          <div className="flex flex-col gap-3">
-            <Label className="text-sm font-medium">Zoom</Label>
-            <div className="flex items-center gap-1 bg-secondary border border-border p-1.5 rounded-lg">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onPreviewScaleChange(Number((previewScale - 0.1).toFixed(2)))}
-                className="text-muted-foreground hover:text-brand-accent transition-all"
-                aria-label="Zoom out"
-              >
-                <Minus className="w-4 h-4" />
-              </Button>
-              <div className="flex-1 text-center text-sm font-semibold text-foreground">
-                {Math.round(previewScale * 100)}%
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onPreviewScaleChange(Number((previewScale + 0.1).toFixed(2)))}
-                className="text-muted-foreground hover:text-brand-accent transition-all"
-                aria-label="Zoom in"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <Label className="text-sm font-medium">Page Navigation</Label>
-            <div className="flex items-center justify-between bg-secondary border border-border p-1.5 rounded-lg">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onCurrentPageChange(Math.max(0, currentPageIndex - 1))}
-                disabled={currentPageIndex === 0}
-                className="text-muted-foreground hover:text-brand-accent transition-all"
-                aria-label="Previous page"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <div className="text-sm font-semibold text-foreground">
-                Page {currentPageIndex + 1} of {totalPages}
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() =>
-                  onCurrentPageChange(
-                    isPaginationComplete
-                      ? Math.min(pages.length - 1, currentPageIndex + 1)
-                      : currentPageIndex + 1
-                  )
-                }
-                disabled={isPaginationComplete && currentPageIndex >= pages.length - 1}
-                className="text-muted-foreground hover:text-brand-accent transition-all"
-                aria-label="Next page"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-
-          <div className="pt-4 space-y-4">
-            <Button
-              variant="brand"
-              size="lg"
-              onClick={onApplyToAllPages}
-              className="w-full font-semibold transition-all"
-            >
-              <Wand2 className="w-4 h-4 mr-2" />
-              Apply to all pages
-            </Button>
-
-            <div>
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => {
-                  const newField = {
-                    id: crypto.randomUUID(),
-                    text: '',
-                    x: 100,
-                    y: 100,
-                    width: 200,
-                    height: 50,
-                    color: settings.inkColor,
-                    fontSize: pageSettings.fontSize,
-                  };
-                  updatePageSetting('textFields', [...(pageSettings.textFields || []), newField]);
-                }}
-                className="w-full font-semibold transition-all"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Text Box
-              </Button>
-              <p className="text-xs text-muted-foreground mt-3 text-center">
-                Add draggable text boxes for dates, names, or signatures.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-5">
+      {/* Text Section */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-2">
           <Type className="w-5 h-5 text-brand-accent" />
-          <h2 className="text-section-title font-semibold tracking-tight text-foreground">Typography</h2>
+          <h2 className="text-section-title font-semibold tracking-tight text-foreground">Text</h2>
         </div>
 
         <div className="space-y-6">
@@ -649,9 +540,6 @@ export default function SettingsPanel({
                 <p className="text-sm font-semibold text-destructive uppercase">{customFontError}</p>
               )}
             </div>
-            <p className="text-xs text-muted-foreground leading-relaxed italic">
-              Upload a custom handwriting font (.ttf or .otf).
-            </p>
           </div>
 
           <div className="flex flex-col gap-2">
@@ -670,46 +558,30 @@ export default function SettingsPanel({
             />
           </div>
 
-          {showLineHeightControl && (
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center">
-                <Label className="text-sm font-medium">Line Height</Label>
-                <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                  {settings.lineHeight.toFixed(1)}
-                </div>
-              </div>
-              <Slider
-                value={[settings.lineHeight]}
-                onValueChange={([value]) => updateSetting('lineHeight', value)}
-                min={1.2}
-                max={3}
-                step={0.1}
+          <div className="flex flex-col gap-3">
+            <Label className="text-sm font-medium">Ink Color</Label>
+            <div className="flex items-center gap-3 p-2 bg-secondary border border-border rounded-lg">
+              <input
+                type="color"
+                value={settings.inkColor}
+                onChange={(e) => updateSetting('inkColor', e.target.value)}
+                className="w-8 h-8 rounded-md cursor-pointer border-0 p-0 bg-transparent"
               />
+              <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                {settings.inkColor}
+              </span>
             </div>
-          )}
-
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between items-center">
-              <Label className="text-sm font-medium">Line Tilt</Label>
-              <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
-                {pageSettings.lineTilt}°
-              </div>
-            </div>
-            <Slider
-              value={[pageSettings.lineTilt]}
-              onValueChange={([value]) => updatePageSetting('lineTilt', value)}
-              min={-15}
-              max={15}
-              step={0.5}
-            />
           </div>
         </div>
       </div>
 
-      <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-5">
+      <Separator />
+
+      {/* Paper Section */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-2">
           <FileText className="w-5 h-5 text-brand-accent" />
-          <h2 className="text-section-title font-semibold tracking-tight text-foreground">Page Layout</h2>
+          <h2 className="text-section-title font-semibold tracking-tight text-foreground">Paper</h2>
         </div>
 
         <div className="space-y-6">
@@ -860,10 +732,88 @@ export default function SettingsPanel({
                   }}
                 />
               </label>
-              <p className="text-xs text-muted-foreground text-center italic">
-                Image will be used as page background
-              </p>
             </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <Label className="text-sm font-medium">Paper Color</Label>
+            <div className="flex flex-wrap gap-2 p-2 bg-secondary border border-border rounded-lg">
+              {PAPER_COLORS.map((color) => (
+                <button
+                  key={color.value}
+                  onClick={() => updateSetting('paperColor', color.value)}
+                  className={`w-8 h-8 rounded-md border-2 transition-all shadow-sm ${settings.paperColor === color.value
+                    ? 'border-brand-accent scale-110'
+                    : 'border-transparent hover:border-border hover:scale-105'
+                    }`}
+                  style={{ backgroundColor: color.value }}
+                  title={color.name}
+                />
+              ))}
+            </div>
+          </div>
+
+          {paperControls.paperMode === 'upload' && (
+            <div className="flex flex-col gap-3">
+              <Label className="text-sm font-medium">Line Color</Label>
+              <div className="flex items-center gap-3 p-2 bg-secondary border border-border rounded-lg">
+                <input
+                  type="color"
+                  value={settings.lineColor}
+                  onChange={(e) => updateSetting('lineColor', e.target.value)}
+                  className="w-8 h-8 rounded-md cursor-pointer border-0 p-0 bg-transparent"
+                />
+                <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                  {settings.lineColor}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Alignment Section */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-2">
+          <Sliders className="w-5 h-5 text-brand-accent" />
+          <h2 className="text-section-title font-semibold tracking-tight text-foreground">Alignment</h2>
+        </div>
+
+        <div className="space-y-6">
+          {showLineHeightControl && (
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <Label className="text-sm font-medium">Line Height</Label>
+                <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
+                  {settings.lineHeight.toFixed(1)}
+                </div>
+              </div>
+              <Slider
+                value={[settings.lineHeight]}
+                onValueChange={([value]) => updateSetting('lineHeight', value)}
+                min={1.2}
+                max={3}
+                step={0.1}
+              />
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <Label className="text-sm font-medium">Line Tilt</Label>
+              <div className="text-xs font-semibold text-muted-foreground bg-secondary border border-border px-2 py-1 rounded-md">
+                {pageSettings.lineTilt}°
+              </div>
+            </div>
+            <Slider
+              value={[pageSettings.lineTilt]}
+              onValueChange={([value]) => updatePageSetting('lineTilt', value)}
+              min={-15}
+              max={15}
+              step={0.5}
+            />
           </div>
 
           {showManualAlignmentControls && (
@@ -935,7 +885,7 @@ export default function SettingsPanel({
           )}
 
           {paperControls.showSpacingControls && (
-            <div className="space-y-6 pt-2">
+            <div className="space-y-6 pt-2 border-t border-border/50">
               <div className="flex flex-col gap-3">
                 <Button
                   variant="brand"
@@ -1003,69 +953,13 @@ export default function SettingsPanel({
         </div>
       </div>
 
-      <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-5">
-          <Palette className="w-5 h-5 text-brand-accent" />
-          <h2 className="text-section-title font-semibold tracking-tight text-foreground">Colors</h2>
-        </div>
+      <Separator />
 
-        <div className="space-y-6">
-          <div className="flex flex-col gap-3">
-            <Label className="text-sm font-medium">Ink Color</Label>
-            <div className="flex items-center gap-3 p-2 bg-secondary border border-border rounded-lg">
-              <input
-                type="color"
-                value={settings.inkColor}
-                onChange={(e) => updateSetting('inkColor', e.target.value)}
-                className="w-8 h-8 rounded-md cursor-pointer border-0 p-0 bg-transparent"
-              />
-              <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                {settings.inkColor}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <Label className="text-sm font-medium">Paper Color</Label>
-            <div className="flex flex-wrap gap-2 p-2 bg-secondary border border-border rounded-lg">
-              {PAPER_COLORS.map((color) => (
-                <button
-                  key={color.value}
-                  onClick={() => updateSetting('paperColor', color.value)}
-                  className={`w-8 h-8 rounded-md border-2 transition-all shadow-sm ${settings.paperColor === color.value
-                    ? 'border-brand-accent scale-110'
-                    : 'border-transparent hover:border-border hover:scale-105'
-                    }`}
-                  style={{ backgroundColor: color.value }}
-                  title={color.name}
-                />
-              ))}
-            </div>
-          </div>
-
-          {paperControls.paperMode === 'upload' && (
-            <div className="flex flex-col gap-3">
-              <Label className="text-sm font-medium">Line Color</Label>
-              <div className="flex items-center gap-3 p-2 bg-secondary border border-border rounded-lg">
-                <input
-                  type="color"
-                  value={settings.lineColor}
-                  onChange={(e) => updateSetting('lineColor', e.target.value)}
-                  className="w-8 h-8 rounded-md cursor-pointer border-0 p-0 bg-transparent"
-                />
-                <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                  {settings.lineColor}
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-5">
+      {/* Realism Section */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-2">
           <Wand2 className="w-5 h-5 text-brand-accent" />
-          <h2 className="text-section-title font-semibold tracking-tight text-foreground">Realism Effects</h2>
+          <h2 className="text-section-title font-semibold tracking-tight text-foreground">Realism</h2>
         </div>
 
         <div className="space-y-6">
@@ -1132,15 +1026,121 @@ export default function SettingsPanel({
         </div>
       </div>
 
-      <div className="pt-2">
-        <Button
-          variant="outline"
-          onClick={onClearAll}
-          className="w-full py-3 text-destructive border-destructive/20 hover:bg-destructive/10 hover:text-destructive font-bold transition-all active:scale-95"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-          Clear Everything
-        </Button>
+      <Separator />
+
+      {/* Actions Section */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-2">
+          <Settings2 className="w-5 h-5 text-brand-accent" />
+          <h2 className="text-section-title font-semibold tracking-tight text-foreground">Actions</h2>
+        </div>
+
+        <div className="space-y-6">
+          <div className="flex flex-col gap-3">
+            <Label className="text-sm font-medium">Zoom</Label>
+            <div className="flex items-center gap-1 bg-secondary border border-border p-1.5 rounded-lg">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onPreviewScaleChange(Number((previewScale - 0.1).toFixed(2)))}
+                className="text-muted-foreground hover:text-brand-accent transition-all"
+                aria-label="Zoom out"
+              >
+                <Minus className="w-4 h-4" />
+              </Button>
+              <div className="flex-1 text-center text-sm font-semibold text-foreground">
+                {Math.round(previewScale * 100)}%
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onPreviewScaleChange(Number((previewScale + 0.1).toFixed(2)))}
+                className="text-muted-foreground hover:text-brand-accent transition-all"
+                aria-label="Zoom in"
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <Label className="text-sm font-medium">Page Navigation</Label>
+            <div className="flex items-center justify-between bg-secondary border border-border p-1.5 rounded-lg">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onCurrentPageChange(Math.max(0, currentPageIndex - 1))}
+                disabled={currentPageIndex === 0}
+                className="text-muted-foreground hover:text-brand-accent transition-all"
+                aria-label="Previous page"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <div className="text-sm font-semibold text-foreground">
+                Page {currentPageIndex + 1} of {totalPages}
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() =>
+                  onCurrentPageChange(
+                    isPaginationComplete
+                      ? Math.min(pages.length - 1, currentPageIndex + 1)
+                      : currentPageIndex + 1
+                  )
+                }
+                disabled={isPaginationComplete && currentPageIndex >= pages.length - 1}
+                className="text-muted-foreground hover:text-brand-accent transition-all"
+                aria-label="Next page"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="pt-2 space-y-4">
+            <Button
+              variant="brand"
+              size="lg"
+              onClick={onApplyToAllPages}
+              className="w-full font-semibold transition-all"
+            >
+              <Wand2 className="w-4 h-4 mr-2" />
+              Apply to all pages
+            </Button>
+
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => {
+                const newField = {
+                  id: crypto.randomUUID(),
+                  text: '',
+                  x: 100,
+                  y: 100,
+                  width: 200,
+                  height: 50,
+                  color: settings.inkColor,
+                  fontSize: pageSettings.fontSize,
+                };
+                updatePageSetting('textFields', [...(pageSettings.textFields || []), newField]);
+              }}
+              className="w-full font-semibold transition-all"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Text Box
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={onClearAll}
+              className="w-full py-3 text-destructive border-destructive/20 hover:bg-destructive/10 hover:text-destructive font-bold transition-all active:scale-95"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Clear Everything
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

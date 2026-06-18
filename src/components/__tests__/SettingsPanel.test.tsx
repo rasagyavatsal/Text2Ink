@@ -12,7 +12,7 @@ describe('SettingsPanel', () => {
     vi.clearAllMocks();
   });
 
-  it('renders the General section with "Add Text Box" button', () => {
+  it('renders the compact inspector sections with "Add Text Box" button', () => {
     renderSettingsPanel();
 
     const homeLink = screen.getByRole('link', { name: /text2ink home/i });
@@ -27,8 +27,12 @@ describe('SettingsPanel', () => {
     expect(logo.className).toContain('w-14');
     expect(screen.queryByText(/editor controls/i)).not.toBeInTheDocument();
 
-    // Check if General heading exists
-    expect(screen.getByText('General')).toBeInTheDocument();
+    // Check if new headings exist
+    expect(screen.getByText('Text')).toBeInTheDocument();
+    expect(screen.getByText('Paper')).toBeInTheDocument();
+    expect(screen.getByText('Alignment')).toBeInTheDocument();
+    expect(screen.getByText('Realism')).toBeInTheDocument();
+    expect(screen.getByText('Actions')).toBeInTheDocument();
 
     // Check if "Add Text Box" button is in the document
     const addTextBoxButton = screen.getByRole('button', { name: /Add Text Box/i });
