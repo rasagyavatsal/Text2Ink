@@ -521,6 +521,13 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       onAnchorChange={setMobileSheetAnchor}
       onHandlePress={handleMobileSheetHandlePress}
       onHeightChange={handleMobileSheetHeightChange}
+      currentPageIndex={currentPageIndex}
+      totalPages={totalPages}
+      isPaginationComplete={isPaginationComplete}
+      pages={pages}
+      previewScale={effectivePreviewScale}
+      onCurrentPageChange={handleCurrentPageChange}
+      onPreviewScaleChange={handlePreviewScaleChange}
     />
   ) : null;
 

@@ -43,6 +43,13 @@ const renderMobileEditorBottomSheet = (
     onAnchorChange: () => {},
     onHandlePress: () => {},
     onHeightChange: () => {},
+    currentPageIndex: 0,
+    totalPages: 1,
+    isPaginationComplete: true,
+    pages: [[]],
+    previewScale: 1.0,
+    onCurrentPageChange: () => {},
+    onPreviewScaleChange: () => {},
   };
   return render(<MobileEditorBottomSheet {...defaultProps} {...overrides} />);
 };
@@ -103,5 +110,58 @@ describe('MobileEditorBottomSheet', () => {
       expect(onHeightChange).toHaveBeenCalledWith(DEFAULT_MOBILE_SHEET_METRICS.minSheetHeight);
     });
     expect(onHeightChange).not.toHaveBeenCalledWith(DEFAULT_MOBILE_SHEET_METRICS.defaultSheetHeight);
+  });
+
+  it('renders page and zoom controls in peek state and hides settings content', () => {
+    const onCurrentPageChange = vi.fn();
+    const onPreviewScaleChange = vi.fn();
+    const { getByText, queryByText, getByLabelText } = renderMobileEditorBottomSheet({
+      anchor: 'peek',
+      currentPageIndex: 0,
+      totalPages: 3,
+      isPaginationComplete: true,
+      pages: [[], [], []],
+      previewScale: 1.2,
+      onCurrentPageChange,
+      onPreviewScaleChange,
+      settingsPanel: <div data-testid="settings-panel">Settings Content</div>,
+    });
+
+    // Handle is rendered
+    expect(getByLabelText('Open editor controls')).toBeDefined();
+
+    // Page controls are rendered below handle
+    expect(getByText('Page 1 of 3')).toBeDefined();
+    expect(getByLabelText('Previous page')).toBeDefined();
+    expect(getByLabelText('Next page')).toBeDefined();
+
+    // Zoom controls are rendered beside/below
+    expect(getByText('120%')).toBeDefined();
+    expect(getByLabelText('Zoom out')).toBeDefined();
+    expect(getByLabelText('Zoom in')).toBeDefined();
+
+    // Settings content is hidden in peek state
+    expect(queryByText('Settings Content')).toBeNull();
+  });
+
+  it('shows settings content and does not show compact page/zoom controls in default state', () => {
+    const { getByText, queryByText } = renderMobileEditorBottomSheet({
+      anchor: 'default',
+      currentPageIndex: 0,
+      totalPages: 3,
+      isPaginationComplete: true,
+      pages: [[], [], []],
+      previewScale: 1.2,
+      onCurrentPageChange: vi.fn(),
+      onPreviewScaleChange: vi.fn(),
+      settingsPanel: <div>Settings Content</div>,
+    });
+
+    // Settings content is visible
+    expect(getByText('Settings Content')).toBeDefined();
+
+    // Compact page and zoom controls are NOT rendered in default state
+    expect(queryByText('Page 1 of 3')).toBeNull();
+    expect(queryByText('120%')).toBeNull();
   });
 });

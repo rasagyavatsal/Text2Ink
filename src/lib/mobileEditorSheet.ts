@@ -71,7 +71,7 @@ export function computeMobileEditorSheetMetrics({
     normalizedViewportHeight,
   );
   const normalizedSafeAreaBottom = Math.max(0, normalizeFinite(safeAreaBottom, 0));
-  const minSheetHeight = Math.round(MOBILE_SHEET_HANDLE_HEIGHT + normalizedSafeAreaBottom);
+  const minSheetHeight = Math.round(MOBILE_SHEET_HANDLE_HEIGHT + 48 + normalizedSafeAreaBottom);
   const minPreviewHeight = getMinimumMobilePreviewHeight(normalizedViewportWidth);
   const availableBelowHeader = Math.max(0, normalizedViewportHeight - normalizedHeaderHeight);
   const previewProtectedMax = availableBelowHeader - minPreviewHeight;
