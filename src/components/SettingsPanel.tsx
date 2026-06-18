@@ -44,10 +44,7 @@ import {
   Wand2, 
   Upload, 
   X, 
-  Minus, 
   Plus, 
-  ChevronLeft, 
-  ChevronRight, 
   Trash2,
   Settings2,
   Sliders
@@ -373,12 +370,6 @@ export default function SettingsPanel({
   onPageSettingsChange,
   currentPageIndex,
   onApplyToAllPages,
-  previewScale,
-  onPreviewScaleChange,
-  onCurrentPageChange,
-  totalPages,
-  isPaginationComplete,
-  pages,
   onClearAll,
   showHomeLink = true,
   isMobileLayout = false,
@@ -1029,8 +1020,6 @@ export default function SettingsPanel({
 
           {settings.randomness.enabled && (
             <div className="space-y-6 pt-2">
-          {settings.randomness.enabled && (
-            <div className="space-y-6 pt-2">
               <SliderRow
                 label="Letter Spacing Variation"
                 value={settings.randomness.spacing}
@@ -1065,8 +1054,6 @@ export default function SettingsPanel({
               />
             </div>
           )}
-            </div>
-          )}
         </div>
       </div>
 
@@ -1080,70 +1067,6 @@ export default function SettingsPanel({
         </div>
 
         <div className="space-y-6">
-          {isMobileLayout && (
-            <>
-              <ControlRow label="Zoom" gapClass="gap-3">
-                <div className="flex items-center gap-1 bg-secondary border border-border p-1.5 rounded-lg">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onPreviewScaleChange(Number((previewScale - 0.1).toFixed(2)))}
-                    className="text-muted-foreground hover:text-brand-accent transition-all"
-                    aria-label="Zoom out"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </Button>
-                  <div className="flex-1 text-center text-sm font-semibold text-foreground">
-                    {Math.round(previewScale * 100)}%
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onPreviewScaleChange(Number((previewScale + 0.1).toFixed(2)))}
-                    className="text-muted-foreground hover:text-brand-accent transition-all"
-                    aria-label="Zoom in"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
-              </ControlRow>
-
-              <ControlRow label="Page Navigation" gapClass="gap-3">
-                <div className="flex items-center justify-between bg-secondary border border-border p-1.5 rounded-lg">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onCurrentPageChange(Math.max(0, currentPageIndex - 1))}
-                    disabled={currentPageIndex === 0}
-                    className="text-muted-foreground hover:text-brand-accent transition-all"
-                    aria-label="Previous page"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <div className="text-sm font-semibold text-foreground">
-                    Page {currentPageIndex + 1} of {totalPages}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() =>
-                      onCurrentPageChange(
-                        isPaginationComplete
-                          ? Math.min(pages.length - 1, currentPageIndex + 1)
-                          : currentPageIndex + 1
-                      )
-                    }
-                    disabled={isPaginationComplete && currentPageIndex >= pages.length - 1}
-                    className="text-muted-foreground hover:text-brand-accent transition-all"
-                    aria-label="Next page"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </ControlRow>
-            </>
-          )}
-
           <div className="pt-2 space-y-4">
             <Button
               variant="brand"
