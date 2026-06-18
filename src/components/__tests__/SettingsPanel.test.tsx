@@ -217,4 +217,29 @@ describe('SettingsPanel', () => {
     expect(screen.getByText('Paper Color')).toBeInTheDocument();
     expect(screen.queryByText('Line Color')).not.toBeInTheDocument();
   });
+
+  it('renders mobile jump controls when isMobileLayout is true and scrolls to sections', () => {
+    const scrollIntoViewMock = vi.fn();
+    window.HTMLElement.prototype.scrollIntoView = scrollIntoViewMock;
+
+    renderSettingsPanel({ isMobileLayout: true });
+
+    // Verify compact jump controls are rendered
+    const textButton = screen.getByRole('button', { name: /^text$/i });
+    const paperButton = screen.getByRole('button', { name: /^paper$/i });
+    const alignButton = screen.getByRole('button', { name: /^align$/i });
+    const moreButton = screen.getByRole('button', { name: /^more$/i });
+
+    expect(textButton).toBeInTheDocument();
+    expect(paperButton).toBeInTheDocument();
+    expect(alignButton).toBeInTheDocument();
+    expect(moreButton).toBeInTheDocument();
+
+    // Verify clicking one calls scrollIntoView
+    const textSection = document.getElementById('section-text');
+    expect(textSection).toBeInTheDocument();
+
+    fireEvent.click(textButton);
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
+  });
 });

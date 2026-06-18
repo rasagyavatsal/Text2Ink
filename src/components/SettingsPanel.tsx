@@ -532,8 +532,29 @@ export default function SettingsPanel({
         </div>
       ) : null}
 
+      {isMobileLayout && (
+        <div className="sticky top-0 -mt-6 pt-6 pb-3 bg-background z-20 border-b border-border/50 -mx-6 px-6 flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {['Text', 'Paper', 'Align', 'More'].map((label) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => {
+                const id = `section-${label.toLowerCase()}`;
+                const el = document.getElementById(id);
+                if (el) {
+                  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }}
+              className="px-4 py-1.5 text-xs font-semibold rounded-full bg-secondary border border-border text-foreground hover:bg-accent hover:text-accent-foreground active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Text Section */}
-      <div className="space-y-6">
+      <div id="section-text" className="space-y-6 scroll-mt-20">
         <div className="flex items-center gap-2">
           <Type className="w-5 h-5 text-brand-accent" />
           <h2 className="text-section-title font-semibold tracking-tight text-foreground">Text</h2>
@@ -671,7 +692,7 @@ export default function SettingsPanel({
       <Separator />
 
       {/* Paper Section */}
-      <div className="space-y-6">
+      <div id="section-paper" className="space-y-6 scroll-mt-20">
         <div className="flex items-center gap-2">
           <FileText className="w-5 h-5 text-brand-accent" />
           <h2 className="text-section-title font-semibold tracking-tight text-foreground">Paper</h2>
@@ -851,7 +872,7 @@ export default function SettingsPanel({
       <Separator />
 
       {/* Alignment Section */}
-      <div className="space-y-6">
+      <div id="section-align" className="space-y-6 scroll-mt-20">
         <div className="flex items-center gap-2">
           <Sliders className="w-5 h-5 text-brand-accent" />
           <h2 className="text-section-title font-semibold tracking-tight text-foreground">Alignment</h2>
@@ -990,7 +1011,7 @@ export default function SettingsPanel({
       <Separator />
 
       {/* Realism Section */}
-      <div className="space-y-6">
+      <div id="section-more" className="space-y-6 scroll-mt-20">
         <div className="flex items-center gap-2">
           <Wand2 className="w-5 h-5 text-brand-accent" />
           <h2 className="text-section-title font-semibold tracking-tight text-foreground">Realism</h2>
