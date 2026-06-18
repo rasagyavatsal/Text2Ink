@@ -73,6 +73,7 @@ describe('HomePage', () => {
     const brElement = heroHeading.querySelector('br');
     expect(brElement).toBeInTheDocument();
     expect(brElement).toHaveClass('sm:hidden');
+    expect(brElement).toHaveClass('lg:block');
 
     expect(screen.getByText(/create realistic handwritten pages from typed text/i)).toBeInTheDocument();
     

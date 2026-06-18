@@ -33,7 +33,7 @@ export default function HomePage() {
           <div className="text-center flex flex-col items-center gap-6 max-w-7xl mx-auto">
             <h1 className="text-page-title sm:text-display-title font-normal tracking-tight text-foreground leading-tight whitespace-normal lg:whitespace-nowrap">
               Convert typed text into
-              <br className="sm:hidden" />
+              <br className="sm:hidden lg:block" />
               {' '}
               <span className="font-bold font-[family-name:var(--font-ff-comma)] text-amber-600 dark:text-amber-300">
                 realistic handwriting
