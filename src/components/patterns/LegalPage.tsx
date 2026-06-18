@@ -40,7 +40,7 @@ export default function LegalPage({
         <div className={frameClasses}>
           <div className="mx-auto w-full max-w-document">
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 items-start">
-              <aside className="w-full lg:w-64 lg:shrink-0 lg:sticky lg:top-32">
+              <aside className="hidden lg:block lg:w-64 lg:shrink-0 lg:sticky lg:top-32">
                 <nav aria-label="Table of contents" className="flex flex-col gap-2">
                   <h2 className="font-semibold text-foreground mb-2">Table of contents</h2>
                   <ul className="flex flex-col gap-2">
@@ -71,17 +71,40 @@ export default function LegalPage({
                   </p>
                 </div>
 
+                <nav aria-label="Table of contents" className="lg:hidden bg-muted/30 rounded-lg p-4 border border-border">
+                  <h2 className="text-sm font-semibold text-foreground mb-3">Table of contents</h2>
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {sections.map((section) => (
+                      <li key={section.id}>
+                        <Link
+                          href={`#${section.id}`}
+                          className="flex items-center text-muted-foreground hover:text-foreground text-sm font-medium transition-colors min-h-[44px] px-3 py-2 bg-background border border-border rounded-md hover:bg-muted/50"
+                        >
+                          {section.title}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+
                 <div className="space-y-8">
-                  {sections.map((section) => (
-                    <section key={section.id} id={section.id} className="space-y-3 scroll-mt-32">
-                      <h2 className="text-section-title font-semibold tracking-tight text-foreground">
-                        {section.title}
-                      </h2>
-                      <p className="text-body leading-7 text-muted-foreground">
-                        {section.body}
-                      </p>
-                    </section>
-                  ))}
+                  {sections.map((section) => {
+                    const paragraphs = section.body
+                      .split(/\n\s*\n/)
+                      .filter((p) => p.trim() !== '');
+                    return (
+                      <section key={section.id} id={section.id} className="space-y-3 scroll-mt-32">
+                        <h2 className="text-section-title font-semibold tracking-tight text-foreground">
+                          {section.title}
+                        </h2>
+                        {paragraphs.map((para, index) => (
+                          <p key={index} className="text-body leading-7 text-muted-foreground">
+                            {para}
+                          </p>
+                        ))}
+                      </section>
+                    );
+                  })}
                 </div>
               </div>
             </div>

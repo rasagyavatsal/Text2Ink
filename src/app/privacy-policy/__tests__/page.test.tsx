@@ -53,9 +53,11 @@ describe('PrivacyPolicyPage', () => {
     expect(screen.getByRole('heading', { name: 'Your choices and requests' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Contact' })).toBeInTheDocument();
 
-    expect(screen.getByRole('navigation', { name: /table of contents/i })).toBeInTheDocument();
-    const tocLink = screen.getByRole('link', { name: 'Uploads and exports' });
-    expect(tocLink).toHaveAttribute('href', '#uploads-and-exports');
+    expect(screen.getAllByRole('navigation', { name: /table of contents/i })[0]).toBeInTheDocument();
+    const tocLinks = screen.getAllByRole('link', { name: 'Uploads and exports' });
+    expect(tocLinks.length).toBe(2);
+    expect(tocLinks[0]).toHaveAttribute('href', '#uploads-and-exports');
+    expect(tocLinks[1]).toHaveAttribute('href', '#uploads-and-exports');
 
     const sectionHeading = screen.getByRole('heading', { name: 'Uploads and exports' });
     expect(sectionHeading.closest('section')).toHaveAttribute('id', 'uploads-and-exports');

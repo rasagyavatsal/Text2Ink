@@ -53,9 +53,11 @@ describe('TermsOfServicePage', () => {
     expect(screen.getByRole('heading', { name: 'Changes to these terms' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Contact' })).toBeInTheDocument();
 
-    expect(screen.getByRole('navigation', { name: /table of contents/i })).toBeInTheDocument();
-    const tocLink = screen.getByRole('link', { name: 'Acceptable use' });
-    expect(tocLink).toHaveAttribute('href', '#acceptable-use');
+    expect(screen.getAllByRole('navigation', { name: /table of contents/i })[0]).toBeInTheDocument();
+    const tocLinks = screen.getAllByRole('link', { name: 'Acceptable use' });
+    expect(tocLinks.length).toBe(2);
+    expect(tocLinks[0]).toHaveAttribute('href', '#acceptable-use');
+    expect(tocLinks[1]).toHaveAttribute('href', '#acceptable-use');
 
     const sectionHeading = screen.getByRole('heading', { name: 'Acceptable use' });
     expect(sectionHeading.closest('section')).toHaveAttribute('id', 'acceptable-use');
