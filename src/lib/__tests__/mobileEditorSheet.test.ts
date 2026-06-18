@@ -44,8 +44,8 @@ describe('mobile editor sheet metrics', () => {
       safeAreaBottom: 8,
     });
 
-    expect(metrics.minSheetHeight).toBe(48);
-    expect(clampMobileSheetHeight(0, metrics)).toBe(48);
+    expect(metrics.minSheetHeight).toBe(96);
+    expect(clampMobileSheetHeight(0, metrics)).toBe(96);
   });
 
   it('builds dense snap points while keeping the library-required closed and full anchors', () => {
