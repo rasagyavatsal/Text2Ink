@@ -12,7 +12,7 @@ vi.mock('react-modal-sheet', () => ({
   Sheet: Object.assign(
     sheetMock,
     {
-      Container: ({ children, className }: any) => <div className={className}>{children}</div>,
+      Container: ({ children, className, style }: any) => <div className={className} style={style}>{children}</div>,
       Header: ({ children, className }: any) => <div className={className}>{children}</div>,
       Content: ({ children, className }: any) => <div className={className}>{children}</div>,
     }
@@ -164,4 +164,19 @@ describe('MobileEditorBottomSheet', () => {
     expect(getByText('Page 1 of 3')).toBeDefined();
     expect(getByText('120%')).toBeDefined();
   });
+
+  it('passes correct sheet heights via CSS custom variables to Sheet.Container', () => {
+    const { container } = renderMobileEditorBottomSheet({
+      anchor: 'default',
+      metrics: DEFAULT_MOBILE_SHEET_METRICS,
+    });
+
+    const sheetContainer = container.querySelector('.mobile-editor-sheet__container');
+    expect(sheetContainer).not.toBeNull();
+    const styles = (sheetContainer as HTMLElement).style;
+    expect(styles.getPropertyValue('--mobile-editor-sheet-current-height')).toBe(
+      `${DEFAULT_MOBILE_SHEET_METRICS.defaultSheetHeight}px`
+    );
+  });
 });
+
