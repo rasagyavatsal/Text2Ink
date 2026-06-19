@@ -234,6 +234,8 @@ describe('SettingsPanel', () => {
     expect(paperButton).toBeInTheDocument();
     expect(alignButton).toBeInTheDocument();
     expect(moreButton).toBeInTheDocument();
+    expect(textButton.parentElement?.className).toContain('pt-2');
+    expect(textButton.parentElement?.className).not.toContain('pt-6');
     expect(screen.queryByText('Zoom')).not.toBeInTheDocument();
     expect(screen.queryByText('Page Navigation')).not.toBeInTheDocument();
 

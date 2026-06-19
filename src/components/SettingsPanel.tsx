@@ -524,7 +524,7 @@ export default function SettingsPanel({
       ) : null}
 
       {isMobileLayout && (
-        <div className="sticky top-0 -mt-6 pt-6 pb-3 bg-background z-20 border-b border-border/50 -mx-6 px-6 flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="sticky top-0 -mt-6 pt-2 pb-3 bg-background z-20 border-b border-border/50 -mx-6 px-6 flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {['Text', 'Paper', 'Align', 'More'].map((label) => (
             <button
               key={label}
