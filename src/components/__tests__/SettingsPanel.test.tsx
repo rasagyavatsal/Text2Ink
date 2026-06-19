@@ -222,7 +222,7 @@ describe('SettingsPanel', () => {
     const scrollIntoViewMock = vi.fn();
     window.HTMLElement.prototype.scrollIntoView = scrollIntoViewMock;
 
-    renderSettingsPanel({ isMobileLayout: true });
+    const { container } = renderSettingsPanel({ isMobileLayout: true });
 
     // Verify compact jump controls are rendered
     const textButton = screen.getByRole('button', { name: /^text$/i });
@@ -239,8 +239,8 @@ describe('SettingsPanel', () => {
     expect(screen.queryByText('Zoom')).not.toBeInTheDocument();
     expect(screen.queryByText('Page Navigation')).not.toBeInTheDocument();
 
-    // Verify clicking one calls scrollIntoView
-    const textSection = document.getElementById('section-text');
+    // Verify clicking one calls scrollIntoView on the scoped section
+    const textSection = container.querySelector('[data-section="text"]');
     expect(textSection).toBeInTheDocument();
 
     fireEvent.click(textButton);

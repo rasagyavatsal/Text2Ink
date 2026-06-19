@@ -374,6 +374,8 @@ export default function SettingsPanel({
   showHomeLink = true,
   isMobileLayout = false,
 }: SettingsPanelProps) {
+  const panelRef = React.useRef<HTMLDivElement>(null);
+  const sectionIdPrefix = React.useId();
   const [customFontError, setCustomFontError] = useState<string | null>(null);
   const [lineDetecting, setLineDetecting] = useState(false);
   const [lineDetectError, setLineDetectError] = useState<string | null>(null);
@@ -504,7 +506,7 @@ export default function SettingsPanel({
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div ref={panelRef} className="p-6 space-y-6">
       {showHomeLink ? (
         <div className="flex items-center">
           <Link
@@ -530,8 +532,8 @@ export default function SettingsPanel({
               key={label}
               type="button"
               onClick={() => {
-                const id = `section-${label.toLowerCase()}`;
-                const el = document.getElementById(id);
+                const targetId = `${sectionIdPrefix}-section-${label.toLowerCase()}`;
+                const el = panelRef.current?.querySelector(`[id="${targetId}"]`);
                 if (el) {
                   el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
@@ -545,7 +547,11 @@ export default function SettingsPanel({
       )}
 
       {/* Text Section */}
-      <div id="section-text" className="space-y-6 scroll-mt-20">
+      <div
+        id={`${sectionIdPrefix}-section-text`}
+        data-section="text"
+        className="space-y-6 scroll-mt-20"
+      >
         <div className="flex items-center gap-2">
           <Type className="w-5 h-5 text-brand-accent" />
           <h2 className="text-section-title font-semibold tracking-tight text-foreground">Text</h2>
@@ -683,7 +689,11 @@ export default function SettingsPanel({
       <Separator />
 
       {/* Paper Section */}
-      <div id="section-paper" className="space-y-6 scroll-mt-20">
+      <div
+        id={`${sectionIdPrefix}-section-paper`}
+        data-section="paper"
+        className="space-y-6 scroll-mt-20"
+      >
         <div className="flex items-center gap-2">
           <FileText className="w-5 h-5 text-brand-accent" />
           <h2 className="text-section-title font-semibold tracking-tight text-foreground">Paper</h2>
@@ -863,7 +873,11 @@ export default function SettingsPanel({
       <Separator />
 
       {/* Alignment Section */}
-      <div id="section-align" className="space-y-6 scroll-mt-20">
+      <div
+        id={`${sectionIdPrefix}-section-align`}
+        data-section="align"
+        className="space-y-6 scroll-mt-20"
+      >
         <div className="flex items-center gap-2">
           <Sliders className="w-5 h-5 text-brand-accent" />
           <h2 className="text-section-title font-semibold tracking-tight text-foreground">Alignment</h2>
@@ -1002,7 +1016,11 @@ export default function SettingsPanel({
       <Separator />
 
       {/* Realism Section */}
-      <div id="section-more" className="space-y-6 scroll-mt-20">
+      <div
+        id={`${sectionIdPrefix}-section-more`}
+        data-section="more"
+        className="space-y-6 scroll-mt-20"
+      >
         <div className="flex items-center gap-2">
           <Wand2 className="w-5 h-5 text-brand-accent" />
           <h2 className="text-section-title font-semibold tracking-tight text-foreground">Realism</h2>
