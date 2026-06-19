@@ -26,6 +26,7 @@ export function getMobileEditorMediaQuery(): string {
 export const MOBILE_EDITOR_MEDIA_QUERY = '(max-width: 1279px)';
 
 export const MOBILE_SHEET_HANDLE_HEIGHT = 40;
+export const MOBILE_SHEET_FOOTER_RESERVE = 48;
 export const MOBILE_PREVIEW_HORIZONTAL_PADDING = 32;
 export const MOBILE_PREVIEW_VERTICAL_PADDING = 24;
 export const MOBILE_PREVIEW_MIN_SCALE = 0.2;
@@ -47,6 +48,7 @@ export interface MobileEditorSheetMetrics {
   minSheetHeight: number;
   defaultSheetHeight: number;
   maxSheetHeight: number;
+  safeAreaBottom: number;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -71,7 +73,7 @@ export function computeMobileEditorSheetMetrics({
     normalizedViewportHeight,
   );
   const normalizedSafeAreaBottom = Math.max(0, normalizeFinite(safeAreaBottom, 0));
-  const minSheetHeight = Math.round(MOBILE_SHEET_HANDLE_HEIGHT + 48 + normalizedSafeAreaBottom);
+  const minSheetHeight = Math.round(MOBILE_SHEET_HANDLE_HEIGHT + MOBILE_SHEET_FOOTER_RESERVE + normalizedSafeAreaBottom);
   const minPreviewHeight = getMinimumMobilePreviewHeight(normalizedViewportWidth);
   const availableBelowHeader = Math.max(0, normalizedViewportHeight - normalizedHeaderHeight);
   const previewProtectedMax = availableBelowHeader - minPreviewHeight;
@@ -86,6 +88,7 @@ export function computeMobileEditorSheetMetrics({
     minSheetHeight,
     defaultSheetHeight,
     maxSheetHeight,
+    safeAreaBottom: normalizedSafeAreaBottom,
   };
 }
 

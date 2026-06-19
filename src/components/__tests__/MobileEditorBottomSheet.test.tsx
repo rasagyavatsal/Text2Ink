@@ -3,8 +3,9 @@ import { render, waitFor } from '@testing-library/react';
 import React from 'react';
 import MobileEditorBottomSheet from '../MobileEditorBottomSheet';
 
-const { sheetMock } = vi.hoisted(() => ({
+const { sheetMock, mockUseVirtualKeyboard } = vi.hoisted(() => ({
   sheetMock: vi.fn(({ children }: any) => children),
+  mockUseVirtualKeyboard: vi.fn(() => ({ keyboardHeight: 0, isKeyboardOpen: false })),
 }));
 
 vi.mock('react-modal-sheet', () => ({
@@ -13,9 +14,14 @@ vi.mock('react-modal-sheet', () => ({
     {
       Container: ({ children, className, style }: any) => <div className={className} style={style}>{children}</div>,
       Header: ({ children, className }: any) => <div className={className}>{children}</div>,
-      Content: ({ children, className }: any) => <div className={className}>{children}</div>,
+      Content: ({ children, className, scrollStyle }: any) => (
+        <div className={className} style={scrollStyle} data-testid="sheet-content">
+          {children}
+        </div>
+      ),
     }
   ),
+  useVirtualKeyboard: () => mockUseVirtualKeyboard(),
 }));
 
 vi.mock('@/components/Version', () => ({
@@ -30,6 +36,7 @@ const DEFAULT_MOBILE_SHEET_METRICS = {
   defaultSheetHeight: 400,
   maxSheetHeight: 700,
   minPreviewHeight: 200,
+  safeAreaBottom: 0,
 };
 
 const renderMobileEditorBottomSheet = (
@@ -180,5 +187,28 @@ describe('MobileEditorBottomSheet', () => {
     expect(styles.getPropertyValue('--mobile-editor-sheet-max-height')).toBe(`${DEFAULT_MOBILE_SHEET_METRICS.maxSheetHeight}px`);
     expect(styles.getPropertyValue('--mobile-editor-sheet-peek-height')).toBe(`${DEFAULT_MOBILE_SHEET_METRICS.minSheetHeight}px`);
     expect(styles.getPropertyValue('--mobile-editor-sheet-current-height')).toBe('');
+  });
+
+  it('applies footer reserve, safeAreaBottom, and keyboardHeight to scroller scrollStyle', () => {
+    mockUseVirtualKeyboard.mockReturnValue({ keyboardHeight: 120, isKeyboardOpen: true });
+    const { getByTestId } = renderMobileEditorBottomSheet({
+      metrics: {
+        ...DEFAULT_MOBILE_SHEET_METRICS,
+        safeAreaBottom: 16,
+      },
+    });
+
+    const content = getByTestId('sheet-content');
+    // Footer reserve is 48, safeAreaBottom is 16, keyboardHeight is 120
+    // Total padding-bottom should be 48 + 16 + 120 = 184px
+    expect(content.style.paddingBottom).toBe('184px');
+  });
+
+  it('positions mobile-editor-sheet__footer correctly above keyboard using keyboardHeight', () => {
+    mockUseVirtualKeyboard.mockReturnValue({ keyboardHeight: 250, isKeyboardOpen: true });
+    const { container } = renderMobileEditorBottomSheet();
+    const footer = container.querySelector('.mobile-editor-sheet__footer') as HTMLElement;
+    expect(footer).not.toBeNull();
+    expect(footer.style.bottom).toBe('250px');
   });
 });

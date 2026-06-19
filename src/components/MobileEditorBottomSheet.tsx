@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Sheet, type SheetRef } from 'react-modal-sheet';
+import { Sheet, type SheetRef, useVirtualKeyboard } from 'react-modal-sheet';
 import {
   classifyMobileSheetAnchor,
   createMobileSheetSnapPoints,
   getMobileSheetAnchorSnapIndex,
   getMobileSheetHandleLabel,
+  MOBILE_SHEET_FOOTER_RESERVE,
   MobileEditorSheetMetrics,
   MobileSheetAnchor,
   resolveMobileSheetSnapHeight,
@@ -134,6 +135,14 @@ export default function MobileEditorBottomSheet({
   const observedAnchorRef = useRef<MobileSheetAnchor | null>(null);
   const sheetReadyRef = useRef(false);
   const [isSheetReady, setIsSheetReady] = useState(false);
+  const { keyboardHeight } = useVirtualKeyboard();
+
+  const scrollStyle = useMemo(() => {
+    return {
+      paddingBottom: `${MOBILE_SHEET_FOOTER_RESERVE + (metrics.safeAreaBottom ?? 0) + keyboardHeight}px`,
+    };
+  }, [metrics.safeAreaBottom, keyboardHeight]);
+
   const snapPoints = useMemo(() => createMobileSheetSnapPoints(metrics), [metrics]);
   const sheetStyleVars = useMemo(
     () =>
@@ -239,6 +248,7 @@ export default function MobileEditorBottomSheet({
             disableDrag
             className="mobile-editor-sheet__content min-h-0 bg-background"
             scrollClassName="mobile-editor-sheet__scroller"
+            scrollStyle={scrollStyle}
           >
             <div className="min-h-full bg-background">
               <div className="min-h-0">
@@ -251,7 +261,10 @@ export default function MobileEditorBottomSheet({
 
       <div
         className={`mobile-editor-sheet__footer${isSheetReady ? '' : ' mobile-editor-sheet__footer--preparing'}`}
-        style={sheetStyleVars}
+        style={{
+          ...sheetStyleVars,
+          bottom: `${keyboardHeight}px`,
+        }}
       >
         <PageZoomControls
           currentPageIndex={currentPageIndex}

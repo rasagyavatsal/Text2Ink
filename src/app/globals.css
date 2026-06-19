@@ -358,7 +358,6 @@
 
   .mobile-editor-sheet__scroller {
     overscroll-behavior: contain;
-    padding-bottom: var(--mobile-editor-sheet-footer-height);
   }
 
   .mobile-editor-sheet__footer {
