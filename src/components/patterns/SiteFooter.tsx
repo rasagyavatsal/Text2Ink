@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import Version from '@/components/Version';
 
 export default function SiteFooter() {
@@ -13,11 +12,14 @@ export default function SiteFooter() {
             href="/"
             className="flex items-center gap-2 text-brand-mark font-bold font-dancing-script hover:text-brand-accent transition-colors"
           >
-            <Image
-              src="/logo-without-background.png"
+            {/* eslint-disable-next-line @next/next/no-img-element -- Lazy static footer logo avoids loading the next/image runtime on the landing page. */}
+            <img
+              src="/logo-without-background.avif"
               alt="Text2Ink Logo"
               width={64}
               height={64}
+              loading="lazy"
+              decoding="async"
               className="w-14 h-14 md:w-16 md:h-16 object-contain"
             />
           </Link>
@@ -90,4 +92,3 @@ export default function SiteFooter() {
     </div>
   );
 }
-
