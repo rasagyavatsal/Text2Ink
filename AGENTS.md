@@ -15,6 +15,16 @@ After every task completion where code is changed, do these steps:
    - `npm --prefix functions run test`
 4. If the changes are related to UI, open the localhost site and validate changes by taking screenshots using Playwright.
 
+## Test-Driven Development
+
+Use TDD for functional changes where behavior can be specified with automated tests.
+
+- Start with Red: write one focused failing test for the new behavior or bug fix before implementing it.
+- Move to Green: add the simplest functional code needed to make that test pass.
+- Refactor after the test passes: remove duplication, improve structure, and keep all tests green.
+- Treat tests as living documentation for expected behavior and as a safety net against regressions.
+- Let test-first usage shape simpler, decoupled interfaces, but do not add unnecessary abstractions just to satisfy a test.
+
 ## Write Less Code
 
 Reduce clutter by building only what is strictly necessary.
@@ -27,10 +37,13 @@ Reduce clutter by building only what is strictly necessary.
 
 ## Prefer Deep Modules
 
-Design modules with small, simple interfaces that hide meaningful implementation complexity.
+Follow the "modules should be deep" principle: a module is its interface plus its implementation, and it earns its place when the implementation it hides is much richer than the interface callers use.
 
-- Encapsulate sequencing, validation, state handling, and edge cases inside the module instead of forcing callers to coordinate them.
+- Optimize for simple interfaces, not tiny implementations. A narrow public surface is valuable when it hides meaningful logic, data structures, sequencing, or operational details.
+- Encapsulate validation, state handling, permissions, caching, persistence, retries, concurrency, and edge cases inside the module instead of forcing callers to coordinate them.
 - Keep public methods, parameters, and configuration minimal; expose only what callers need to use the capability correctly.
-- Avoid shallow pass-through modules that add names, files, or methods without reducing caller complexity.
+- Avoid shallow wrappers that merely rename one call, mirror another API, or add files and methods without reducing caller knowledge.
+- Do not equate deep with large. Small functions can still be useful when their names express domain meaning, create real semantic distance from the implementation, or protect callers from internals.
+- Favor stable interfaces that can survive implementation changes; callers should not need to change because internal algorithms, data structures, or storage choices evolve.
 - Use the deletion test: if deleting a module only removes indirection, it is probably too shallow; if deleting it spreads complexity across multiple callers, it is likely earning its place.
 - Prefer deeper, clearer abstractions over excessive decomposition, but do not hide important domain semantics just to make an API smaller.
