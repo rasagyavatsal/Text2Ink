@@ -159,13 +159,19 @@ test.describe("client-side validation", () => {
 // ---------------------------------------------------------------------------
 
 test.describe("real inquiry submission via emulator", () => {
+  test.describe.configure({ mode: "serial" });
+
   test.skip(
     !process.env.FIRESTORE_EMULATOR_HOST,
     "Requires FIRESTORE_EMULATOR_HOST; run npm run test:e2e:emulator."
   );
 
-  test.beforeEach(async () => {
-    // Guard: emulator env + clear Firestore state before each test.
+  test.beforeEach(async ({}, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "chromium",
+      "Shared Firebase emulator state is exercised once in Chromium."
+    );
+
     await setupInquiryEmulator();
     await clearCapturedEmails();
   });

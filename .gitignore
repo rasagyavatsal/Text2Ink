@@ -52,3 +52,4 @@ docs/ui-inquiry-design-system-refactor-spec.md
 /.antigravitycli
 .ralph/
 PROMPT.md
+firestore-debug.log
