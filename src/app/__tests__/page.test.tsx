@@ -23,6 +23,12 @@ describe('HomePage', () => {
     expect(homePageSource).toMatch(/<footer\b/);
   });
 
+  it('preloads the hero handwriting font directly from the page', () => {
+    expect(homePageSource).toContain("preload('/fonts/FFCommaTrial-Regular.ttf'");
+    expect(homePageSource).toContain("as: 'font'");
+    expect(homePageSource).toContain("crossOrigin: ''");
+  });
+
   it('renders the header with Text2Ink, Contact, and Open Editor links', () => {
     render(<HomePage />);
     const header = screen.getByRole('banner');
@@ -158,6 +164,10 @@ describe('HomePage', () => {
     expect(firstImg).toBeInTheDocument();
     expect(firstImg).toHaveAttribute('src', '/Sample-handwriting-preview1.png');
     expect(firstImg).toHaveAttribute('alt', 'Handwriting preview 1');
+    expect(firstImg).toHaveAttribute('width', '618');
+    expect(firstImg).toHaveAttribute('height', '800');
+    expect(firstImg).toHaveAttribute('loading', 'eager');
+    expect(firstImg).toHaveAttribute('fetchPriority', 'high');
 
     // Verify second picture
     const secondPic = pictures[1];
@@ -165,6 +175,10 @@ describe('HomePage', () => {
     expect(secondImg).toBeInTheDocument();
     expect(secondImg).toHaveAttribute('src', '/Sample-handwriting-preview2.png');
     expect(secondImg).toHaveAttribute('alt', 'Handwriting preview 2');
+    expect(secondImg).toHaveAttribute('width', '618');
+    expect(secondImg).toHaveAttribute('height', '800');
+    expect(secondImg).toHaveAttribute('loading', 'lazy');
+    expect(secondImg).not.toHaveAttribute('fetchPriority', 'high');
   });
 
   it('renders the preview images grid without a width constraint wrapper', () => {

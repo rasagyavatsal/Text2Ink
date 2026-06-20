@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import { preload } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import SiteHeader from '@/components/patterns/SiteHeader';
 import SiteFooter from '@/components/patterns/SiteFooter';
@@ -10,6 +11,8 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
+  preload('/fonts/FFCommaTrial-Regular.ttf', { as: 'font', crossOrigin: '' });
+
   const frameClasses = 'w-full px-public-gutter';
 
   return (
@@ -58,8 +61,11 @@ export default function HomePage() {
                   <img
                     src="/Sample-handwriting-preview1.png"
                     alt="Handwriting preview 1"
+                    width={618}
+                    height={800}
                     className="w-full h-auto object-cover"
-                    loading="lazy"
+                    loading="eager"
+                    fetchPriority="high"
                   />
                 </picture>
               </div>
@@ -70,6 +76,8 @@ export default function HomePage() {
                   <img
                     src="/Sample-handwriting-preview2.png"
                     alt="Handwriting preview 2"
+                    width={618}
+                    height={800}
                     className="w-full h-auto object-cover"
                     loading="lazy"
                   />

@@ -1,5 +1,5 @@
 import { FirebaseApp, getApps, initializeApp } from "firebase/app";
-import { Analytics, getAnalytics, isSupported } from "firebase/analytics";
+import type { Analytics } from "firebase/analytics";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -21,6 +21,7 @@ export async function getFirebaseAnalytics(): Promise<Analytics | null> {
   if (typeof globalThis.window === "undefined") return null;
 
   try {
+    const { getAnalytics, isSupported } = await import("firebase/analytics");
     const supported = await isSupported();
     if (!supported) return null;
 
