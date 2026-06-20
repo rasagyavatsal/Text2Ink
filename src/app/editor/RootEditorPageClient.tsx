@@ -533,7 +533,11 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
 
   return (
     <>
-      <div className="relative h-[100dvh] overflow-hidden bg-background">
+      <div
+        data-testid="editor-shell"
+        data-client-ready={persistState ? 'true' : 'false'}
+        className="relative h-[100dvh] overflow-hidden bg-background"
+      >
         <div
           className={cn(
             'fixed inset-x-0 top-0 z-20 transition-transform xl:left-panel',

@@ -144,6 +144,10 @@ export default function MobileEditorBottomSheet({
   }, [metrics.safeAreaBottom, keyboardHeight]);
 
   const snapPoints = useMemo(() => createMobileSheetSnapPoints(metrics), [metrics]);
+  const anchorSnapIndex = useMemo(
+    () => getMobileSheetAnchorSnapIndex(anchor, snapPoints, metrics),
+    [anchor, metrics, snapPoints],
+  );
   const sheetStyleVars = useMemo(
     () =>
       ({
@@ -171,30 +175,28 @@ export default function MobileEditorBottomSheet({
       return;
     }
 
-    const index = getMobileSheetAnchorSnapIndex(anchor, snapPoints, metrics);
+    const index = anchorSnapIndex;
     const height = resolveMobileSheetSnapHeight(snapPoints[index] ?? metrics.minSheetHeight, metrics.maxSheetHeight);
     onHeightChange(height);
 
     const timeout = globalThis.setTimeout(() => {
       const sheet = sheetRef.current;
 
+      if (!sheetReadyRef.current) {
+        sheetReadyRef.current = true;
+        setIsSheetReady(true);
+        return;
+      }
+
       if (!sheet) {
-        if (!sheetReadyRef.current) {
-          sheetReadyRef.current = true;
-          setIsSheetReady(true);
-        }
         return;
       }
 
       sheet.snapTo(index);
-      if (!sheetReadyRef.current) {
-        sheetReadyRef.current = true;
-        setIsSheetReady(true);
-      }
     }, 100);
 
     return () => globalThis.clearTimeout(timeout);
-  }, [anchor, metrics, onHeightChange, snapPoints]);
+  }, [anchor, anchorSnapIndex, metrics, onHeightChange, snapPoints]);
 
   const handleDrag = useCallback(() => {
     const sheet = sheetRef.current;
@@ -220,6 +222,7 @@ export default function MobileEditorBottomSheet({
         avoidKeyboard
         disableDismiss
         disableScrollLocking
+        initialSnap={anchorSnapIndex}
         snapPoints={snapPoints}
         className={`mobile-editor-sheet${isSheetReady ? '' : ' mobile-editor-sheet--preparing'}`}
         dragCloseThreshold={0}

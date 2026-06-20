@@ -86,6 +86,7 @@ export default function HandwritingEditor({
   const [selectionRange, setSelectionRange] = useState({ start: 0, end: 0 });
   const [fontMetricsVersion, setFontMetricsVersion] = useState(0);
   const [localText, setLocalText] = useState(text);
+  const [lastTextProp, setLastTextProp] = useState(text);
   const [pages, setPages] = useState<LineData[][]>([[]]);
   const [isPaginationComplete, setIsPaginationComplete] = useState(true);
   void isPaginationComplete;
@@ -102,9 +103,10 @@ export default function HandwritingEditor({
   });
   const justDidCanvasDragRef = useRef(false);
 
-  useEffect(() => {
+  if (text !== lastTextProp) {
+    setLastTextProp(text);
     setLocalText(text);
-  }, [text]);
+  }
 
   const debouncedPropagateText = useDebouncedCallback((nextText: string) => {
     onTextChange(nextText);
@@ -639,14 +641,14 @@ export default function HandwritingEditor({
       const currentStartOffset = pageStartOffsets[pageIndex] ?? 0;
 
       return (
-        <button
+        <div
           key={pageIndex}
           ref={(el) => {
             if (isVisiblePreview) {
               pageElsRef.current[pageIndex] = el;
             }
           }}
-          type="button"
+          role="button"
           className="relative shadow-2xl block text-left bg-transparent border-0 p-0 cursor-default"
           style={{
             width: page.width * scale,
@@ -662,7 +664,7 @@ export default function HandwritingEditor({
             if (!isVisiblePreview) return;
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
-              handlePageClick(e as unknown as React.MouseEvent<HTMLButtonElement>);
+              handlePageClick(e as unknown as React.MouseEvent<HTMLElement>);
             }
           }}
         >
@@ -774,7 +776,7 @@ export default function HandwritingEditor({
               tabIndex={0}
             />
           )}
-        </button>
+        </div>
       );
     },
     [

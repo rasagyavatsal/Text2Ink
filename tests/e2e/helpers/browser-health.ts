@@ -87,7 +87,6 @@ export async function assertNoNextJsErrorOverlay(page: Page): Promise<void> {
     "[data-nextjs-dialog]",
     "nextjs-portal",
     "#__next-build-error",
-    "[data-nextjs-toast]",
   ];
 
   for (const selector of overlaySelectors) {

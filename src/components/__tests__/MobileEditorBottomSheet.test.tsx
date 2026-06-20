@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, waitFor } from '@testing-library/react';
 import React from 'react';
 import MobileEditorBottomSheet from '../MobileEditorBottomSheet';
+import { createMobileSheetSnapPoints, getMobileSheetAnchorSnapIndex } from '@/lib/mobileEditorSheet';
 
 const { sheetMock, mockUseVirtualKeyboard } = vi.hoisted(() => ({
   sheetMock: vi.fn(({ children }: any) => children),
@@ -106,8 +107,13 @@ describe('MobileEditorBottomSheet', () => {
     });
 
     const sheetProps = sheetMock.mock.calls[0]?.[0];
+    const expectedInitialSnap = getMobileSheetAnchorSnapIndex(
+      'peek',
+      createMobileSheetSnapPoints(DEFAULT_MOBILE_SHEET_METRICS),
+      DEFAULT_MOBILE_SHEET_METRICS
+    );
 
-    expect(sheetProps.initialSnap).toBeUndefined();
+    expect(sheetProps.initialSnap).toBe(expectedInitialSnap);
 
     await waitFor(() => {
       expect(onHeightChange).toHaveBeenCalledWith(DEFAULT_MOBILE_SHEET_METRICS.minSheetHeight);

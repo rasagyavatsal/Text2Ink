@@ -1,5 +1,5 @@
 import path from "path";
-import { test, expect } from "./fixtures";
+import { openDesktopEditor, test, expect } from "./fixtures";
 
 /**
  * Editor Upload And Text Box E2E Tests (issue #285)
@@ -13,6 +13,11 @@ import { test, expect } from "./fixtures";
  * data-testid="desktop-settings-panel".
  */
 
+test.skip(
+  ({ isMobile }) => isMobile,
+  "Desktop editor coverage runs on desktop projects; mobile editor behavior is covered in mobile-editor.spec.ts."
+);
+
 const FONT_FIXTURE = path.join(__dirname, "fixtures", "test-font.ttf");
 const BG_FIXTURE = path.join(__dirname, "fixtures", "test-background.png");
 
@@ -20,10 +25,7 @@ const BG_FIXTURE = path.join(__dirname, "fixtures", "test-background.png");
 // Helper: open /editor, wait for the desktop settings panel to be present
 // ---------------------------------------------------------------------------
 async function openEditor(page: Parameters<typeof test>[1]["page"]) {
-  await page.goto("/editor");
-  const panel = page.getByTestId("desktop-settings-panel");
-  await expect(panel).toBeAttached({ timeout: 15_000 });
-  return panel;
+  return openDesktopEditor(page);
 }
 
 // ---------------------------------------------------------------------------

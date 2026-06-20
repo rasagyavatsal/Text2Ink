@@ -159,6 +159,11 @@ test.describe("client-side validation", () => {
 // ---------------------------------------------------------------------------
 
 test.describe("real inquiry submission via emulator", () => {
+  test.skip(
+    !process.env.FIRESTORE_EMULATOR_HOST,
+    "Requires FIRESTORE_EMULATOR_HOST; run npm run test:e2e:emulator."
+  );
+
   test.beforeEach(async () => {
     // Guard: emulator env + clear Firestore state before each test.
     await setupInquiryEmulator();
