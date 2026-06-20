@@ -2,13 +2,6 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import SiteFooter from '../SiteFooter';
 
-// Mock next/image
-vi.mock('next/image', () => ({
-  default: ({ priority, ...props }: any) => {
-    return <img alt="" {...props} />;
-  },
-}));
-
 // Mock Version
 vi.mock('@/components/Version', () => ({
   default: () => <span data-testid="version">v1.23.4</span>
@@ -19,7 +12,11 @@ describe('SiteFooter', () => {
     render(<SiteFooter />);
     
     // Logo
-    expect(screen.getByRole('img', { name: /text2ink logo/i })).toBeInTheDocument();
+    const logoImg = screen.getByRole('img', { name: /text2ink logo/i });
+    expect(logoImg).toBeInTheDocument();
+    expect(logoImg).toHaveAttribute('src', '/logo-without-background.avif');
+    expect(logoImg).toHaveAttribute('loading', 'lazy');
+    expect(logoImg).toHaveAttribute('decoding', 'async');
 
     // Legal links
     const termsLink = screen.getByRole('link', { name: /terms of service/i });
@@ -85,4 +82,3 @@ describe('SiteFooter', () => {
     });
   });
 });
-
