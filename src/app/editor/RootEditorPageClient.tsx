@@ -544,7 +544,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
         </div>
 
         <div className="flex h-full min-h-0 box-border overflow-hidden bg-muted">
-          <aside className="hidden xl:flex flex-col w-panel shrink-0 bg-background border-r border-border overflow-y-auto overscroll-contain">
+          <aside data-testid="desktop-settings-panel" className="hidden xl:flex flex-col w-panel shrink-0 bg-background border-r border-border overflow-y-auto overscroll-contain">
             {desktopSettingsRail}
           </aside>
 
