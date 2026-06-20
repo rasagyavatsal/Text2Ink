@@ -8,7 +8,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.tsx'],
-    exclude: ['**/node_modules/**', '**/dist/**', '**/functions/lib/**', '**/cypress/**', '**/.{idea,git,cache,output,temp}/**'],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/functions/lib/**', '**/cypress/**', '**/.{idea,git,cache,output,temp}/**', 'tests/e2e/**'],
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
