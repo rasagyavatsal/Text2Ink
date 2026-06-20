@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures";
+import { gotoHydratedEditor, test, expect } from "./fixtures";
 
 /**
  * Editor Pagination E2E Tests (issue #283)
@@ -9,6 +9,11 @@ import { test, expect } from "./fixtures";
  * All tests use a desktop viewport so the canvas-toolbar and settings panel
  * (xl breakpoint) are visible.
  */
+
+test.skip(
+  ({ isMobile }) => isMobile,
+  "Desktop editor coverage runs on desktop projects; mobile editor behavior is covered in mobile-editor.spec.ts."
+);
 
 // ---------------------------------------------------------------------------
 // Long-text fixture that reliably spans more than one page.
@@ -40,7 +45,7 @@ async function waitForMultiplePages(page: import("@playwright/test").Page) {
 // ---------------------------------------------------------------------------
 
 test("long text causes page count to exceed one", async ({ page }) => {
-  await page.goto("/editor");
+  await gotoHydratedEditor(page);
 
   const textInput = page.getByLabel("Handwriting text input");
   await textInput.fill(LONG_TEXT_FIXTURE);
@@ -61,7 +66,7 @@ test("long text causes page count to exceed one", async ({ page }) => {
 // ---------------------------------------------------------------------------
 
 test("clicking next page navigates to page 2", async ({ page }) => {
-  await page.goto("/editor");
+  await gotoHydratedEditor(page);
 
   const textInput = page.getByLabel("Handwriting text input");
   await textInput.fill(LONG_TEXT_FIXTURE);
@@ -84,7 +89,7 @@ test("clicking next page navigates to page 2", async ({ page }) => {
 // ---------------------------------------------------------------------------
 
 test("clicking previous page navigates back to page 1", async ({ page }) => {
-  await page.goto("/editor");
+  await gotoHydratedEditor(page);
 
   const textInput = page.getByLabel("Handwriting text input");
   await textInput.fill(LONG_TEXT_FIXTURE);
@@ -115,7 +120,7 @@ test("clicking previous page navigates back to page 1", async ({ page }) => {
 // ---------------------------------------------------------------------------
 
 test("page counter updates correctly when navigating back and forth", async ({ page }) => {
-  await page.goto("/editor");
+  await gotoHydratedEditor(page);
 
   const textInput = page.getByLabel("Handwriting text input");
   await textInput.fill(LONG_TEXT_FIXTURE);
@@ -154,7 +159,7 @@ test("page counter updates correctly when navigating back and forth", async ({ p
 test("changing font size affects pagination without crashing", async ({ page }) => {
   // Use a large desktop viewport so the xl sidebar is rendered.
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/editor");
+  await gotoHydratedEditor(page);
 
   const textInput = page.getByLabel("Handwriting text input");
   await textInput.fill(LONG_TEXT_FIXTURE);
@@ -198,7 +203,7 @@ test("changing font size affects pagination without crashing", async ({ page }) 
 
 test("changing paper orientation does not lose text", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/editor");
+  await gotoHydratedEditor(page);
 
   const shortText = "Orientation test content";
   const textInput = page.getByLabel("Handwriting text input");
@@ -239,4 +244,3 @@ test("changing paper orientation does not lose text", async ({ page }) => {
     toolbar.locator("span").filter({ hasText: /Page \d+ of \d+/ })
   ).toBeVisible({ timeout: 15_000 });
 });
-

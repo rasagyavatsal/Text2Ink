@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures";
+import { openDesktopEditor, test, expect } from "./fixtures";
 
 /**
  * Editor Settings Panel E2E Tests (issue #284)
@@ -11,14 +11,16 @@ import { test, expect } from "./fixtures";
  * data-testid="desktop-settings-panel".
  */
 
+test.skip(
+  ({ isMobile }) => isMobile,
+  "Desktop editor coverage runs on desktop projects; mobile editor behavior is covered in mobile-editor.spec.ts."
+);
+
 // ---------------------------------------------------------------------------
 // Helper: open /editor, wait for the desktop settings panel to be present
 // ---------------------------------------------------------------------------
 async function openEditor(page: Parameters<typeof test>[1]["page"]) {
-  await page.goto("/editor");
-  const panel = page.getByTestId("desktop-settings-panel");
-  await expect(panel).toBeAttached({ timeout: 15_000 });
-  return panel;
+  return openDesktopEditor(page);
 }
 
 // ---------------------------------------------------------------------------

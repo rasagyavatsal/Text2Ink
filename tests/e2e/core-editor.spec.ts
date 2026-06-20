@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures";
+import { gotoHydratedEditor, test, expect } from "./fixtures";
 
 /**
  * Core Editor Writing And Canvas E2E Tests (issue #282)
@@ -9,12 +9,17 @@ import { test, expect } from "./fixtures";
  * pagination controls disabled state for single-page content.
  */
 
+test.skip(
+  ({ isMobile }) => isMobile,
+  "Desktop editor coverage runs on desktop projects; mobile editor behavior is covered in mobile-editor.spec.ts."
+);
+
 // ---------------------------------------------------------------------------
 // /editor – initial load: page preview is visible
 // ---------------------------------------------------------------------------
 
 test("/editor page preview is visible on initial load", async ({ page }) => {
-  await page.goto("/editor");
+  await gotoHydratedEditor(page);
   // The preview scroll container wraps the HandwritingEditor canvas.
   const previewContainer = page.getByTestId("preview-scroll-container");
   await expect(previewContainer).toBeVisible();
@@ -27,7 +32,7 @@ test("/editor page preview is visible on initial load", async ({ page }) => {
 test("typed text is retained in the Handwriting text input", async ({
   page,
 }) => {
-  await page.goto("/editor");
+  await gotoHydratedEditor(page);
 
   const textInput = page.getByLabel("Handwriting text input");
   await textInput.fill("Hello world");
@@ -41,7 +46,7 @@ test("typed text is retained in the Handwriting text input", async ({
 // ---------------------------------------------------------------------------
 
 test("canvas preview remains visible after typing", async ({ page }) => {
-  await page.goto("/editor");
+  await gotoHydratedEditor(page);
 
   const textInput = page.getByLabel("Handwriting text input");
   await textInput.fill("Canvas stays visible");
@@ -57,7 +62,7 @@ test("canvas preview remains visible after typing", async ({ page }) => {
 test("pagination worker updates page count to 1 for short text", async ({
   page,
 }) => {
-  await page.goto("/editor");
+  await gotoHydratedEditor(page);
 
   const textInput = page.getByLabel("Handwriting text input");
   await textInput.fill("Short text");
@@ -79,7 +84,7 @@ test("pagination worker updates page count to 1 for short text", async ({
 test("zoom in control increases the displayed zoom percentage", async ({
   page,
 }) => {
-  await page.goto("/editor");
+  await gotoHydratedEditor(page);
 
   const toolbar = page.getByTestId("canvas-toolbar");
   await expect(toolbar).toBeVisible({ timeout: 10_000 });
@@ -98,7 +103,7 @@ test("zoom in control increases the displayed zoom percentage", async ({
 test("zoom out control decreases the displayed zoom percentage", async ({
   page,
 }) => {
-  await page.goto("/editor");
+  await gotoHydratedEditor(page);
 
   const toolbar = page.getByTestId("canvas-toolbar");
   await expect(toolbar).toBeVisible({ timeout: 10_000 });
@@ -120,7 +125,7 @@ test("zoom out control decreases the displayed zoom percentage", async ({
 test("previous page button is disabled for single-page content", async ({
   page,
 }) => {
-  await page.goto("/editor");
+  await gotoHydratedEditor(page);
 
   // Fill with short text so pagination completes as 1 page.
   const textInput = page.getByLabel("Handwriting text input");
@@ -139,7 +144,7 @@ test("previous page button is disabled for single-page content", async ({
 test("next page button is disabled for single-page content", async ({
   page,
 }) => {
-  await page.goto("/editor");
+  await gotoHydratedEditor(page);
 
   const textInput = page.getByLabel("Handwriting text input");
   await textInput.fill("One page only");

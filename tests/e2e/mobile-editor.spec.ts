@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures";
+import { gotoHydratedEditor, test, expect } from "./fixtures";
 
 /**
  * Mobile Editor E2E Tests (issue #288)
@@ -30,7 +30,7 @@ const LONG_TEXT_FIXTURE =
 // ---------------------------------------------------------------------------
 async function openMobileEditor(page: import("@playwright/test").Page) {
   await page.setViewportSize(MOBILE_VIEWPORT);
-  await page.goto("/editor");
+  await gotoHydratedEditor(page);
   // Preview scroll container is always rendered in mobile layout.
   const previewContainer = page.getByTestId("preview-scroll-container");
   await expect(previewContainer).toBeVisible({ timeout: 15_000 });

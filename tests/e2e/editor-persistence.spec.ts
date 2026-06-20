@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures";
+import { openDesktopEditor, test, expect, waitForHydratedEditor } from "./fixtures";
 
 /**
  * Editor Persistence And Clear-All E2E Tests (issue #286)
@@ -15,14 +15,16 @@ import { test, expect } from "./fixtures";
  * data-testid="desktop-settings-panel".
  */
 
+test.skip(
+  ({ isMobile }) => isMobile,
+  "Desktop editor coverage runs on desktop projects; mobile editor behavior is covered in mobile-editor.spec.ts."
+);
+
 // ---------------------------------------------------------------------------
 // Helper: open /editor, wait for the desktop settings panel to be present
 // ---------------------------------------------------------------------------
 async function openEditor(page: Parameters<typeof test>[1]["page"]) {
-  await page.goto("/editor");
-  const panel = page.getByTestId("desktop-settings-panel");
-  await expect(panel).toBeAttached({ timeout: 15_000 });
-  return panel;
+  return openDesktopEditor(page);
 }
 
 // ---------------------------------------------------------------------------
@@ -40,7 +42,8 @@ test("editor text is persisted across page reloads", async ({ page }) => {
 
   // Reload the page
   await page.reload();
-  await expect(page.getByTestId("desktop-settings-panel")).toBeAttached({
+  await waitForHydratedEditor(page);
+  await expect(page.getByTestId("desktop-settings-panel")).toBeVisible({
     timeout: 15_000,
   });
 
@@ -72,8 +75,9 @@ test("changed setting (paper style) is persisted across page reloads", async ({
 
   // Reload
   await page.reload();
+  await waitForHydratedEditor(page);
   const restoredPanel = page.getByTestId("desktop-settings-panel");
-  await expect(restoredPanel).toBeAttached({ timeout: 15_000 });
+  await expect(restoredPanel).toBeVisible({ timeout: 15_000 });
 
   // The dot-grid card should still be selected
   const restoredDotGrid = restoredPanel.getByTestId("paper-style-card-dot-grid");
@@ -184,7 +188,8 @@ test("cleared state (empty text) persists after page reload", async ({
 
   // Reload the page
   await page.reload();
-  await expect(page.getByTestId("desktop-settings-panel")).toBeAttached({
+  await waitForHydratedEditor(page);
+  await expect(page.getByTestId("desktop-settings-panel")).toBeVisible({
     timeout: 15_000,
   });
 

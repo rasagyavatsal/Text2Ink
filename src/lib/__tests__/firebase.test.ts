@@ -64,4 +64,15 @@ describe('firebase helpers', () => {
     const analytics = await getFirebaseAnalytics();
     expect(analytics).toBe(mockAnalytics);
   });
+
+  it('getFirebaseAnalytics returns null when analytics initialization throws', async () => {
+    vi.mocked(firebaseAnalytics.isSupported).mockResolvedValue(true);
+    vi.mocked(firebaseAnalytics.getAnalytics).mockImplementation(() => {
+      throw new Error('Analytics unavailable');
+    });
+    vi.mocked(firebaseApp.getApps).mockReturnValue([{} as firebaseApp.FirebaseApp]);
+
+    const analytics = await getFirebaseAnalytics();
+    expect(analytics).toBeNull();
+  });
 });
