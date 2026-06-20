@@ -13,7 +13,9 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "test:e2e:emulator": "firebase emulators:exec --project text2ink --only functions,firestore 'FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 playwright test'",
     "test:coverage": "vitest run --coverage",
+    "dev:emulator": "API_URL=http://127.0.0.1:5001/text2ink/us-central1/inquiry next dev",
     "deploy": "npm run build && firebase deploy",
     "deploy:preview": "npm run build && firebase hosting:channel:deploy preview"
   },
