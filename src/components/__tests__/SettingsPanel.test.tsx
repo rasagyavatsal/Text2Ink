@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, render } from '@testing-library/react';
 import './settingsPanelTestMocks';
 import { renderSettingsPanel, createSettingsPanelProps } from './settingsPanelTestUtils';
 import SettingsPanel from '../SettingsPanel';
@@ -141,6 +141,31 @@ describe('SettingsPanel', () => {
     expect(screen.getByRole('button', { name: /^lined \(medium\) paper style$/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/Size/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Orientation/i)).toBeInTheDocument();
+  });
+
+  it('keeps explicit control IDs unique when desktop and mobile panels are mounted together', () => {
+    const desktopProps = createSettingsPanelProps({ idPrefix: 'desktop-settings' });
+    const mobileProps = createSettingsPanelProps({
+      idPrefix: 'mobile-settings',
+      isMobileLayout: true,
+      showHomeLink: false,
+    });
+    const { container } = render(
+      <>
+        <SettingsPanel {...desktopProps as any} />
+        <SettingsPanel {...mobileProps as any} />
+      </>
+    );
+
+    const explicitControlIds = Array.from(container.querySelectorAll<HTMLElement>('[id]'))
+      .map((element) => element.id)
+      .filter((id) => id.endsWith('paper-format') || id.endsWith('paper-orientation'));
+
+    expect(explicitControlIds).toContain('desktop-settings-paper-format');
+    expect(explicitControlIds).toContain('mobile-settings-paper-format');
+    expect(explicitControlIds).toContain('desktop-settings-paper-orientation');
+    expect(explicitControlIds).toContain('mobile-settings-paper-orientation');
+    expect(new Set(explicitControlIds).size).toBe(explicitControlIds.length);
   });
 
   it('hides preset-owned alignment controls for preset-backed built-in papers', () => {

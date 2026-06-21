@@ -41,6 +41,35 @@ interface PageZoomControlsProps {
   readonly onPreviewScaleChange: (scale: number) => void;
 }
 
+type ScheduledSnapAttempt =
+  | { readonly type: 'frame'; readonly id: number }
+  | { readonly type: 'timeout'; readonly id: ReturnType<typeof setTimeout> };
+
+function scheduleSnapAttempt(callback: () => void): ScheduledSnapAttempt {
+  if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+    return { type: 'frame', id: window.requestAnimationFrame(callback) };
+  }
+
+  return { type: 'timeout', id: setTimeout(callback, 16) };
+}
+
+function cancelSnapAttempt(attempt: ScheduledSnapAttempt | null) {
+  if (!attempt) return;
+
+  if (
+    attempt.type === 'frame' &&
+    typeof window !== 'undefined' &&
+    typeof window.cancelAnimationFrame === 'function'
+  ) {
+    window.cancelAnimationFrame(attempt.id);
+    return;
+  }
+
+  if (attempt.type === 'timeout') {
+    clearTimeout(attempt.id);
+  }
+}
+
 function PageZoomControls({
   currentPageIndex,
   totalPages,
@@ -59,7 +88,7 @@ function PageZoomControls({
           size="icon-lg"
           onClick={() => onCurrentPageChange(Math.max(0, currentPageIndex - 1))}
           disabled={currentPageIndex === 0}
-          className="text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
+          className="h-11 w-11 text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
           aria-label="Previous page"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -78,7 +107,7 @@ function PageZoomControls({
             )
           }
           disabled={isPaginationComplete && currentPageIndex >= pages.length - 1}
-          className="text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
+          className="h-11 w-11 text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
           aria-label="Next page"
         >
           <ChevronRight className="w-4 h-4" />
@@ -94,7 +123,7 @@ function PageZoomControls({
           variant="ghost"
           size="icon-lg"
           onClick={() => onPreviewScaleChange(Number((previewScale - 0.1).toFixed(2)))}
-          className="text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
+          className="h-11 w-11 text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
           aria-label="Zoom out"
         >
           <Minus className="w-4 h-4" />
@@ -106,7 +135,7 @@ function PageZoomControls({
           variant="ghost"
           size="icon-lg"
           onClick={() => onPreviewScaleChange(Number((previewScale + 0.1).toFixed(2)))}
-          className="text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
+          className="h-11 w-11 text-muted-foreground hover:text-brand-accent transition-all focus-visible:ring-offset-background"
           aria-label="Zoom in"
         >
           <Plus className="w-4 h-4" />
@@ -144,6 +173,14 @@ export default function MobileEditorBottomSheet({
   }, [metrics.safeAreaBottom, keyboardHeight]);
 
   const snapPoints = useMemo(() => createMobileSheetSnapPoints(metrics), [metrics]);
+  const hasValidSnapPoints =
+    snapPoints.length > 0 &&
+    metrics.minSheetHeight > 0 &&
+    metrics.maxSheetHeight >= metrics.minSheetHeight;
+  const peekSnapIndex = useMemo(
+    () => getMobileSheetAnchorSnapIndex('peek', snapPoints, metrics),
+    [metrics, snapPoints],
+  );
   const anchorSnapIndex = useMemo(
     () => getMobileSheetAnchorSnapIndex(anchor, snapPoints, metrics),
     [anchor, metrics, snapPoints],
@@ -159,6 +196,7 @@ export default function MobileEditorBottomSheet({
 
   const updateHeightFromSnapIndex = useCallback(
     (index: number) => {
+      if (!hasValidSnapPoints) return;
       const snapPoint = snapPoints[index] ?? metrics.minSheetHeight;
       const height = resolveMobileSheetSnapHeight(snapPoint, metrics.maxSheetHeight);
       onHeightChange(height);
@@ -166,53 +204,69 @@ export default function MobileEditorBottomSheet({
       observedAnchorRef.current = nextAnchor;
       onAnchorChange(nextAnchor);
     },
-    [metrics, onAnchorChange, onHeightChange, snapPoints],
+    [hasValidSnapPoints, metrics, onAnchorChange, onHeightChange, snapPoints],
   );
 
   useEffect(() => {
-    if (observedAnchorRef.current === anchor) {
+    if (!hasValidSnapPoints) {
+      sheetReadyRef.current = false;
+      return;
+    }
+
+    if (sheetReadyRef.current && observedAnchorRef.current === anchor) {
       observedAnchorRef.current = null;
       return;
     }
+    observedAnchorRef.current = null;
 
     const index = anchorSnapIndex;
     const height = resolveMobileSheetSnapHeight(snapPoints[index] ?? metrics.minSheetHeight, metrics.maxSheetHeight);
     onHeightChange(height);
+    const shouldSkipSnapTo = !sheetReadyRef.current && anchor === 'peek';
 
-    const timeout = globalThis.setTimeout(() => {
+    let scheduledAttempt: ScheduledSnapAttempt | null = null;
+    let attempts = 0;
+    const snapWhenMeasured = () => {
       const sheet = sheetRef.current;
+      const measuredHeight = sheet?.height ?? 0;
 
-      if (!sheetReadyRef.current) {
-        sheetReadyRef.current = true;
-        setIsSheetReady(true);
+      if (measuredHeight <= 0 && attempts < 12) {
+        attempts += 1;
+        scheduledAttempt = scheduleSnapAttempt(snapWhenMeasured);
         return;
       }
 
-      if (!sheet) {
-        return;
+      if (sheet && !shouldSkipSnapTo) {
+        sheet.snapTo(index);
       }
 
-      sheet.snapTo(index);
-    }, 100);
+      sheetReadyRef.current = true;
+      setIsSheetReady(true);
+    };
 
-    return () => globalThis.clearTimeout(timeout);
-  }, [anchor, anchorSnapIndex, metrics, onHeightChange, snapPoints]);
+    scheduledAttempt = scheduleSnapAttempt(snapWhenMeasured);
+
+    return () => cancelSnapAttempt(scheduledAttempt);
+  }, [anchor, anchorSnapIndex, hasValidSnapPoints, metrics, onHeightChange, snapPoints]);
 
   const handleDrag = useCallback(() => {
+    if (!isSheetReady) return;
     const sheet = sheetRef.current;
     if (!sheet) return;
     const height = Math.round(sheet.height - sheet.y.get());
     onHeightChange(Math.min(metrics.maxSheetHeight, Math.max(metrics.minSheetHeight, height)));
-  }, [metrics.maxSheetHeight, metrics.minSheetHeight, onHeightChange]);
+  }, [isSheetReady, metrics.maxSheetHeight, metrics.minSheetHeight, onHeightChange]);
 
   const handleClose = useCallback(() => {
+    if (!hasValidSnapPoints) return;
     const index = getMobileSheetAnchorSnapIndex('peek', snapPoints, metrics);
     sheetRef.current?.snapTo(index);
     onHeightChange(metrics.minSheetHeight);
     onAnchorChange('peek');
-  }, [metrics, onAnchorChange, onHeightChange, snapPoints]);
+  }, [hasValidSnapPoints, metrics, onAnchorChange, onHeightChange, snapPoints]);
 
   const handleLabel = getMobileSheetHandleLabel(anchor);
+  const canInteract = hasValidSnapPoints && isSheetReady;
 
   return (
     <>
@@ -222,9 +276,9 @@ export default function MobileEditorBottomSheet({
         avoidKeyboard
         disableDismiss
         disableScrollLocking
-        initialSnap={anchorSnapIndex}
+        initialSnap={peekSnapIndex}
         snapPoints={snapPoints}
-        className={`mobile-editor-sheet${isSheetReady ? '' : ' mobile-editor-sheet--preparing'}`}
+        className={`mobile-editor-sheet${canInteract ? '' : ' mobile-editor-sheet--preparing'}`}
         dragCloseThreshold={0}
         dragVelocityThreshold={850}
         onClose={handleClose}
@@ -238,7 +292,7 @@ export default function MobileEditorBottomSheet({
           <Sheet.Header className="mobile-editor-sheet__header bg-background">
             <button
               type="button"
-              className="flex min-h-10 w-full touch-none items-center justify-center rounded-t-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="flex min-h-11 w-full touch-none items-center justify-center rounded-t-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               aria-label={handleLabel}
               aria-expanded={anchor !== 'peek'}
               onClick={onHandlePress}
@@ -263,7 +317,7 @@ export default function MobileEditorBottomSheet({
       </Sheet>
 
       <div
-        className={`mobile-editor-sheet__footer${isSheetReady ? '' : ' mobile-editor-sheet__footer--preparing'}`}
+        className={`mobile-editor-sheet__footer${canInteract ? '' : ' mobile-editor-sheet__footer--preparing'}`}
         style={{
           ...sheetStyleVars,
           bottom: `${keyboardHeight}px`,

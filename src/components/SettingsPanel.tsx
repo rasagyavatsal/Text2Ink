@@ -233,6 +233,9 @@ const FontCard = ({
   );
 };
 
+const horizontalCarouselClassName =
+  "grid grid-rows-2 grid-flow-col gap-3 auto-cols-[calc(45%-0.375rem)] overflow-x-auto pb-4 snap-x snap-mandatory touch-pan-x overscroll-x-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]";
+
 interface ControlRowProps {
   readonly label: string;
   readonly valueDisplay?: React.ReactNode;
@@ -361,6 +364,7 @@ interface SettingsPanelProps {
   readonly onClearAll: () => void;
   readonly showHomeLink?: boolean;
   readonly isMobileLayout?: boolean;
+  readonly idPrefix?: string;
 }
 
 export default function SettingsPanel({
@@ -373,9 +377,20 @@ export default function SettingsPanel({
   onClearAll,
   showHomeLink = true,
   isMobileLayout = false,
+  idPrefix,
 }: SettingsPanelProps) {
   const panelRef = React.useRef<HTMLDivElement>(null);
-  const sectionIdPrefix = React.useId();
+  const carouselDragRef = React.useRef<{
+    pointerId: number;
+    startX: number;
+    scrollLeft: number;
+    moved: boolean;
+  } | null>(null);
+  const suppressCarouselClickRef = React.useRef(false);
+  const generatedIdPrefix = React.useId();
+  const instanceIdPrefix = idPrefix ?? generatedIdPrefix;
+  const paperFormatId = `${instanceIdPrefix}-paper-format`;
+  const paperOrientationId = `${instanceIdPrefix}-paper-orientation`;
   const [customFontError, setCustomFontError] = useState<string | null>(null);
   const [lineDetecting, setLineDetecting] = useState(false);
   const [lineDetectError, setLineDetectError] = useState<string | null>(null);
@@ -427,6 +442,55 @@ export default function SettingsPanel({
     setLineDetectError(null);
     setLineDetectInfo(null);
   }, [currentPageIndex, currentBackground]);
+
+  const handleCarouselPointerDown = React.useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== 'touch') return;
+
+    event.stopPropagation();
+    carouselDragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      scrollLeft: event.currentTarget.scrollLeft,
+      moved: false,
+    };
+    try {
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+    } catch {
+      // Synthetic test events and older browsers may not allow capture for this pointer.
+    }
+  }, []);
+
+  const handleCarouselPointerMove = React.useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    const dragState = carouselDragRef.current;
+    if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+    const deltaX = event.clientX - dragState.startX;
+    if (Math.abs(deltaX) > 4) {
+      dragState.moved = true;
+      suppressCarouselClickRef.current = true;
+    }
+
+    event.currentTarget.scrollLeft = dragState.scrollLeft - deltaX;
+    event.preventDefault();
+    event.stopPropagation();
+  }, []);
+
+  const handleCarouselPointerEnd = React.useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    const dragState = carouselDragRef.current;
+    if (!dragState || dragState.pointerId !== event.pointerId) return;
+
+    suppressCarouselClickRef.current = dragState.moved;
+    carouselDragRef.current = null;
+    event.stopPropagation();
+  }, []);
+
+  const handleCarouselClickCapture = React.useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    if (!suppressCarouselClickRef.current) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    suppressCarouselClickRef.current = false;
+  }, []);
 
 
 
@@ -532,13 +596,13 @@ export default function SettingsPanel({
               key={label}
               type="button"
               onClick={() => {
-                const targetId = `${sectionIdPrefix}-section-${label.toLowerCase()}`;
+                const targetId = `${instanceIdPrefix}-section-${label.toLowerCase()}`;
                 const el = panelRef.current?.querySelector(`[id="${targetId}"]`);
                 if (el) {
                   el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
               }}
-              className="px-4 py-1.5 text-xs font-semibold rounded-full bg-secondary border border-border text-foreground hover:bg-accent hover:text-accent-foreground active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+              className="min-h-11 px-4 py-1.5 text-xs font-semibold rounded-full bg-secondary border border-border text-foreground hover:bg-accent hover:text-accent-foreground active:scale-95 transition-all cursor-pointer whitespace-nowrap"
             >
               {label}
             </button>
@@ -548,7 +612,7 @@ export default function SettingsPanel({
 
       {/* Text Section */}
       <div
-        id={`${sectionIdPrefix}-section-text`}
+        id={`${instanceIdPrefix}-section-text`}
         data-section="text"
         className="space-y-6 scroll-mt-20"
       >
@@ -560,7 +624,15 @@ export default function SettingsPanel({
         <div className="space-y-6">
           <ControlRow label="Fonts" gapClass="gap-3">
             <div className="relative w-full overflow-hidden">
-              <div className="grid grid-rows-2 grid-flow-col gap-3 auto-cols-[calc(45%-0.375rem)] overflow-x-auto pb-4 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div
+                data-testid="font-carousel"
+                className={horizontalCarouselClassName}
+                onPointerDown={handleCarouselPointerDown}
+                onPointerMove={handleCarouselPointerMove}
+                onPointerUp={handleCarouselPointerEnd}
+                onPointerCancel={handleCarouselPointerEnd}
+                onClickCapture={handleCarouselClickCapture}
+              >
                 {availableFonts.map((font) => (
                   <div key={font.value} className="snap-start">
                     <FontCard
@@ -690,7 +762,7 @@ export default function SettingsPanel({
 
       {/* Paper Section */}
       <div
-        id={`${sectionIdPrefix}-section-paper`}
+        id={`${instanceIdPrefix}-section-paper`}
         data-section="paper"
         className="space-y-6 scroll-mt-20"
       >
@@ -702,7 +774,15 @@ export default function SettingsPanel({
         <div className="space-y-6">
           <ControlRow label="Paper Style" gapClass="gap-3">
             <div className="relative w-full overflow-hidden">
-              <div className="grid grid-rows-2 grid-flow-col gap-3 auto-cols-[calc(45%-0.375rem)] overflow-x-auto pb-4 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div
+                data-testid="paper-style-carousel"
+                className={horizontalCarouselClassName}
+                onPointerDown={handleCarouselPointerDown}
+                onPointerMove={handleCarouselPointerMove}
+                onPointerUp={handleCarouselPointerEnd}
+                onPointerCancel={handleCarouselPointerEnd}
+                onClickCapture={handleCarouselClickCapture}
+              >
                 {PAPER_STYLES.map((style) => (
                   <div key={style.value} className="snap-start">
                     <PaperStyleCard
@@ -721,7 +801,7 @@ export default function SettingsPanel({
             </div>
           </ControlRow>
 
-          <ControlRow label="Size" htmlFor="paper-format" gapClass="gap-3">
+          <ControlRow label="Size" htmlFor={paperFormatId} gapClass="gap-3">
             <Select
               value={currentPaperFormat}
               onValueChange={(value) =>
@@ -730,7 +810,7 @@ export default function SettingsPanel({
                 })
               }
             >
-              <SelectTrigger id="paper-format" className="w-full h-10">
+              <SelectTrigger id={paperFormatId} className="w-full h-10">
                 <SelectValue placeholder="Select size" />
               </SelectTrigger>
               <SelectContent>
@@ -743,7 +823,7 @@ export default function SettingsPanel({
             </Select>
           </ControlRow>
 
-          <ControlRow label="Orientation" htmlFor="paper-orientation" gapClass="gap-3">
+          <ControlRow label="Orientation" htmlFor={paperOrientationId} gapClass="gap-3">
             <Select
               value={currentPaperOrientation}
               onValueChange={(value) =>
@@ -752,7 +832,7 @@ export default function SettingsPanel({
                 })
               }
             >
-              <SelectTrigger id="paper-orientation" className="w-full h-10">
+              <SelectTrigger id={paperOrientationId} className="w-full h-10">
                 <SelectValue placeholder="Select orientation" />
               </SelectTrigger>
               <SelectContent>
@@ -874,7 +954,7 @@ export default function SettingsPanel({
 
       {/* Alignment Section */}
       <div
-        id={`${sectionIdPrefix}-section-align`}
+        id={`${instanceIdPrefix}-section-align`}
         data-section="align"
         className="space-y-6 scroll-mt-20"
       >
@@ -1017,7 +1097,7 @@ export default function SettingsPanel({
 
       {/* Realism Section */}
       <div
-        id={`${sectionIdPrefix}-section-more`}
+        id={`${instanceIdPrefix}-section-more`}
         data-section="more"
         className="space-y-6 scroll-mt-20"
       >
