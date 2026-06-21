@@ -5,9 +5,14 @@ import { Button } from '@/components/ui/button';
 import SiteHeader from '@/components/patterns/SiteHeader';
 import SiteFooter from '@/components/patterns/SiteFooter';
 
+const siteUrl = 'https://text2ink.com';
+
 export const metadata: Metadata = {
   title: 'Text to Handwriting Converter',
   description: 'Create realistic handwritten pages from typed text for assignments, class notes, study materials, and notebook-style images.',
+  alternates: {
+    canonical: `${siteUrl}/`,
+  },
 };
 
 export default function HomePage() {
