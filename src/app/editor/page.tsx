@@ -4,7 +4,7 @@ import RootEditorPageClient from './RootEditorPageClient';
 import './editor.css';
 
 const siteUrl = 'https://text2ink.com';
-const canonicalUrl = `${siteUrl}/`;
+const canonicalUrl = `${siteUrl}/editor`;
 const editorTitle = 'Handwriting Editor - Create Realistic Handwritten Notes';
 const editorDescription = 'Use our free online handwriting editor to convert text to realistic handwritten notes. Customize fonts, paper styles, ink effects, margins, and export as PDF or images.';
 
@@ -30,11 +30,6 @@ const editorJsonLd = {
     'Adjustable margins and spacing',
   ],
   screenshot: `${siteUrl}/Sample-handwriting-preview1.avif`,
-  aggregateRating: {
-    '@type': 'AggregateRating',
-    ratingValue: '4.8',
-    ratingCount: '150',
-  },
 };
 
 export const metadata: Metadata = {
