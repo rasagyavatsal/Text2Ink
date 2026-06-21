@@ -34,8 +34,10 @@ import {
   computeMobilePreviewScale,
   DESKTOP_PREVIEW_MIN_SCALE,
   getMobileEditorMediaQuery,
+  getMobileSheetAnchorHeight,
   MOBILE_PREVIEW_MIN_SCALE,
-  MobileSheetAnchor,
+  type MobileEditorSheetChange,
+  type MobileSheetAnchor,
   PREVIEW_MAX_SCALE,
 } from '@/lib/mobileEditorSheet';
 import { cn } from '@/lib/utils';
@@ -50,6 +52,8 @@ type EditorInitialState = {
   previewScale: number;
   currentPageIndex: number;
 };
+
+type MobileEditorSheetState = Pick<MobileEditorSheetChange, 'anchor' | 'height'>;
 
 const DEFAULT_INITIAL_STATE: EditorInitialState = {
   text: '',
@@ -188,9 +192,6 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
   
-  const [mobileSheetAnchor, setMobileSheetAnchor] = useState<MobileSheetAnchor>('peek');
-  const [mobileSheetHeight, setMobileSheetHeight] = useState<number | null>(null);
-
   const mobileSheetMetrics = useMemo(
     () =>
       computeMobileEditorSheetMetrics({
@@ -201,9 +202,13 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       }),
     [headerHeight, viewportSize.height, viewportSize.safeAreaBottom, viewportSize.width],
   );
+  const [mobileSheetState, setMobileSheetState] = useState<MobileEditorSheetState>(() => ({
+    anchor: 'peek',
+    height: getMobileSheetAnchorHeight('peek', mobileSheetMetrics),
+  }));
 
   const effectiveMobileSheetHeight = isMobileEditorLayout
-    ? clampMobileSheetHeight(mobileSheetHeight ?? mobileSheetMetrics.defaultSheetHeight, mobileSheetMetrics)
+    ? clampMobileSheetHeight(mobileSheetState.height, mobileSheetMetrics)
     : 0;
   const mobileStablePreviewAvailableHeight = Math.max(0, viewportSize.height - headerHeight);
   const currentPreviewLayout = useMemo(
@@ -360,24 +365,45 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
     [isMobileEditorLayout, mobilePreviewMaxScale],
   );
 
-  const handleMobileSheetHeightChange = useCallback((height: number) => {
-    setMobileSheetHeight((prev) => (prev === height ? prev : height));
+  const handleMobileSheetChange = useCallback((change: MobileEditorSheetChange) => {
+    setMobileSheetState((prev) => {
+      const height = clampMobileSheetHeight(change.height, mobileSheetMetrics);
+      if (prev.anchor === change.anchor && prev.height === height) return prev;
+      return {
+        anchor: change.anchor,
+        height,
+      };
+    });
+  }, [mobileSheetMetrics]);
+
+  const setMobileSheetAnchorState = useCallback((anchor: MobileSheetAnchor) => {
+    setMobileSheetState({
+      anchor,
+      height: getMobileSheetAnchorHeight(anchor, mobileSheetMetrics),
+    });
+  }, [mobileSheetMetrics]);
+
+  const getNextMobileSheetAnchor = useCallback((anchor: MobileSheetAnchor): MobileSheetAnchor => {
+    if (anchor === 'peek') return 'default';
+    if (anchor === 'default') return 'expanded';
+    return 'peek';
   }, []);
 
   const handleEditorTypingFocus = useCallback(() => {
     if (!isMobileEditorLayout) return;
-    setMobileSheetAnchor('peek');
-    setMobileSheetHeight(mobileSheetMetrics.minSheetHeight);
-  }, [isMobileEditorLayout, mobileSheetMetrics.minSheetHeight]);
+    setMobileSheetAnchorState('peek');
+  }, [isMobileEditorLayout, setMobileSheetAnchorState]);
 
   const handleMobileSheetHandlePress = useCallback(() => {
     blurActiveTextInput();
-    setMobileSheetAnchor((prev) => {
-      if (prev === 'peek') return 'default';
-      if (prev === 'default') return 'expanded';
-      return 'peek';
+    setMobileSheetState((prev) => {
+      const anchor = getNextMobileSheetAnchor(prev.anchor);
+      return {
+        anchor,
+        height: getMobileSheetAnchorHeight(anchor, mobileSheetMetrics),
+      };
     });
-  }, []);
+  }, [getNextMobileSheetAnchor, mobileSheetMetrics]);
 
   const handleCurrentPageChange = useCallback(
     (nextIndex: number) => {
@@ -523,12 +549,11 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
 
   const mobileControlsSheet = isMobileEditorLayout ? (
     <MobileEditorBottomSheet
-      anchor={mobileSheetAnchor}
+      anchor={mobileSheetState.anchor}
       metrics={mobileSheetMetrics}
       settingsPanel={mobileSettingsPanel}
-      onAnchorChange={setMobileSheetAnchor}
       onHandlePress={handleMobileSheetHandlePress}
-      onHeightChange={handleMobileSheetHeightChange}
+      onSheetChange={handleMobileSheetChange}
       currentPageIndex={currentPageIndex}
       totalPages={totalPages}
       isPaginationComplete={isPaginationComplete}
@@ -549,7 +574,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
         <div
           className={cn(
             'fixed inset-x-0 top-0 z-20 transition-transform xl:left-panel',
-            isMobileEditorLayout && mobileSheetAnchor !== 'peek' && 'hidden xl:block',
+            isMobileEditorLayout && mobileSheetState.anchor !== 'peek' && 'hidden xl:block',
           )}
         >
           {topControls}

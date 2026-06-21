@@ -1,6 +1,13 @@
 import { PAGE_HEIGHT, PAGE_WIDTH } from '@/lib/pageConstants';
 
 export type MobileSheetAnchor = 'peek' | 'default' | 'expanded';
+export type MobileEditorSheetChangeSource = 'snap' | 'drag' | 'close';
+
+export interface MobileEditorSheetChange {
+  readonly anchor: MobileSheetAnchor;
+  readonly height: number;
+  readonly source: MobileEditorSheetChangeSource;
+}
 
 const DEFAULT_DESKTOP_BREAKPOINT_PX = 1280;
 
@@ -96,6 +103,12 @@ export function clampMobileSheetHeight(height: number, metrics: MobileEditorShee
   return clamp(Math.round(normalizeFinite(height, metrics.defaultSheetHeight)), metrics.minSheetHeight, metrics.maxSheetHeight);
 }
 
+export function getMobileSheetAnchorHeight(anchor: MobileSheetAnchor, metrics: MobileEditorSheetMetrics) {
+  if (anchor === 'peek') return metrics.minSheetHeight;
+  if (anchor === 'expanded') return metrics.maxSheetHeight;
+  return metrics.defaultSheetHeight;
+}
+
 export function resolveMobileSheetSnapHeight(snapPoint: number, maxSheetHeight: number) {
   if (snapPoint > 0 && snapPoint <= 1) {
     return Math.round(snapPoint * maxSheetHeight);
@@ -153,12 +166,7 @@ export function getMobileSheetAnchorSnapIndex(
   snapPoints: number[],
   metrics: MobileEditorSheetMetrics,
 ) {
-  const getTargetHeight = () => {
-    if (anchor === 'peek') return metrics.minSheetHeight;
-    if (anchor === 'expanded') return metrics.maxSheetHeight;
-    return metrics.defaultSheetHeight;
-  };
-  const targetHeight = getTargetHeight();
+  const targetHeight = getMobileSheetAnchorHeight(anchor, metrics);
 
   return findNearestMobileSheetSnapIndex(snapPoints, metrics.maxSheetHeight, targetHeight);
 }

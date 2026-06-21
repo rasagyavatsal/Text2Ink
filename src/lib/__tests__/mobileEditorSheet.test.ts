@@ -6,6 +6,7 @@ import {
   computeMobilePreviewScale,
   createMobileSheetSnapPoints,
   getMobileEditorMediaQuery,
+  getMobileSheetAnchorHeight,
   getMobileSheetAnchorSnapIndex,
   getMobileSheetHandleLabel,
   resolveMobileSheetSnapHeight,
@@ -99,6 +100,18 @@ describe('mobile editor sheet metrics', () => {
 
     expect(resolveMobileSheetSnapHeight(snapPoints[peekIndex], metrics.maxSheetHeight)).toBe(metrics.minSheetHeight);
     expect(resolveMobileSheetSnapHeight(snapPoints[expandedIndex], metrics.maxSheetHeight)).toBe(metrics.maxSheetHeight);
+  });
+
+  it('returns stable heights for conceptual anchors', () => {
+    const metrics = computeMobileEditorSheetMetrics({
+      viewportHeight: 844,
+      viewportWidth: 390,
+      headerHeight: 72,
+    });
+
+    expect(getMobileSheetAnchorHeight('peek', metrics)).toBe(metrics.minSheetHeight);
+    expect(getMobileSheetAnchorHeight('default', metrics)).toBe(metrics.defaultSheetHeight);
+    expect(getMobileSheetAnchorHeight('expanded', metrics)).toBe(metrics.maxSheetHeight);
   });
 
   it('classifies handle labels from the current conceptual state', () => {

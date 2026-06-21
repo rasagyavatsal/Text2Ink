@@ -26,6 +26,16 @@ const LONG_TEXT_FIXTURE =
     "pariatur. Excepteur sint occaecat cupidatat non proident, sunt in " +
     "culpa qui officia deserunt mollit anim id est laborum.\n").repeat(20);
 
+type CanvasInkBounds = {
+  count: number;
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+  canvasWidth: number;
+  canvasHeight: number;
+};
+
 async function disableNextDevToolsPointerInterception(page: Page) {
   await page.addStyleTag({
     content: "nextjs-portal { pointer-events: none !important; }",
@@ -80,16 +90,39 @@ async function waitForMobileMultiplePages(page: Page) {
 
 async function expectElementTopmostAtCenter(locator: ReturnType<Page["locator"]>) {
   await expect(locator).toBeVisible({ timeout: 10_000 });
-  const isTopmost = await locator.evaluate((element) => {
-    const rect = element.getBoundingClientRect();
-    const topElement = document.elementFromPoint(
-      rect.left + rect.width / 2,
-      rect.top + Math.min(rect.height / 2, 40)
-    );
-    return topElement === element || element.contains(topElement);
-  });
+  await expect
+    .poll(
+      () =>
+        locator.evaluate((element) => {
+          const rect = element.getBoundingClientRect();
+          const topElement = document.elementFromPoint(
+            rect.left + rect.width / 2,
+            rect.top + Math.min(rect.height / 2, 40)
+          );
+          return topElement === element || element.contains(topElement);
+        }),
+      { timeout: 10_000 },
+    )
+    .toBe(true);
+}
 
-  expect(isTopmost).toBe(true);
+async function expectHandleTopmost(page: Page, name: string | RegExp = /editor controls/i) {
+  const handle = page.getByRole("button", { name });
+  await expectElementTopmostAtCenter(handle);
+  return handle;
+}
+
+async function expectPeekHandleAtBottom(page: Page) {
+  const handle = await expectHandleTopmost(page, "Open editor controls");
+  const viewport = page.viewportSize();
+  expect(viewport).not.toBeNull();
+  await expect
+    .poll(async () => {
+      const box = await handle.boundingBox();
+      return box?.y ?? 0;
+    }, { timeout: 10_000 })
+    .toBeGreaterThan(viewport!.height - 140);
+  return handle;
 }
 
 async function expectMinimumHitTarget(locator: ReturnType<Page["locator"]>) {
@@ -100,6 +133,161 @@ async function expectMinimumHitTarget(locator: ReturnType<Page["locator"]>) {
   expect(box!.height).toBeGreaterThanOrEqual(44);
 }
 
+async function tapCanvasFraction(
+  page: Page,
+  canvas: ReturnType<Page["locator"]>,
+  fractionX: number,
+  fractionY: number,
+  isMobile: boolean,
+) {
+  const point = await canvas.evaluate(
+    (element, { fractionX, fractionY }) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        x: rect.left + rect.width * fractionX,
+        y: rect.top + rect.height * fractionY,
+      };
+    },
+    { fractionX, fractionY },
+  );
+
+  const topElementTag = await page.evaluate(({ x, y }) => {
+    const element = document.elementFromPoint(x, y);
+    return element?.tagName.toLowerCase();
+  }, point);
+  expect(topElementTag).toBe("canvas");
+
+  if (isMobile) {
+    await page.touchscreen.tap(point.x, point.y);
+  } else {
+    await page.mouse.click(point.x, point.y);
+  }
+}
+
+async function tapCanvasClientPoint(
+  page: Page,
+  point: { x: number; y: number },
+  isMobile: boolean,
+) {
+  const topElementTag = await page.evaluate(({ x, y }) => {
+    const element = document.elementFromPoint(x, y);
+    return element?.tagName.toLowerCase();
+  }, point);
+  expect(topElementTag).toBe("canvas");
+
+  if (isMobile) {
+    await page.touchscreen.tap(point.x, point.y);
+  } else {
+    await page.mouse.click(point.x, point.y);
+  }
+}
+
+async function getCanvasInkBounds(
+  canvas: ReturnType<Page["locator"]>,
+): Promise<CanvasInkBounds | null> {
+  return canvas.evaluate((element) => {
+    const canvasElement = element as HTMLCanvasElement;
+    const context = canvasElement.getContext("2d");
+    if (!context) {
+      return null;
+    }
+
+    const { width, height } = canvasElement;
+    const pixels = context.getImageData(0, 0, width, height).data;
+    let count = 0;
+    let minX = width;
+    let minY = height;
+    let maxX = 0;
+    let maxY = 0;
+
+    for (let index = 0; index < pixels.length; index += 4) {
+      const red = pixels[index] ?? 255;
+      const green = pixels[index + 1] ?? 255;
+      const blue = pixels[index + 2] ?? 255;
+      const alpha = pixels[index + 3] ?? 0;
+      if (alpha > 0 && red < 130 && green < 140 && blue < 180) {
+        const pixelIndex = index / 4;
+        const x = pixelIndex % width;
+        const y = Math.floor(pixelIndex / width);
+        count += 1;
+        minX = Math.min(minX, x);
+        maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
+      }
+    }
+
+    if (count === 0) {
+      return null;
+    }
+
+    return {
+      count,
+      minX,
+      maxX,
+      minY,
+      maxY,
+      canvasWidth: width,
+      canvasHeight: height,
+    };
+  });
+}
+
+async function waitForCanvasTextInk(
+  canvas: ReturnType<Page["locator"]>,
+): Promise<CanvasInkBounds> {
+  await expect
+    .poll(
+      async () => (await getCanvasInkBounds(canvas))?.count ?? 0,
+      { timeout: 10_000 },
+    )
+    .toBeGreaterThan(20);
+
+  const bounds = await getCanvasInkBounds(canvas);
+  expect(bounds).not.toBeNull();
+  return bounds!;
+}
+
+async function getCanvasInkPoint(
+  canvas: ReturnType<Page["locator"]>,
+  bounds: CanvasInkBounds,
+  xMode: "center" | "rightWhitespace",
+) {
+  return canvas.evaluate(
+    (element, { bounds, xMode }) => {
+      const rect = element.getBoundingClientRect();
+      const inkCenterX = (bounds.minX + bounds.maxX) / 2;
+      const inkCenterY = (bounds.minY + bounds.maxY) / 2;
+      return {
+        x:
+          xMode === "rightWhitespace"
+            ? rect.left + rect.width * 0.9
+            : rect.left + (inkCenterX / bounds.canvasWidth) * rect.width,
+        y: rect.top + (inkCenterY / bounds.canvasHeight) * rect.height,
+      };
+    },
+    { bounds, xMode },
+  );
+}
+
+async function expectTextareaCaret(page: Page, expectedIndex: number) {
+  const textInput = page.getByLabel("Handwriting text input");
+  await expect
+    .poll(() =>
+      textInput.evaluate((element) => (element as HTMLTextAreaElement).selectionStart ?? -1)
+    )
+    .toBe(expectedIndex);
+
+  const selection = await textInput.evaluate((element) => {
+    const textarea = element as HTMLTextAreaElement;
+    return {
+      start: textarea.selectionStart,
+      end: textarea.selectionEnd,
+    };
+  });
+  expect(selection.end).toBe(selection.start);
+}
+
 // ---------------------------------------------------------------------------
 // 1. Mobile bottom sheet is visible on load.
 // ---------------------------------------------------------------------------
@@ -108,8 +296,9 @@ test("mobile bottom sheet is visible at mobile viewport", async ({ page }) => {
   await openMobileEditor(page);
 
   // The sheet handle button is the most reliable accessible element to assert.
-  const sheetHandle = page.getByRole("button", { name: "Open editor controls" });
-  await expect(sheetHandle).toBeVisible({ timeout: 10_000 });
+  const sheetHandle = await expectPeekHandleAtBottom(page);
+  await sheetHandle.click();
+  await expectHandleTopmost(page, "Expand editor controls");
 });
 
 // ---------------------------------------------------------------------------
@@ -154,21 +343,40 @@ test("pressing the sheet handle moves from peek to default state", async ({ page
 test("sheet handle cycles peek to default to expanded to peek", async ({ page }) => {
   await openMobileEditor(page);
 
-  const openHandle = page.getByRole("button", { name: "Open editor controls" });
-  await expect(openHandle).toBeVisible({ timeout: 10_000 });
-  await openHandle.click();
+  for (let i = 0; i < 2; i++) {
+    const openHandle = await expectPeekHandleAtBottom(page);
+    await openHandle.click();
 
-  const expandHandle = page.getByRole("button", { name: "Expand editor controls" });
-  await expect(expandHandle).toBeVisible({ timeout: 5_000 });
-  await expandHandle.click();
+    const expandHandle = await expectHandleTopmost(page, "Expand editor controls");
+    await expandHandle.click();
 
-  const collapseHandle = page.getByRole("button", { name: "Collapse editor controls" });
-  await expect(collapseHandle).toBeVisible({ timeout: 5_000 });
-  await collapseHandle.click();
+    const collapseHandle = await expectHandleTopmost(page, "Collapse editor controls");
+    await collapseHandle.click();
 
-  await expect(page.getByRole("button", { name: "Open editor controls" })).toBeVisible({
-    timeout: 5_000,
-  });
+    await expectPeekHandleAtBottom(page);
+  }
+});
+
+test("sheet handle returns visible and topmost after editor focus blur", async ({ page }) => {
+  await openFreshMobileEditor(page);
+
+  const textInput = page.getByLabel("Handwriting text input");
+  await textInput.fill("Focus blur mobile handle");
+  await textInput.evaluate((element) => (element as HTMLTextAreaElement).blur());
+
+  await expectPeekHandleAtBottom(page);
+});
+
+test("viewport resize keeps the sheet handle visible and tappable", async ({ page }) => {
+  await openFreshMobileEditor(page);
+
+  await page.setViewportSize({ width: 844, height: 390 });
+  await expect(page.getByTestId("preview-scroll-container")).toBeVisible({ timeout: 10_000 });
+  await page.setViewportSize(MOBILE_VIEWPORT);
+
+  const handle = await expectPeekHandleAtBottom(page);
+  await handle.click();
+  await expectHandleTopmost(page, "Expand editor controls");
 });
 
 test("tapping rendered canvas text moves the hidden textarea caret", async ({
@@ -183,26 +391,13 @@ test("tapping rendered canvas text moves the hidden textarea caret", async ({
 
   const canvas = page.locator('canvas[aria-label="Page 1 preview"]').first();
   await expect(canvas).toBeVisible({ timeout: 10_000 });
+  const inkBounds = await waitForCanvasTextInk(canvas);
 
-  const tapPoint = await canvas.evaluate((element) => {
-    const rect = element.getBoundingClientRect();
-    return {
-      x: rect.left + rect.width * 0.155,
-      y: rect.top + rect.height * 0.125,
-    };
-  });
-
-  const topElementTag = await page.evaluate(({ x, y }) => {
-    const element = document.elementFromPoint(x, y);
-    return element?.tagName.toLowerCase();
-  }, tapPoint);
-  expect(topElementTag).toBe("canvas");
-
-  if (isMobile) {
-    await page.touchscreen.tap(tapPoint.x, tapPoint.y);
-  } else {
-    await page.mouse.click(tapPoint.x, tapPoint.y);
-  }
+  await tapCanvasClientPoint(
+    page,
+    await getCanvasInkPoint(canvas, inkBounds, "center"),
+    isMobile,
+  );
 
   await expect
     .poll(() =>
@@ -217,6 +412,42 @@ test("tapping rendered canvas text moves the hidden textarea caret", async ({
     };
   });
   expect(finalSelection.end).toBe(finalSelection.start);
+});
+
+test("preview paper taps place the caret on text, line whitespace, and lower blank area", async ({
+  page,
+  isMobile,
+}) => {
+  await openFreshMobileEditor(page);
+
+  const textInput = page.getByLabel("Handwriting text input");
+  await textInput.fill("abcdef");
+  await expect(textInput).toHaveValue("abcdef");
+
+  const canvas = page.locator('canvas[aria-label="Page 1 preview"]').first();
+  await expect(canvas).toBeVisible({ timeout: 10_000 });
+  const inkBounds = await waitForCanvasTextInk(canvas);
+
+  await tapCanvasClientPoint(
+    page,
+    await getCanvasInkPoint(canvas, inkBounds, "center"),
+    isMobile,
+  );
+  await expect
+    .poll(() =>
+      textInput.evaluate((element) => (element as HTMLTextAreaElement).selectionStart ?? 6)
+    )
+    .toBeLessThan(6);
+
+  await tapCanvasClientPoint(
+    page,
+    await getCanvasInkPoint(canvas, inkBounds, "rightWhitespace"),
+    isMobile,
+  );
+  await expectTextareaCaret(page, 6);
+
+  await tapCanvasFraction(page, canvas, 0.5, 0.8, isMobile);
+  await expectTextareaCaret(page, 6);
 });
 
 // ---------------------------------------------------------------------------
