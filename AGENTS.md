@@ -47,3 +47,13 @@ Follow the "modules should be deep" principle: a module is its interface plus it
 - Favor stable interfaces that can survive implementation changes; callers should not need to change because internal algorithms, data structures, or storage choices evolve.
 - Use the deletion test: if deleting a module only removes indirection, it is probably too shallow; if deleting it spreads complexity across multiple callers, it is likely earning its place.
 - Prefer deeper, clearer abstractions over excessive decomposition, but do not hide important domain semantics just to make an API smaller.
+
+## SEO Guidance
+
+For SEO work in 2026, optimize for Search Everywhere Optimization: traditional search engines, generative AI summaries, and social platforms. Prioritize E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness), clear user intent, and brand authority.
+
+- Optimize for AI and zero-click searches: add concise 50-to-100-word direct answers near the top of relevant pages, use structured data such as FAQ, Author, and Article schema, and target conversational long-tail phrasing that matches voice and AI queries.
+- Build topical authority with topic clusters: create deep pillar pages for core themes, publish tightly related sub-topic content, and link clusters back to pillars with descriptive anchor text.
+- Strengthen E-E-A-T and brand salience: include first-hand experience through original photos, data, and case studies; add credible author bios with credentials and external work; and support brand recognition through mentions on news sites, niche publications, and social platforms.
+- Maintain technical foundations and mobile usability: keep layouts responsive, make touch targets at least 44 x 44 pixels, keep text readable without zooming.s
+- Focus on customer-centric content: match each page to the user's intent, offer unique perspectives instead of generic summaries.
