@@ -1,9 +1,10 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import CanvasPreview from '../CanvasPreview';
+import CanvasPreview, { resolveCanvasInsertionPoint } from '../CanvasPreview';
 import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '@/lib/types';
 import { withTestPaperSelection } from '@/test/paperTestHelpers';
+import type { CharacterPosition } from '@/lib/renderer/UnifiedPagePainter';
 
 const { renderPage, paintCursorOverlay, paintSelectionOverlay } = vi.hoisted(() => ({
   renderPage: vi.fn(),
@@ -35,6 +36,52 @@ const defaultProps = {
 };
 
 const withResolvedPaperPreset = withTestPaperSelection;
+
+const insertionPositions: CharacterPosition[] = [
+  { x: 10, y: 20, width: 10, height: 16, lineIndex: 0, charIndex: 0 },
+  { x: 24, y: 20, width: 10, height: 16, lineIndex: 0, charIndex: 1 },
+  { x: 10, y: 50, width: 10, height: 16, lineIndex: 1, charIndex: 0 },
+  { x: 24, y: 50, width: 10, height: 16, lineIndex: 1, charIndex: 1 },
+];
+
+describe('resolveCanvasInsertionPoint', () => {
+  it('handles text taps and character half selection', () => {
+    expect(resolveCanvasInsertionPoint(insertionPositions, 12, 24)).toEqual({
+      index: 0,
+      isLeftHalf: true,
+    });
+    expect(resolveCanvasInsertionPoint(insertionPositions, 18, 24)).toEqual({
+      index: 0,
+      isLeftHalf: false,
+    });
+  });
+
+  it('uses the nearest insertion point for whitespace on the tapped line', () => {
+    expect(resolveCanvasInsertionPoint(insertionPositions, 0, 24)).toEqual({
+      index: 0,
+      isLeftHalf: true,
+    });
+    expect(resolveCanvasInsertionPoint(insertionPositions, 80, 24)).toEqual({
+      index: 1,
+      isLeftHalf: false,
+    });
+    expect(resolveCanvasInsertionPoint(insertionPositions, 80, 54)).toEqual({
+      index: 3,
+      isLeftHalf: false,
+    });
+  });
+
+  it('maps blank space above and below the text to document bounds', () => {
+    expect(resolveCanvasInsertionPoint(insertionPositions, 80, 4)).toEqual({
+      index: 0,
+      isLeftHalf: true,
+    });
+    expect(resolveCanvasInsertionPoint(insertionPositions, 80, 90)).toEqual({
+      index: insertionPositions.length,
+      isLeftHalf: true,
+    });
+  });
+});
 
 describe('CanvasPreview', () => {
   beforeEach(() => {
@@ -120,6 +167,32 @@ describe('CanvasPreview', () => {
     expect(onCharMouseDown).toHaveBeenCalledWith(0, true);
     expect(onCharMouseMove).toHaveBeenCalledWith(1, true);
     expect(onCharClick).not.toHaveBeenCalled();
+  });
+
+  it('keeps small pointer movement below the drag threshold as a caret click', async () => {
+    const onCharClick = vi.fn();
+    const onCharMouseDown = vi.fn();
+    const onCharMouseMove = vi.fn();
+
+    const { container } = render(
+      <CanvasPreview
+        {...defaultProps}
+        onCharClick={onCharClick}
+        onCharMouseDown={onCharMouseDown}
+        onCharMouseMove={onCharMouseMove}
+      />
+    );
+    await waitFor(() => expect(renderPage).toHaveBeenCalled());
+
+    const canvas = container.querySelector('canvas')!;
+    fireEvent.pointerDown(canvas, { clientX: 4, clientY: 5, pointerId: 1 });
+    fireEvent.pointerMove(canvas, { clientX: 8, clientY: 7, pointerId: 1 });
+    fireEvent.pointerUp(canvas, { pointerId: 1 });
+    fireEvent.click(canvas, { clientX: 4, clientY: 5 });
+
+    expect(onCharMouseDown).toHaveBeenCalledWith(0, true);
+    expect(onCharMouseMove).not.toHaveBeenCalled();
+    expect(onCharClick).toHaveBeenCalledWith(0, true);
   });
 
   it('routes double and triple clicks to the selection handlers', async () => {

@@ -7,6 +7,8 @@ import { resolvePageLayout } from '@/lib/layout/LayoutEngine';
 import { pageRenderEngine } from '@/lib/renderer/PageRenderEngine';
 import { UnifiedPagePainter, type CharacterPosition } from '@/lib/renderer/UnifiedPagePainter';
 
+const CANVAS_SELECTION_DRAG_THRESHOLD_PX = 6;
+
 export interface CanvasPreviewProps {
   readonly lines: LineData[];
   readonly pageSettings: PageSettings;
@@ -58,6 +60,133 @@ function isAbortError(error: unknown) {
   return error instanceof Error && error.name === 'AbortError';
 }
 
+export interface CanvasInsertionPoint {
+  readonly index: number;
+  readonly isLeftHalf: boolean;
+}
+
+interface IndexedCharacterPosition {
+  readonly index: number;
+  readonly position: CharacterPosition;
+}
+
+interface CharacterLineGroup {
+  readonly positions: IndexedCharacterPosition[];
+  readonly top: number;
+  readonly bottom: number;
+  readonly centerY: number;
+}
+
+function groupCharacterPositionsByLine(positions: CharacterPosition[]): CharacterLineGroup[] {
+  const lineMap = new Map<number, IndexedCharacterPosition[]>();
+
+  positions.forEach((position, index) => {
+    const linePositions = lineMap.get(position.lineIndex) ?? [];
+    linePositions.push({ index, position });
+    lineMap.set(position.lineIndex, linePositions);
+  });
+
+  return Array.from(lineMap.values())
+    .map((linePositions) => {
+      const sortedPositions = [...linePositions].sort((a, b) => {
+        if (a.position.x !== b.position.x) return a.position.x - b.position.x;
+        return a.index - b.index;
+      });
+      const top = Math.min(...sortedPositions.map(({ position }) => position.y));
+      const bottom = Math.max(...sortedPositions.map(({ position }) => position.y + position.height));
+
+      return {
+        positions: sortedPositions,
+        top,
+        bottom,
+        centerY: top + (bottom - top) / 2,
+      };
+    })
+    .sort((a, b) => {
+      if (a.top !== b.top) return a.top - b.top;
+      return a.positions[0].index - b.positions[0].index;
+    });
+}
+
+function getNearestLineGroup(lineGroups: CharacterLineGroup[], pageY: number) {
+  let nearestGroup = lineGroups[0];
+  let nearestDistance = Math.abs(pageY - nearestGroup.centerY);
+
+  for (const group of lineGroups.slice(1)) {
+    const distance = Math.abs(pageY - group.centerY);
+    if (distance < nearestDistance) {
+      nearestGroup = group;
+      nearestDistance = distance;
+    }
+  }
+
+  return nearestGroup;
+}
+
+function getNearestInsertionPointOnLine(lineGroup: CharacterLineGroup, pageX: number): CanvasInsertionPoint {
+  for (const { index, position } of lineGroup.positions) {
+    if (position.width <= 0) continue;
+
+    const left = position.x;
+    const right = position.x + position.width;
+    if (pageX >= left && pageX <= right) {
+      return {
+        index,
+        isLeftHalf: pageX < left + position.width / 2,
+      };
+    }
+  }
+
+  let nearestPoint: CanvasInsertionPoint = {
+    index: lineGroup.positions[0].index,
+    isLeftHalf: true,
+  };
+  let nearestDistance = Infinity;
+
+  for (const { index, position } of lineGroup.positions) {
+    const insertionStops = [
+      { x: position.x, point: { index, isLeftHalf: true } },
+      { x: position.x + position.width, point: { index, isLeftHalf: false } },
+    ];
+
+    for (const stop of insertionStops) {
+      const distance = Math.abs(pageX - stop.x);
+      if (distance < nearestDistance) {
+        nearestPoint = stop.point;
+        nearestDistance = distance;
+      }
+    }
+  }
+
+  return nearestPoint;
+}
+
+export function resolveCanvasInsertionPoint(
+  positions: CharacterPosition[],
+  pageX: number,
+  pageY: number,
+): CanvasInsertionPoint | null {
+  if (positions.length === 0) return null;
+
+  const lineGroups = groupCharacterPositionsByLine(positions);
+  if (lineGroups.length === 0) return null;
+
+  const firstLine = lineGroups[0];
+  const lastLine = lineGroups.at(-1)!;
+
+  if (pageY < firstLine.top) {
+    return { index: 0, isLeftHalf: true };
+  }
+
+  if (pageY > lastLine.bottom) {
+    return { index: positions.length, isLeftHalf: true };
+  }
+
+  const containingLine = lineGroups.find((group) => pageY >= group.top && pageY <= group.bottom);
+  const targetLine = containingLine ?? getNearestLineGroup(lineGroups, pageY);
+  return getNearestInsertionPointOnLine(targetLine, pageX);
+}
+
 /**
  * CanvasPreview renders a single page using the UnifiedPagePainter onto a Canvas element.
  * This replaces the DOM-based preview (thousands of span elements) with a single canvas,
@@ -96,6 +225,7 @@ export default function CanvasPreview({
   const isPointerDownRef = useRef(false);
   const didDragRef = useRef(false);
   const activePointerIdRef = useRef<number | null>(null);
+  const pointerStartRef = useRef<{ clientX: number; clientY: number } | null>(null);
   const resolvedLayout = useMemo(
     () =>
       resolvePageLayout({
@@ -215,6 +345,7 @@ export default function CanvasPreview({
       }
       isPointerDownRef.current = false;
       activePointerIdRef.current = null;
+      pointerStartRef.current = null;
     };
     window.addEventListener('pointerup', handleWindowPointerUp);
     window.addEventListener('pointercancel', handleWindowPointerUp);
@@ -241,32 +372,7 @@ export default function CanvasPreview({
       targetY = pageX * sin + pageY * cos;
     }
 
-    // Find the closest character
-    let bestIdx = -1;
-    let bestDist = Infinity;
-
-    for (let i = 0; i < positions.length; i++) {
-      const pos = positions[i];
-      // Check if point is roughly within the line's vertical range
-      if (targetY >= pos.y && targetY <= pos.y + pos.height) {
-        // Check horizontal distance
-        const charCenterX = pos.x + pos.width / 2;
-        const dist = Math.abs(targetX - charCenterX);
-        if (dist < bestDist) {
-          bestDist = dist;
-          bestIdx = i;
-        }
-      }
-    }
-
-    if (bestIdx === -1) {
-      // Fallback: click below all text → position at end
-      return { index: positions.length, isLeftHalf: true };
-    }
-
-    const pos = positions[bestIdx];
-    const isLeftHalf = targetX < pos.x + pos.width / 2;
-    return { index: bestIdx, isLeftHalf };
+    return resolveCanvasInsertionPoint(positions, targetX, targetY);
   }, [pageSettings.lineTilt]);
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -319,6 +425,7 @@ export default function CanvasPreview({
     const pointerId = typeof e.pointerId === 'number' ? e.pointerId : null;
     activePointerIdRef.current = pointerId;
     didDragRef.current = false;
+    pointerStartRef.current = { clientX: e.clientX, clientY: e.clientY };
     if (pointerId !== null) {
       e.currentTarget.setPointerCapture?.(pointerId);
     }
@@ -334,10 +441,16 @@ export default function CanvasPreview({
     if (!onCharMouseMove) return;
     if (!isPointerDownRef.current) return;
     if (activePointerIdRef.current !== null && e.pointerId !== activePointerIdRef.current) return;
+    const pointerStart = pointerStartRef.current;
+    if (pointerStart) {
+      const distance = Math.hypot(e.clientX - pointerStart.clientX, e.clientY - pointerStart.clientY);
+      if (distance < CANVAS_SELECTION_DRAG_THRESHOLD_PX) return;
+    }
+
+    didDragRef.current = true;
     const coords = getPageCoordsFromCanvas(e.currentTarget, e, previewScale);
     const hit = findCharAtPoint(coords.x, coords.y);
     if (hit) {
-      didDragRef.current = true;
       onCharMouseMove(pageStartOffset + hit.index, hit.isLeftHalf);
     }
   }, [onCharMouseMove, findCharAtPoint, pageStartOffset, previewScale]);
@@ -346,6 +459,7 @@ export default function CanvasPreview({
     if (activePointerIdRef.current !== null && e.pointerId !== activePointerIdRef.current) return;
     isPointerDownRef.current = false;
     activePointerIdRef.current = null;
+    pointerStartRef.current = null;
     onMouseUp?.();
   }, [onMouseUp]);
 
