@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { render, screen, within } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import HomePage from '../page';
+import HomePage, { metadata } from '../page';
 
 // Mock ThemePicker to avoid context issues
 vi.mock('@/components/ThemePicker', () => ({
@@ -16,6 +16,10 @@ const homePageSource = fs.readFileSync(
 );
 
 describe('HomePage', () => {
+  it('publishes canonical homepage metadata', () => {
+    expect(metadata.alternates?.canonical).toBe('https://text2ink.com/');
+  });
+
   it('keeps the landing page frame local to the route module', () => {
     expect(homePageSource).not.toMatch(/StandardPageShell/);
     expect(homePageSource).toMatch(/<header\b/);

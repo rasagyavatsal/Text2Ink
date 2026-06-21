@@ -2,7 +2,7 @@ import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, act } from '@testing-library/react';
 import React, { type ReactNode } from 'react';
 import RootEditorPageClient from '../RootEditorPageClient';
-import { metadata } from '../page';
+import EditorPage, { metadata } from '../page';
 import type { MobileEditorSheetMetrics, MobileSheetAnchor } from '@/lib/mobileEditorSheet';
 
 vi.mock('next/image', () => ({
@@ -170,9 +170,19 @@ describe('Root editor page', () => {
     expect(screen.queryByRole('link', { name: /back to home/i })).not.toBeInTheDocument();
   });
 
-  it('uses root canonical editor metadata', () => {
-    expect(metadata.alternates?.canonical).toBe('https://text2ink.com/');
-    expect(metadata.openGraph?.url).toBe('https://text2ink.com/');
+  it('publishes self-canonical editor metadata', () => {
+    expect(metadata.alternates?.canonical).toBe('https://text2ink.com/editor');
+    expect(metadata.openGraph?.url).toBe('https://text2ink.com/editor');
+  });
+
+  it('emits WebApplication JSON-LD without unsupported review ratings', () => {
+    const { container } = render(<EditorPage />);
+    const script = container.querySelector('script[type="application/ld+json"]');
+    expect(script).toBeInTheDocument();
+
+    const structuredData = JSON.parse(script?.innerHTML ?? '{}');
+    expect(structuredData.url).toBe('https://text2ink.com/editor');
+    expect(structuredData.aggregateRating).toBeUndefined();
   });
 
   it('uses semantic theme tokens instead of hardcoded colors', () => {
