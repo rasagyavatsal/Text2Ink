@@ -375,7 +375,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
     setMobileSheetAnchor((prev) => {
       if (prev === 'peek') return 'default';
       if (prev === 'default') return 'expanded';
-      return 'default';
+      return 'peek';
     });
   }, []);
 
@@ -412,6 +412,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       onClearAll={handleClearAll}
       showHomeLink
       isMobileLayout={false}
+      idPrefix="desktop-settings"
     />
   );
 
@@ -432,6 +433,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       onClearAll={handleClearAll}
       showHomeLink={false}
       isMobileLayout={true}
+      idPrefix="mobile-settings"
     />
   );
 
@@ -463,11 +465,17 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
         </Link>
       ) : null}
       <div className="flex items-center gap-chrome bg-background/80 backdrop-blur-md p-1.5 rounded-xl border border-border/50 shadow-sm">
-        <ThemePicker variant="ghost" />
+        <ThemePicker
+          variant="ghost"
+          className={isMobileEditorLayout ? 'min-h-11 min-w-11' : undefined}
+        />
         <Button
           variant="brand"
           size="chrome"
-          className="min-w-[7.5rem] px-4 has-[>svg]:px-4 shadow-sm"
+          className={cn(
+            "min-w-[7.5rem] px-4 has-[>svg]:px-4 shadow-sm",
+            isMobileEditorLayout && "min-h-11"
+          )}
           onClick={() => setIsExportModalOpen(true)}
         >
           <Download className="w-4 h-4 mr-2" />

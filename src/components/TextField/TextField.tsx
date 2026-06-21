@@ -231,28 +231,28 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
         {/* Corners */}
         <div
           data-testid="handle-nw"
-          className="absolute -top-3 -left-3 size-6 pointer-events-auto cursor-nwse-resize touch-none flex items-center justify-center"
+          className="absolute -top-[22px] -left-[22px] size-11 pointer-events-auto cursor-nwse-resize touch-none flex items-center justify-center"
           onPointerDown={(e) => handleResizeStart(e, 'nw')}
         >
           <span className="h-2.5 w-2.5 rounded-full border-2 border-brand-accent bg-background shadow-sm transition-transform hover:scale-125" />
         </div>
         <div
           data-testid="handle-ne"
-          className="absolute -top-3 -right-3 size-6 pointer-events-auto cursor-nesw-resize touch-none flex items-center justify-center"
+          className="absolute -top-[22px] -right-[22px] size-11 pointer-events-auto cursor-nesw-resize touch-none flex items-center justify-center"
           onPointerDown={(e) => handleResizeStart(e, 'ne')}
         >
           <span className="h-2.5 w-2.5 rounded-full border-2 border-brand-accent bg-background shadow-sm transition-transform hover:scale-125" />
         </div>
         <div
           data-testid="handle-sw"
-          className="absolute -bottom-3 -left-3 size-6 pointer-events-auto cursor-nesw-resize touch-none flex items-center justify-center"
+          className="absolute -bottom-[22px] -left-[22px] size-11 pointer-events-auto cursor-nesw-resize touch-none flex items-center justify-center"
           onPointerDown={(e) => handleResizeStart(e, 'sw')}
         >
           <span className="h-2.5 w-2.5 rounded-full border-2 border-brand-accent bg-background shadow-sm transition-transform hover:scale-125" />
         </div>
         <div
           data-testid="handle-se"
-          className="absolute -bottom-3 -right-3 size-6 pointer-events-auto cursor-nwse-resize touch-none flex items-center justify-center"
+          className="absolute -bottom-[22px] -right-[22px] size-11 pointer-events-auto cursor-nwse-resize touch-none flex items-center justify-center"
           onPointerDown={(e) => handleResizeStart(e, 'se')}
         >
           <span className="h-2.5 w-2.5 rounded-full border-2 border-brand-accent bg-background shadow-sm transition-transform hover:scale-125" />
@@ -261,22 +261,22 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
         {/* Sides */}
         <div
           data-testid="handle-n"
-          className="absolute -top-3 left-3 right-3 h-6 pointer-events-auto cursor-ns-resize touch-none"
+          className="absolute -top-[22px] left-3 right-3 h-11 pointer-events-auto cursor-ns-resize touch-none"
           onPointerDown={(e) => handleResizeStart(e, 'n')}
         />
         <div
           data-testid="handle-s"
-          className="absolute -bottom-3 left-3 right-3 h-6 pointer-events-auto cursor-ns-resize touch-none"
+          className="absolute -bottom-[22px] left-3 right-3 h-11 pointer-events-auto cursor-ns-resize touch-none"
           onPointerDown={(e) => handleResizeStart(e, 's')}
         />
         <div
           data-testid="handle-w"
-          className="absolute -left-3 top-3 bottom-3 w-6 pointer-events-auto cursor-ew-resize touch-none"
+          className="absolute -left-[22px] top-3 bottom-3 w-11 pointer-events-auto cursor-ew-resize touch-none"
           onPointerDown={(e) => handleResizeStart(e, 'w')}
         />
         <div
           data-testid="handle-e"
-          className="absolute -right-3 top-3 bottom-3 w-6 pointer-events-auto cursor-ew-resize touch-none"
+          className="absolute -right-[22px] top-3 bottom-3 w-11 pointer-events-auto cursor-ew-resize touch-none"
           onPointerDown={(e) => handleResizeStart(e, 'e')}
         />
       </div>
@@ -284,7 +284,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
       {/* Top Left Icon - Drag */}
       <div
         className={cn(
-          "absolute -top-6 -left-6 z-20 flex items-center transition-opacity",
+          "absolute -top-[30px] -left-[30px] z-20 flex items-center transition-opacity",
           showControls ? "opacity-100" : "opacity-0 xl:group-hover:opacity-100"
         )}
       >
@@ -293,7 +293,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
           variant="outline"
           size="icon-sm"
           aria-label="Move text box"
-          className="rounded-full cursor-move bg-background shadow-md border-border text-muted-foreground hover:text-foreground touch-none h-8 w-8"
+          className="rounded-full cursor-move bg-background shadow-md border-border text-muted-foreground hover:text-foreground touch-none h-11 w-11"
           onPointerDown={handleDragPointerDown}
         >
           <Move className="size-4" />
@@ -303,7 +303,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
       {/* Top Right Icon - Settings */}
       <div
         className={cn(
-          "absolute -top-6 -right-6 z-20 flex items-center transition-opacity",
+          "absolute -top-[30px] -right-[30px] z-20 flex items-center transition-opacity",
           showControls ? "opacity-100" : "opacity-0 xl:group-hover:opacity-100"
         )}
       >
@@ -316,7 +316,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
               size="icon-sm"
               aria-label="Text box settings"
               className={cn(
-                "rounded-full bg-background shadow-md border-border text-muted-foreground hover:text-foreground transition-colors h-8 w-8",
+                "rounded-full bg-background shadow-md border-border text-muted-foreground hover:text-foreground transition-colors h-11 w-11",
                 isSettingsOpen && "bg-muted text-foreground"
               )}
             >

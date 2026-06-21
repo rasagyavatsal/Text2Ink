@@ -44,8 +44,8 @@ describe('mobile editor sheet metrics', () => {
       safeAreaBottom: 8,
     });
 
-    expect(metrics.minSheetHeight).toBe(96);
-    expect(clampMobileSheetHeight(0, metrics)).toBe(96);
+    expect(metrics.minSheetHeight).toBe(100);
+    expect(clampMobileSheetHeight(0, metrics)).toBe(100);
   });
 
   it('builds dense snap points while keeping the library-required closed and full anchors', () => {
@@ -62,6 +62,27 @@ describe('mobile editor sheet metrics', () => {
     expect(snapPoints.at(-1)).toBe(1);
     expect(resolvedHeights).toEqual([...resolvedHeights].sort((a, b) => a - b));
     expect(resolvedHeights).toContain(metrics.minSheetHeight);
+    expect(resolvedHeights.at(-1)).toBe(metrics.maxSheetHeight);
+  });
+
+  it.each([
+    { name: 'Pixel 5', viewportHeight: 851, viewportWidth: 393, headerHeight: 0 },
+    { name: 'iPhone SE', viewportHeight: 667, viewportWidth: 375, headerHeight: 0 },
+    { name: 'iPhone 12', viewportHeight: 844, viewportWidth: 390, headerHeight: 0 },
+    { name: 'iPad portrait', viewportHeight: 1024, viewportWidth: 768, headerHeight: 0 },
+  ])('keeps snap heights within the measured sheet for $name', ({ viewportHeight, viewportWidth, headerHeight }) => {
+    const metrics = computeMobileEditorSheetMetrics({
+      viewportHeight,
+      viewportWidth,
+      headerHeight,
+    });
+    const snapPoints = createMobileSheetSnapPoints(metrics);
+    const resolvedHeights = snapPoints.map((point) => resolveMobileSheetSnapHeight(point, metrics.maxSheetHeight));
+
+    expect(snapPoints.length).toBeGreaterThan(0);
+    expect(resolvedHeights.every((height) => height >= 0 && height <= metrics.maxSheetHeight)).toBe(true);
+    expect(resolvedHeights).toContain(metrics.minSheetHeight);
+    expect(resolvedHeights).toContain(metrics.defaultSheetHeight);
     expect(resolvedHeights.at(-1)).toBe(metrics.maxSheetHeight);
   });
 
@@ -132,4 +153,3 @@ describe('mobile editor media query', () => {
     expect(getMobileEditorMediaQuery()).toBe('(max-width: 1279px)');
   });
 });
-

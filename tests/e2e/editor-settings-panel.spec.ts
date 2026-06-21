@@ -120,8 +120,7 @@ test("can change paper size to A4 via paper-format select", async ({
 }) => {
   const panel = await openEditor(page);
 
-  // Use the panel-scoped trigger – Radix SelectTrigger has id="paper-format"
-  const formatTrigger = panel.locator("#paper-format");
+  const formatTrigger = panel.getByLabel("Size");
   await formatTrigger.scrollIntoViewIfNeeded();
   await formatTrigger.click();
 
@@ -137,7 +136,7 @@ test("can change paper size to A3 via paper-format select", async ({
 }) => {
   const panel = await openEditor(page);
 
-  const formatTrigger = panel.locator("#paper-format");
+  const formatTrigger = panel.getByLabel("Size");
   await formatTrigger.scrollIntoViewIfNeeded();
   await formatTrigger.click();
 
@@ -156,7 +155,7 @@ test("can change orientation to Landscape via paper-orientation select", async (
 }) => {
   const panel = await openEditor(page);
 
-  const orientationTrigger = panel.locator("#paper-orientation");
+  const orientationTrigger = panel.getByLabel("Orientation");
   await orientationTrigger.scrollIntoViewIfNeeded();
   await orientationTrigger.click();
 

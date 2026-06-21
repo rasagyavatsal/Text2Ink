@@ -25,7 +25,7 @@ export function getMobileEditorMediaQuery(): string {
 /** @deprecated Use getDesktopBreakpointPx() for token-based values */
 export const MOBILE_EDITOR_MEDIA_QUERY = '(max-width: 1279px)';
 
-export const MOBILE_SHEET_HANDLE_HEIGHT = 40;
+export const MOBILE_SHEET_HANDLE_HEIGHT = 44;
 export const MOBILE_SHEET_FOOTER_RESERVE = 48;
 export const MOBILE_PREVIEW_HORIZONTAL_PADDING = 32;
 export const MOBILE_PREVIEW_VERTICAL_PADDING = 24;
