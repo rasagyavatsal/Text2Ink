@@ -1,4 +1,5 @@
 import { gotoHydratedEditor, test, expect } from "./fixtures";
+import type { Page } from "@playwright/test";
 
 /**
  * Mobile Editor E2E Tests (issue #288)
@@ -25,13 +26,30 @@ const LONG_TEXT_FIXTURE =
     "pariatur. Excepteur sint occaecat cupidatat non proident, sunt in " +
     "culpa qui officia deserunt mollit anim id est laborum.\n").repeat(20);
 
+async function disableNextDevToolsPointerInterception(page: Page) {
+  await page.addStyleTag({
+    content: "nextjs-portal { pointer-events: none !important; }",
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Helper: open /editor at mobile viewport, wait for preview to be visible.
 // ---------------------------------------------------------------------------
-async function openMobileEditor(page: import("@playwright/test").Page) {
+async function openMobileEditor(page: Page) {
   await page.setViewportSize(MOBILE_VIEWPORT);
   await gotoHydratedEditor(page);
+  await disableNextDevToolsPointerInterception(page);
   // Preview scroll container is always rendered in mobile layout.
+  const previewContainer = page.getByTestId("preview-scroll-container");
+  await expect(previewContainer).toBeVisible({ timeout: 15_000 });
+  return previewContainer;
+}
+
+async function openFreshMobileEditor(page: Page) {
+  await page.setViewportSize(MOBILE_VIEWPORT);
+  await page.addInitScript(() => window.localStorage.clear());
+  await gotoHydratedEditor(page);
+  await disableNextDevToolsPointerInterception(page);
   const previewContainer = page.getByTestId("preview-scroll-container");
   await expect(previewContainer).toBeVisible({ timeout: 15_000 });
   return previewContainer;
@@ -40,7 +58,7 @@ async function openMobileEditor(page: import("@playwright/test").Page) {
 // ---------------------------------------------------------------------------
 // Helper: open the sheet by clicking the handle.
 // ---------------------------------------------------------------------------
-async function openSheet(page: import("@playwright/test").Page) {
+async function openSheet(page: Page) {
   const openHandle = page.getByRole("button", { name: "Open editor controls" });
   await expect(openHandle).toBeVisible({ timeout: 10_000 });
   await openHandle.click();
@@ -53,11 +71,33 @@ async function openSheet(page: import("@playwright/test").Page) {
 // ---------------------------------------------------------------------------
 // Helper: wait for multiple pages in mobile footer controls.
 // ---------------------------------------------------------------------------
-async function waitForMobileMultiplePages(page: import("@playwright/test").Page) {
+async function waitForMobileMultiplePages(page: Page) {
   // In mobile layout the page counter is inside the sheet footer via
   // PageZoomControls which renders "Page X of Y".
   const pageCounter = page.locator("span").filter({ hasText: /Page \d+ of [2-9]\d*/ });
   await expect(pageCounter).toBeVisible({ timeout: 30_000 });
+}
+
+async function expectElementTopmostAtCenter(locator: ReturnType<Page["locator"]>) {
+  await expect(locator).toBeVisible({ timeout: 10_000 });
+  const isTopmost = await locator.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const topElement = document.elementFromPoint(
+      rect.left + rect.width / 2,
+      rect.top + Math.min(rect.height / 2, 40)
+    );
+    return topElement === element || element.contains(topElement);
+  });
+
+  expect(isTopmost).toBe(true);
+}
+
+async function expectMinimumHitTarget(locator: ReturnType<Page["locator"]>) {
+  await expect(locator).toBeAttached({ timeout: 10_000 });
+  const box = await locator.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.width).toBeGreaterThanOrEqual(44);
+  expect(box!.height).toBeGreaterThanOrEqual(44);
 }
 
 // ---------------------------------------------------------------------------
@@ -109,6 +149,74 @@ test("pressing the sheet handle moves from peek to default state", async ({ page
   // "Expand editor controls" (next press will expand to 'expanded').
   const expandHandle = page.getByRole("button", { name: "Expand editor controls" });
   await expect(expandHandle).toBeVisible({ timeout: 5_000 });
+});
+
+test("sheet handle cycles peek to default to expanded to peek", async ({ page }) => {
+  await openMobileEditor(page);
+
+  const openHandle = page.getByRole("button", { name: "Open editor controls" });
+  await expect(openHandle).toBeVisible({ timeout: 10_000 });
+  await openHandle.click();
+
+  const expandHandle = page.getByRole("button", { name: "Expand editor controls" });
+  await expect(expandHandle).toBeVisible({ timeout: 5_000 });
+  await expandHandle.click();
+
+  const collapseHandle = page.getByRole("button", { name: "Collapse editor controls" });
+  await expect(collapseHandle).toBeVisible({ timeout: 5_000 });
+  await collapseHandle.click();
+
+  await expect(page.getByRole("button", { name: "Open editor controls" })).toBeVisible({
+    timeout: 5_000,
+  });
+});
+
+test("tapping rendered canvas text moves the hidden textarea caret", async ({
+  page,
+  isMobile,
+}) => {
+  await openFreshMobileEditor(page);
+
+  const textInput = page.getByLabel("Handwriting text input");
+  await textInput.fill("abcdef");
+  await expect(textInput).toHaveValue("abcdef");
+
+  const canvas = page.locator('canvas[aria-label="Page 1 preview"]').first();
+  await expect(canvas).toBeVisible({ timeout: 10_000 });
+
+  const tapPoint = await canvas.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      x: rect.left + rect.width * 0.155,
+      y: rect.top + rect.height * 0.125,
+    };
+  });
+
+  const topElementTag = await page.evaluate(({ x, y }) => {
+    const element = document.elementFromPoint(x, y);
+    return element?.tagName.toLowerCase();
+  }, tapPoint);
+  expect(topElementTag).toBe("canvas");
+
+  if (isMobile) {
+    await page.touchscreen.tap(tapPoint.x, tapPoint.y);
+  } else {
+    await page.mouse.click(tapPoint.x, tapPoint.y);
+  }
+
+  await expect
+    .poll(() =>
+      textInput.evaluate((element) => (element as HTMLTextAreaElement).selectionStart ?? 6)
+    )
+    .toBeLessThan(6);
+  const finalSelection = await textInput.evaluate((element) => {
+    const textarea = element as HTMLTextAreaElement;
+    return {
+      start: textarea.selectionStart,
+      end: textarea.selectionEnd,
+    };
+  });
+  expect(finalSelection.end).toBe(finalSelection.start);
 });
 
 // ---------------------------------------------------------------------------
@@ -181,6 +289,98 @@ test("mobile sheet More tab button is visible and clickable", async ({ page }) =
 
   const moreSection = page.locator('[data-section="more"]').first();
   await expect(moreSection).toBeAttached({ timeout: 5_000 });
+});
+
+test("Clear dialog opened from the mobile sheet is above the sheet and clickable", async ({
+  page,
+}) => {
+  await openFreshMobileEditor(page);
+  await openSheet(page);
+
+  await page.getByRole("button", { name: /Clear Everything/i }).click();
+
+  const dialog = page.getByRole("dialog", { name: /Clear Everything/i });
+  await expectElementTopmostAtCenter(dialog);
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(dialog).toBeHidden({ timeout: 5_000 });
+});
+
+test("Paper Size select opens above the mobile sheet and can change selection", async ({
+  page,
+}) => {
+  await openFreshMobileEditor(page);
+  await openSheet(page);
+
+  const tabBar = page.locator("div.sticky.top-0.-mt-6");
+  await tabBar.getByRole("button", { name: "Paper", exact: true }).click();
+
+  const sheetContent = page.locator(".mobile-editor-sheet__content");
+  const sizeTrigger = sheetContent.getByLabel("Size");
+  await sizeTrigger.click();
+
+  const a4Option = page.getByRole("option", { name: "A4" });
+  await expectElementTopmostAtCenter(a4Option);
+  await a4Option.click();
+
+  await expect(sizeTrigger).toContainText("A4");
+});
+
+test("horizontal font carousel responds to touch drag without moving the sheet", async ({ page }) => {
+  await openFreshMobileEditor(page);
+  await openSheet(page);
+
+  const carousel = page.locator("#mobile-settings-section-text").getByTestId("font-carousel");
+  await expect(carousel).toBeVisible({ timeout: 10_000 });
+  await carousel.evaluate((element) => {
+    element.scrollLeft = 0;
+  });
+
+  const box = await carousel.boundingBox();
+  expect(box).not.toBeNull();
+
+  const startX = Math.round(box!.x + box!.width * 0.8);
+  const endX = Math.round(box!.x + box!.width * 0.2);
+  const y = Math.round(box!.y + box!.height / 2);
+
+  await carousel.dispatchEvent("pointerdown", {
+    pointerId: 1,
+    pointerType: "touch",
+    clientX: startX,
+    clientY: y,
+    bubbles: true,
+    cancelable: true,
+  });
+  await carousel.dispatchEvent("pointermove", {
+    pointerId: 1,
+    pointerType: "touch",
+    clientX: endX,
+    clientY: y,
+    bubbles: true,
+    cancelable: true,
+  });
+  await carousel.dispatchEvent("pointerup", {
+    pointerId: 1,
+    pointerType: "touch",
+    clientX: endX,
+    clientY: y,
+    bubbles: true,
+    cancelable: true,
+  });
+
+  await expect
+    .poll(() => carousel.evaluate((element) => element.scrollLeft))
+    .toBeGreaterThan(20);
+});
+
+test("mobile text-box controls expose 44px touch targets", async ({ page }) => {
+  await openFreshMobileEditor(page);
+  await openSheet(page);
+
+  await page.getByRole("button", { name: /Add Text Box/i }).click();
+
+  await expectMinimumHitTarget(page.getByRole("button", { name: "Move text box" }));
+  await expectMinimumHitTarget(page.getByRole("button", { name: "Text box settings" }));
+  await expectMinimumHitTarget(page.getByTestId("handle-se").first());
 });
 
 // ---------------------------------------------------------------------------

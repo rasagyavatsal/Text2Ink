@@ -53,6 +53,17 @@ export class PageRenderEngine {
 
     input.canvas.width = Math.ceil(layout.page.width * renderScale);
     input.canvas.height = Math.ceil(layout.page.height * renderScale);
+
+    this.#throwIfAborted(input.signal);
+    const { mainPositions } = UnifiedPagePainter.computeCharacterPositions({
+      ctx,
+      lines: input.lines,
+      pageSettings: input.pageSettings,
+      settings: input.settings,
+      pageIndex: input.pageIndex,
+      fontFamily: input.fontFamily,
+    });
+
     ctx.scale(renderScale, renderScale);
 
     let pendingBackground: Promise<void> | null = null;
@@ -80,16 +91,6 @@ export class PageRenderEngine {
       scaleFactor: input.scale,
       fontFamily: input.fontFamily,
       renderTextFields: input.mode === 'export',
-    });
-
-    this.#throwIfAborted(input.signal);
-    const { mainPositions } = UnifiedPagePainter.computeCharacterPositions({
-      ctx,
-      lines: input.lines,
-      pageSettings: input.pageSettings,
-      settings: input.settings,
-      pageIndex: input.pageIndex,
-      fontFamily: input.fontFamily,
     });
 
     return {

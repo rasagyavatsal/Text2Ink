@@ -154,8 +154,11 @@
   /* Primitive tokens: layout metrics consumed by JS */
   --metric-header-height-mobile: 60px;
   --metric-header-height-desktop: 68px;
-  --metric-sheet-handle-height: 40px;
+  --metric-sheet-handle-height: 44px;
   --metric-desktop-breakpoint: 1280px;
+  --z-editor-sheet: 10000;
+  --z-editor-sheet-footer: 10010;
+  --z-editor-overlay: 10050;
 
   /* Semantic tokens: layout intent */
   --layout-panel-width: var(--width-panel);
@@ -335,6 +338,10 @@
 }
 
 @layer components {
+  .mobile-editor-sheet {
+    z-index: var(--z-editor-sheet) !important;
+  }
+
   .mobile-editor-sheet__container {
     --mobile-editor-sheet-footer-height: calc(var(--mobile-editor-sheet-peek-height) - var(--metric-sheet-handle-height));
     height: var(--mobile-editor-sheet-max-height) !important;
@@ -366,7 +373,7 @@
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 10000;
+    z-index: var(--z-editor-sheet-footer);
     pointer-events: auto;
     min-height: var(--mobile-editor-sheet-footer-height);
     background-color: var(--background);
@@ -412,7 +419,8 @@
 
 @font-face {
   font-family: 'DavysCrappyWrit';
-  src: url('/fonts/DavysCrappyWrit.ttf') format('truetype');
+  /* The original DavysCrappyWrit.ttf has overlapping tables and fails Chromium font decode. */
+  src: url('/fonts/ReenieBeanie.ttf') format('truetype');
   font-display: swap;
 }
 

@@ -220,12 +220,12 @@ test("changing paper orientation does not lose text", async ({ page }) => {
     toolbar.locator("span").filter({ hasText: /Page \d+ of \d+/ })
   ).toBeVisible({ timeout: 15_000 });
 
-  // Change orientation via the "paper-orientation" select inside the paper section.
+  // Change orientation via the paper section's labeled select.
   const paperSection = page.locator('[data-section="paper"]');
   await expect(paperSection).toBeVisible({ timeout: 10_000 });
 
   // Click the orientation trigger to open the dropdown.
-  const orientationTrigger = paperSection.locator("#paper-orientation");
+  const orientationTrigger = paperSection.getByLabel("Orientation");
   await expect(orientationTrigger).toBeVisible({ timeout: 10_000 });
   await orientationTrigger.click();
 

@@ -381,4 +381,44 @@ describe('PageRenderEngine — scale factor applied from engine, not from caller
     expect(canvas.height).toBe(Math.ceil(result.layout.page.height * renderScale));
     expect(ctx.scale).toHaveBeenCalledWith(renderScale, renderScale);
   });
+
+  it('returns preview character positions in unscaled page coordinates', async () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      randomness: { ...DEFAULT_SETTINGS.randomness, enabled: false },
+    };
+    const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
+    const engine = new PageRenderEngine();
+    let activeScale = 1;
+    const ctx = createMockCanvasContext({
+      scale: vi.fn((scale: number) => {
+        activeScale = scale;
+      }),
+      measureText: vi.fn((text: string) => ({
+        width: (text === 'Ajpqy' ? 50 : 12) * activeScale,
+        fontBoundingBoxAscent: 20 * activeScale,
+        fontBoundingBoxDescent: 5 * activeScale,
+        actualBoundingBoxAscent: 18 * activeScale,
+        actualBoundingBoxDescent: 4 * activeScale,
+      })),
+    });
+    const canvas = createMockCanvas(ctx);
+
+    Object.defineProperty(globalThis, 'devicePixelRatio', { configurable: true, value: 2 });
+
+    const result = await engine.renderPage({
+      canvas,
+      mode: 'preview',
+      pageIndex: 0,
+      lines: [{ text: 'AB', lineIndex: 0, hasNewline: false }],
+      pageSettings,
+      settings,
+      scale: 1.5,
+      fontFamily: 'Caveat, cursive',
+    });
+
+    expect(ctx.scale).toHaveBeenCalledWith(3, 3);
+    expect(result.characterPositions[0].width).toBe(12);
+    expect(result.characterPositions[1].x - result.characterPositions[0].x).toBe(12);
+  });
 });

@@ -321,16 +321,22 @@ export default function HandwritingEditor({
     setSelectionRange({ start, end });
   }, []);
 
+  const focusTextareaWithSelection = useCallback((anchor: number, focus: number) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    textarea.setSelectionRange(anchor, focus);
+    textarea.focus({ preventScroll: true });
+    textarea.setSelectionRange(anchor, focus);
+  }, []);
+
   const updateVisibleSelection = useCallback((anchor: number, focus: number) => {
+    focusTextareaWithSelection(anchor, focus);
     const start = Math.min(anchor, focus);
     const end = Math.max(anchor, focus);
     setCursorPosition(focus);
     setSelectionRange({ start, end });
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-      textareaRef.current.setSelectionRange(anchor, focus);
-    }
-  }, []);
+  }, [focusTextareaWithSelection]);
 
   const handleCharMouseDown = useCallback(
     (globalCharIndex: number, isLeftHalf: boolean) => {
@@ -372,14 +378,11 @@ export default function HandwritingEditor({
       }
 
       const newPosition = isLeftHalf ? globalCharIndex : globalCharIndex + 1;
+      focusTextareaWithSelection(newPosition, newPosition);
       setCursorPosition(newPosition);
       setSelectionRange({ start: newPosition, end: newPosition });
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-        textareaRef.current.setSelectionRange(newPosition, newPosition);
-      }
     },
-    []
+    [focusTextareaWithSelection]
   );
 
   const handleCanvasCharShiftClick = useCallback(
@@ -606,29 +609,6 @@ export default function HandwritingEditor({
       globalThis.removeEventListener('pointercancel', handleUp);
     };
   }, [getPageSettings, isDraggingMarginLine, onSettingsChange, previewScale, resolveLayoutForPage, settings]);
-
-
-
-  useEffect(() => {
-    debouncedRequestPagination();
-  }, [
-      currentPageIndex,
-      debouncedRequestPagination,
-      desiredPageSettings,
-      localText,
-      resolvedFontFamily,
-    settings.customBackgroundImage,
-    settings.customBackgroundImages,
-    settings.lineHeight,
-    settings.lineColor,
-    settings.paperColor,
-    settings.paper,
-    settings.ruledMarginLineOffset,
-  ]);
-
-  useEffect(() => {
-    onTotalPagesChange?.(totalPages);
-  }, [onTotalPagesChange, totalPages]);
 
   const renderPage = useCallback(
     (pageIndex: number, scale: number, isVisiblePreview: boolean) => {
