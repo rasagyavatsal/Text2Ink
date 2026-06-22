@@ -26,7 +26,7 @@ export type PersistedEditorStateV1<TSettings, TPageSettings> = {
   ui: EditorUiState;
 };
 
-const STORAGE_KEY = 'text2ink.editor.state';
+export const EDITOR_STORAGE_KEY = 'text2ink.editor.state';
 
 const safeJsonParse = (value: string): unknown => {
   try {
@@ -40,7 +40,7 @@ export const loadEditorStateV1 = <TSettings, TPageSettings>():
   | PersistedEditorStateV1<TSettings, TPageSettings>
   | null => {
   if (typeof globalThis.window === 'undefined') return null;
-  const raw = globalThis.localStorage.getItem(STORAGE_KEY);
+  const raw = globalThis.localStorage.getItem(EDITOR_STORAGE_KEY);
   if (!raw) return null;
 
   const parsed = safeJsonParse(raw);
@@ -115,7 +115,7 @@ export const saveEditorStateV1 = <TSettings, TPageSettings>(
   };
 
   try {
-    globalThis.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    globalThis.localStorage.setItem(EDITOR_STORAGE_KEY, JSON.stringify(payload));
   } catch {
     return;
   }
@@ -124,7 +124,7 @@ export const saveEditorStateV1 = <TSettings, TPageSettings>(
 export const clearEditorState = (): void => {
   if (typeof globalThis.window === 'undefined') return;
   try {
-    globalThis.localStorage.removeItem(STORAGE_KEY);
+    globalThis.localStorage.removeItem(EDITOR_STORAGE_KEY);
   } catch {
     return;
   }

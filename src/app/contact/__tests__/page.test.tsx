@@ -2,7 +2,7 @@ import fs from "node:fs"
 import path from "node:path"
 import { describe, it, expect, vi } from "vitest"
 import { render, screen, within } from "@testing-library/react"
-import ContactPage from "../page"
+import ContactPage, { metadata } from "../page"
 
 vi.mock("@/components/InquiryForm", () => ({
   InquiryForm: () => <div data-testid="inquiry-form">Inquiry Form Mock</div>,
@@ -18,6 +18,12 @@ const contactPageSource = fs.readFileSync(
 )
 
 describe("ContactPage", () => {
+  it("publishes contact metadata and social preview details", () => {
+    expect(metadata.title).toBe("Contact Text2Ink")
+    expect(metadata.alternates?.canonical).toBe("https://text2ink.com/contact")
+    expect(metadata.openGraph?.url).toBe("https://text2ink.com/contact")
+  })
+
   it("keeps the contact page frame local to the route module", () => {
     expect(contactPageSource).not.toMatch(/StandardPageShell/)
     expect(contactPageSource).toMatch(/<header\b/)
@@ -55,20 +61,21 @@ describe("ContactPage", () => {
     expect(screen.queryByText("rasagyavatsal@outlook.com")).not.toBeInTheDocument()
   })
 
-  it("renders Email me heading with responsive spacing", () => {
+  it("renders Contact Text2Ink heading with responsive spacing", () => {
     render(<ContactPage />)
-    const heading = screen.getByRole("heading", { name: "Email me" })
+    const heading = screen.getByRole("heading", { name: "Contact Text2Ink" })
     expect(heading).toBeInTheDocument()
     expect(heading.className).toMatch(/mb-4/)
     expect(heading.className).toMatch(/sm:mb-6/)
   })
 
-  it("renders the concise and personal intro copy with responsive spacing", () => {
+  it("renders trust and intent copy based on the current form behavior", () => {
     render(<ContactPage />)
-    const intro = screen.getByText(/question, bug report, or feature request.*I'll get back to you/i)
+    const intro = screen.getByText(/send a question, bug report, or feature request/i)
     expect(intro).toBeInTheDocument()
     expect(intro.className).toMatch(/mb-6/)
     expect(intro.className).toMatch(/sm:mb-8/)
+    expect(screen.getByText(/the form asks for your name, email, topic, and message/i)).toBeInTheDocument()
   })
 
   it("renders the Mail icon with the email address and handles wrapping", () => {
@@ -108,5 +115,13 @@ describe("ContactPage", () => {
     const contentinfo = screen.getByRole("contentinfo")
     expect(banner.tagName.toLowerCase()).toBe("header")
     expect(contentinfo.tagName.toLowerCase()).toBe("footer")
+  })
+
+  it("emits ContactPage and Organization JSON-LD", () => {
+    const { container } = render(<ContactPage />)
+    const types = Array.from(container.querySelectorAll('script[type="application/ld+json"]'))
+      .map((script) => JSON.parse(script.textContent ?? "{}")["@type"])
+
+    expect(types).toEqual(expect.arrayContaining(["ContactPage", "Organization"]))
   })
 })

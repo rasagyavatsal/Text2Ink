@@ -1,14 +1,30 @@
 import type { Metadata } from 'next';
 import LegalPage from '@/components/patterns/LegalPage';
+import JsonLd from '@/components/seo/JsonLd';
+import { buildBreadcrumbListJsonLd } from '@/lib/seo/jsonLd';
+import { canonicalUrl, siteFacts } from '@/lib/seo/productFacts';
 
-const canonicalUrl = 'https://text2ink.com/privacy-policy';
+const canonical = canonicalUrl('/privacy-policy');
+const title = 'Privacy Policy';
+const description = 'Read how Text2Ink handles editor drafts, analytics, contact-form submissions, and other information tied to the service.';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy',
-  description:
-    'Read how Text2Ink handles editor drafts, analytics, contact-form submissions, and other information tied to the service.',
+  title,
+  description,
   alternates: {
-    canonical: canonicalUrl,
+    canonical,
+  },
+  openGraph: {
+    type: 'website',
+    url: canonical,
+    siteName: siteFacts.siteName,
+    title,
+    description,
+  },
+  twitter: {
+    card: 'summary',
+    title,
+    description,
   },
 };
 
@@ -47,11 +63,19 @@ const sections = [
 
 export default function PrivacyPolicyPage() {
   return (
-    <LegalPage
-      title="Privacy Policy"
-      intro="This policy explains what information Text2Ink handles, why it is used, and what choices you have."
-      effectiveDate="June 16, 2026"
-      sections={sections}
-    />
+    <>
+      <JsonLd
+        data={buildBreadcrumbListJsonLd([
+          { name: 'Home', url: canonicalUrl('/') },
+          { name: title, url: canonical },
+        ])}
+      />
+      <LegalPage
+        title="Privacy Policy"
+        intro="This policy explains what information Text2Ink handles, why it is used, and what choices you have."
+        effectiveDate="June 16, 2026"
+        sections={sections}
+      />
+    </>
   );
 }
