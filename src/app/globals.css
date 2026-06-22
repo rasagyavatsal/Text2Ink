@@ -349,11 +349,6 @@
     overflow: hidden;
   }
 
-  .mobile-editor-sheet--preparing {
-    opacity: 0;
-    pointer-events: none;
-  }
-
   .mobile-editor-sheet__header {
     min-height: var(--metric-sheet-handle-height);
     flex-shrink: 0;
@@ -383,11 +378,6 @@
     display: flex;
     justify-content: center;
     align-items: center;
-  }
-
-  .mobile-editor-sheet__footer--preparing {
-    opacity: 0;
-    pointer-events: none;
   }
 
   .label-text {
