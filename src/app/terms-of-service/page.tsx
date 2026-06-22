@@ -1,16 +1,11 @@
-import type { Metadata } from 'next';
 import LegalPage from '@/components/patterns/LegalPage';
+import { buildLegalMetadata } from '@/lib/seo/pageMetadata';
 
-const canonicalUrl = 'https://text2ink.com/terms-of-service';
+const path = '/terms-of-service';
+const title = 'Terms of Service';
+const description = 'Read the Terms of Service for using Text2Ink, including acceptable use, export responsibility, and service changes.';
 
-export const metadata: Metadata = {
-  title: 'Terms of Service',
-  description:
-    'Read the Terms of Service for using Text2Ink, including acceptable use, export responsibility, and service changes.',
-  alternates: {
-    canonical: canonicalUrl,
-  },
-};
+export const metadata = buildLegalMetadata({ path, title, description });
 
 const sections = [
   {
@@ -48,7 +43,8 @@ const sections = [
 export default function TermsOfServicePage() {
   return (
     <LegalPage
-      title="Terms of Service"
+      title={title}
+      path={path}
       intro="These terms explain how you may use Text2Ink and what you are responsible for when you create and export handwriting-style pages."
       effectiveDate="June 16, 2026"
       sections={sections}

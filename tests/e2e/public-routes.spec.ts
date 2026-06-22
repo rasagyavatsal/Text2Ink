@@ -26,14 +26,11 @@ test("home page renders within the first viewport", async ({ page }) => {
 
 test("home page hero contains the expected copy", async ({ page }) => {
   await page.goto("/");
-  // The h1 includes the phrase "realistic handwriting"
   const heading = page.getByRole("heading", { level: 1 });
-  await expect(heading).toContainText("realistic handwriting");
-  // The hero paragraph mentions handwritten pages
-  const heroParagraph = page.getByText(
-    /create realistic handwritten pages from typed text/i
-  );
+  await expect(heading).toContainText("Text to Handwriting Converter");
+  const heroParagraph = page.getByTestId("home-direct-answer");
   await expect(heroParagraph).toBeVisible();
+  await expect(heroParagraph).toContainText("PDF, PNG, or JPG");
 });
 
 // ---------------------------------------------------------------------------
@@ -42,10 +39,38 @@ test("home page hero contains the expected copy", async ({ page }) => {
 
 test("home page displays preview images", async ({ page }) => {
   await page.goto("/");
-  const preview1 = page.getByAltText("Handwriting preview 1");
-  const preview2 = page.getByAltText("Handwriting preview 2");
+  const preview1 = page.getByAltText("Text2Ink handwritten page preview on lined notebook paper");
+  const preview2 = page.getByAltText("Text2Ink handwritten page preview with blue ink and notebook lines");
   await expect(preview1).toBeVisible();
   await expect(preview2).toBeVisible();
+});
+
+// ---------------------------------------------------------------------------
+// Feature pages – crawlable SEO content
+// ---------------------------------------------------------------------------
+
+test("/features/handwriting-fonts renders the feature page", async ({ page }) => {
+  await page.goto("/features/handwriting-fonts");
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Handwriting Fonts in Text2Ink" })
+  ).toBeVisible();
+  await expect(page.getByTestId("feature-direct-answer")).toContainText(".ttf or .otf");
+});
+
+test("/features/notebook-paper-styles renders the feature page", async ({ page }) => {
+  await page.goto("/features/notebook-paper-styles");
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Notebook Paper Styles in Text2Ink" })
+  ).toBeVisible();
+  await expect(page.getByText(/Letter, A4, and A3/i).first()).toBeVisible();
+});
+
+test("/features/export-handwritten-notes renders the feature page", async ({ page }) => {
+  await page.goto("/features/export-handwritten-notes");
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Export Handwritten Notes from Text2Ink" })
+  ).toBeVisible();
+  await expect(page.getByText("PDF Document").first()).toBeVisible();
 });
 
 // ---------------------------------------------------------------------------
@@ -116,7 +141,15 @@ test("/terms-of-service renders the legal page shell", async ({ page }) => {
 // Shared header navigation on public pages
 // ---------------------------------------------------------------------------
 
-const publicPages = ["/", "/contact", "/privacy-policy", "/terms-of-service"];
+const publicPages = [
+  "/",
+  "/contact",
+  "/privacy-policy",
+  "/terms-of-service",
+  "/features/handwriting-fonts",
+  "/features/notebook-paper-styles",
+  "/features/export-handwritten-notes",
+];
 
 for (const path of publicPages) {
   test(`shared header renders on ${path}`, async ({ page }) => {

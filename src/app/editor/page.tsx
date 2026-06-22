@@ -1,36 +1,18 @@
 import type { Metadata } from 'next';
 import { preload } from 'react-dom';
+import JsonLd from '@/components/seo/JsonLd';
+import { buildSoftwareApplicationJsonLd } from '@/lib/seo/jsonLd';
+import {
+  canonicalUrl,
+  siteFacts,
+  webApplicationFeatureList,
+} from '@/lib/seo/productFacts';
 import RootEditorPageClient from './RootEditorPageClient';
 import './editor.css';
 
-const siteUrl = 'https://text2ink.com';
-const canonicalUrl = `${siteUrl}/editor`;
+const canonical = canonicalUrl('/editor');
 const editorTitle = 'Handwriting Editor - Create Realistic Handwritten Notes';
-const editorDescription = 'Use our free online handwriting editor to convert text to realistic handwritten notes. Customize fonts, paper styles, ink effects, margins, and export as PDF or images.';
-
-const editorJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'WebApplication',
-  name: 'Text2Ink',
-  description: editorDescription,
-  url: canonicalUrl,
-  applicationCategory: 'UtilityApplication',
-  operatingSystem: 'Any',
-  offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'USD',
-  },
-  featureList: [
-    'Convert text to handwriting',
-    'Multiple handwriting fonts',
-    'Custom paper backgrounds',
-    'Realistic ink effects',
-    'Export to PDF and images',
-    'Adjustable margins and spacing',
-  ],
-  screenshot: `${siteUrl}/Sample-handwriting-preview1.avif`,
-};
+const editorDescription = 'Use the Text2Ink handwriting editor to convert text into handwriting-style pages. Customize fonts, paper styles, colors, margins, text boxes, randomness, and export as PDF, PNG, or JPG.';
 
 export const metadata: Metadata = {
   title: editorTitle,
@@ -46,42 +28,52 @@ export const metadata: Metadata = {
     'realistic handwriting creator',
   ],
   alternates: {
-    canonical: canonicalUrl,
+    canonical,
   },
   openGraph: {
     type: 'website',
-    url: canonicalUrl,
-    siteName: 'Text2Ink',
-    title: `${editorTitle} | Text2Ink`,
+    url: canonical,
+    siteName: siteFacts.siteName,
+    title: `${editorTitle} | ${siteFacts.siteName}`,
     description: editorDescription,
     images: [
       {
-        url: '/Sample-handwriting-preview1.avif',
-        width: 840,
-        height: 1188,
-        alt: 'Text2Ink handwriting editor preview',
+        url: siteFacts.previewImagePath,
+        width: 618,
+        height: 800,
+        alt: siteFacts.previewImageAlt,
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: `${editorTitle} | Text2Ink`,
+    title: `${editorTitle} | ${siteFacts.siteName}`,
     description: editorDescription,
-    images: ['/Sample-handwriting-preview1.avif'],
-    creator: '@text2ink',
+    images: [siteFacts.previewImagePath],
   },
 };
 
-export default function HomePage() {
+export default function EditorPage() {
   preload('/Sample-handwriting-preview1-mobile.avif', { as: 'image' });
   preload('/Sample-handwriting-preview1.avif', { as: 'image' });
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(editorJsonLd) }}
+      <JsonLd
+        data={buildSoftwareApplicationJsonLd({
+          url: canonical,
+          description: editorDescription,
+          featureList: webApplicationFeatureList,
+        })}
       />
+      <section aria-labelledby="editor-page-title">
+        <h1 id="editor-page-title" className="sr-only">
+          Text2Ink Handwriting Editor
+        </h1>
+        <p className="sr-only">
+          Type text, choose handwriting and paper controls, add text boxes, review pages, and export the rendered document.
+        </p>
+      </section>
       <RootEditorPageClient />
     </>
   );

@@ -25,6 +25,7 @@ describe('LegalPage', () => {
     render(
       <LegalPage
         title="Test Page"
+        path="/test-page"
         intro="Test Intro"
         effectiveDate="Jan 1, 2026"
         sections={sections}
@@ -57,6 +58,7 @@ describe('LegalPage', () => {
     render(
       <LegalPage
         title="Test Page"
+        path="/test-page"
         intro="Test Intro"
         effectiveDate="Jan 1, 2026"
         sections={sections}
@@ -85,6 +87,7 @@ describe('LegalPage', () => {
     render(
       <LegalPage
         title="Test"
+        path="/test"
         intro="Intro"
         effectiveDate="Jan 1, 2026"
         sections={sections}
