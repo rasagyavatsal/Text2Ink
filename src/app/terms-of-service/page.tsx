@@ -1,32 +1,11 @@
-import type { Metadata } from 'next';
 import LegalPage from '@/components/patterns/LegalPage';
-import JsonLd from '@/components/seo/JsonLd';
-import { buildBreadcrumbListJsonLd } from '@/lib/seo/jsonLd';
-import { canonicalUrl, siteFacts } from '@/lib/seo/productFacts';
+import { buildLegalMetadata } from '@/lib/seo/pageMetadata';
 
-const canonical = canonicalUrl('/terms-of-service');
+const path = '/terms-of-service';
 const title = 'Terms of Service';
 const description = 'Read the Terms of Service for using Text2Ink, including acceptable use, export responsibility, and service changes.';
 
-export const metadata: Metadata = {
-  title,
-  description,
-  alternates: {
-    canonical,
-  },
-  openGraph: {
-    type: 'website',
-    url: canonical,
-    siteName: siteFacts.siteName,
-    title,
-    description,
-  },
-  twitter: {
-    card: 'summary',
-    title,
-    description,
-  },
-};
+export const metadata = buildLegalMetadata({ path, title, description });
 
 const sections = [
   {
@@ -63,19 +42,12 @@ const sections = [
 
 export default function TermsOfServicePage() {
   return (
-    <>
-      <JsonLd
-        data={buildBreadcrumbListJsonLd([
-          { name: 'Home', url: canonicalUrl('/') },
-          { name: title, url: canonical },
-        ])}
-      />
-      <LegalPage
-        title="Terms of Service"
-        intro="These terms explain how you may use Text2Ink and what you are responsible for when you create and export handwriting-style pages."
-        effectiveDate="June 16, 2026"
-        sections={sections}
-      />
-    </>
+    <LegalPage
+      title={title}
+      path={path}
+      intro="These terms explain how you may use Text2Ink and what you are responsible for when you create and export handwriting-style pages."
+      effectiveDate="June 16, 2026"
+      sections={sections}
+    />
   );
 }

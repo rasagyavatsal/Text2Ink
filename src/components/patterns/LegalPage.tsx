@@ -2,11 +2,15 @@ import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import Breadcrumbs from '@/components/patterns/Breadcrumbs';
+import JsonLd from '@/components/seo/JsonLd';
 import SiteHeader from '@/components/patterns/SiteHeader';
 import SiteFooter from '@/components/patterns/SiteFooter';
+import { buildBreadcrumbListJsonLd } from '@/lib/seo/jsonLd';
+import { canonicalUrl } from '@/lib/seo/productFacts';
 
 interface LegalPageProps {
   title: string;
+  path: string;
   intro: string;
   effectiveDate: string;
   sections: Array<{ id: string; title: string; body: string }>;
@@ -14,14 +18,26 @@ interface LegalPageProps {
 
 export default function LegalPage({
   title,
+  path,
   intro,
   effectiveDate,
   sections,
 }: LegalPageProps) {
   const frameClasses = 'w-full px-public-gutter';
+  const breadcrumbLinks = [
+    { name: 'Home', href: '/' },
+    { name: title, href: path },
+  ] as const;
 
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd
+        data={buildBreadcrumbListJsonLd([
+          { name: 'Home', url: canonicalUrl('/') },
+          { name: title, url: canonicalUrl(path) },
+        ])}
+      />
+
       <header className="sticky top-0 z-50 border-b border-border bg-background">
         <div className={`${frameClasses} py-chrome-y`}>
           <SiteHeader
@@ -41,10 +57,7 @@ export default function LegalPage({
         <div className={frameClasses}>
           <div className="mx-auto w-full max-w-document">
             <Breadcrumbs
-              items={[
-                { name: 'Home', href: '/' },
-                { name: title, href: '#' },
-              ]}
+              items={breadcrumbLinks}
             />
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 items-start">
               <aside className="hidden lg:block lg:w-64 lg:shrink-0 lg:sticky lg:top-32">
