@@ -7,9 +7,10 @@ import {
   createMobileSheetSnapPoints,
   getMobileSheetAnchorSnapIndex,
   getMobileSheetHandleLabel,
+  type MobileEditorSheetChange,
   MOBILE_SHEET_FOOTER_RESERVE,
-  MobileEditorSheetMetrics,
-  MobileSheetAnchor,
+  type MobileEditorSheetMetrics,
+  type MobileSheetAnchor,
   resolveMobileSheetSnapHeight,
 } from '@/lib/mobileEditorSheet';
 import { Button } from '@/components/ui/button';
@@ -19,9 +20,8 @@ interface MobileEditorBottomSheetProps {
   readonly anchor: MobileSheetAnchor;
   readonly metrics: MobileEditorSheetMetrics;
   readonly settingsPanel: React.ReactNode;
-  readonly onAnchorChange: (anchor: MobileSheetAnchor) => void;
   readonly onHandlePress: () => void;
-  readonly onHeightChange: (height: number) => void;
+  readonly onSheetChange: (change: MobileEditorSheetChange) => void;
   readonly currentPageIndex: number;
   readonly totalPages: number;
   readonly isPaginationComplete: boolean;
@@ -149,9 +149,8 @@ export default function MobileEditorBottomSheet({
   anchor,
   metrics,
   settingsPanel,
-  onAnchorChange,
   onHandlePress,
-  onHeightChange,
+  onSheetChange,
   currentPageIndex,
   totalPages,
   isPaginationComplete,
@@ -161,7 +160,6 @@ export default function MobileEditorBottomSheet({
   onPreviewScaleChange,
 }: MobileEditorBottomSheetProps) {
   const sheetRef = useRef<SheetRef | null>(null);
-  const observedAnchorRef = useRef<MobileSheetAnchor | null>(null);
   const sheetReadyRef = useRef(false);
   const [isSheetReady, setIsSheetReady] = useState(false);
   const { keyboardHeight } = useVirtualKeyboard();
@@ -193,18 +191,17 @@ export default function MobileEditorBottomSheet({
       }) as React.CSSProperties,
     [metrics.maxSheetHeight, metrics.minSheetHeight],
   );
+  const sheetMeasurementKey = `${metrics.viewportWidth}:${metrics.viewportHeight}:${metrics.maxSheetHeight}`;
 
   const updateHeightFromSnapIndex = useCallback(
     (index: number) => {
       if (!hasValidSnapPoints) return;
       const snapPoint = snapPoints[index] ?? metrics.minSheetHeight;
       const height = resolveMobileSheetSnapHeight(snapPoint, metrics.maxSheetHeight);
-      onHeightChange(height);
       const nextAnchor = classifyMobileSheetAnchor(height, metrics);
-      observedAnchorRef.current = nextAnchor;
-      onAnchorChange(nextAnchor);
+      onSheetChange({ anchor: nextAnchor, height, source: 'snap' });
     },
-    [hasValidSnapPoints, metrics, onAnchorChange, onHeightChange, snapPoints],
+    [hasValidSnapPoints, metrics, onSheetChange, snapPoints],
   );
 
   useEffect(() => {
@@ -213,15 +210,9 @@ export default function MobileEditorBottomSheet({
       return;
     }
 
-    if (sheetReadyRef.current && observedAnchorRef.current === anchor) {
-      observedAnchorRef.current = null;
-      return;
-    }
-    observedAnchorRef.current = null;
-
     const index = anchorSnapIndex;
     const height = resolveMobileSheetSnapHeight(snapPoints[index] ?? metrics.minSheetHeight, metrics.maxSheetHeight);
-    onHeightChange(height);
+    onSheetChange({ anchor, height, source: 'snap' });
     const shouldSkipSnapTo = !sheetReadyRef.current && anchor === 'peek';
 
     let scheduledAttempt: ScheduledSnapAttempt | null = null;
@@ -247,30 +238,34 @@ export default function MobileEditorBottomSheet({
     scheduledAttempt = scheduleSnapAttempt(snapWhenMeasured);
 
     return () => cancelSnapAttempt(scheduledAttempt);
-  }, [anchor, anchorSnapIndex, hasValidSnapPoints, metrics, onHeightChange, snapPoints]);
+  }, [anchor, anchorSnapIndex, hasValidSnapPoints, metrics, onSheetChange, snapPoints]);
 
   const handleDrag = useCallback(() => {
     if (!isSheetReady) return;
     const sheet = sheetRef.current;
     if (!sheet) return;
     const height = Math.round(sheet.height - sheet.y.get());
-    onHeightChange(Math.min(metrics.maxSheetHeight, Math.max(metrics.minSheetHeight, height)));
-  }, [isSheetReady, metrics.maxSheetHeight, metrics.minSheetHeight, onHeightChange]);
+    const clampedHeight = Math.min(metrics.maxSheetHeight, Math.max(metrics.minSheetHeight, height));
+    onSheetChange({
+      anchor: classifyMobileSheetAnchor(clampedHeight, metrics),
+      height: clampedHeight,
+      source: 'drag',
+    });
+  }, [isSheetReady, metrics, onSheetChange]);
 
   const handleClose = useCallback(() => {
     if (!hasValidSnapPoints) return;
     const index = getMobileSheetAnchorSnapIndex('peek', snapPoints, metrics);
     sheetRef.current?.snapTo(index);
-    onHeightChange(metrics.minSheetHeight);
-    onAnchorChange('peek');
-  }, [hasValidSnapPoints, metrics, onAnchorChange, onHeightChange, snapPoints]);
+    onSheetChange({ anchor: 'peek', height: metrics.minSheetHeight, source: 'close' });
+  }, [hasValidSnapPoints, metrics, onSheetChange, snapPoints]);
 
   const handleLabel = getMobileSheetHandleLabel(anchor);
-  const canInteract = hasValidSnapPoints && isSheetReady;
 
   return (
     <>
       <Sheet
+        key={sheetMeasurementKey}
         ref={sheetRef}
         isOpen
         avoidKeyboard
@@ -278,7 +273,7 @@ export default function MobileEditorBottomSheet({
         disableScrollLocking
         initialSnap={peekSnapIndex}
         snapPoints={snapPoints}
-        className={`mobile-editor-sheet${canInteract ? '' : ' mobile-editor-sheet--preparing'}`}
+        className="mobile-editor-sheet"
         dragCloseThreshold={0}
         dragVelocityThreshold={850}
         onClose={handleClose}
@@ -317,7 +312,7 @@ export default function MobileEditorBottomSheet({
       </Sheet>
 
       <div
-        className={`mobile-editor-sheet__footer${canInteract ? '' : ' mobile-editor-sheet__footer--preparing'}`}
+        className="mobile-editor-sheet__footer"
         style={{
           ...sheetStyleVars,
           bottom: `${keyboardHeight}px`,

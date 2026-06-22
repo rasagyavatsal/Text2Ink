@@ -47,9 +47,8 @@ const renderMobileEditorBottomSheet = (
     anchor: 'default' as const,
     metrics: DEFAULT_MOBILE_SHEET_METRICS,
     settingsPanel: <div>Settings</div>,
-    onAnchorChange: () => {},
     onHandlePress: () => {},
-    onHeightChange: () => {},
+    onSheetChange: () => {},
     currentPageIndex: 0,
     totalPages: 1,
     isPaginationComplete: true,
@@ -99,11 +98,11 @@ describe('MobileEditorBottomSheet', () => {
   });
 
   it('starts by reporting the peek anchor height instead of the default height', async () => {
-    const onHeightChange = vi.fn();
+    const onSheetChange = vi.fn();
 
     renderMobileEditorBottomSheet({
       anchor: 'peek',
-      onHeightChange,
+      onSheetChange,
     });
 
     const sheetProps = sheetMock.mock.calls[0]?.[0];
@@ -116,9 +115,15 @@ describe('MobileEditorBottomSheet', () => {
     expect(sheetProps.initialSnap).toBe(expectedInitialSnap);
 
     await waitFor(() => {
-      expect(onHeightChange).toHaveBeenCalledWith(DEFAULT_MOBILE_SHEET_METRICS.minSheetHeight);
+      expect(onSheetChange).toHaveBeenCalledWith({
+        anchor: 'peek',
+        height: DEFAULT_MOBILE_SHEET_METRICS.minSheetHeight,
+        source: 'snap',
+      });
     });
-    expect(onHeightChange).not.toHaveBeenCalledWith(DEFAULT_MOBILE_SHEET_METRICS.defaultSheetHeight);
+    expect(onSheetChange).not.toHaveBeenCalledWith(
+      expect.objectContaining({ height: DEFAULT_MOBILE_SHEET_METRICS.defaultSheetHeight }),
+    );
   });
 
   it('renders page and zoom controls in peek state and hides settings content', () => {
@@ -158,6 +163,25 @@ describe('MobileEditorBottomSheet', () => {
 
     // Settings content is hidden in peek state
     expect(queryByText('Settings Content')).toBeNull();
+  });
+
+  it('keeps handle and footer visible and pointer-enabled while keyboard is closed', () => {
+    mockUseVirtualKeyboard.mockReturnValue({ keyboardHeight: 0, isKeyboardOpen: false });
+    const { container, getByLabelText } = renderMobileEditorBottomSheet({
+      anchor: 'peek',
+    });
+
+    const sheetProps = sheetMock.mock.calls[0]?.[0];
+    const handle = getByLabelText('Open editor controls');
+    const footer = container.querySelector('.mobile-editor-sheet__footer') as HTMLElement;
+
+    expect(sheetProps.className).toBe('mobile-editor-sheet');
+    expect(handle).toBeVisible();
+    expect(handle).not.toBeDisabled();
+    expect(footer).not.toBeNull();
+    expect(footer.className).toBe('mobile-editor-sheet__footer');
+    expect(footer.style.pointerEvents).not.toBe('none');
+    expect(footer.style.opacity).not.toBe('0');
   });
 
   it('shows settings content and renders page/zoom controls in default state', () => {

@@ -3,7 +3,12 @@ import { fireEvent, render, screen, waitFor, act } from '@testing-library/react'
 import React, { type ReactNode } from 'react';
 import RootEditorPageClient from '../RootEditorPageClient';
 import EditorPage, { metadata } from '../page';
-import type { MobileEditorSheetMetrics, MobileSheetAnchor } from '@/lib/mobileEditorSheet';
+import {
+  getMobileSheetAnchorHeight,
+  type MobileEditorSheetChange,
+  type MobileEditorSheetMetrics,
+  type MobileSheetAnchor,
+} from '@/lib/mobileEditorSheet';
 
 vi.mock('next/image', () => ({
   default: (props: any) => <img alt="" {...props} />,
@@ -48,7 +53,7 @@ type MockMobileEditorBottomSheetProps = {
   anchor: MobileSheetAnchor;
   metrics: MobileEditorSheetMetrics;
   onHandlePress: () => void;
-  onHeightChange: (height: number) => void;
+  onSheetChange: (change: MobileEditorSheetChange) => void;
   settingsPanel: ReactNode;
 };
 
@@ -57,28 +62,34 @@ vi.mock('@/components/MobileEditorBottomSheet', () => ({
     anchor,
     metrics,
     onHandlePress,
-    onHeightChange,
+    onSheetChange,
     settingsPanel,
   }: MockMobileEditorBottomSheetProps) {
     React.useEffect(() => {
-      let anchorHeight = metrics.defaultSheetHeight;
-      if (anchor === 'peek') {
-        anchorHeight = metrics.minSheetHeight;
-      } else if (anchor === 'expanded') {
-        anchorHeight = metrics.maxSheetHeight;
-      }
-      onHeightChange(anchorHeight);
-    }, [anchor, metrics.defaultSheetHeight, metrics.maxSheetHeight, metrics.minSheetHeight, onHeightChange]);
+      onSheetChange({
+        anchor,
+        height: getMobileSheetAnchorHeight(anchor, metrics),
+        source: 'snap',
+      });
+    }, [anchor, metrics, onSheetChange]);
 
     return (
       <div data-testid="mobile-editor-bottom-sheet" data-anchor={anchor}>
         <button type="button" data-testid="sheet-handle" onClick={onHandlePress}>
           Sheet handle
         </button>
-        <button type="button" data-testid="sheet-drag-expanded" onClick={() => onHeightChange(metrics.maxSheetHeight)}>
+        <button
+          type="button"
+          data-testid="sheet-drag-expanded"
+          onClick={() => onSheetChange({ anchor: 'expanded', height: metrics.maxSheetHeight, source: 'drag' })}
+        >
           Drag to expanded
         </button>
-        <button type="button" data-testid="sheet-drag-peek" onClick={() => onHeightChange(metrics.minSheetHeight)}>
+        <button
+          type="button"
+          data-testid="sheet-drag-peek"
+          onClick={() => onSheetChange({ anchor: 'peek', height: metrics.minSheetHeight, source: 'drag' })}
+        >
           Drag to peek
         </button>
         {settingsPanel}

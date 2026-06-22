@@ -1,5 +1,5 @@
 import { gotoHydratedEditor, test, expect } from "./fixtures";
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 
 /**
  * Mobile Editor E2E Tests (issue #288)
@@ -25,6 +25,16 @@ const LONG_TEXT_FIXTURE =
     "reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla " +
     "pariatur. Excepteur sint occaecat cupidatat non proident, sunt in " +
     "culpa qui officia deserunt mollit anim id est laborum.\n").repeat(20);
+
+type CanvasInkBounds = {
+  count: number;
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+  canvasWidth: number;
+  canvasHeight: number;
+};
 
 async function disableNextDevToolsPointerInterception(page: Page) {
   await page.addStyleTag({
@@ -80,16 +90,39 @@ async function waitForMobileMultiplePages(page: Page) {
 
 async function expectElementTopmostAtCenter(locator: ReturnType<Page["locator"]>) {
   await expect(locator).toBeVisible({ timeout: 10_000 });
-  const isTopmost = await locator.evaluate((element) => {
-    const rect = element.getBoundingClientRect();
-    const topElement = document.elementFromPoint(
-      rect.left + rect.width / 2,
-      rect.top + Math.min(rect.height / 2, 40)
-    );
-    return topElement === element || element.contains(topElement);
-  });
+  await expect
+    .poll(
+      () =>
+        locator.evaluate((element) => {
+          const rect = element.getBoundingClientRect();
+          const topElement = document.elementFromPoint(
+            rect.left + rect.width / 2,
+            rect.top + Math.min(rect.height / 2, 40)
+          );
+          return topElement === element || element.contains(topElement);
+        }),
+      { timeout: 10_000 },
+    )
+    .toBe(true);
+}
 
-  expect(isTopmost).toBe(true);
+async function expectHandleTopmost(page: Page, name: string | RegExp = /editor controls/i) {
+  const handle = page.getByRole("button", { name });
+  await expectElementTopmostAtCenter(handle);
+  return handle;
+}
+
+async function expectPeekHandleAtBottom(page: Page) {
+  const handle = await expectHandleTopmost(page, "Open editor controls");
+  const viewport = page.viewportSize();
+  expect(viewport).not.toBeNull();
+  await expect
+    .poll(async () => {
+      const box = await handle.boundingBox();
+      return box?.y ?? 0;
+    }, { timeout: 10_000 })
+    .toBeGreaterThan(viewport!.height - 140);
+  return handle;
 }
 
 async function expectMinimumHitTarget(locator: ReturnType<Page["locator"]>) {
@@ -100,6 +133,216 @@ async function expectMinimumHitTarget(locator: ReturnType<Page["locator"]>) {
   expect(box!.height).toBeGreaterThanOrEqual(44);
 }
 
+async function tapCanvasFraction(
+  page: Page,
+  canvas: ReturnType<Page["locator"]>,
+  fractionX: number,
+  fractionY: number,
+  isMobile: boolean,
+) {
+  const point = await canvas.evaluate(
+    (element, { fractionX, fractionY }) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        x: rect.left + rect.width * fractionX,
+        y: rect.top + rect.height * fractionY,
+      };
+    },
+    { fractionX, fractionY },
+  );
+
+  const topElementTag = await page.evaluate(({ x, y }) => {
+    const element = document.elementFromPoint(x, y);
+    return element?.tagName.toLowerCase();
+  }, point);
+  expect(topElementTag).toBe("canvas");
+
+  if (isMobile) {
+    await page.touchscreen.tap(point.x, point.y);
+  } else {
+    await page.mouse.click(point.x, point.y);
+  }
+}
+
+async function tapCanvasClientPoint(
+  page: Page,
+  point: { x: number; y: number },
+  isMobile: boolean,
+) {
+  const topElementTag = await page.evaluate(({ x, y }) => {
+    const element = document.elementFromPoint(x, y);
+    return element?.tagName.toLowerCase();
+  }, point);
+  expect(topElementTag).toBe("canvas");
+
+  if (isMobile) {
+    await page.touchscreen.tap(point.x, point.y);
+  } else {
+    await page.mouse.click(point.x, point.y);
+  }
+}
+
+async function getCanvasInkBounds(
+  canvas: ReturnType<Page["locator"]>,
+): Promise<CanvasInkBounds | null> {
+  return canvas.evaluate((element) => {
+    const canvasElement = element as HTMLCanvasElement;
+    const context = canvasElement.getContext("2d");
+    if (!context) {
+      return null;
+    }
+
+    const { width, height } = canvasElement;
+    const pixels = context.getImageData(0, 0, width, height).data;
+    let count = 0;
+    let minX = width;
+    let minY = height;
+    let maxX = 0;
+    let maxY = 0;
+
+    for (let index = 0; index < pixels.length; index += 4) {
+      const red = pixels[index] ?? 255;
+      const green = pixels[index + 1] ?? 255;
+      const blue = pixels[index + 2] ?? 255;
+      const alpha = pixels[index + 3] ?? 0;
+      if (alpha > 0 && red < 130 && green < 140 && blue < 180) {
+        const pixelIndex = index / 4;
+        const x = pixelIndex % width;
+        const y = Math.floor(pixelIndex / width);
+        count += 1;
+        minX = Math.min(minX, x);
+        maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
+      }
+    }
+
+    if (count === 0) {
+      return null;
+    }
+
+    return {
+      count,
+      minX,
+      maxX,
+      minY,
+      maxY,
+      canvasWidth: width,
+      canvasHeight: height,
+    };
+  });
+}
+
+async function waitForCanvasTextInk(
+  canvas: ReturnType<Page["locator"]>,
+): Promise<CanvasInkBounds> {
+  await expect
+    .poll(
+      async () => (await getCanvasInkBounds(canvas))?.count ?? 0,
+      { timeout: 10_000 },
+    )
+    .toBeGreaterThan(20);
+
+  const bounds = await getCanvasInkBounds(canvas);
+  expect(bounds).not.toBeNull();
+  return bounds!;
+}
+
+async function getCanvasInkPoint(
+  canvas: ReturnType<Page["locator"]>,
+  bounds: CanvasInkBounds,
+  xMode: "center" | "rightWhitespace",
+) {
+  return canvas.evaluate(
+    (element, { bounds, xMode }) => {
+      const rect = element.getBoundingClientRect();
+      const inkCenterX = (bounds.minX + bounds.maxX) / 2;
+      const inkCenterY = (bounds.minY + bounds.maxY) / 2;
+      return {
+        x:
+          xMode === "rightWhitespace"
+            ? rect.left + rect.width * 0.9
+            : rect.left + (inkCenterX / bounds.canvasWidth) * rect.width,
+        y: rect.top + (inkCenterY / bounds.canvasHeight) * rect.height,
+      };
+    },
+    { bounds, xMode },
+  );
+}
+
+async function getTextareaSelection(textInput: Locator) {
+  return textInput.evaluate((element) => {
+    const textarea = element as HTMLTextAreaElement;
+    return {
+      start: textarea.selectionStart,
+      end: textarea.selectionEnd,
+    };
+  });
+}
+
+async function expectCollapsedTextareaSelection(textInput: Locator) {
+  const selection = await getTextareaSelection(textInput);
+  expect(selection.end).toBe(selection.start);
+}
+
+async function expectTextareaCaret(page: Page, expectedIndex: number) {
+  const textInput = page.getByLabel("Handwriting text input");
+  await expect
+    .poll(() =>
+      textInput.evaluate((element) => (element as HTMLTextAreaElement).selectionStart ?? -1)
+    )
+    .toBe(expectedIndex);
+  await expectCollapsedTextareaSelection(textInput);
+}
+
+async function prepareCanvasCaretScenario(page: Page) {
+  await openFreshMobileEditor(page);
+
+  const textInput = page.getByLabel("Handwriting text input");
+  await textInput.fill("abcdef");
+  await expect(textInput).toHaveValue("abcdef");
+
+  const canvas = page.locator('canvas[aria-label="Page 1 preview"]').first();
+  await expect(canvas).toBeVisible({ timeout: 10_000 });
+  const inkBounds = await waitForCanvasTextInk(canvas);
+  return { textInput, canvas, inkBounds };
+}
+
+async function expectCollapsedTextareaCaretBefore(textInput: Locator, maxIndex: number) {
+  await expect
+    .poll(() =>
+      textInput.evaluate((element) => (element as HTMLTextAreaElement).selectionStart ?? maxIndex)
+    )
+    .toBeLessThan(maxIndex);
+  await expectCollapsedTextareaSelection(textInput);
+}
+
+async function prepareMobileMultiplePages(page: Page) {
+  await openMobileEditor(page);
+
+  const textInput = page.getByLabel("Handwriting text input");
+  await expect(textInput).toBeAttached({ timeout: 10_000 });
+  await textInput.focus();
+  await textInput.fill(LONG_TEXT_FIXTURE);
+
+  await waitForMobileMultiplePages(page);
+}
+
+async function clickMobilePageButton(
+  page: Page,
+  name: "Next page" | "Previous page",
+  expectedPage: number,
+) {
+  const button = page.getByRole("button", { name });
+  await expect(button).toBeEnabled({ timeout: 10_000 });
+  await button.click();
+
+  const pageCounter = page.locator("span").filter({
+    hasText: new RegExp(`Page ${expectedPage} of \\d+`),
+  });
+  await expect(pageCounter).toBeVisible({ timeout: 10_000 });
+}
+
 // ---------------------------------------------------------------------------
 // 1. Mobile bottom sheet is visible on load.
 // ---------------------------------------------------------------------------
@@ -108,8 +351,9 @@ test("mobile bottom sheet is visible at mobile viewport", async ({ page }) => {
   await openMobileEditor(page);
 
   // The sheet handle button is the most reliable accessible element to assert.
-  const sheetHandle = page.getByRole("button", { name: "Open editor controls" });
-  await expect(sheetHandle).toBeVisible({ timeout: 10_000 });
+  const sheetHandle = await expectPeekHandleAtBottom(page);
+  await sheetHandle.click();
+  await expectHandleTopmost(page, "Expand editor controls");
 });
 
 // ---------------------------------------------------------------------------
@@ -154,69 +398,79 @@ test("pressing the sheet handle moves from peek to default state", async ({ page
 test("sheet handle cycles peek to default to expanded to peek", async ({ page }) => {
   await openMobileEditor(page);
 
-  const openHandle = page.getByRole("button", { name: "Open editor controls" });
-  await expect(openHandle).toBeVisible({ timeout: 10_000 });
-  await openHandle.click();
+  for (let i = 0; i < 2; i++) {
+    const openHandle = await expectPeekHandleAtBottom(page);
+    await openHandle.click();
 
-  const expandHandle = page.getByRole("button", { name: "Expand editor controls" });
-  await expect(expandHandle).toBeVisible({ timeout: 5_000 });
-  await expandHandle.click();
+    const expandHandle = await expectHandleTopmost(page, "Expand editor controls");
+    await expandHandle.click();
 
-  const collapseHandle = page.getByRole("button", { name: "Collapse editor controls" });
-  await expect(collapseHandle).toBeVisible({ timeout: 5_000 });
-  await collapseHandle.click();
+    const collapseHandle = await expectHandleTopmost(page, "Collapse editor controls");
+    await collapseHandle.click();
 
-  await expect(page.getByRole("button", { name: "Open editor controls" })).toBeVisible({
-    timeout: 5_000,
-  });
+    await expectPeekHandleAtBottom(page);
+  }
+});
+
+test("sheet handle returns visible and topmost after editor focus blur", async ({ page }) => {
+  await openFreshMobileEditor(page);
+
+  const textInput = page.getByLabel("Handwriting text input");
+  await textInput.fill("Focus blur mobile handle");
+  await textInput.evaluate((element) => (element as HTMLTextAreaElement).blur());
+
+  await expectPeekHandleAtBottom(page);
+});
+
+test("viewport resize keeps the sheet handle visible and tappable", async ({ page }) => {
+  await openFreshMobileEditor(page);
+
+  await page.setViewportSize({ width: 844, height: 390 });
+  await expect(page.getByTestId("preview-scroll-container")).toBeVisible({ timeout: 10_000 });
+  await page.setViewportSize(MOBILE_VIEWPORT);
+
+  const handle = await expectPeekHandleAtBottom(page);
+  await handle.click();
+  await expectHandleTopmost(page, "Expand editor controls");
 });
 
 test("tapping rendered canvas text moves the hidden textarea caret", async ({
   page,
   isMobile,
 }) => {
-  await openFreshMobileEditor(page);
+  const { textInput, canvas, inkBounds } = await prepareCanvasCaretScenario(page);
 
-  const textInput = page.getByLabel("Handwriting text input");
-  await textInput.fill("abcdef");
-  await expect(textInput).toHaveValue("abcdef");
+  await tapCanvasClientPoint(
+    page,
+    await getCanvasInkPoint(canvas, inkBounds, "center"),
+    isMobile,
+  );
 
-  const canvas = page.locator('canvas[aria-label="Page 1 preview"]').first();
-  await expect(canvas).toBeVisible({ timeout: 10_000 });
+  await expectCollapsedTextareaCaretBefore(textInput, 6);
+});
 
-  const tapPoint = await canvas.evaluate((element) => {
-    const rect = element.getBoundingClientRect();
-    return {
-      x: rect.left + rect.width * 0.155,
-      y: rect.top + rect.height * 0.125,
-    };
-  });
+test("preview paper taps place the caret on text, line whitespace, and lower blank area", async ({
+  page,
+  isMobile,
+}) => {
+  const { textInput, canvas, inkBounds } = await prepareCanvasCaretScenario(page);
 
-  const topElementTag = await page.evaluate(({ x, y }) => {
-    const element = document.elementFromPoint(x, y);
-    return element?.tagName.toLowerCase();
-  }, tapPoint);
-  expect(topElementTag).toBe("canvas");
+  await tapCanvasClientPoint(
+    page,
+    await getCanvasInkPoint(canvas, inkBounds, "center"),
+    isMobile,
+  );
+  await expectCollapsedTextareaCaretBefore(textInput, 6);
 
-  if (isMobile) {
-    await page.touchscreen.tap(tapPoint.x, tapPoint.y);
-  } else {
-    await page.mouse.click(tapPoint.x, tapPoint.y);
-  }
+  await tapCanvasClientPoint(
+    page,
+    await getCanvasInkPoint(canvas, inkBounds, "rightWhitespace"),
+    isMobile,
+  );
+  await expectTextareaCaret(page, 6);
 
-  await expect
-    .poll(() =>
-      textInput.evaluate((element) => (element as HTMLTextAreaElement).selectionStart ?? 6)
-    )
-    .toBeLessThan(6);
-  const finalSelection = await textInput.evaluate((element) => {
-    const textarea = element as HTMLTextAreaElement;
-    return {
-      start: textarea.selectionStart,
-      end: textarea.selectionEnd,
-    };
-  });
-  expect(finalSelection.end).toBe(finalSelection.start);
+  await tapCanvasFraction(page, canvas, 0.5, 0.8, isMobile);
+  await expectTextareaCaret(page, 6);
 });
 
 // ---------------------------------------------------------------------------
@@ -451,47 +705,15 @@ test("mobile zoom out decreases the displayed zoom percentage", async ({ page })
 test.describe.serial("mobile page navigation with multi-page text", () => {
   test("next page button navigates to page 2", async ({ page }) => {
     test.setTimeout(60_000);
-    await openMobileEditor(page);
-
-    const textInput = page.getByLabel("Handwriting text input");
-    await expect(textInput).toBeAttached({ timeout: 10_000 });
-    await textInput.focus();
-    await textInput.fill(LONG_TEXT_FIXTURE);
-
-    await waitForMobileMultiplePages(page);
-
-    const nextButton = page.getByRole("button", { name: "Next page" });
-    await expect(nextButton).toBeEnabled({ timeout: 10_000 });
-    await nextButton.click();
-
-    // The page counter span should now read "Page 2 of N".
-    const pageCounter = page.locator("span").filter({ hasText: /Page 2 of \d+/ });
-    await expect(pageCounter).toBeVisible({ timeout: 10_000 });
+    await prepareMobileMultiplePages(page);
+    await clickMobilePageButton(page, "Next page", 2);
   });
 
   test("previous page button navigates back to page 1", async ({ page }) => {
     test.setTimeout(60_000);
-    await openMobileEditor(page);
-
-    const textInput = page.getByLabel("Handwriting text input");
-    await expect(textInput).toBeAttached({ timeout: 10_000 });
-    await textInput.focus();
-    await textInput.fill(LONG_TEXT_FIXTURE);
-
-    await waitForMobileMultiplePages(page);
-
-    const nextButton = page.getByRole("button", { name: "Next page" });
-    await expect(nextButton).toBeEnabled({ timeout: 10_000 });
-    await nextButton.click();
-
-    const page2Counter = page.locator("span").filter({ hasText: /Page 2 of \d+/ });
-    await expect(page2Counter).toBeVisible({ timeout: 10_000 });
-
-    const prevButton = page.getByRole("button", { name: "Previous page" });
-    await prevButton.click();
-
-    const page1Counter = page.locator("span").filter({ hasText: /Page 1 of \d+/ });
-    await expect(page1Counter).toBeVisible({ timeout: 10_000 });
+    await prepareMobileMultiplePages(page);
+    await clickMobilePageButton(page, "Next page", 2);
+    await clickMobilePageButton(page, "Previous page", 1);
   });
 });
 
