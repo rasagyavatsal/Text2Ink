@@ -1,3 +1,7 @@
+## Communication
+
+- Use caveman.
+
 ## Validation
 
 After every task completion where code is changed, do these steps:
