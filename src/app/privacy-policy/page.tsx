@@ -1,16 +1,11 @@
-import type { Metadata } from 'next';
 import LegalPage from '@/components/patterns/LegalPage';
+import { buildLegalMetadata } from '@/lib/seo/pageMetadata';
 
-const canonicalUrl = 'https://text2ink.com/privacy-policy';
+const path = '/privacy-policy';
+const title = 'Privacy Policy';
+const description = 'Read how Text2Ink handles editor drafts, analytics, contact-form submissions, and other information tied to the service.';
 
-export const metadata: Metadata = {
-  title: 'Privacy Policy',
-  description:
-    'Read how Text2Ink handles editor drafts, analytics, contact-form submissions, and other information tied to the service.',
-  alternates: {
-    canonical: canonicalUrl,
-  },
-};
+export const metadata = buildLegalMetadata({ path, title, description });
 
 const sections = [
   {
@@ -48,7 +43,8 @@ const sections = [
 export default function PrivacyPolicyPage() {
   return (
     <LegalPage
-      title="Privacy Policy"
+      title={title}
+      path={path}
       intro="This policy explains what information Text2Ink handles, why it is used, and what choices you have."
       effectiveDate="June 16, 2026"
       sections={sections}

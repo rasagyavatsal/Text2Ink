@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor, act } from '@testing-library/react'
 import React, { type ReactNode } from 'react';
 import RootEditorPageClient from '../RootEditorPageClient';
 import EditorPage, { metadata } from '../page';
+import { productFacts } from '@/lib/seo/productFacts';
 import {
   getMobileSheetAnchorHeight,
   type MobileEditorSheetChange,
@@ -99,6 +100,7 @@ vi.mock('@/components/MobileEditorBottomSheet', () => ({
 }));
 
 vi.mock('@/lib/editorPersistence', () => ({
+  EDITOR_STORAGE_KEY: 'text2ink.editor.state',
   loadEditorStateV1: vi.fn(() => null),
   loadNormalizedEditorStateV1: vi.fn(() => null),
   saveEditorStateV1: vi.fn(),
@@ -186,6 +188,17 @@ describe('Root editor page', () => {
     expect(metadata.openGraph?.url).toBe('https://text2ink.com/editor');
   });
 
+  it('renders an accessible H1 and intro in the editor route HTML', () => {
+    render(<EditorPage />);
+
+    const heading = screen.getByRole('heading', {
+      level: 1,
+      name: 'Text2Ink Handwriting Editor',
+    });
+    expect(heading).toHaveClass('sr-only');
+    expect(screen.getByText(/type text, choose handwriting and paper controls/i)).toHaveClass('sr-only');
+  });
+
   it('emits WebApplication JSON-LD without unsupported review ratings', () => {
     const { container } = render(<EditorPage />);
     const script = container.querySelector('script[type="application/ld+json"]');
@@ -193,6 +206,11 @@ describe('Root editor page', () => {
 
     const structuredData = JSON.parse(script?.innerHTML ?? '{}');
     expect(structuredData.url).toBe('https://text2ink.com/editor');
+    expect(structuredData.featureList).toEqual(expect.arrayContaining([
+      `${productFacts.handwritingFonts.length} built-in handwriting fonts`,
+      'Custom .ttf and .otf font upload',
+      'PDF, PNG, and JPG exports',
+    ]));
     expect(structuredData.aggregateRating).toBeUndefined();
   });
 

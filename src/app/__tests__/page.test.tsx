@@ -4,6 +4,7 @@ import path from 'node:path';
 import { render, screen, within } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import HomePage, { metadata } from '../page';
+import { productFacts } from '@/lib/seo/productFacts';
 
 // Mock ThemePicker to avoid context issues
 vi.mock('@/components/ThemePicker', () => ({
@@ -18,6 +19,12 @@ const homePageSource = fs.readFileSync(
 describe('HomePage', () => {
   it('publishes canonical homepage metadata', () => {
     expect(metadata.alternates?.canonical).toBe('https://text2ink.com/');
+    expect(metadata.openGraph?.url).toBe('https://text2ink.com/');
+    expect(metadata.openGraph?.images).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        alt: expect.stringMatching(/text2ink handwritten page preview/i),
+      }),
+    ]));
   });
 
   it('keeps the landing page frame local to the route module', () => {
@@ -62,14 +69,14 @@ describe('HomePage', () => {
     expect(screen.getByText(/all rights reserved/i)).toBeInTheDocument();
   });
 
-  it('renders the hero section', () => {
+  it('renders the pillar hero and direct answer', () => {
     render(<HomePage />);
     const heroHeading = screen.getByRole('heading', {
-      name: 'Convert typed text into realistic handwriting',
+      name: 'Text to Handwriting Converter',
     });
     expect(heroHeading).toBeInTheDocument();
 
-    const highlightedText = within(heroHeading).getByText('realistic handwriting');
+    const highlightedText = within(heroHeading).getByText('Handwriting');
     expect(highlightedText.tagName).toBe('SPAN');
     expect(heroHeading).not.toHaveClass('font-bold');
     expect(heroHeading).toHaveClass('font-normal');
@@ -77,15 +84,13 @@ describe('HomePage', () => {
     expect(highlightedText).toHaveClass('font-[family-name:var(--font-ff-comma)]');
     expect(highlightedText).toHaveClass('text-amber-600');
     expect(heroHeading).toHaveClass('whitespace-normal');
-    expect(heroHeading).toHaveClass('lg:whitespace-nowrap');
     expect(heroHeading.querySelectorAll('span')).toHaveLength(1);
-    
-    const brElement = heroHeading.querySelector('br');
-    expect(brElement).toBeInTheDocument();
-    expect(brElement).toHaveClass('sm:hidden');
-    expect(brElement).toHaveClass('lg:block');
 
-    expect(screen.getByText(/create realistic handwritten pages from typed text/i)).toBeInTheDocument();
+    const directAnswer = screen.getByTestId('home-direct-answer');
+    const wordCount = directAnswer.textContent?.trim().split(/\s+/).length ?? 0;
+    expect(wordCount).toBeGreaterThanOrEqual(50);
+    expect(wordCount).toBeLessThanOrEqual(100);
+    expect(directAnswer).toHaveTextContent(/PDF, PNG, or JPG/i);
     
     // There should be three "Open Editor" links (one in header, one in hero, one in footer)
     const ctaLinks = screen.getAllByRole('link', { name: /open editor/i });
@@ -167,7 +172,7 @@ describe('HomePage', () => {
     const firstImg = firstPic.querySelector('img');
     expect(firstImg).toBeInTheDocument();
     expect(firstImg).toHaveAttribute('src', '/Sample-handwriting-preview1.png');
-    expect(firstImg).toHaveAttribute('alt', 'Handwriting preview 1');
+    expect(firstImg).toHaveAttribute('alt', 'Text2Ink handwritten page preview on lined notebook paper');
     expect(firstImg).toHaveAttribute('width', '618');
     expect(firstImg).toHaveAttribute('height', '800');
     expect(firstImg).toHaveAttribute('loading', 'eager');
@@ -178,7 +183,7 @@ describe('HomePage', () => {
     const secondImg = secondPic.querySelector('img');
     expect(secondImg).toBeInTheDocument();
     expect(secondImg).toHaveAttribute('src', '/Sample-handwriting-preview2.png');
-    expect(secondImg).toHaveAttribute('alt', 'Handwriting preview 2');
+    expect(secondImg).toHaveAttribute('alt', 'Text2Ink handwritten page preview with blue ink and notebook lines');
     expect(secondImg).toHaveAttribute('width', '618');
     expect(secondImg).toHaveAttribute('height', '800');
     expect(secondImg).toHaveAttribute('loading', 'lazy');
@@ -215,5 +220,42 @@ describe('HomePage', () => {
     expect(screen.getByRole('heading', { name: /add page details/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /tune realism/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /review and export/i })).toBeInTheDocument();
+  });
+
+  it('renders product-fact-backed feature links and FAQ content', () => {
+    render(<HomePage />);
+
+    expect(screen.getByRole('heading', { name: /text2ink features/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /handwriting fonts/i })[0]).toHaveAttribute(
+      'href',
+      '/features/handwriting-fonts',
+    );
+    expect(screen.getAllByRole('link', { name: /notebook paper styles/i })[0]).toHaveAttribute(
+      'href',
+      '/features/notebook-paper-styles',
+    );
+    expect(screen.getAllByRole('link', { name: /export handwritten notes/i })[0]).toHaveAttribute(
+      'href',
+      '/features/export-handwritten-notes',
+    );
+    expect(screen.getAllByText(new RegExp(productFacts.paper.styles[0].name)).length).toBeGreaterThan(0);
+    expect(screen.getByRole('heading', { name: /text2ink faq/i })).toBeInTheDocument();
+    expect(screen.getByText(/Which export formats does Text2Ink support/i)).toBeInTheDocument();
+  });
+
+  it('emits WebSite, Organization, WebApplication, FAQ, and breadcrumb JSON-LD', () => {
+    const { container } = render(<HomePage />);
+    const schemas = Array.from(container.querySelectorAll('script[type="application/ld+json"]'))
+      .map((script) => JSON.parse(script.textContent ?? '{}'));
+    const types = schemas.map((schema) => schema['@type']);
+
+    expect(types).toEqual(expect.arrayContaining([
+      'WebSite',
+      'Organization',
+      'WebApplication',
+      'FAQPage',
+      'BreadcrumbList',
+    ]));
+    expect(schemas.find((schema) => schema['@type'] === 'WebApplication')).not.toHaveProperty('aggregateRating');
   });
 });

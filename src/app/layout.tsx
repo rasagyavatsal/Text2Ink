@@ -1,22 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { 
   Inter, 
-  Caveat,
-  Dancing_Script, 
-  Indie_Flower, 
-  Shadows_Into_Light, 
-  Kalam, 
-  Patrick_Hand, 
-  Architects_Daughter, 
-  Satisfy, 
-  Homemade_Apple 
+  Dancing_Script,
 } from "next/font/google";
 import "./globals.css";
 import FirebaseAnalytics from "./firebase-analytics";
+import { siteFacts } from "@/lib/seo/productFacts";
 
-const siteUrl = "https://text2ink.com";
-const siteName = "Text2Ink";
-const siteDescription = "Create realistic handwritten notes from typed text with Text2Ink.";
+const siteDescription = "Create handwriting-style notes from typed text with Text2Ink.";
 const siteKeywords = [
   "text to handwriting",
   "handwriting converter",
@@ -42,13 +33,6 @@ const inter = Inter({
   display: 'swap',
 });
 
-const caveat = Caveat({
-  variable: "--font-caveat",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: 'swap',
-});
-
 const dancingScript = Dancing_Script({
   variable: "--font-dancing-script",
   subsets: ["latin"],
@@ -56,66 +40,17 @@ const dancingScript = Dancing_Script({
   display: 'swap',
 });
 
-const indieFlower = Indie_Flower({
-  variable: "--font-indie-flower",
-  subsets: ["latin"],
-  weight: ["400"],
-  display: 'swap',
-});
-
-const shadowsIntoLight = Shadows_Into_Light({
-  variable: "--font-shadows-into-light",
-  subsets: ["latin"],
-  weight: ["400"],
-  display: 'swap',
-});
-
-const kalam = Kalam({
-  variable: "--font-kalam",
-  subsets: ["latin"],
-  weight: ["300", "400", "700"],
-  display: 'swap',
-});
-
-const patrickHand = Patrick_Hand({
-  variable: "--font-patrick-hand",
-  subsets: ["latin"],
-  weight: ["400"],
-  display: 'swap',
-});
-
-const architectsDaughter = Architects_Daughter({
-  variable: "--font-architects-daughter",
-  subsets: ["latin"],
-  weight: ["400"],
-  display: 'swap',
-});
-
-const satisfy = Satisfy({
-  variable: "--font-satisfy",
-  subsets: ["latin"],
-  weight: ["400"],
-  display: 'swap',
-});
-
-const homemadeApple = Homemade_Apple({
-  variable: "--font-homemade-apple",
-  subsets: ["latin"],
-  weight: ["400"],
-  display: 'swap',
-});
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(siteFacts.canonicalBaseUrl),
   title: {
     default: "Text2Ink",
     template: "%s | Text2Ink",
   },
   description: siteDescription,
   keywords: siteKeywords,
-  authors: [{ name: siteName }],
-  creator: siteName,
-  publisher: siteName,
+  authors: [{ name: siteFacts.siteName }],
+  creator: siteFacts.siteName,
+  publisher: siteFacts.siteName,
   robots: {
     index: true,
     follow: true,
@@ -152,7 +87,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${caveat.variable} ${dancingScript.variable} ${indieFlower.variable} ${shadowsIntoLight.variable} ${kalam.variable} ${patrickHand.variable} ${architectsDaughter.variable} ${satisfy.variable} ${homemadeApple.variable} antialiased font-sans`}
+        className={`${inter.variable} ${dancingScript.variable} antialiased font-sans`}
       >
         <ThemeProvider
           attribute="class"

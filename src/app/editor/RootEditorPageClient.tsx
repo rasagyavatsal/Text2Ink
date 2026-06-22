@@ -486,6 +486,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
             alt="Text2Ink logo"
             width={40}
             height={40}
+            loading="eager"
             className="h-9 w-9 object-contain"
           />
         </Link>

@@ -42,6 +42,30 @@ export default function SiteFooter() {
                 </li>
                 <li>
                   <Link
+                    href="/features/handwriting-fonts"
+                    className="block py-2 md:py-1 transition-colors hover:text-brand-accent"
+                  >
+                    Handwriting Fonts
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/features/notebook-paper-styles"
+                    className="block py-2 md:py-1 transition-colors hover:text-brand-accent"
+                  >
+                    Paper Styles
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/features/export-handwritten-notes"
+                    className="block py-2 md:py-1 transition-colors hover:text-brand-accent"
+                  >
+                    Export Notes
+                  </Link>
+                </li>
+                <li>
+                  <Link
                     href="/contact"
                     className="block py-2 md:py-1 transition-colors hover:text-brand-accent"
                   >
