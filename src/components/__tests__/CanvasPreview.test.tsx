@@ -44,6 +44,21 @@ const insertionPositions: CharacterPosition[] = [
   { x: 24, y: 50, width: 10, height: 16, lineIndex: 1, charIndex: 1 },
 ];
 
+async function renderCanvasPreviewWithPointerHandlers(
+  props: Partial<React.ComponentProps<typeof CanvasPreview>> = {}
+) {
+  const handlers = {
+    onCharClick: vi.fn(),
+    onCharMouseDown: vi.fn(),
+    onCharMouseMove: vi.fn(),
+  };
+  const result = render(<CanvasPreview {...defaultProps} {...handlers} {...props} />);
+  await waitFor(() => expect(renderPage).toHaveBeenCalled());
+  const canvas = result.container.querySelector('canvas');
+  expect(canvas).not.toBeNull();
+  return { ...result, ...handlers, canvas: canvas! };
+}
+
 describe('resolveCanvasInsertionPoint', () => {
   it('handles text taps and character half selection', () => {
     expect(resolveCanvasInsertionPoint(insertionPositions, 12, 24)).toEqual({
@@ -144,21 +159,8 @@ describe('CanvasPreview', () => {
   });
 
   it('does not fire char click after a drag selection', async () => {
-    const onCharClick = vi.fn();
-    const onCharMouseDown = vi.fn();
-    const onCharMouseMove = vi.fn();
-
-    const { container } = render(
-      <CanvasPreview
-        {...defaultProps}
-        onCharClick={onCharClick}
-        onCharMouseDown={onCharMouseDown}
-        onCharMouseMove={onCharMouseMove}
-      />
-    );
-    await waitFor(() => expect(renderPage).toHaveBeenCalled());
-
-    const canvas = container.querySelector('canvas')!;
+    const { canvas, onCharClick, onCharMouseDown, onCharMouseMove } =
+      await renderCanvasPreviewWithPointerHandlers();
     fireEvent.pointerDown(canvas, { clientX: 4, clientY: 5, pointerId: 1 });
     fireEvent.pointerMove(canvas, { clientX: 14, clientY: 5, pointerId: 1 });
     fireEvent.pointerUp(canvas, { pointerId: 1 });
@@ -170,21 +172,8 @@ describe('CanvasPreview', () => {
   });
 
   it('keeps small pointer movement below the drag threshold as a caret click', async () => {
-    const onCharClick = vi.fn();
-    const onCharMouseDown = vi.fn();
-    const onCharMouseMove = vi.fn();
-
-    const { container } = render(
-      <CanvasPreview
-        {...defaultProps}
-        onCharClick={onCharClick}
-        onCharMouseDown={onCharMouseDown}
-        onCharMouseMove={onCharMouseMove}
-      />
-    );
-    await waitFor(() => expect(renderPage).toHaveBeenCalled());
-
-    const canvas = container.querySelector('canvas')!;
+    const { canvas, onCharClick, onCharMouseDown, onCharMouseMove } =
+      await renderCanvasPreviewWithPointerHandlers();
     fireEvent.pointerDown(canvas, { clientX: 4, clientY: 5, pointerId: 1 });
     fireEvent.pointerMove(canvas, { clientX: 8, clientY: 7, pointerId: 1 });
     fireEvent.pointerUp(canvas, { pointerId: 1 });
@@ -217,11 +206,7 @@ describe('CanvasPreview', () => {
   });
 
   it('clears drag state when mouseup happens outside the canvas', () => {
-    const onCharClick = vi.fn();
-
-    const { container } = render(<CanvasPreview {...defaultProps} onCharClick={onCharClick} onCharMouseMove={vi.fn()} onCharMouseDown={vi.fn()} />);
-    return waitFor(() => expect(renderPage).toHaveBeenCalled()).then(() => {
-      const canvas = container.querySelector('canvas')!;
+    return renderCanvasPreviewWithPointerHandlers().then(({ canvas, onCharClick }) => {
       fireEvent.pointerDown(canvas, { clientX: 4, clientY: 5, pointerId: 1 });
       fireEvent.pointerMove(canvas, { clientX: 14, clientY: 5, pointerId: 1 });
       fireEvent.pointerUp(globalThis as unknown as Window, { pointerId: 1 });

@@ -1,5 +1,5 @@
 import { gotoHydratedEditor, test, expect } from "./fixtures";
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 
 /**
  * Mobile Editor E2E Tests (issue #288)
@@ -270,6 +270,21 @@ async function getCanvasInkPoint(
   );
 }
 
+async function getTextareaSelection(textInput: Locator) {
+  return textInput.evaluate((element) => {
+    const textarea = element as HTMLTextAreaElement;
+    return {
+      start: textarea.selectionStart,
+      end: textarea.selectionEnd,
+    };
+  });
+}
+
+async function expectCollapsedTextareaSelection(textInput: Locator) {
+  const selection = await getTextareaSelection(textInput);
+  expect(selection.end).toBe(selection.start);
+}
+
 async function expectTextareaCaret(page: Page, expectedIndex: number) {
   const textInput = page.getByLabel("Handwriting text input");
   await expect
@@ -277,15 +292,55 @@ async function expectTextareaCaret(page: Page, expectedIndex: number) {
       textInput.evaluate((element) => (element as HTMLTextAreaElement).selectionStart ?? -1)
     )
     .toBe(expectedIndex);
+  await expectCollapsedTextareaSelection(textInput);
+}
 
-  const selection = await textInput.evaluate((element) => {
-    const textarea = element as HTMLTextAreaElement;
-    return {
-      start: textarea.selectionStart,
-      end: textarea.selectionEnd,
-    };
+async function prepareCanvasCaretScenario(page: Page) {
+  await openFreshMobileEditor(page);
+
+  const textInput = page.getByLabel("Handwriting text input");
+  await textInput.fill("abcdef");
+  await expect(textInput).toHaveValue("abcdef");
+
+  const canvas = page.locator('canvas[aria-label="Page 1 preview"]').first();
+  await expect(canvas).toBeVisible({ timeout: 10_000 });
+  const inkBounds = await waitForCanvasTextInk(canvas);
+  return { textInput, canvas, inkBounds };
+}
+
+async function expectCollapsedTextareaCaretBefore(textInput: Locator, maxIndex: number) {
+  await expect
+    .poll(() =>
+      textInput.evaluate((element) => (element as HTMLTextAreaElement).selectionStart ?? maxIndex)
+    )
+    .toBeLessThan(maxIndex);
+  await expectCollapsedTextareaSelection(textInput);
+}
+
+async function prepareMobileMultiplePages(page: Page) {
+  await openMobileEditor(page);
+
+  const textInput = page.getByLabel("Handwriting text input");
+  await expect(textInput).toBeAttached({ timeout: 10_000 });
+  await textInput.focus();
+  await textInput.fill(LONG_TEXT_FIXTURE);
+
+  await waitForMobileMultiplePages(page);
+}
+
+async function clickMobilePageButton(
+  page: Page,
+  name: "Next page" | "Previous page",
+  expectedPage: number,
+) {
+  const button = page.getByRole("button", { name });
+  await expect(button).toBeEnabled({ timeout: 10_000 });
+  await button.click();
+
+  const pageCounter = page.locator("span").filter({
+    hasText: new RegExp(`Page ${expectedPage} of \\d+`),
   });
-  expect(selection.end).toBe(selection.start);
+  await expect(pageCounter).toBeVisible({ timeout: 10_000 });
 }
 
 // ---------------------------------------------------------------------------
@@ -383,15 +438,7 @@ test("tapping rendered canvas text moves the hidden textarea caret", async ({
   page,
   isMobile,
 }) => {
-  await openFreshMobileEditor(page);
-
-  const textInput = page.getByLabel("Handwriting text input");
-  await textInput.fill("abcdef");
-  await expect(textInput).toHaveValue("abcdef");
-
-  const canvas = page.locator('canvas[aria-label="Page 1 preview"]').first();
-  await expect(canvas).toBeVisible({ timeout: 10_000 });
-  const inkBounds = await waitForCanvasTextInk(canvas);
+  const { textInput, canvas, inkBounds } = await prepareCanvasCaretScenario(page);
 
   await tapCanvasClientPoint(
     page,
@@ -399,45 +446,21 @@ test("tapping rendered canvas text moves the hidden textarea caret", async ({
     isMobile,
   );
 
-  await expect
-    .poll(() =>
-      textInput.evaluate((element) => (element as HTMLTextAreaElement).selectionStart ?? 6)
-    )
-    .toBeLessThan(6);
-  const finalSelection = await textInput.evaluate((element) => {
-    const textarea = element as HTMLTextAreaElement;
-    return {
-      start: textarea.selectionStart,
-      end: textarea.selectionEnd,
-    };
-  });
-  expect(finalSelection.end).toBe(finalSelection.start);
+  await expectCollapsedTextareaCaretBefore(textInput, 6);
 });
 
 test("preview paper taps place the caret on text, line whitespace, and lower blank area", async ({
   page,
   isMobile,
 }) => {
-  await openFreshMobileEditor(page);
-
-  const textInput = page.getByLabel("Handwriting text input");
-  await textInput.fill("abcdef");
-  await expect(textInput).toHaveValue("abcdef");
-
-  const canvas = page.locator('canvas[aria-label="Page 1 preview"]').first();
-  await expect(canvas).toBeVisible({ timeout: 10_000 });
-  const inkBounds = await waitForCanvasTextInk(canvas);
+  const { textInput, canvas, inkBounds } = await prepareCanvasCaretScenario(page);
 
   await tapCanvasClientPoint(
     page,
     await getCanvasInkPoint(canvas, inkBounds, "center"),
     isMobile,
   );
-  await expect
-    .poll(() =>
-      textInput.evaluate((element) => (element as HTMLTextAreaElement).selectionStart ?? 6)
-    )
-    .toBeLessThan(6);
+  await expectCollapsedTextareaCaretBefore(textInput, 6);
 
   await tapCanvasClientPoint(
     page,
@@ -682,47 +705,15 @@ test("mobile zoom out decreases the displayed zoom percentage", async ({ page })
 test.describe.serial("mobile page navigation with multi-page text", () => {
   test("next page button navigates to page 2", async ({ page }) => {
     test.setTimeout(60_000);
-    await openMobileEditor(page);
-
-    const textInput = page.getByLabel("Handwriting text input");
-    await expect(textInput).toBeAttached({ timeout: 10_000 });
-    await textInput.focus();
-    await textInput.fill(LONG_TEXT_FIXTURE);
-
-    await waitForMobileMultiplePages(page);
-
-    const nextButton = page.getByRole("button", { name: "Next page" });
-    await expect(nextButton).toBeEnabled({ timeout: 10_000 });
-    await nextButton.click();
-
-    // The page counter span should now read "Page 2 of N".
-    const pageCounter = page.locator("span").filter({ hasText: /Page 2 of \d+/ });
-    await expect(pageCounter).toBeVisible({ timeout: 10_000 });
+    await prepareMobileMultiplePages(page);
+    await clickMobilePageButton(page, "Next page", 2);
   });
 
   test("previous page button navigates back to page 1", async ({ page }) => {
     test.setTimeout(60_000);
-    await openMobileEditor(page);
-
-    const textInput = page.getByLabel("Handwriting text input");
-    await expect(textInput).toBeAttached({ timeout: 10_000 });
-    await textInput.focus();
-    await textInput.fill(LONG_TEXT_FIXTURE);
-
-    await waitForMobileMultiplePages(page);
-
-    const nextButton = page.getByRole("button", { name: "Next page" });
-    await expect(nextButton).toBeEnabled({ timeout: 10_000 });
-    await nextButton.click();
-
-    const page2Counter = page.locator("span").filter({ hasText: /Page 2 of \d+/ });
-    await expect(page2Counter).toBeVisible({ timeout: 10_000 });
-
-    const prevButton = page.getByRole("button", { name: "Previous page" });
-    await prevButton.click();
-
-    const page1Counter = page.locator("span").filter({ hasText: /Page 1 of \d+/ });
-    await expect(page1Counter).toBeVisible({ timeout: 10_000 });
+    await prepareMobileMultiplePages(page);
+    await clickMobilePageButton(page, "Next page", 2);
+    await clickMobilePageButton(page, "Previous page", 1);
   });
 });
 
