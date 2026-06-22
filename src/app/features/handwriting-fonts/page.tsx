@@ -1,40 +1,13 @@
-import type { Metadata } from 'next';
 import FeaturePage from '@/components/patterns/FeaturePage';
-import { canonicalUrl, productFacts, siteFacts } from '@/lib/seo/productFacts';
+import { buildFeatureMetadata } from '@/lib/seo/pageMetadata';
+import { productFacts } from '@/lib/seo/productFacts';
 
 const path = '/features/handwriting-fonts';
 const title = 'Handwriting Fonts in Text2Ink';
 const description = 'See the built-in handwriting font choices and custom font upload support available in the Text2Ink editor.';
 const directAnswer = `Text2Ink includes ${productFacts.handwritingFonts.length} built-in handwriting font choices in the editor and also supports custom font upload for .ttf or .otf files. You can choose a font, adjust font size, set ink color, and combine the selected handwriting with paper styles, page sizes, orientation, alignment controls, and exports from the same editor.`;
 
-export const metadata: Metadata = {
-  title,
-  description,
-  alternates: {
-    canonical: canonicalUrl(path),
-  },
-  openGraph: {
-    type: 'website',
-    url: canonicalUrl(path),
-    siteName: siteFacts.siteName,
-    title,
-    description,
-    images: [
-      {
-        url: siteFacts.previewImagePath,
-        width: 618,
-        height: 800,
-        alt: siteFacts.previewImageAlt,
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title,
-    description,
-    images: [siteFacts.previewImagePath],
-  },
-};
+export const metadata = buildFeatureMetadata({ path, title, description });
 
 const sections = [
   {

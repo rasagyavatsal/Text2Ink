@@ -1,6 +1,6 @@
-import type { Metadata } from 'next';
 import FeaturePage from '@/components/patterns/FeaturePage';
-import { canonicalUrl, productFacts, siteFacts } from '@/lib/seo/productFacts';
+import { buildFeatureMetadata } from '@/lib/seo/pageMetadata';
+import { productFacts } from '@/lib/seo/productFacts';
 
 const path = '/features/export-handwritten-notes';
 const title = 'Export Handwritten Notes from Text2Ink';
@@ -8,34 +8,7 @@ const description = 'Learn which export formats the Text2Ink editor supports and
 const exportLabels = productFacts.exportFormats.map((format) => format.label).join(', ');
 const directAnswer = `Text2Ink exports rendered handwriting-style pages as ${exportLabels}. The export dialog lets you choose a format, starts export only when the document has text, renders pages with progress feedback, finalizes PDF output when needed, and can cancel an active export. The editor also provides zoom and page navigation so you can review generated pages before downloading.`;
 
-export const metadata: Metadata = {
-  title,
-  description,
-  alternates: {
-    canonical: canonicalUrl(path),
-  },
-  openGraph: {
-    type: 'website',
-    url: canonicalUrl(path),
-    siteName: siteFacts.siteName,
-    title,
-    description,
-    images: [
-      {
-        url: siteFacts.previewImagePath,
-        width: 618,
-        height: 800,
-        alt: siteFacts.previewImageAlt,
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title,
-    description,
-    images: [siteFacts.previewImagePath],
-  },
-};
+export const metadata = buildFeatureMetadata({ path, title, description });
 
 const sections = [
   {

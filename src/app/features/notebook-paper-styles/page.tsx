@@ -1,6 +1,6 @@
-import type { Metadata } from 'next';
 import FeaturePage from '@/components/patterns/FeaturePage';
-import { canonicalUrl, productFacts, siteFacts } from '@/lib/seo/productFacts';
+import { buildFeatureMetadata } from '@/lib/seo/pageMetadata';
+import { productFacts } from '@/lib/seo/productFacts';
 
 const path = '/features/notebook-paper-styles';
 const title = 'Notebook Paper Styles in Text2Ink';
@@ -9,34 +9,7 @@ const paperFormats = productFacts.paper.formats.map((format) => format.name).joi
 const paperOrientations = productFacts.paper.orientations.map((orientation) => orientation.name).join(' and ');
 const directAnswer = `Text2Ink lets you build handwriting-style pages on Blank, lined, ruled, grid, dot grid, and Cornell paper options from the editor catalog. The page size controls include ${paperFormats}, and the orientation controls include ${paperOrientations}. The editor also exposes paper color, margins, line tilt, line offset, custom line spacing, and PNG or JPG background uploads where those controls apply.`;
 
-export const metadata: Metadata = {
-  title,
-  description,
-  alternates: {
-    canonical: canonicalUrl(path),
-  },
-  openGraph: {
-    type: 'website',
-    url: canonicalUrl(path),
-    siteName: siteFacts.siteName,
-    title,
-    description,
-    images: [
-      {
-        url: siteFacts.previewImagePath,
-        width: 618,
-        height: 800,
-        alt: siteFacts.previewImageAlt,
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title,
-    description,
-    images: [siteFacts.previewImagePath],
-  },
-};
+export const metadata = buildFeatureMetadata({ path, title, description });
 
 const sections = [
   {
