@@ -22,6 +22,7 @@ describe('PrivacyPolicyPage', () => {
   it('publishes canonical metadata for the legal route', () => {
     expect(metadata.title).toBe('Privacy Policy');
     expect(metadata.alternates?.canonical).toBe('https://text2ink.com/privacy-policy');
+    expect(metadata.openGraph?.url).toBe('https://text2ink.com/privacy-policy');
   });
 
   it('renders real privacy content inside the shared site chrome', () => {
@@ -35,6 +36,10 @@ describe('PrivacyPolicyPage', () => {
 
     const backLink = screen.getByRole('link', { name: /back to editor/i });
     expect(backLink).toHaveAttribute('href', '/editor');
+
+    const breadcrumb = screen.getByRole('navigation', { name: /breadcrumb/i });
+    expect(within(breadcrumb).getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/');
+    expect(within(breadcrumb).getByText('Privacy Policy')).toBeInTheDocument();
 
     expect(
       screen.getByRole('heading', { level: 1, name: 'Privacy Policy' })
@@ -65,5 +70,13 @@ describe('PrivacyPolicyPage', () => {
     expect(
       screen.getByRole('link', { name: /terms of service/i })
     ).toHaveAttribute('href', '/terms-of-service');
+  });
+
+  it('emits breadcrumb JSON-LD for the visible legal breadcrumbs', () => {
+    const { container } = render(<PrivacyPolicyPage />);
+    const schemas = Array.from(container.querySelectorAll('script[type="application/ld+json"]'))
+      .map((script) => JSON.parse(script.textContent ?? '{}'));
+
+    expect(schemas.some((schema) => schema['@type'] === 'BreadcrumbList')).toBe(true);
   });
 });

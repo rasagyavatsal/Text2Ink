@@ -583,6 +583,7 @@ export default function SettingsPanel({
               alt="Text2Ink logo"
               width={56}
               height={56}
+              loading="eager"
               className="h-14 w-14 object-contain"
             />
           </Link>

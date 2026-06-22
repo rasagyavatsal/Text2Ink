@@ -22,6 +22,7 @@ describe('TermsOfServicePage', () => {
   it('publishes canonical metadata for the legal route', () => {
     expect(metadata.title).toBe('Terms of Service');
     expect(metadata.alternates?.canonical).toBe('https://text2ink.com/terms-of-service');
+    expect(metadata.openGraph?.url).toBe('https://text2ink.com/terms-of-service');
   });
 
   it('renders real terms content inside the shared site chrome', () => {
@@ -35,6 +36,10 @@ describe('TermsOfServicePage', () => {
 
     const backLink = screen.getByRole('link', { name: /back to editor/i });
     expect(backLink).toHaveAttribute('href', '/editor');
+
+    const breadcrumb = screen.getByRole('navigation', { name: /breadcrumb/i });
+    expect(within(breadcrumb).getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/');
+    expect(within(breadcrumb).getByText('Terms of Service')).toBeInTheDocument();
 
     expect(
       screen.getByRole('heading', { level: 1, name: 'Terms of Service' })
@@ -65,5 +70,13 @@ describe('TermsOfServicePage', () => {
     expect(
       screen.getByRole('link', { name: /privacy policy/i })
     ).toHaveAttribute('href', '/privacy-policy');
+  });
+
+  it('emits breadcrumb JSON-LD for the visible legal breadcrumbs', () => {
+    const { container } = render(<TermsOfServicePage />);
+    const schemas = Array.from(container.querySelectorAll('script[type="application/ld+json"]'))
+      .map((script) => JSON.parse(script.textContent ?? '{}'));
+
+    expect(schemas.some((schema) => schema['@type'] === 'BreadcrumbList')).toBe(true);
   });
 });

@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import Breadcrumbs from '@/components/patterns/Breadcrumbs';
 import SiteHeader from '@/components/patterns/SiteHeader';
 import SiteFooter from '@/components/patterns/SiteFooter';
 
@@ -39,6 +40,12 @@ export default function LegalPage({
       <main className="py-page-y">
         <div className={frameClasses}>
           <div className="mx-auto w-full max-w-document">
+            <Breadcrumbs
+              items={[
+                { name: 'Home', href: '/' },
+                { name: title, href: '#' },
+              ]}
+            />
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 items-start">
               <aside className="hidden lg:block lg:w-64 lg:shrink-0 lg:sticky lg:top-32">
                 <nav aria-label="Table of contents" className="flex flex-col gap-2">

@@ -4,14 +4,36 @@ import { Button } from "@/components/ui/button"
 import { InquiryForm } from "@/components/InquiryForm"
 import SiteHeader from "@/components/patterns/SiteHeader"
 import SiteFooter from "@/components/patterns/SiteFooter"
+import JsonLd from "@/components/seo/JsonLd"
+import {
+  buildContactPageJsonLd,
+  buildOrganizationJsonLd,
+} from "@/lib/seo/jsonLd"
+import { canonicalUrl, siteFacts } from "@/lib/seo/productFacts"
 import { Mail } from "lucide-react"
 
+const canonical = canonicalUrl("/contact")
+const title = "Contact Text2Ink"
+const description =
+  "Send Text2Ink a question, bug report, or feature request through the contact form or direct email link."
+
 export const metadata: Metadata = {
-  title: "Contact Us",
-  description:
-    "Have questions about Text2Ink? Send us an inquiry and we'll get back to you.",
+  title,
+  description,
   alternates: {
-    canonical: "https://text2ink.com/contact",
+    canonical,
+  },
+  openGraph: {
+    type: "website",
+    url: canonical,
+    siteName: siteFacts.siteName,
+    title,
+    description,
+  },
+  twitter: {
+    card: "summary",
+    title,
+    description,
   },
 }
 
@@ -20,6 +42,9 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd data={buildContactPageJsonLd({ url: canonical, description })} />
+      <JsonLd data={buildOrganizationJsonLd()} />
+
       <header className="sticky top-0 z-50 border-b border-border bg-background">
         <div className={`${frameClasses} py-chrome-y`}>
           <SiteHeader
@@ -39,10 +64,10 @@ export default function ContactPage() {
         <div className={frameClasses}>
           <div className="mx-auto w-full max-w-xl">
             <h1 className="text-page-title font-bold tracking-tight text-foreground mb-4 sm:mb-6">
-              Email me
+              Contact Text2Ink
             </h1>
             <p className="text-body-lg text-muted-foreground mb-6 sm:mb-8">
-              Have a question, bug report, or feature request? I&apos;ll get back to you.
+              Send a question, bug report, or feature request. The form asks for your name, email, topic, and message, or you can email directly.
             </p>
             <InquiryForm />
             <div className="mt-6 sm:mt-8">
