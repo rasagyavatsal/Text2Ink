@@ -162,7 +162,10 @@ export default function MobileEditorBottomSheet({
   onPreviewScaleChange,
 }: MobileEditorBottomSheetProps) {
   const sheetRef = useRef<SheetRef | null>(null);
+  const sheetContainerRef = useRef<HTMLDivElement | null>(null);
+  const sheetFooterRef = useRef<HTMLDivElement | null>(null);
   const sheetReadyRef = useRef(false);
+  const activeTouchDragRef = useRef<{ startY: number; startHeight: number } | null>(null);
   const { keyboardHeight } = useVirtualKeyboard();
 
   const scrollStyle = useMemo(() => {
@@ -194,6 +197,44 @@ export default function MobileEditorBottomSheet({
     [currentHeight, metrics.maxSheetHeight, metrics.minSheetHeight],
   );
   const sheetMeasurementKey = `${metrics.viewportWidth}:${metrics.viewportHeight}:${metrics.maxSheetHeight}`;
+
+  const syncCurrentHeightStyle = useCallback(
+    (height: number) => {
+      const boundedHeight = Math.min(
+        metrics.maxSheetHeight,
+        Math.max(metrics.minSheetHeight, Math.round(height))
+      );
+      const value = `${boundedHeight}px`;
+      sheetContainerRef.current?.style.setProperty('--mobile-editor-sheet-current-height', value);
+      sheetFooterRef.current?.style.setProperty('--mobile-editor-sheet-current-height', value);
+    },
+    [metrics.maxSheetHeight, metrics.minSheetHeight],
+  );
+
+  const syncCurrentHeightFromDrag = useCallback(() => {
+    const sync = () => {
+      const sheetY = sheetRef.current?.y.get();
+      if (typeof sheetY !== 'number' || Number.isNaN(sheetY)) return;
+
+      syncCurrentHeightStyle(metrics.maxSheetHeight - sheetY);
+    };
+
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(sync);
+      return;
+    }
+
+    sync();
+  }, [metrics.maxSheetHeight, syncCurrentHeightStyle]);
+
+  const getCurrentSheetHeight = useCallback(() => {
+    const sheetY = sheetRef.current?.y.get();
+    if (typeof sheetY === 'number' && !Number.isNaN(sheetY)) {
+      return metrics.maxSheetHeight - sheetY;
+    }
+
+    return currentHeight;
+  }, [currentHeight, metrics.maxSheetHeight]);
 
   const updateHeightFromSnapIndex = useCallback(
     (index: number) => {
@@ -248,6 +289,45 @@ export default function MobileEditorBottomSheet({
     onSheetChange({ anchor: 'peek', height: metrics.minSheetHeight, source: 'close' });
   }, [hasValidSnapPoints, metrics, onSheetChange, snapPoints]);
 
+  const handleHeaderKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+
+      event.preventDefault();
+      onHandlePress();
+    },
+    [onHandlePress],
+  );
+
+  const handleHeaderTouchStart = useCallback(
+    (event: React.TouchEvent<HTMLDivElement>) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+
+      activeTouchDragRef.current = {
+        startY: touch.clientY,
+        startHeight: getCurrentSheetHeight(),
+      };
+    },
+    [getCurrentSheetHeight],
+  );
+
+  const handleHeaderTouchMove = useCallback(
+    (event: React.TouchEvent<HTMLDivElement>) => {
+      const dragState = activeTouchDragRef.current;
+      const touch = event.touches[0];
+      if (!dragState || !touch) return;
+
+      syncCurrentHeightStyle(dragState.startHeight + dragState.startY - touch.clientY);
+    },
+    [syncCurrentHeightStyle],
+  );
+
+  const handleHeaderTouchEnd = useCallback(() => {
+    activeTouchDragRef.current = null;
+    syncCurrentHeightFromDrag();
+  }, [syncCurrentHeightFromDrag]);
+
   const handleLabel = getMobileSheetHandleLabel(anchor);
 
   return (
@@ -266,21 +346,29 @@ export default function MobileEditorBottomSheet({
         dragVelocityThreshold={850}
         onClose={handleClose}
         onSnap={updateHeightFromSnapIndex}
+        onDrag={syncCurrentHeightFromDrag}
+        onDragEnd={syncCurrentHeightFromDrag}
       >
         <Sheet.Container
-          className="mobile-editor-sheet__container border-t border-border bg-background shadow-2xl"
+          ref={sheetContainerRef}
+          unstyled
+          className="mobile-editor-sheet__container rounded-t-3xl border-t border-border bg-background shadow-2xl"
           style={sheetStyleVars}
         >
-          <Sheet.Header className="mobile-editor-sheet__header bg-background">
-            <button
-              type="button"
-              className="flex min-h-11 w-full touch-none items-center justify-center rounded-t-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-              aria-label={handleLabel}
-              aria-expanded={anchor !== 'peek'}
-              onClick={onHandlePress}
-            >
-              <span className="h-1.5 w-14 rounded-full bg-border" aria-hidden="true" />
-            </button>
+          <Sheet.Header
+            className="mobile-editor-sheet__header flex min-h-11 w-full touch-none items-center justify-center rounded-t-3xl bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            role="button"
+            tabIndex={0}
+            aria-label={handleLabel}
+            aria-expanded={anchor !== 'peek'}
+            onClick={onHandlePress}
+            onKeyDown={handleHeaderKeyDown}
+            onTouchStart={handleHeaderTouchStart}
+            onTouchMove={handleHeaderTouchMove}
+            onTouchEnd={handleHeaderTouchEnd}
+            onTouchCancel={handleHeaderTouchEnd}
+          >
+            <span className="h-1.5 w-14 rounded-full bg-border" aria-hidden="true" />
           </Sheet.Header>
 
           <Sheet.Content
@@ -299,6 +387,7 @@ export default function MobileEditorBottomSheet({
       </Sheet>
 
       <div
+        ref={sheetFooterRef}
         className="mobile-editor-sheet__footer"
         style={{
           ...sheetStyleVars,

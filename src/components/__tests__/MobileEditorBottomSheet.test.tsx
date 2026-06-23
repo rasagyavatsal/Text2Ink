@@ -4,8 +4,13 @@ import React from 'react';
 import MobileEditorBottomSheet from '../MobileEditorBottomSheet';
 import { createMobileSheetSnapPoints, getMobileSheetAnchorSnapIndex } from '@/lib/mobileEditorSheet';
 
-const { sheetMock, mockUseVirtualKeyboard } = vi.hoisted(() => ({
+const { sheetMock, sheetContainerMock, mockUseVirtualKeyboard } = vi.hoisted(() => ({
   sheetMock: vi.fn(({ children }: any) => children),
+  sheetContainerMock: vi.fn(({ children, className, style, unstyled }: any) => (
+    <div className={className} style={style} data-unstyled={String(Boolean(unstyled))}>
+      {children}
+    </div>
+  )),
   mockUseVirtualKeyboard: vi.fn(() => ({ keyboardHeight: 0, isKeyboardOpen: false })),
 }));
 
@@ -13,8 +18,8 @@ vi.mock('react-modal-sheet', () => ({
   Sheet: Object.assign(
     sheetMock,
     {
-      Container: ({ children, className, style }: any) => <div className={className} style={style}>{children}</div>,
-      Header: ({ children, className }: any) => <div className={className}>{children}</div>,
+      Container: sheetContainerMock,
+      Header: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
       Content: ({ children, className, scrollStyle }: any) => (
         <div className={className} style={scrollStyle} data-testid="sheet-content">
           {children}
@@ -96,6 +101,21 @@ describe('MobileEditorBottomSheet', () => {
         expect(button.className).toContain('focus-visible:ring-offset-background');
       }
     });
+  });
+
+  it('removes library decorative container styles while keeping themed rounded sheet chrome', () => {
+    const { getByLabelText } = renderMobileEditorBottomSheet();
+
+    const containerProps = sheetContainerMock.mock.calls[0]?.[0];
+    expect(containerProps.unstyled).toBe(true);
+    expect(containerProps.className).toContain('mobile-editor-sheet__container');
+    expect(containerProps.className).toContain('border-t');
+    expect(containerProps.className).toContain('bg-background');
+    expect(containerProps.className).toContain('shadow-2xl');
+    expect(containerProps.className).toContain('rounded-t-3xl');
+
+    const handle = getByLabelText('Expand editor controls');
+    expect(handle.className).toContain('rounded-t-3xl');
   });
 
   it('starts by reporting the peek anchor height instead of the default height', async () => {
