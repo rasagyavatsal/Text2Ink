@@ -45,6 +45,24 @@ describe('SiteFooter', () => {
     const contactLink = screen.getByRole('link', { name: /contact/i });
     expect(contactLink).toBeInTheDocument();
     expect(contactLink).toHaveAttribute('href', '/contact');
+
+    expect(screen.getByRole('link', { name: /handwriting fonts/i })).toHaveAttribute(
+      'href',
+      '/features/handwriting-fonts',
+    );
+    expect(screen.getByRole('link', { name: /paper styles/i })).toHaveAttribute(
+      'href',
+      '/features/notebook-paper-styles',
+    );
+    expect(screen.getByRole('link', { name: /paper colors/i })).toHaveAttribute(
+      'href',
+      '/features/paper-colors',
+    );
+    expect(screen.getByRole('link', { name: /realism effects/i })).toHaveAttribute(
+      'href',
+      '/features/realism-effects',
+    );
+    expect(screen.queryByRole('link', { name: /export notes/i })).not.toBeInTheDocument();
   });
 
   it('renders only the logo image in the brand link without wordmark text', () => {

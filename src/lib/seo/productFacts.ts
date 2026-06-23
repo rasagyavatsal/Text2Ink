@@ -1,5 +1,7 @@
 import {
+  DEFAULT_SETTINGS,
   HANDWRITING_FONTS,
+  PAPER_COLORS,
   PAPER_FORMATS,
   PAPER_ORIENTATIONS,
   PAPER_STYLES,
@@ -28,7 +30,8 @@ export const publicRoutes = [
   { path: '/privacy-policy', priority: 0.4, changeFrequency: 'monthly' },
   { path: '/features/handwriting-fonts', priority: 0.7, changeFrequency: 'monthly' },
   { path: '/features/notebook-paper-styles', priority: 0.7, changeFrequency: 'monthly' },
-  { path: '/features/export-handwritten-notes', priority: 0.7, changeFrequency: 'monthly' },
+  { path: '/features/paper-colors', priority: 0.7, changeFrequency: 'monthly' },
+  { path: '/features/realism-effects', priority: 0.7, changeFrequency: 'monthly' },
 ] as const;
 
 export const featureRoutes = publicRoutes.filter((route) => route.path.startsWith('/features/'));
@@ -44,7 +47,21 @@ export const productFacts = {
     styles: PAPER_STYLES.map(({ name, value }) => ({ name, value })),
     formats: PAPER_FORMATS.map(({ name, value }) => ({ name, value })),
     orientations: PAPER_ORIENTATIONS.map(({ name, value }) => ({ name, value })),
+    colors: PAPER_COLORS.map(({ name, value }) => ({ name, value })),
     customBackgroundFormats: ['PNG', 'JPG'],
+  },
+  realism: {
+    toggleLabel: 'Enable Randomness',
+    enabledDefault: DEFAULT_SETTINGS.randomness.enabled,
+    variations: [
+      { name: 'Letter spacing variation', value: DEFAULT_SETTINGS.randomness.spacing },
+      { name: 'Baseline variation', value: DEFAULT_SETTINGS.randomness.baseline },
+      { name: 'Rotation variation', value: DEFAULT_SETTINGS.randomness.rotation },
+    ],
+    appliedBy: [
+      'renderer handwriting text',
+      'movable text boxes',
+    ],
   },
   controls: [
     'Font size',
