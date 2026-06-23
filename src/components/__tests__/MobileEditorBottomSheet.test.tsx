@@ -45,6 +45,7 @@ const renderMobileEditorBottomSheet = (
 ) => {
   const defaultProps = {
     anchor: 'default' as const,
+    currentHeight: DEFAULT_MOBILE_SHEET_METRICS.defaultSheetHeight,
     metrics: DEFAULT_MOBILE_SHEET_METRICS,
     settingsPanel: <div>Settings</div>,
     onHandlePress: () => {},
@@ -205,9 +206,10 @@ describe('MobileEditorBottomSheet', () => {
     expect(getByText('120%')).toBeDefined();
   });
 
-  it('passes max and peek sheet heights via CSS custom variables to Sheet.Container', () => {
+  it('passes sheet heights via CSS custom variables to Sheet.Container', () => {
     const { container } = renderMobileEditorBottomSheet({
       anchor: 'default',
+      currentHeight: DEFAULT_MOBILE_SHEET_METRICS.defaultSheetHeight,
       metrics: DEFAULT_MOBILE_SHEET_METRICS,
     });
 
@@ -216,7 +218,7 @@ describe('MobileEditorBottomSheet', () => {
     const styles = (sheetContainer as HTMLElement).style;
     expect(styles.getPropertyValue('--mobile-editor-sheet-max-height')).toBe(`${DEFAULT_MOBILE_SHEET_METRICS.maxSheetHeight}px`);
     expect(styles.getPropertyValue('--mobile-editor-sheet-peek-height')).toBe(`${DEFAULT_MOBILE_SHEET_METRICS.minSheetHeight}px`);
-    expect(styles.getPropertyValue('--mobile-editor-sheet-current-height')).toBe('');
+    expect(styles.getPropertyValue('--mobile-editor-sheet-current-height')).toBe(`${DEFAULT_MOBILE_SHEET_METRICS.defaultSheetHeight}px`);
   });
 
   it('applies footer reserve, safeAreaBottom, and keyboardHeight to scroller scrollStyle', () => {
