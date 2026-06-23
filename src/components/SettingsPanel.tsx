@@ -298,6 +298,10 @@ const SliderRow = ({
   disabled = false,
   gapClass = "gap-2",
 }: SliderRowProps) => {
+  const stopGesturePropagation = (event: React.PointerEvent | React.TouchEvent) => {
+    event.stopPropagation();
+  };
+
   return (
     <ControlRow
       label={label}
@@ -306,12 +310,21 @@ const SliderRow = ({
       gapClass={gapClass}
     >
       <Slider
+        aria-label={label}
         disabled={disabled}
         value={[value]}
         onValueChange={([val]) => onValueChange(val)}
         min={min}
         max={max}
         step={step}
+        onPointerDown={stopGesturePropagation}
+        onPointerMove={stopGesturePropagation}
+        onPointerUp={stopGesturePropagation}
+        onPointerCancel={stopGesturePropagation}
+        onTouchStart={stopGesturePropagation}
+        onTouchMove={stopGesturePropagation}
+        onTouchEnd={stopGesturePropagation}
+        onTouchCancel={stopGesturePropagation}
       />
     </ControlRow>
   );

@@ -139,8 +139,8 @@ describe('SettingsPanel', () => {
 
     expect(screen.getByRole('button', { name: /blank paper style/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^lined \(medium\) paper style$/i })).toBeInTheDocument();
-    expect(screen.getByLabelText(/Size/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Orientation/i)).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: /^Size$/i })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: /^Orientation$/i })).toBeInTheDocument();
   });
 
   it('keeps explicit control IDs unique when desktop and mobile panels are mounted together', () => {

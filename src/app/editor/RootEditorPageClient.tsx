@@ -551,6 +551,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
   const mobileControlsSheet = isMobileEditorLayout ? (
     <MobileEditorBottomSheet
       anchor={mobileSheetState.anchor}
+      currentHeight={effectiveMobileSheetHeight}
       metrics={mobileSheetMetrics}
       settingsPanel={mobileSettingsPanel}
       onHandlePress={handleMobileSheetHandlePress}
