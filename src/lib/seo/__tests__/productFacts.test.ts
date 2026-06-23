@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEFAULT_SETTINGS,
   HANDWRITING_FONTS,
+  PAPER_COLORS,
   PAPER_FORMATS,
   PAPER_ORIENTATIONS,
   PAPER_STYLES,
@@ -27,6 +29,20 @@ describe('SEO product facts', () => {
     expect(productFacts.paper.orientations.map((orientation) => orientation.name)).toEqual(
       PAPER_ORIENTATIONS.map((orientation) => orientation.name),
     );
+    expect(productFacts.paper.colors).toEqual(PAPER_COLORS);
+  });
+
+  it('derives realism facts from editor default settings', () => {
+    expect(productFacts.realism.toggleLabel).toBe('Enable Randomness');
+    expect(productFacts.realism.appliedBy).toEqual([
+      'renderer handwriting text',
+      'movable text boxes',
+    ]);
+    expect(productFacts.realism.variations).toEqual([
+      { name: 'Letter spacing variation', value: DEFAULT_SETTINGS.randomness.spacing },
+      { name: 'Baseline variation', value: DEFAULT_SETTINGS.randomness.baseline },
+      { name: 'Rotation variation', value: DEFAULT_SETTINGS.randomness.rotation },
+    ]);
   });
 
   it('keeps export, persistence, contact, and canonical facts centralized', () => {

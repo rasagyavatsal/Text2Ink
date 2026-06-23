@@ -58,10 +58,18 @@ export default function SiteFooter() {
                 </li>
                 <li>
                   <Link
-                    href="/features/export-handwritten-notes"
+                    href="/features/paper-colors"
                     className="block py-2 md:py-1 transition-colors hover:text-brand-accent"
                   >
-                    Export Notes
+                    Paper Colors
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/features/realism-effects"
+                    className="block py-2 md:py-1 transition-colors hover:text-brand-accent"
+                  >
+                    Realism Effects
                   </Link>
                 </li>
                 <li>

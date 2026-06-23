@@ -14,8 +14,10 @@ describe('generated metadata routes', () => {
       'https://text2ink.com/privacy-policy',
       'https://text2ink.com/features/handwriting-fonts',
       'https://text2ink.com/features/notebook-paper-styles',
-      'https://text2ink.com/features/export-handwritten-notes',
+      'https://text2ink.com/features/paper-colors',
+      'https://text2ink.com/features/realism-effects',
     ]));
+    expect(urls).not.toContain('https://text2ink.com/features/export-handwritten-notes');
   });
 
   it('publishes robots rules with the generated sitemap URL', () => {
