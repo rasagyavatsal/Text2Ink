@@ -221,6 +221,14 @@ async function performChromiumTouchDrag(
   }
 }
 
+async function readMobileSheetCurrentHeight(page: Page) {
+  return page.locator(".mobile-editor-sheet__container").evaluate((element) => {
+    return Number.parseFloat(
+      (element as HTMLElement).style.getPropertyValue("--mobile-editor-sheet-current-height")
+    );
+  });
+}
+
 async function tapCanvasFraction(
   page: Page,
   canvas: ReturnType<Page["locator"]>,
@@ -562,7 +570,7 @@ test("preview paper taps place the caret on text, line whitespace, and lower bla
 });
 
 // ---------------------------------------------------------------------------
-// 5. Use mobile sheet tabs: Text, Paper, Align, More – each tab button is
+// 5. Use mobile sheet tabs: Text, Paper, Align, Realism – each tab button is
 //    visible and clickable in the sheet's sticky tab row.
 //
 //    The tab buttons are rendered inside the MobileEditorBottomSheet → Sheet
@@ -618,19 +626,71 @@ test("mobile sheet Align tab button is visible and clickable", async ({ page }) 
   await expect(alignSection).toBeAttached({ timeout: 5_000 });
 });
 
-test("mobile sheet More tab button is visible and clickable", async ({ page }) => {
+test("mobile sheet Realism tab button is visible and clickable", async ({ page }) => {
   await openMobileEditor(page);
   await openSheet(page);
 
   const tabBar = page.locator("div.sticky.top-0.-mt-6");
   await expect(tabBar).toBeVisible({ timeout: 5_000 });
 
-  const moreTab = tabBar.getByRole("button", { name: "More", exact: true });
-  await expect(moreTab).toBeVisible({ timeout: 5_000 });
-  await moreTab.click();
+  const realismTab = tabBar.getByRole("button", { name: "Realism", exact: true });
+  await expect(realismTab).toBeVisible({ timeout: 5_000 });
+  await expect(tabBar.getByRole("button", { name: "More", exact: true })).toHaveCount(0);
+  await realismTab.click();
 
   const moreSection = page.locator('[data-section="more"]').first();
   await expect(moreSection).toBeAttached({ timeout: 5_000 });
+});
+
+test("sheet drag updates current height CSS variable before touch ends", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== "chromium", "CDP real touch drag requires Chromium");
+
+  await openFreshMobileEditor(page);
+
+  const handle = await expectHandleTopmost(page, "Open editor controls");
+  const sheetContainer = page.locator(".mobile-editor-sheet__container");
+  await expect(sheetContainer).toBeVisible({ timeout: 10_000 });
+
+  const beforeHeight = await readMobileSheetCurrentHeight(page);
+  const start = await getLocatorDragPoint(handle, 0.5, 0.5);
+  const end = { x: start.x, y: start.y - 220 };
+  const client = await page.context().newCDPSession(page);
+
+  try {
+    await client.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [{ x: start.x, y: start.y, id: 1 }],
+    });
+    await page.waitForTimeout(50);
+
+    for (let step = 1; step <= 10; step++) {
+      const ratio = step / 10;
+      await client.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [
+          {
+            x: Math.round(start.x + (end.x - start.x) * ratio),
+            y: Math.round(start.y + (end.y - start.y) * ratio),
+            id: 1,
+          },
+        ],
+      });
+      await page.waitForTimeout(16);
+    }
+
+    await expect
+      .poll(() => readMobileSheetCurrentHeight(page))
+      .toBeGreaterThan(beforeHeight + 40);
+  } finally {
+    await client.send("Input.dispatchTouchEvent", {
+      type: "touchEnd",
+      touchPoints: [],
+    }).catch(() => {});
+    await client.detach();
+  }
 });
 
 test("Clear dialog opened from the mobile sheet is above the sheet and clickable", async ({
@@ -667,7 +727,56 @@ test("Paper Size select opens above the mobile sheet and can change selection", 
   await expect(sizeTrigger).toContainText("A4");
 });
 
-test("real touch carousel drag scrolls font and paper carousels without sheet drag", async ({
+test("carousel arrow buttons scroll font and paper carousels", async ({ page }) => {
+  await openFreshMobileEditor(page);
+  await openSheet(page);
+
+  const buttonScrollCarousel = async (
+    carousel: Locator,
+    nextButtonName: string,
+    previousButtonName: string,
+  ) => {
+    await expect(carousel).toBeVisible({ timeout: 10_000 });
+    await carousel.evaluate((element) => {
+      element.scrollLeft = 0;
+    });
+
+    const nextButton = page.getByRole("button", { name: nextButtonName });
+    const previousButton = page.getByRole("button", { name: previousButtonName });
+    await expect(nextButton).toBeVisible({ timeout: 10_000 });
+    await expect(previousButton).toBeVisible({ timeout: 10_000 });
+    await expect(previousButton).toBeDisabled();
+
+    await nextButton.click();
+
+    await expect
+      .poll(() => carousel.evaluate((element) => element.scrollLeft))
+      .toBeGreaterThan(20);
+    await expect(previousButton).toBeEnabled();
+
+    await previousButton.click();
+    await expect
+      .poll(() => carousel.evaluate((element) => element.scrollLeft))
+      .toBeLessThan(5);
+    await expect(page.getByRole("button", { name: "Expand editor controls" })).toBeVisible();
+  };
+
+  await buttonScrollCarousel(
+    page.locator("#mobile-settings-section-text").getByTestId("font-carousel"),
+    "Next fonts",
+    "Previous fonts",
+  );
+
+  const tabBar = page.locator("div.sticky.top-0.-mt-6");
+  await tabBar.getByRole("button", { name: "Paper", exact: true }).click();
+  await buttonScrollCarousel(
+    page.locator("#mobile-settings-section-paper").getByTestId("paper-style-carousel"),
+    "Next paper styles",
+    "Previous paper styles",
+  );
+});
+
+test("vertical drag that starts on the font carousel scrolls the mobile sheet", async ({
   page,
   browserName,
 }) => {
@@ -676,32 +785,69 @@ test("real touch carousel drag scrolls font and paper carousels without sheet dr
   await openFreshMobileEditor(page);
   await openSheet(page);
 
-  const dragCarousel = async (carousel: Locator) => {
-    await expect(carousel).toBeVisible({ timeout: 10_000 });
-    await carousel.evaluate((element) => {
-      element.scrollLeft = 0;
-    });
+  const sheetScroller = page.locator(".mobile-editor-sheet__scroller");
+  const carousel = page.locator("#mobile-settings-section-text").getByTestId("font-carousel");
+  const firstFontCard = carousel.getByRole("button", { name: /Caveat/ });
+  await expect(carousel).toBeVisible({ timeout: 10_000 });
+  await expect(firstFontCard).toBeVisible({ timeout: 10_000 });
+  await sheetScroller.evaluate((element) => {
+    element.scrollTop = 0;
+  });
 
-    await expectLocatorHitTestableAtRatio(carousel, 0.82, 0.25);
-    const start = await getLocatorDragPoint(carousel, 0.82, 0.25);
-    const end = await getLocatorDragPoint(carousel, 0.18, 0.25);
+  await expectLocatorHitTestableAtRatio(firstFontCard, 0.5, 0.35);
+  const start = await getLocatorDragPoint(firstFontCard, 0.5, 0.35);
+  const end = { x: start.x + 8, y: start.y - 240 };
 
-    await performChromiumTouchDrag(page, start, end);
+  await performChromiumTouchDrag(page, start, end, 14);
 
-    await expect
-      .poll(() => carousel.evaluate((element) => element.scrollLeft))
-      .toBeGreaterThan(20);
-    await expect(page.getByRole("button", { name: "Expand editor controls" })).toBeVisible();
-  };
-
-  await dragCarousel(page.locator("#mobile-settings-section-text").getByTestId("font-carousel"));
-
-  const tabBar = page.locator("div.sticky.top-0.-mt-6");
-  await tabBar.getByRole("button", { name: "Paper", exact: true }).click();
-  await dragCarousel(page.locator("#mobile-settings-section-paper").getByTestId("paper-style-carousel"));
+  await expect
+    .poll(() => sheetScroller.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(20);
+  await expect(page.getByRole("button", { name: "Expand editor controls" })).toBeVisible();
 });
 
-test("horizontal font carousel responds to touch drag without moving the sheet", async ({ page }) => {
+test("diagonal drag on the font carousel scrolls the sheet but not the carousel", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== "chromium", "CDP real touch drag requires Chromium");
+
+  await openFreshMobileEditor(page);
+  await openSheet(page);
+
+  const sheetScroller = page.locator(".mobile-editor-sheet__scroller");
+  const carousel = page.locator("#mobile-settings-section-text").getByTestId("font-carousel");
+  const firstFontCard = carousel.getByRole("button", { name: /Caveat/ });
+  await expect(carousel).toBeVisible({ timeout: 10_000 });
+  await expect(firstFontCard).toBeVisible({ timeout: 10_000 });
+  await sheetScroller.evaluate((element) => {
+    element.scrollTop = 0;
+  });
+  await carousel.evaluate((element) => {
+    element.scrollLeft = 0;
+  });
+
+  await expectLocatorHitTestableAtRatio(firstFontCard, 0.75, 0.35);
+  const start = await getLocatorDragPoint(firstFontCard, 0.75, 0.35);
+  const end = { x: start.x - 170, y: start.y - 170 };
+
+  await performChromiumTouchDrag(page, start, end, 14);
+
+  await expect
+    .poll(() => carousel.evaluate((element) => element.scrollLeft))
+    .toBeLessThan(5);
+  await expect
+    .poll(() => sheetScroller.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(20);
+  await expect(page.getByRole("button", { name: "Expand editor controls" })).toBeVisible();
+});
+
+test("horizontal touch drag on the font carousel does not scroll it", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== "chromium", "CDP real touch drag requires Chromium");
+
   await openFreshMobileEditor(page);
   await openSheet(page);
 
@@ -711,41 +857,15 @@ test("horizontal font carousel responds to touch drag without moving the sheet",
     element.scrollLeft = 0;
   });
 
-  const box = await carousel.boundingBox();
-  expect(box).not.toBeNull();
+  await expectLocatorHitTestableAtRatio(carousel, 0.82, 0.25);
+  const start = await getLocatorDragPoint(carousel, 0.82, 0.25);
+  const end = await getLocatorDragPoint(carousel, 0.18, 0.25);
 
-  const startX = Math.round(box!.x + box!.width * 0.8);
-  const endX = Math.round(box!.x + box!.width * 0.2);
-  const y = Math.round(box!.y + box!.height / 2);
-
-  await carousel.dispatchEvent("pointerdown", {
-    pointerId: 1,
-    pointerType: "touch",
-    clientX: startX,
-    clientY: y,
-    bubbles: true,
-    cancelable: true,
-  });
-  await carousel.dispatchEvent("pointermove", {
-    pointerId: 1,
-    pointerType: "touch",
-    clientX: endX,
-    clientY: y,
-    bubbles: true,
-    cancelable: true,
-  });
-  await carousel.dispatchEvent("pointerup", {
-    pointerId: 1,
-    pointerType: "touch",
-    clientX: endX,
-    clientY: y,
-    bubbles: true,
-    cancelable: true,
-  });
+  await performChromiumTouchDrag(page, start, end);
 
   await expect
     .poll(() => carousel.evaluate((element) => element.scrollLeft))
-    .toBeGreaterThan(20);
+    .toBeLessThan(5);
 });
 
 test("preview scroll touch drag scrolls preview instead of sheet drag", async ({
