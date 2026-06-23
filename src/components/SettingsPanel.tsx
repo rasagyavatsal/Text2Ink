@@ -39,6 +39,8 @@ import {
 import { cn } from '@/lib/utils';
 import { detectBackgroundLines } from '@/lib/lineDetection';
 import { 
+  ChevronLeft,
+  ChevronRight,
   Type, 
   FileText, 
   Wand2, 
@@ -233,8 +235,126 @@ const FontCard = ({
   );
 };
 
-const horizontalCarouselClassName =
+const desktopCarouselClassName =
   "grid grid-rows-2 grid-flow-col gap-3 auto-cols-[calc(45%-0.375rem)] overflow-x-auto pb-4 snap-x snap-mandatory touch-pan-x overscroll-x-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]";
+
+const mobileCarouselClassName =
+  "grid grid-rows-2 grid-flow-col gap-3 auto-cols-[calc(45%-0.375rem)] overflow-x-hidden pb-4 snap-x snap-mandatory touch-pan-y scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]";
+
+const CAROUSEL_BUTTON_SCROLL_RATIO = 0.85;
+
+const mobileJumpControls = [
+  { label: 'Text', section: 'text' },
+  { label: 'Paper', section: 'paper' },
+  { label: 'Align', section: 'align' },
+  { label: 'Realism', section: 'more' },
+] as const;
+
+interface CarouselRailProps {
+  readonly testId: string;
+  readonly previousLabel: string;
+  readonly nextLabel: string;
+  readonly children: React.ReactNode;
+}
+
+const CarouselRail = ({
+  testId,
+  previousLabel,
+  nextLabel,
+  children,
+}: CarouselRailProps) => {
+  const scrollerRef = React.useRef<HTMLDivElement>(null);
+  const [scrollState, setScrollState] = useState({
+    canScrollBack: false,
+    canScrollForward: false,
+  });
+
+  const updateScrollState = React.useCallback(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+
+    const maxScrollLeft = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+    const nextState = {
+      canScrollBack: scroller.scrollLeft > 1,
+      canScrollForward: scroller.scrollLeft < maxScrollLeft - 1,
+    };
+
+    setScrollState((current) =>
+      current.canScrollBack === nextState.canScrollBack &&
+      current.canScrollForward === nextState.canScrollForward
+        ? current
+        : nextState,
+    );
+  }, []);
+
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+
+    const frame = window.requestAnimationFrame(updateScrollState);
+    const resizeObserver =
+      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updateScrollState);
+    resizeObserver?.observe(scroller);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      resizeObserver?.disconnect();
+    };
+  }, [updateScrollState]);
+
+  const scrollByPage = React.useCallback(
+    (direction: -1 | 1) => {
+      const scroller = scrollerRef.current;
+      if (!scroller) return;
+
+      scroller.scrollBy({
+        left: direction * Math.max(scroller.clientWidth * CAROUSEL_BUTTON_SCROLL_RATIO, 1),
+        behavior: 'smooth',
+      });
+      window.setTimeout(updateScrollState, 180);
+    },
+    [updateScrollState],
+  );
+
+  return (
+    <div className="flex items-center gap-2">
+      <Button
+        type="button"
+        variant="outline"
+        size="icon-lg"
+        aria-label={previousLabel}
+        className="h-11 w-11 rounded-full bg-background"
+        disabled={!scrollState.canScrollBack}
+        onClick={() => scrollByPage(-1)}
+      >
+        <ChevronLeft className="size-5" aria-hidden="true" />
+      </Button>
+
+      <div className="min-w-0 flex-1 overflow-hidden">
+        <div
+          ref={scrollerRef}
+          data-testid={testId}
+          className={mobileCarouselClassName}
+          onScroll={updateScrollState}
+        >
+          {children}
+        </div>
+      </div>
+
+      <Button
+        type="button"
+        variant="outline"
+        size="icon-lg"
+        aria-label={nextLabel}
+        className="h-11 w-11 rounded-full bg-background"
+        disabled={!scrollState.canScrollForward}
+        onClick={() => scrollByPage(1)}
+      >
+        <ChevronRight className="size-5" aria-hidden="true" />
+      </Button>
+    </div>
+  );
+};
 
 interface ControlRowProps {
   readonly label: string;
@@ -466,6 +586,7 @@ export default function SettingsPanel({
       scrollLeft: event.currentTarget.scrollLeft,
       moved: false,
     };
+
     try {
       event.currentTarget.setPointerCapture?.(event.pointerId);
     } catch {
@@ -582,6 +703,41 @@ export default function SettingsPanel({
     });
   };
 
+  const renderCarousel = (
+    testId: string,
+    previousLabel: string,
+    nextLabel: string,
+    children: React.ReactNode,
+  ) => {
+    if (isMobileLayout) {
+      return (
+        <CarouselRail
+          testId={testId}
+          previousLabel={previousLabel}
+          nextLabel={nextLabel}
+        >
+          {children}
+        </CarouselRail>
+      );
+    }
+
+    return (
+      <div className="relative w-full overflow-hidden">
+        <div
+          data-testid={testId}
+          className={desktopCarouselClassName}
+          onPointerDown={handleCarouselPointerDown}
+          onPointerMove={handleCarouselPointerMove}
+          onPointerUp={handleCarouselPointerEnd}
+          onPointerCancel={handleCarouselPointerEnd}
+          onClickCapture={handleCarouselClickCapture}
+        >
+          {children}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div ref={panelRef} className="p-6 space-y-6">
       {showHomeLink ? (
@@ -605,12 +761,12 @@ export default function SettingsPanel({
 
       {isMobileLayout && (
         <div className="sticky top-0 -mt-6 pt-2 pb-3 bg-background z-20 border-b border-border/50 -mx-6 px-6 flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {['Text', 'Paper', 'Align', 'More'].map((label) => (
+          {mobileJumpControls.map(({ label, section }) => (
             <button
               key={label}
               type="button"
               onClick={() => {
-                const targetId = `${instanceIdPrefix}-section-${label.toLowerCase()}`;
+                const targetId = `${instanceIdPrefix}-section-${section}`;
                 const el = panelRef.current?.querySelector(`[id="${targetId}"]`);
                 if (el) {
                   el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -637,30 +793,23 @@ export default function SettingsPanel({
 
         <div className="space-y-6">
           <ControlRow label="Fonts" gapClass="gap-3">
-            <div className="relative w-full overflow-hidden">
-              <div
-                data-testid="font-carousel"
-                className={horizontalCarouselClassName}
-                onPointerDown={handleCarouselPointerDown}
-                onPointerMove={handleCarouselPointerMove}
-                onPointerUp={handleCarouselPointerEnd}
-                onPointerCancel={handleCarouselPointerEnd}
-                onClickCapture={handleCarouselClickCapture}
-              >
-                {availableFonts.map((font) => (
-                  <div key={font.value} className="snap-start">
-                    <FontCard
-                      font={font}
-                      isSelected={settings.fontFamily === font.value}
-                      onClick={() => {
-                        setCustomFontError(null);
-                        updateSetting('fontFamily', font.value);
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
+            {renderCarousel(
+              "font-carousel",
+              "Previous fonts",
+              "Next fonts",
+              availableFonts.map((font) => (
+                <div key={font.value} className="snap-start">
+                  <FontCard
+                    font={font}
+                    isSelected={settings.fontFamily === font.value}
+                    onClick={() => {
+                      setCustomFontError(null);
+                      updateSetting('fontFamily', font.value);
+                    }}
+                  />
+                </div>
+              )),
+            )}
           </ControlRow>
 
           <ControlRow label="Custom Font">
@@ -787,32 +936,25 @@ export default function SettingsPanel({
 
         <div className="space-y-6">
           <ControlRow label="Paper Style" gapClass="gap-3">
-            <div className="relative w-full overflow-hidden">
-              <div
-                data-testid="paper-style-carousel"
-                className={horizontalCarouselClassName}
-                onPointerDown={handleCarouselPointerDown}
-                onPointerMove={handleCarouselPointerMove}
-                onPointerUp={handleCarouselPointerEnd}
-                onPointerCancel={handleCarouselPointerEnd}
-                onClickCapture={handleCarouselClickCapture}
-              >
-                {PAPER_STYLES.map((style) => (
-                  <div key={style.value} className="snap-start">
-                    <PaperStyleCard
-                      style={{ name: style.name, value: style.value }}
-                      paperColor={settings.paperColor}
-                      isSelected={currentPaperStyle === style.value}
-                      onClick={() =>
-                        updateBuiltinSelection({
-                          style: style.value,
-                        })
-                      }
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
+            {renderCarousel(
+              "paper-style-carousel",
+              "Previous paper styles",
+              "Next paper styles",
+              PAPER_STYLES.map((style) => (
+                <div key={style.value} className="snap-start">
+                  <PaperStyleCard
+                    style={{ name: style.name, value: style.value }}
+                    paperColor={settings.paperColor}
+                    isSelected={currentPaperStyle === style.value}
+                    onClick={() =>
+                      updateBuiltinSelection({
+                        style: style.value,
+                      })
+                    }
+                  />
+                </div>
+              )),
+            )}
           </ControlRow>
 
           <ControlRow label="Size" htmlFor={paperFormatId} gapClass="gap-3">
