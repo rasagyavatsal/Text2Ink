@@ -126,32 +126,10 @@ describe('HomePage', () => {
     expect(secondCard).toHaveClass('sm:rounded-2xl');
   });
 
-  it('renders the how to use section with responsive spacing and readable instruction cards', () => {
+  it('does not render the retired how to use section', () => {
     render(<HomePage />);
-    const section = screen.getByRole('heading', { name: /how to use text2ink/i }).closest('section');
-    expect(section).toBeInTheDocument();
-    expect(section).toHaveClass('mt-10');
-    expect(section).toHaveClass('sm:mt-16');
-    expect(section).toHaveClass('md:mt-24');
-
-    // Spacing around the header of the section
-    const headerWrapper = screen.getByRole('heading', { name: /how to use text2ink/i }).parentElement;
-    expect(headerWrapper).toHaveClass('mb-8');
-    expect(headerWrapper).toHaveClass('sm:mb-10');
-    expect(headerWrapper).toHaveClass('md:mb-12');
-
-    // Instruction cards padding and readability
-    const cards = section?.querySelectorAll('.grid > div');
-    expect(cards?.length).toBe(6);
-    cards?.forEach((card) => {
-      // Consistent padding across phone and tablet layouts
-      expect(card).toHaveClass('p-5');
-      expect(card).toHaveClass('sm:p-6');
-      
-      // Readable line lengths across breakpoints
-      const p = card.querySelector('p');
-      expect(p).toHaveClass('max-w-prose');
-    });
+    expect(screen.queryByRole('heading', { name: /how to use text2ink/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Create a handwritten document by typing your content/i)).not.toBeInTheDocument();
   });
 
   it('renders the preview images with responsive picture sources', () => {
@@ -209,36 +187,26 @@ describe('HomePage', () => {
     expect(hasMaxWidth).toBe(false);
   });
 
-  it('renders the how to use section', () => {
-    render(<HomePage />);
-    expect(screen.getByRole('heading', { name: /how to use text2ink/i })).toBeInTheDocument();
-    expect(screen.getByText(/Create a handwritten document by typing your content/i)).toBeInTheDocument();
-
-    expect(screen.getByRole('heading', { name: /open the editor and type/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /choose handwriting/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /set up paper/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /add page details/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /tune realism/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /review and export/i })).toBeInTheDocument();
-  });
-
-  it('renders product-fact-backed feature links and FAQ content', () => {
+  it('renders exactly four product-fact-backed feature links and FAQ content', () => {
     render(<HomePage />);
 
-    expect(screen.getByRole('heading', { name: /text2ink features/i })).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: /handwriting fonts/i })[0]).toHaveAttribute(
-      'href',
+    const section = screen.getByRole('heading', { name: /text2ink features/i }).closest('section');
+    expect(section).toBeInTheDocument();
+    const featureLinks = within(section as HTMLElement).getAllByRole('link');
+    expect(featureLinks).toHaveLength(4);
+    expect(featureLinks.map((link) => link.getAttribute('href'))).toEqual([
       '/features/handwriting-fonts',
-    );
-    expect(screen.getAllByRole('link', { name: /notebook paper styles/i })[0]).toHaveAttribute(
-      'href',
       '/features/notebook-paper-styles',
-    );
-    expect(screen.getAllByRole('link', { name: /export handwritten notes/i })[0]).toHaveAttribute(
-      'href',
-      '/features/export-handwritten-notes',
-    );
+      '/features/paper-colors',
+      '/features/realism-effects',
+    ]);
+    expect(within(section as HTMLElement).getByRole('heading', { name: 'Fonts' })).toBeInTheDocument();
+    expect(within(section as HTMLElement).getByRole('heading', { name: 'Paper styles' })).toBeInTheDocument();
+    expect(within(section as HTMLElement).getByRole('heading', { name: 'Paper colors' })).toBeInTheDocument();
+    expect(within(section as HTMLElement).getByRole('heading', { name: 'Realism effects' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /export handwritten notes/i })).not.toBeInTheDocument();
     expect(screen.getAllByText(new RegExp(productFacts.paper.styles[0].name)).length).toBeGreaterThan(0);
+    expect(screen.getByText(new RegExp(productFacts.paper.colors[0].name))).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /text2ink faq/i })).toBeInTheDocument();
     expect(screen.getByText(/Which export formats does Text2Ink support/i)).toBeInTheDocument();
   });
