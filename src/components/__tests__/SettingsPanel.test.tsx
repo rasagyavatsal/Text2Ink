@@ -253,23 +253,39 @@ describe('SettingsPanel', () => {
     const textButton = screen.getByRole('button', { name: /^text$/i });
     const paperButton = screen.getByRole('button', { name: /^paper$/i });
     const alignButton = screen.getByRole('button', { name: /^align$/i });
-    const moreButton = screen.getByRole('button', { name: /^more$/i });
+    const realismButton = screen.getByRole('button', { name: /^realism$/i });
 
     expect(textButton).toBeInTheDocument();
     expect(paperButton).toBeInTheDocument();
     expect(alignButton).toBeInTheDocument();
-    expect(moreButton).toBeInTheDocument();
+    expect(realismButton).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^more$/i })).not.toBeInTheDocument();
     expect(textButton.parentElement?.className).toContain('pt-2');
     expect(textButton.parentElement?.className).not.toContain('pt-6');
     expect(screen.queryByText('Zoom')).not.toBeInTheDocument();
     expect(screen.queryByText('Page Navigation')).not.toBeInTheDocument();
 
-    // Verify clicking one calls scrollIntoView on the scoped section
-    const textSection = container.querySelector('[data-section="text"]');
-    expect(textSection).toBeInTheDocument();
+    // Verify clicking Realism still scrolls to the existing "more" section.
+    const realismSection = container.querySelector('[data-section="more"]');
+    expect(realismSection).toBeInTheDocument();
 
-    fireEvent.click(textButton);
+    fireEvent.click(realismButton);
     expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
+  });
+
+  it('renders carousel arrow buttons only in mobile layout', () => {
+    const desktop = renderSettingsPanel();
+
+    expect(screen.queryByRole('button', { name: /next fonts/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /previous fonts/i })).not.toBeInTheDocument();
+    desktop.unmount();
+
+    renderSettingsPanel({ isMobileLayout: true });
+
+    expect(screen.getByRole('button', { name: /next fonts/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /previous fonts/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /next paper styles/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /previous paper styles/i })).toBeInTheDocument();
   });
 
   it('verifies rebalanced document actions in the Actions section (resolves #273)', () => {
