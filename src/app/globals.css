@@ -344,6 +344,7 @@
 
   .mobile-editor-sheet__container {
     --mobile-editor-sheet-footer-height: calc(var(--mobile-editor-sheet-peek-height) - var(--metric-sheet-handle-height));
+    --mobile-editor-sheet-content-height: max(0px, calc(var(--mobile-editor-sheet-current-height) - var(--metric-sheet-handle-height) - var(--mobile-editor-sheet-footer-height)));
     height: var(--mobile-editor-sheet-max-height) !important;
     max-height: var(--mobile-editor-sheet-max-height) !important;
     overflow: hidden;
@@ -356,9 +357,12 @@
 
   .mobile-editor-sheet__content {
     min-height: 0;
+    max-height: var(--mobile-editor-sheet-content-height);
+    overflow: hidden;
   }
 
   .mobile-editor-sheet__scroller {
+    max-height: var(--mobile-editor-sheet-content-height);
     overscroll-behavior: contain;
   }
 

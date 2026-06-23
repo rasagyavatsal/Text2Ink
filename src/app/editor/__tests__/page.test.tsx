@@ -52,6 +52,7 @@ vi.mock('@/components/Version', () => ({
 
 type MockMobileEditorBottomSheetProps = {
   anchor: MobileSheetAnchor;
+  currentHeight: number;
   metrics: MobileEditorSheetMetrics;
   onHandlePress: () => void;
   onSheetChange: (change: MobileEditorSheetChange) => void;
@@ -61,6 +62,7 @@ type MockMobileEditorBottomSheetProps = {
 vi.mock('@/components/MobileEditorBottomSheet', () => ({
   default: function MockMobileEditorBottomSheet({
     anchor,
+    currentHeight,
     metrics,
     onHandlePress,
     onSheetChange,
@@ -75,7 +77,11 @@ vi.mock('@/components/MobileEditorBottomSheet', () => ({
     }, [anchor, metrics, onSheetChange]);
 
     return (
-      <div data-testid="mobile-editor-bottom-sheet" data-anchor={anchor}>
+      <div
+        data-testid="mobile-editor-bottom-sheet"
+        data-anchor={anchor}
+        data-current-height={currentHeight}
+      >
         <button type="button" data-testid="sheet-handle" onClick={onHandlePress}>
           Sheet handle
         </button>

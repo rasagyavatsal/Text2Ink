@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Sheet, type SheetRef, useVirtualKeyboard } from 'react-modal-sheet';
 import {
   classifyMobileSheetAnchor,
@@ -18,6 +18,7 @@ import { ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react';
 
 interface MobileEditorBottomSheetProps {
   readonly anchor: MobileSheetAnchor;
+  readonly currentHeight: number;
   readonly metrics: MobileEditorSheetMetrics;
   readonly settingsPanel: React.ReactNode;
   readonly onHandlePress: () => void;
@@ -147,6 +148,7 @@ function PageZoomControls({
 
 export default function MobileEditorBottomSheet({
   anchor,
+  currentHeight,
   metrics,
   settingsPanel,
   onHandlePress,
@@ -161,7 +163,6 @@ export default function MobileEditorBottomSheet({
 }: MobileEditorBottomSheetProps) {
   const sheetRef = useRef<SheetRef | null>(null);
   const sheetReadyRef = useRef(false);
-  const [isSheetReady, setIsSheetReady] = useState(false);
   const { keyboardHeight } = useVirtualKeyboard();
 
   const scrollStyle = useMemo(() => {
@@ -188,8 +189,9 @@ export default function MobileEditorBottomSheet({
       ({
         '--mobile-editor-sheet-max-height': `${metrics.maxSheetHeight}px`,
         '--mobile-editor-sheet-peek-height': `${metrics.minSheetHeight}px`,
+        '--mobile-editor-sheet-current-height': `${currentHeight}px`,
       }) as React.CSSProperties,
-    [metrics.maxSheetHeight, metrics.minSheetHeight],
+    [currentHeight, metrics.maxSheetHeight, metrics.minSheetHeight],
   );
   const sheetMeasurementKey = `${metrics.viewportWidth}:${metrics.viewportHeight}:${metrics.maxSheetHeight}`;
 
@@ -232,26 +234,12 @@ export default function MobileEditorBottomSheet({
       }
 
       sheetReadyRef.current = true;
-      setIsSheetReady(true);
     };
 
     scheduledAttempt = scheduleSnapAttempt(snapWhenMeasured);
 
     return () => cancelSnapAttempt(scheduledAttempt);
   }, [anchor, anchorSnapIndex, hasValidSnapPoints, metrics, onSheetChange, snapPoints]);
-
-  const handleDrag = useCallback(() => {
-    if (!isSheetReady) return;
-    const sheet = sheetRef.current;
-    if (!sheet) return;
-    const height = Math.round(sheet.height - sheet.y.get());
-    const clampedHeight = Math.min(metrics.maxSheetHeight, Math.max(metrics.minSheetHeight, height));
-    onSheetChange({
-      anchor: classifyMobileSheetAnchor(clampedHeight, metrics),
-      height: clampedHeight,
-      source: 'drag',
-    });
-  }, [isSheetReady, metrics, onSheetChange]);
 
   const handleClose = useCallback(() => {
     if (!hasValidSnapPoints) return;
@@ -277,7 +265,6 @@ export default function MobileEditorBottomSheet({
         dragCloseThreshold={0}
         dragVelocityThreshold={850}
         onClose={handleClose}
-        onDrag={handleDrag}
         onSnap={updateHeightFromSnapIndex}
       >
         <Sheet.Container
