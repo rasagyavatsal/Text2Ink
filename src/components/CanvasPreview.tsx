@@ -422,13 +422,15 @@ export default function CanvasPreview({
   const handlePointerDown = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     e.stopPropagation();
     isPointerDownRef.current = true;
+    const isTouchPointer = e.pointerType === 'touch';
     const pointerId = typeof e.pointerId === 'number' ? e.pointerId : null;
     activePointerIdRef.current = pointerId;
     didDragRef.current = false;
     pointerStartRef.current = { clientX: e.clientX, clientY: e.clientY };
-    if (pointerId !== null) {
+    if (!isTouchPointer && pointerId !== null) {
       e.currentTarget.setPointerCapture?.(pointerId);
     }
+    if (isTouchPointer) return;
     if (!onCharMouseDown) return;
     const coords = getPageCoordsFromCanvas(e.currentTarget, e, previewScale);
     const hit = findCharAtPoint(coords.x, coords.y);
@@ -438,7 +440,7 @@ export default function CanvasPreview({
   }, [onCharMouseDown, findCharAtPoint, pageStartOffset, previewScale]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!onCharMouseMove) return;
+    e.stopPropagation();
     if (!isPointerDownRef.current) return;
     if (activePointerIdRef.current !== null && e.pointerId !== activePointerIdRef.current) return;
     const pointerStart = pointerStartRef.current;
@@ -447,6 +449,12 @@ export default function CanvasPreview({
       if (distance < CANVAS_SELECTION_DRAG_THRESHOLD_PX) return;
     }
 
+    if (e.pointerType === 'touch') {
+      didDragRef.current = true;
+      return;
+    }
+
+    if (!onCharMouseMove) return;
     didDragRef.current = true;
     const coords = getPageCoordsFromCanvas(e.currentTarget, e, previewScale);
     const hit = findCharAtPoint(coords.x, coords.y);
@@ -456,6 +464,7 @@ export default function CanvasPreview({
   }, [onCharMouseMove, findCharAtPoint, pageStartOffset, previewScale]);
 
   const handlePointerUp = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+    e.stopPropagation();
     if (activePointerIdRef.current !== null && e.pointerId !== activePointerIdRef.current) return;
     isPointerDownRef.current = false;
     activePointerIdRef.current = null;
@@ -474,10 +483,15 @@ export default function CanvasPreview({
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
+      onTouchStart={(e) => e.stopPropagation()}
+      onTouchMove={(e) => e.stopPropagation()}
+      onTouchEnd={(e) => e.stopPropagation()}
+      onTouchCancel={(e) => e.stopPropagation()}
       style={{
         width: pageWidth * previewScale,
         height: pageHeight * previewScale,
         cursor: 'text',
+        touchAction: 'pan-y',
       }}
     >
       <span role="img" aria-label={`Page ${pageIndex + 1} preview`} />

@@ -36,6 +36,8 @@ type CanvasInkBounds = {
   canvasHeight: number;
 };
 
+type Point = { x: number; y: number };
+
 async function disableNextDevToolsPointerInterception(page: Page) {
   await page.addStyleTag({
     content: "nextjs-portal { pointer-events: none !important; }",
@@ -70,12 +72,12 @@ async function openFreshMobileEditor(page: Page) {
 // ---------------------------------------------------------------------------
 async function openSheet(page: Page) {
   const openHandle = page.getByRole("button", { name: "Open editor controls" });
-  await expect(openHandle).toBeVisible({ timeout: 10_000 });
+  await expectElementTopmostAtCenter(openHandle);
   await openHandle.click();
   // Wait for the sheet to expand (label changes once anchor transitions).
   await expect(
     page.getByRole("button", { name: "Expand editor controls" })
-  ).toBeVisible({ timeout: 5_000 });
+  ).toBeVisible({ timeout: 10_000 });
 }
 
 // ---------------------------------------------------------------------------
@@ -131,6 +133,92 @@ async function expectMinimumHitTarget(locator: ReturnType<Page["locator"]>) {
   expect(box).not.toBeNull();
   expect(box!.width).toBeGreaterThanOrEqual(44);
   expect(box!.height).toBeGreaterThanOrEqual(44);
+}
+
+async function expectLocatorHitTestableAtPoint(
+  page: Page,
+  locator: Locator,
+  point: Point,
+) {
+  await expect
+    .poll(
+      () =>
+        locator.evaluate((element, { x, y }) => {
+          const topElement = document.elementFromPoint(x, y);
+          return topElement === element || element.contains(topElement);
+        }, point),
+      { timeout: 10_000 },
+    )
+    .toBe(true);
+}
+
+async function expectLocatorHitTestableAtRatio(
+  locator: Locator,
+  xRatio: number,
+  yRatio = 0.5,
+) {
+  await expect
+    .poll(
+      () =>
+        locator.evaluate((element, { xRatio, yRatio }) => {
+          const rect = element.getBoundingClientRect();
+          const x = Math.round(rect.left + rect.width * xRatio);
+          const y = Math.round(rect.top + rect.height * yRatio);
+          const topElement = document.elementFromPoint(x, y);
+          return topElement === element || element.contains(topElement);
+        }, { xRatio, yRatio }),
+      { timeout: 10_000 },
+    )
+    .toBe(true);
+}
+
+async function getLocatorDragPoint(locator: Locator, xRatio: number, yRatio = 0.5) {
+  const box = await locator.boundingBox();
+  expect(box).not.toBeNull();
+
+  return {
+    x: Math.round(box!.x + box!.width * xRatio),
+    y: Math.round(box!.y + box!.height * yRatio),
+  };
+}
+
+async function performChromiumTouchDrag(
+  page: Page,
+  start: Point,
+  end: Point,
+  steps = 8,
+) {
+  const client = await page.context().newCDPSession(page);
+  try {
+    await client.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [{ x: start.x, y: start.y, id: 1 }],
+    });
+    await page.waitForTimeout(50);
+
+    for (let step = 1; step <= steps; step++) {
+      const ratio = step / steps;
+      await client.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [
+          {
+            x: Math.round(start.x + (end.x - start.x) * ratio),
+            y: Math.round(start.y + (end.y - start.y) * ratio),
+            id: 1,
+          },
+        ],
+      });
+      await page.waitForTimeout(16);
+    }
+
+    await client.send("Input.dispatchTouchEvent", {
+      type: "touchEnd",
+      touchPoints: [],
+    });
+    await page.waitForTimeout(50);
+  } finally {
+    await client.detach();
+  }
 }
 
 async function tapCanvasFraction(
@@ -569,7 +657,7 @@ test("Paper Size select opens above the mobile sheet and can change selection", 
   await tabBar.getByRole("button", { name: "Paper", exact: true }).click();
 
   const sheetContent = page.locator(".mobile-editor-sheet__content");
-  const sizeTrigger = sheetContent.getByLabel("Size");
+  const sizeTrigger = sheetContent.getByRole("combobox", { name: "Size" });
   await sizeTrigger.click();
 
   const a4Option = page.getByRole("option", { name: "A4" });
@@ -577,6 +665,40 @@ test("Paper Size select opens above the mobile sheet and can change selection", 
   await a4Option.click();
 
   await expect(sizeTrigger).toContainText("A4");
+});
+
+test("real touch carousel drag scrolls font and paper carousels without sheet drag", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== "chromium", "CDP real touch drag requires Chromium");
+
+  await openFreshMobileEditor(page);
+  await openSheet(page);
+
+  const dragCarousel = async (carousel: Locator) => {
+    await expect(carousel).toBeVisible({ timeout: 10_000 });
+    await carousel.evaluate((element) => {
+      element.scrollLeft = 0;
+    });
+
+    await expectLocatorHitTestableAtRatio(carousel, 0.82, 0.25);
+    const start = await getLocatorDragPoint(carousel, 0.82, 0.25);
+    const end = await getLocatorDragPoint(carousel, 0.18, 0.25);
+
+    await performChromiumTouchDrag(page, start, end);
+
+    await expect
+      .poll(() => carousel.evaluate((element) => element.scrollLeft))
+      .toBeGreaterThan(20);
+    await expect(page.getByRole("button", { name: "Expand editor controls" })).toBeVisible();
+  };
+
+  await dragCarousel(page.locator("#mobile-settings-section-text").getByTestId("font-carousel"));
+
+  const tabBar = page.locator("div.sticky.top-0.-mt-6");
+  await tabBar.getByRole("button", { name: "Paper", exact: true }).click();
+  await dragCarousel(page.locator("#mobile-settings-section-paper").getByTestId("paper-style-carousel"));
 });
 
 test("horizontal font carousel responds to touch drag without moving the sheet", async ({ page }) => {
@@ -624,6 +746,93 @@ test("horizontal font carousel responds to touch drag without moving the sheet",
   await expect
     .poll(() => carousel.evaluate((element) => element.scrollLeft))
     .toBeGreaterThan(20);
+});
+
+test("preview scroll touch drag scrolls preview instead of sheet drag", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== "chromium", "CDP real touch drag requires Chromium");
+
+  const previewContainer = await openFreshMobileEditor(page);
+  await openSheet(page);
+
+  const canvas = page.locator('canvas[aria-label="Page 1 preview"]').first();
+  await expect(canvas).toBeVisible({ timeout: 10_000 });
+  await previewContainer.evaluate((element) => {
+    element.scrollTop = 0;
+  });
+
+  const start = await canvas.evaluate(() => {
+    const canvasElement = document.querySelector('canvas[aria-label="Page 1 preview"]');
+    const sheetContainer = document.querySelector(".mobile-editor-sheet__container");
+    if (!canvasElement || !sheetContainer) {
+      throw new Error("Missing canvas or mobile sheet");
+    }
+
+    const canvasRect = canvasElement.getBoundingClientRect();
+    const sheetRect = sheetContainer.getBoundingClientRect();
+    const visibleCanvasBottom = Math.min(canvasRect.bottom, sheetRect.top - 80);
+    return {
+      x: Math.round(canvasRect.left + canvasRect.width / 2),
+      y: Math.round(
+        Math.max(
+          canvasRect.top + 40,
+          Math.min(canvasRect.top + canvasRect.height * 0.45, visibleCanvasBottom),
+        ),
+      ),
+    };
+  });
+  const end = { x: start.x, y: Math.max(40, start.y - 220) };
+  await expectLocatorHitTestableAtPoint(page, canvas, start);
+
+  let previewScrollTop = 0;
+  for (let attempt = 0; attempt < 2 && previewScrollTop <= 20; attempt++) {
+    await previewContainer.evaluate((element) => {
+      element.scrollTop = 0;
+    });
+    await performChromiumTouchDrag(page, start, end, 14);
+    previewScrollTop = await previewContainer.evaluate((element) => element.scrollTop);
+  }
+
+  expect(previewScrollTop).toBeGreaterThan(20);
+  await expect(page.getByRole("button", { name: "Expand editor controls" })).toBeVisible();
+});
+
+test("real touch slider drag changes value without sheet drag or sheet scroll", async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== "chromium", "CDP real touch drag requires Chromium");
+
+  await openFreshMobileEditor(page);
+  await openSheet(page);
+
+  const slider = page.getByRole("slider", { name: "Font Size" });
+  await expect(slider).toBeVisible({ timeout: 10_000 });
+  await slider.scrollIntoViewIfNeeded();
+
+  const sheetScroller = page.locator(".mobile-editor-sheet__scroller");
+  const beforeScrollTop = await sheetScroller.evaluate((element) => element.scrollTop);
+  const beforeValue = Number(await slider.getAttribute("aria-valuenow"));
+  const sliderRoot = page
+    .locator("#mobile-settings-section-text [data-slot='slider']")
+    .filter({ has: slider })
+    .first();
+
+  await expectLocatorHitTestableAtRatio(sliderRoot, 0.35);
+  const start = await getLocatorDragPoint(sliderRoot, 0.35);
+  const end = await getLocatorDragPoint(sliderRoot, 0.82);
+
+  await performChromiumTouchDrag(page, start, end);
+
+  await expect
+    .poll(async () => Number(await slider.getAttribute("aria-valuenow")))
+    .toBeGreaterThan(beforeValue);
+  await expect
+    .poll(() => sheetScroller.evaluate((element) => element.scrollTop))
+    .toBe(beforeScrollTop);
+  await expect(page.getByRole("button", { name: "Expand editor controls" })).toBeVisible();
 });
 
 test("mobile text-box controls expose 44px touch targets", async ({ page }) => {

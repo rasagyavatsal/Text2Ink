@@ -120,7 +120,7 @@ test("can change paper size to A4 via paper-format select", async ({
 }) => {
   const panel = await openEditor(page);
 
-  const formatTrigger = panel.getByLabel("Size");
+  const formatTrigger = panel.getByRole("combobox", { name: "Size" });
   await formatTrigger.scrollIntoViewIfNeeded();
   await formatTrigger.click();
 
@@ -136,7 +136,7 @@ test("can change paper size to A3 via paper-format select", async ({
 }) => {
   const panel = await openEditor(page);
 
-  const formatTrigger = panel.getByLabel("Size");
+  const formatTrigger = panel.getByRole("combobox", { name: "Size" });
   await formatTrigger.scrollIntoViewIfNeeded();
   await formatTrigger.click();
 
