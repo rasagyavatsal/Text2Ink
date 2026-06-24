@@ -150,6 +150,7 @@
   --text-size-5xl: 3rem;
   --text-size-6xl: 3.75rem;
   --text-size-7xl: 4.5rem;
+  --text-size-8xl: 5.5rem;
 
   /* Primitive tokens: layout metrics consumed by JS */
   --metric-header-height-mobile: 60px;
