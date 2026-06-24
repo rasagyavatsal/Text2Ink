@@ -187,23 +187,27 @@ describe('HomePage', () => {
     expect(hasMaxWidth).toBe(false);
   });
 
-  it('renders exactly four product-fact-backed feature links and FAQ content', () => {
-    render(<HomePage />);
+  it('renders four feature sections with headings, paragraphs, and image placeholders', () => {
+    const { container } = render(<HomePage />);
 
     const section = screen.getByRole('heading', { name: /text2ink features/i }).closest('section');
     expect(section).toBeInTheDocument();
-    const featureLinks = within(section as HTMLElement).getAllByRole('link');
-    expect(featureLinks).toHaveLength(4);
-    expect(featureLinks.map((link) => link.getAttribute('href'))).toEqual([
-      '/features/handwriting-fonts',
-      '/features/notebook-paper-styles',
-      '/features/paper-colors',
-      '/features/realism-effects',
-    ]);
+
+    const featureSections = container.querySelectorAll('[data-testid="feature-section"]');
+    expect(featureSections).toHaveLength(4);
+
     expect(within(section as HTMLElement).getByRole('heading', { name: 'Fonts' })).toBeInTheDocument();
     expect(within(section as HTMLElement).getByRole('heading', { name: 'Paper styles' })).toBeInTheDocument();
     expect(within(section as HTMLElement).getByRole('heading', { name: 'Paper colors' })).toBeInTheDocument();
     expect(within(section as HTMLElement).getByRole('heading', { name: 'Realism effects' })).toBeInTheDocument();
+
+    // No feature page links
+    expect(within(section as HTMLElement).queryAllByRole('link')).toHaveLength(0);
+
+    // Each section has an image placeholder
+    const placeholders = within(section as HTMLElement).getAllByText('Image placeholder');
+    expect(placeholders).toHaveLength(4);
+
     expect(screen.queryByRole('link', { name: /export handwritten notes/i })).not.toBeInTheDocument();
     expect(screen.getAllByText(new RegExp(productFacts.paper.styles[0].name)).length).toBeGreaterThan(0);
     expect(screen.getByText(new RegExp(productFacts.paper.colors[0].name))).toBeInTheDocument();

@@ -46,39 +46,27 @@ test("home page displays preview images", async ({ page }) => {
 });
 
 // ---------------------------------------------------------------------------
-// Feature pages – crawlable SEO content
+// Feature pages – retired (should 404)
 // ---------------------------------------------------------------------------
 
-test("/features/handwriting-fonts renders the feature page", async ({ page }) => {
-  await page.goto("/features/handwriting-fonts");
-  await expect(
-    page.getByRole("heading", { level: 1, name: "Handwriting Fonts in Text2Ink" })
-  ).toBeVisible();
-  await expect(page.getByTestId("feature-direct-answer")).toContainText(".ttf or .otf");
+test("/features/handwriting-fonts is retired", async ({ page }) => {
+  const response = await page.goto("/features/handwriting-fonts");
+  expect(response?.status()).toBe(404);
 });
 
-test("/features/notebook-paper-styles renders the feature page", async ({ page }) => {
-  await page.goto("/features/notebook-paper-styles");
-  await expect(
-    page.getByRole("heading", { level: 1, name: "Notebook Paper Styles in Text2Ink" })
-  ).toBeVisible();
-  await expect(page.getByText(/Letter, A4, and A3/i).first()).toBeVisible();
+test("/features/notebook-paper-styles is retired", async ({ page }) => {
+  const response = await page.goto("/features/notebook-paper-styles");
+  expect(response?.status()).toBe(404);
 });
 
-test("/features/paper-colors renders the feature page", async ({ page }) => {
-  await page.goto("/features/paper-colors");
-  await expect(
-    page.getByRole("heading", { level: 1, name: "Paper Colors in Text2Ink" })
-  ).toBeVisible();
-  await expect(page.getByText("#fffef5").first()).toBeVisible();
+test("/features/paper-colors is retired", async ({ page }) => {
+  const response = await page.goto("/features/paper-colors");
+  expect(response?.status()).toBe(404);
 });
 
-test("/features/realism-effects renders the feature page", async ({ page }) => {
-  await page.goto("/features/realism-effects");
-  await expect(
-    page.getByRole("heading", { level: 1, name: "Realism Effects in Text2Ink" })
-  ).toBeVisible();
-  await expect(page.getByText("Enable Randomness").first()).toBeVisible();
+test("/features/realism-effects is retired", async ({ page }) => {
+  const response = await page.goto("/features/realism-effects");
+  expect(response?.status()).toBe(404);
 });
 
 test("/features/export-handwritten-notes is retired", async ({ page }) => {
@@ -159,10 +147,6 @@ const publicPages = [
   "/contact",
   "/privacy-policy",
   "/terms-of-service",
-  "/features/handwriting-fonts",
-  "/features/notebook-paper-styles",
-  "/features/paper-colors",
-  "/features/realism-effects",
 ];
 
 for (const path of publicPages) {
