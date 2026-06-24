@@ -3,7 +3,7 @@ import sitemap from '../sitemap';
 import robots from '../robots';
 
 describe('generated metadata routes', () => {
-  it('includes public, editor, legal, and feature URLs in the sitemap', () => {
+  it('includes public, editor, legal URLs in the sitemap without retired feature routes', () => {
     const urls = sitemap().map((entry) => entry.url);
 
     expect(urls).toEqual(expect.arrayContaining([
@@ -12,11 +12,11 @@ describe('generated metadata routes', () => {
       'https://text2ink.com/contact',
       'https://text2ink.com/terms-of-service',
       'https://text2ink.com/privacy-policy',
-      'https://text2ink.com/features/handwriting-fonts',
-      'https://text2ink.com/features/notebook-paper-styles',
-      'https://text2ink.com/features/paper-colors',
-      'https://text2ink.com/features/realism-effects',
     ]));
+    expect(urls).not.toContain('https://text2ink.com/features/handwriting-fonts');
+    expect(urls).not.toContain('https://text2ink.com/features/notebook-paper-styles');
+    expect(urls).not.toContain('https://text2ink.com/features/paper-colors');
+    expect(urls).not.toContain('https://text2ink.com/features/realism-effects');
     expect(urls).not.toContain('https://text2ink.com/features/export-handwritten-notes');
   });
 

@@ -46,22 +46,11 @@ describe('SiteFooter', () => {
     expect(contactLink).toBeInTheDocument();
     expect(contactLink).toHaveAttribute('href', '/contact');
 
-    expect(screen.getByRole('link', { name: /handwriting fonts/i })).toHaveAttribute(
-      'href',
-      '/features/handwriting-fonts',
-    );
-    expect(screen.getByRole('link', { name: /paper styles/i })).toHaveAttribute(
-      'href',
-      '/features/notebook-paper-styles',
-    );
-    expect(screen.getByRole('link', { name: /paper colors/i })).toHaveAttribute(
-      'href',
-      '/features/paper-colors',
-    );
-    expect(screen.getByRole('link', { name: /realism effects/i })).toHaveAttribute(
-      'href',
-      '/features/realism-effects',
-    );
+    // Feature page links should not be present
+    expect(screen.queryByRole('link', { name: /handwriting fonts/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /paper styles/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /paper colors/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /realism effects/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /export notes/i })).not.toBeInTheDocument();
   });
 

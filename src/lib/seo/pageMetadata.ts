@@ -7,12 +7,6 @@ type PageMetadataInput = {
   readonly description: string;
 };
 
-const previewImage = {
-  url: siteFacts.previewImagePath,
-  width: 618,
-  height: 800,
-  alt: siteFacts.previewImageAlt,
-} as const;
 
 const buildSharedMetadata = ({ path, title, description }: PageMetadataInput) => {
   const canonical = canonicalUrl(path);
@@ -42,26 +36,6 @@ const buildTwitterMetadata = (
   description,
 });
 
-export const buildFeatureMetadata = ({
-  path,
-  title,
-  description,
-}: PageMetadataInput): Metadata => {
-  const input = { path, title, description };
-  const sharedMetadata = buildSharedMetadata(input);
-
-  return {
-    ...sharedMetadata,
-    openGraph: {
-      ...sharedMetadata.openGraph,
-      images: [previewImage],
-    },
-    twitter: {
-      ...buildTwitterMetadata(input, 'summary_large_image'),
-      images: [siteFacts.previewImagePath],
-    },
-  };
-};
 
 export const buildLegalMetadata = ({
   path,

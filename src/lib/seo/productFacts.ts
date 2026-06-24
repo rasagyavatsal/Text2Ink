@@ -28,13 +28,10 @@ export const publicRoutes = [
   { path: '/contact', priority: 0.6, changeFrequency: 'monthly' },
   { path: '/terms-of-service', priority: 0.4, changeFrequency: 'monthly' },
   { path: '/privacy-policy', priority: 0.4, changeFrequency: 'monthly' },
-  { path: '/features/handwriting-fonts', priority: 0.7, changeFrequency: 'monthly' },
-  { path: '/features/notebook-paper-styles', priority: 0.7, changeFrequency: 'monthly' },
-  { path: '/features/paper-colors', priority: 0.7, changeFrequency: 'monthly' },
-  { path: '/features/realism-effects', priority: 0.7, changeFrequency: 'monthly' },
+
 ] as const;
 
-export const featureRoutes = publicRoutes.filter((route) => route.path.startsWith('/features/'));
+
 
 export const productFacts = {
   handwritingFonts: HANDWRITING_FONTS
