@@ -242,6 +242,65 @@ const mobileCarouselClassName =
   "grid grid-rows-2 grid-flow-col gap-3 auto-cols-[calc(45%-0.375rem)] overflow-x-hidden pb-4 snap-x snap-mandatory touch-pan-y scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]";
 
 const CAROUSEL_BUTTON_SCROLL_RATIO = 0.85;
+const CAROUSEL_SCROLL_EPSILON = 1;
+
+const getCarouselSnapTargets = (
+  scroller: HTMLDivElement,
+  maxScrollLeft: number,
+) => {
+  const scrollerLeft = scroller.getBoundingClientRect().left;
+  const targets = Array.from(scroller.children, (child) => {
+    const childElement = child as HTMLElement;
+    const childLeft = childElement.getBoundingClientRect().left;
+    return Math.min(
+      Math.max(childLeft - scrollerLeft + scroller.scrollLeft, 0),
+      maxScrollLeft,
+    );
+  });
+
+  return Array.from(new Set([0, maxScrollLeft, ...targets].map(Math.round))).sort(
+    (a, b) => a - b,
+  );
+};
+
+const resolveCarouselScrollTarget = (
+  scroller: HTMLDivElement,
+  currentTarget: number,
+  rawTarget: number,
+  direction: -1 | 1,
+  maxScrollLeft: number,
+) => {
+  const clampedTarget = Math.min(Math.max(rawTarget, 0), maxScrollLeft);
+  const snapTargets = getCarouselSnapTargets(scroller, maxScrollLeft);
+
+  if (direction > 0) {
+    const forwardTargets = snapTargets.filter(
+      (target) =>
+        target > currentTarget + CAROUSEL_SCROLL_EPSILON &&
+        target <= clampedTarget + CAROUSEL_SCROLL_EPSILON,
+    );
+
+    return (
+      forwardTargets[forwardTargets.length - 1] ??
+      snapTargets.find((target) => target > currentTarget + CAROUSEL_SCROLL_EPSILON) ??
+      clampedTarget
+    );
+  }
+
+  const backwardTargets = snapTargets.filter(
+    (target) =>
+      target < currentTarget - CAROUSEL_SCROLL_EPSILON &&
+      target >= clampedTarget - CAROUSEL_SCROLL_EPSILON,
+  );
+
+  return (
+    backwardTargets[0] ??
+    [...snapTargets]
+      .reverse()
+      .find((target) => target < currentTarget - CAROUSEL_SCROLL_EPSILON) ??
+    clampedTarget
+  );
+};
 
 const mobileJumpControls = [
   { label: 'Text', section: 'text' },
@@ -264,6 +323,8 @@ const CarouselRail = ({
   children,
 }: CarouselRailProps) => {
   const scrollerRef = React.useRef<HTMLDivElement>(null);
+  const targetScrollLeftRef = React.useRef(0);
+  const scrollRequestIdRef = React.useRef(0);
   const [scrollState, setScrollState] = useState({
     canScrollBack: false,
     canScrollForward: false,
@@ -307,11 +368,53 @@ const CarouselRail = ({
       const scroller = scrollerRef.current;
       if (!scroller) return;
 
-      scroller.scrollBy({
-        left: direction * Math.max(scroller.clientWidth * CAROUSEL_BUTTON_SCROLL_RATIO, 1),
-        behavior: 'smooth',
-      });
-      window.setTimeout(updateScrollState, 180);
+      const maxScrollLeft = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+      const currentTarget = Math.min(Math.max(targetScrollLeftRef.current, 0), maxScrollLeft);
+      const rawTarget =
+        currentTarget +
+        direction * Math.max(scroller.clientWidth * CAROUSEL_BUTTON_SCROLL_RATIO, 1);
+      const nextTarget = resolveCarouselScrollTarget(
+        scroller,
+        currentTarget,
+        rawTarget,
+        direction,
+        maxScrollLeft,
+      );
+
+      targetScrollLeftRef.current = nextTarget;
+      scrollRequestIdRef.current += 1;
+      const scrollRequestId = scrollRequestIdRef.current;
+      const startScrollLeft = scroller.scrollLeft;
+
+      const forceTargetIfCurrent = () => {
+        if (scrollRequestIdRef.current !== scrollRequestId) return;
+        scroller.scrollLeft = nextTarget;
+        updateScrollState();
+      };
+
+      scroller.scrollTo({ left: nextTarget, behavior: 'smooth' });
+      window.requestAnimationFrame(updateScrollState);
+      window.setTimeout(() => {
+        const hasStarted =
+          Math.abs(scroller.scrollLeft - startScrollLeft) > CAROUSEL_SCROLL_EPSILON;
+        const hasReached =
+          Math.abs(scroller.scrollLeft - nextTarget) <= CAROUSEL_SCROLL_EPSILON;
+
+        if (!hasStarted && !hasReached) {
+          forceTargetIfCurrent();
+          return;
+        }
+
+        updateScrollState();
+      }, 180);
+      window.setTimeout(() => {
+        if (Math.abs(scroller.scrollLeft - nextTarget) > CAROUSEL_SCROLL_EPSILON) {
+          forceTargetIfCurrent();
+          return;
+        }
+
+        updateScrollState();
+      }, 600);
     },
     [updateScrollState],
   );

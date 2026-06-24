@@ -439,6 +439,48 @@ async function clickMobilePageButton(
   await expect(pageCounter).toBeVisible({ timeout: 10_000 });
 }
 
+type CarouselScrollSnapshot = {
+  scrollLeft: number;
+  maxScrollLeft: number;
+  pageScroll: number;
+};
+
+async function readCarouselScrollSnapshot(
+  carousel: Locator,
+): Promise<CarouselScrollSnapshot> {
+  return carousel.evaluate((element) => ({
+    scrollLeft: element.scrollLeft,
+    maxScrollLeft: Math.max(0, element.scrollWidth - element.clientWidth),
+    pageScroll: Math.max(element.clientWidth * 0.85, 1),
+  }));
+}
+
+function clampScrollTarget(value: number, maxScrollLeft: number) {
+  return Math.min(Math.max(value, 0), maxScrollLeft);
+}
+
+async function waitForCarouselScrollToSettle(
+  page: Page,
+  carousel: Locator,
+): Promise<number> {
+  let settledScrollLeft = 0;
+
+  await expect
+    .poll(
+      async () => {
+        const before = await carousel.evaluate((element) => element.scrollLeft);
+        await page.waitForTimeout(120);
+        const after = await carousel.evaluate((element) => element.scrollLeft);
+        settledScrollLeft = after;
+        return Math.abs(after - before);
+      },
+      { timeout: 4_000 },
+    )
+    .toBeLessThanOrEqual(1);
+
+  return settledScrollLeft;
+}
+
 // ---------------------------------------------------------------------------
 // 1. Mobile bottom sheet is visible on load.
 // ---------------------------------------------------------------------------
@@ -747,17 +789,48 @@ test("carousel arrow buttons scroll font and paper carousels", async ({ page }) 
     await expect(previousButton).toBeVisible({ timeout: 10_000 });
     await expect(previousButton).toBeDisabled();
 
+    const startSnapshot = await readCarouselScrollSnapshot(carousel);
+    const nextTarget = clampScrollTarget(
+      startSnapshot.scrollLeft + startSnapshot.pageScroll,
+      startSnapshot.maxScrollLeft,
+    );
+    const targetTolerance = Math.max(8, Math.min(120, startSnapshot.pageScroll * 0.5));
+    const prefersReducedMotion = await page.evaluate(() =>
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    );
+
     await nextButton.click();
+    await page.waitForTimeout(80);
+
+    const earlyScrollLeft = await carousel.evaluate((element) => element.scrollLeft);
+    if (
+      !prefersReducedMotion &&
+      earlyScrollLeft > startSnapshot.scrollLeft + 1 &&
+      earlyScrollLeft < nextTarget - 1
+    ) {
+      expect(earlyScrollLeft).toBeGreaterThan(startSnapshot.scrollLeft + 1);
+      expect(earlyScrollLeft).toBeLessThan(nextTarget - 1);
+    } else {
+      test.info().annotations.push({
+        type: "skip",
+        description: "Smooth scroll intermediate assertion skipped: reduced motion or instant completion.",
+      });
+    }
 
     await expect
       .poll(() => carousel.evaluate((element) => element.scrollLeft))
-      .toBeGreaterThan(20);
+      .toBeGreaterThan(startSnapshot.scrollLeft + 20);
+    const settledNextScrollLeft = await waitForCarouselScrollToSettle(page, carousel);
+    expect(Math.abs(settledNextScrollLeft - nextTarget)).toBeLessThanOrEqual(targetTolerance);
     await expect(previousButton).toBeEnabled();
 
     await previousButton.click();
     await expect
       .poll(() => carousel.evaluate((element) => element.scrollLeft))
-      .toBeLessThan(5);
+      .toBeLessThanOrEqual(5);
+    const settledPreviousScrollLeft = await waitForCarouselScrollToSettle(page, carousel);
+    expect(settledPreviousScrollLeft).toBeLessThanOrEqual(5);
+    await expect(previousButton).toBeDisabled();
     await expect(page.getByRole("button", { name: "Expand editor controls" })).toBeVisible();
   };
 
