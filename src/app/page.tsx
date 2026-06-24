@@ -22,24 +22,136 @@ import {
 const pageTitle = 'Text to Handwriting Converter';
 const pageDescription = 'Use Text2Ink to convert typed text into handwriting-style notebook pages with built-in fonts, paper styles, text boxes, and PDF, PNG, or JPG exports.';
 
-const directAnswer = `Text2Ink is a text to handwriting converter that renders typed content as handwriting-style notebook pages. In the editor, you can choose built-in handwriting fonts or upload .ttf/.otf fonts, pick paper styles such as lined, ruled, grid, dot grid, and Cornell, set page size and orientation, adjust colors and alignment, add text boxes, and export the result as PDF, PNG, or JPG.`;
+const fontCount = productFacts.handwritingFonts.length;
+const customFontFormats = productFacts.customFontUpload.formats.join(' or ');
+const paperStyleCount = productFacts.paper.styles.length;
+const paperStyleNames = productFacts.paper.styles.map((style) => style.name).join(', ');
+const paperFormatNames = productFacts.paper.formats.map((format) => format.name).join(', ');
+const paperOrientationNames = productFacts.paper.orientations.map((orientation) => orientation.name).join(' and ');
+const paperColorNames = productFacts.paper.colors.map((color) => color.name).join(', ');
+const backgroundFormats = productFacts.paper.customBackgroundFormats.join(' or ');
+const exportFormatNames = productFacts.exportFormats.map((format) => format.label).join(', ');
+const randomnessControlNames = productFacts.realism.variations.map((variation) => variation.name.toLowerCase()).join(', ');
+const draftStorageKey = productFacts.browserDraft.storageKey;
+
+const directAnswer = `Text2Ink is a browser-based text to handwriting converter for turning typed or pasted text into handwriting-style notebook pages. Open the editor, choose from ${fontCount} built-in handwriting fonts or upload ${customFontFormats} fonts, pick paper style, page size, orientation, colors, margins, realism controls, and text boxes, then export the rendered pages as PDF, PNG, or JPG files. No account or payment is required.`;
+
+const landingSections = [
+  {
+    id: 'what-text2ink-does',
+    title: 'What Text2Ink does',
+    body: [
+      'Text2Ink is a browser editor for converting typed or pasted text into handwriting-style notebook pages. It renders text with handwriting fonts on the selected paper setup, so the result is a visual page preview rather than plain text in a document. You enter content, tune the handwriting and paper controls, preview the pages, and export the rendered output when it looks right.',
+      'The editor route opens directly from the homepage and does not require an account or payment step. The controls cover handwriting font, font size, ink color, line height, paper style, page size, orientation, margins, page colors, text boxes, page navigation, and export. That keeps the workflow focused on making a notebook-style page rather than managing a document account.',
+      'Because Text2Ink is focused on rendered pages, the important choices are visual and practical. A longer essay needs different spacing than a short note. A worksheet background may need text boxes instead of one continuous block. A document meant for printing may need a PDF, while a single preview for another app may be easier to handle as an image.',
+    ],
+  },
+  {
+    id: 'how-to-convert-text-to-handwriting-online',
+    title: 'How to convert text to handwriting online',
+    body: [
+      'Start by opening the editor, then type or paste the text you want to render. Choose a handwriting font, adjust the font size, set the ink color, and pick the paper setup that matches the page you need. The preview updates from the editor state, so you can make changes before downloading anything.',
+      'Next, tune the layout. Set the paper style, page size, orientation, margin values, line height, line tilt, line offset, and custom line spacing where those controls apply. If a custom page design is needed, upload a PNG or JPG background image and place the handwriting over it. Use page navigation to check each rendered page before export.',
+      'When the document has text, open the export dialog and choose the format. Text2Ink exports from the current editor state, including the typed text, paper settings, handwriting controls, text boxes, and per-page changes. If the editor is empty, export stays disabled so blank downloads are avoided.',
+      'Before exporting, use the preview as the final check. Confirm that line breaks land where expected, the handwriting stays inside the margins, the ink color has enough contrast against the paper, and page navigation shows the page count you expect. For multi-page text, inspect more than the first page because a small change in font size, line height, or paper format can move content to a later page.',
+    ],
+  },
+  {
+    id: 'handwriting-font-options',
+    title: 'Handwriting font options',
+    body: [
+      `Text2Ink includes ${fontCount} built-in handwriting fonts. The font list covers casual handwriting, script-style writing, narrow letterforms, heavier marker-like forms, and lighter note-taking styles. The goal is to provide useful variation without making you leave the editor to hunt for a font before the first preview is visible.`,
+      `If the built-in set is not the right fit, upload a custom ${customFontFormats} font file. The editor reads the font file in the browser, stores the selected custom font in the draft state when persistence runs, and renders the page with that font family. Font size, ink color, and line height remain separate controls, so you can keep the same font and still change density, readability, and page coverage.`,
+      'Font choice should match the output goal. Larger, open handwriting styles are easier to read on a small mobile screenshot, while narrower styles can fit more words onto a page. If the preview feels crowded, reduce font size carefully or increase the page format instead of only tightening line height. If the page feels artificial, try a different font before adding stronger randomness.',
+    ],
+  },
+  {
+    id: 'notebook-paper-and-page-setup',
+    title: 'Notebook paper and page setup',
+    body: [
+      `The editor includes ${paperStyleCount} paper styles: ${paperStyleNames}. Those styles can be combined with ${paperFormatNames} page sizes and ${paperOrientationNames} orientation. Paper setup also includes page-level controls such as paper color, margins, line color for generated or upload-backed paper, line tilt, line offset, and custom line spacing.`,
+      `Paper color is separate from ink color. The current catalog includes ${paperColorNames}, which lets you keep blue or dark ink while changing the page background. For custom paper, the editor accepts ${backgroundFormats} background images. Uploaded backgrounds can be used for forms, worksheets, branded pages, or scanned paper textures, then removed from the editor when no longer needed.`,
+      'Page setup affects both appearance and pagination. Letter, A4, and A3 do not hold the same amount of handwriting, and landscape pages change the line length. Lined and ruled paper are useful when handwriting should follow rows, grid and dot grid work better for structured notes, and Cornell paper gives the page a note-taking layout with separate areas. Margins and line offsets help align handwriting with those page structures.',
+    ],
+  },
+  {
+    id: 'realism-controls',
+    title: 'Realism controls',
+    body: [
+      `The ${productFacts.realism.toggleLabel} setting controls whether Text2Ink applies handwriting variation while rendering text. When it is on, the renderer can vary ${randomnessControlNames}. Those changes are designed to make repeated letters and long lines feel less mechanically identical while still keeping the typed content readable.`,
+      'Randomness applies to rendered handwriting text and movable text boxes. That matters because text boxes often hold labels, corrections, signatures, or callouts, and those should not look disconnected from the main handwriting. If a cleaner technical page is needed, turn randomness down or disable it and keep the page closer to aligned type.',
+      'Use realism controls as finishing controls, not as a substitute for layout. A page usually looks better when font, margins, line height, and paper choice are close first. Then small spacing, baseline, and rotation variation can add natural irregularity. Strong variation can make dense documents harder to read, especially on mobile screenshots or small exported images.',
+    ],
+  },
+  {
+    id: 'text-boxes-and-page-control',
+    title: 'Text boxes and page control',
+    body: [
+      'Text boxes give the page a second layer of handwriting control. You can add movable boxes on the active page, edit their text, resize their placement area, and delete them when they are not needed. They are useful for annotations, side notes, headings, form fields, labels, and content that should sit outside the main typed flow.',
+      `Page settings can differ by page, and the editor also has an Apply to all pages action when one page setup should become the document-wide setup. Draft persistence uses browser local storage under ${draftStorageKey}, including typed text, handwriting settings, page settings, text boxes, uploaded font data, uploaded background images, preview scale, and current page position.`,
+      'Per-page control is useful when a document is not visually uniform. A first page might need a title text box, later pages may need tighter margins, and an uploaded background may only apply to a specific page. Apply to all pages is for the opposite case: after one page looks correct, it lets you reuse that setup instead of manually repeating the same controls on every page.',
+    ],
+  },
+  {
+    id: 'export-options',
+    title: 'Export options',
+    body: [
+      `Text2Ink exports ${exportFormatNames}. PDF Document is for multi-page document sharing or printing. PNG Image and JPG Image are for image-first workflows where a page preview needs to be inserted into another app, attached to a message, or archived as a rendered image.`,
+      'Exports are generated from the editor state at the time you download. That includes the active text, selected font, custom font if present, paper setup, colors, margins, line settings, text boxes, and page-specific settings. The export button is disabled until there is text, matching the editor behavior that a handwritten page needs content before it can be downloaded.',
+      'For longer documents, PDF is usually the most convenient because it keeps the pages together. PNG is useful when crisp page images are more important than file size, and JPG is useful when a smaller photo-style image is acceptable. Whichever format you choose, check the preview first because the export reflects the same page state rather than reinterpreting the text separately.',
+    ],
+  },
+  {
+    id: 'responsible-use-and-privacy',
+    title: 'Responsible use and privacy',
+    body: [
+      'Text2Ink gives you control over the content you type or paste, but it does not decide whether that content is appropriate for a school, workplace, platform, or assignment rule. Before submitting or sharing an export, check that your use of handwriting-style output follows the rules that apply to your situation.',
+      `Custom fonts and background images are read by browser file APIs, and saved drafts stay in browser storage under ${draftStorageKey}. Clearing site data or removing the saved editor state removes the stored draft from that browser profile. For questions, bugs, feature requests, or privacy concerns, use the Contact page linked in the header and footer.`,
+      'If you use a shared computer or managed browser profile, treat browser storage as shared with anyone who can access that profile. Remove drafts you do not want kept there, especially when they include private text, uploaded custom fonts, or background images. Also inspect exports before sharing them because the downloaded file may include every visible page element from the editor preview.',
+    ],
+  },
+] as const;
 
 const homeFaqs = [
   {
-    question: 'What does Text2Ink convert?',
-    answer: 'Text2Ink converts typed text into handwriting-style pages inside a browser-based editor.',
+    question: 'Can I use Text2Ink without signing in?',
+    answer: 'Yes. The editor opens from the homepage without an account or payment step.',
   },
   {
-    question: 'Which export formats does Text2Ink support?',
-    answer: `The export dialog supports ${productFacts.exportFormats.map((format) => format.label).join(', ')}.`,
+    question: 'Where is my draft saved?',
+    answer: `Saved editor drafts use browser local storage under ${draftStorageKey}. That draft can include text, handwriting settings, page settings, text boxes, uploaded font data, uploaded background images, preview scale, and page position.`,
   },
   {
-    question: 'Which paper styles are available?',
-    answer: `The editor includes ${productFacts.paper.styles.map((style) => style.name).join(', ')} paper styles.`,
+    question: 'How do I remove saved Text2Ink data from my browser?',
+    answer: 'Clear the site data for text2ink.com in your browser settings, or clear the saved editor state from the editor controls when that option is available.',
   },
   {
-    question: 'Does Text2Ink save editor drafts in the browser?',
-    answer: `The editor saves work in browser local storage under ${productFacts.browserDraft.storageKey}, as described in the privacy policy.`,
+    question: 'What happens when I upload a custom font or background image?',
+    answer: 'The browser reads the selected file and stores it in the editor state for rendering. Custom font uploads accept .ttf and .otf files, and custom background uploads accept PNG or JPG images.',
+  },
+  {
+    question: 'Why is export disabled when there is no text?',
+    answer: 'Export is disabled for empty documents because the export engine needs text content to render a useful handwriting page.',
+  },
+  {
+    question: 'Can one document produce more than one exported page?',
+    answer: 'Yes. The editor paginates longer text into multiple rendered pages, and the export flow uses the document pages from the current editor state.',
+  },
+  {
+    question: 'Can I change one page without changing every page?',
+    answer: 'Yes. The editor supports per-page settings, and the Apply to all pages action is available when the current page setup should be reused across the document.',
+  },
+  {
+    question: 'Does Text2Ink review whether my content is allowed by school or workplace rules?',
+    answer: 'No. You control the content and are responsible for checking whether handwritten-style output is permitted before submitting, posting, or sharing it.',
+  },
+  {
+    question: 'What should I check before submitting or sharing an export?',
+    answer: 'Check the rendered text, page count, paper setup, margins, text boxes, and export format. Also confirm that your use of the output follows the relevant assignment, workplace, or platform rules.',
+  },
+  {
+    question: 'How can I report a bug or request a feature?',
+    answer: 'Use the Contact page from the header or footer and include what happened, which browser you used, and the editor steps that led to the issue.',
   },
 ] as const;
 
@@ -165,63 +277,21 @@ export default function HomePage() {
             </div>
 
         <section className={`${frameClasses} mt-10 sm:mt-16 md:mt-24`}>
-          <div className="text-center mb-8 sm:mb-10 md:mb-12">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground mb-4">
-              Text2Ink features
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Explore the editor controls that are backed by the current Text2Ink product code.
-            </p>
-          </div>
-
-          <div className="space-y-12">
-            <section id="handwriting-fonts" data-testid="feature-section" className="grid gap-6 md:grid-cols-2 md:items-start">
-              <div>
-                <h3 className="text-xl font-semibold mb-3">Fonts</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Choose from {productFacts.handwritingFonts.length} built-in fonts or upload .ttf and .otf font files. The font picker controls the active handwriting face, while font size, ink color, and line height shape how that handwriting is rendered on the selected paper setup.
-                </p>
-              </div>
-              <div className="rounded-lg border-2 border-dashed border-border flex items-center justify-center min-h-44 bg-muted/20">
-                <p className="text-sm text-muted-foreground">Image placeholder</p>
-              </div>
-            </section>
-
-            <section id="paper-styles" data-testid="feature-section" className="grid gap-6 md:grid-cols-2 md:items-start">
-              <div>
-                <h3 className="text-xl font-semibold mb-3">Paper styles</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Use {productFacts.paper.styles.map((style) => style.name).join(', ')} paper with Letter, A4, A3, portrait, and landscape options. Paper color, line color, line height, line tilt, margins, line offset, and custom line spacing are available where the selected paper setup exposes those controls.
-                </p>
-              </div>
-              <div className="rounded-lg border-2 border-dashed border-border flex items-center justify-center min-h-44 bg-muted/20">
-                <p className="text-sm text-muted-foreground">Image placeholder</p>
-              </div>
-            </section>
-
-            <section id="paper-colors" data-testid="feature-section" className="grid gap-6 md:grid-cols-2 md:items-start">
-              <div>
-                <h3 className="text-xl font-semibold mb-3">Paper colors</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Pick {productFacts.paper.colors.map((color) => color.name).join(', ')} paper colors from the editor catalog. Paper color is separate from ink color and line color, so each can be set independently as part of the page setup.
-                </p>
-              </div>
-              <div className="rounded-lg border-2 border-dashed border-border flex items-center justify-center min-h-44 bg-muted/20">
-                <p className="text-sm text-muted-foreground">Image placeholder</p>
-              </div>
-            </section>
-
-            <section id="realism-effects" data-testid="feature-section" className="grid gap-6 md:grid-cols-2 md:items-start">
-              <div>
-                <h3 className="text-xl font-semibold mb-3">Realism effects</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Toggle randomness and tune spacing, baseline, and rotation variation from their editor defaults. When enabled, seeded per-character offsets produce natural handwriting variation across spacing, baseline, and rotation.
-                </p>
-              </div>
-              <div className="rounded-lg border-2 border-dashed border-border flex items-center justify-center min-h-44 bg-muted/20">
-                <p className="text-sm text-muted-foreground">Image placeholder</p>
-              </div>
-            </section>
+          <div className="mx-auto max-w-4xl space-y-12">
+            {landingSections.map((section) => (
+              <section key={section.id} id={section.id} className="scroll-mt-24">
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-4">
+                  {section.title}
+                </h2>
+                <div className="space-y-4">
+                  {section.body.map((paragraph) => (
+                    <p key={paragraph} className="text-body-lg leading-8 text-muted-foreground">
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              </section>
+            ))}
           </div>
         </section>
 
