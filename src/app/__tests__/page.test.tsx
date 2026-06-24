@@ -187,32 +187,70 @@ describe('HomePage', () => {
     expect(hasMaxWidth).toBe(false);
   });
 
-  it('renders four feature sections with headings, paragraphs, and image placeholders', () => {
+  it('removes the retired feature-section placeholders', () => {
     const { container } = render(<HomePage />);
 
-    const section = screen.getByRole('heading', { name: /text2ink features/i }).closest('section');
-    expect(section).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /text2ink features/i })).not.toBeInTheDocument();
+    expect(container.querySelectorAll('[data-testid="feature-section"]')).toHaveLength(0);
+    expect(screen.queryByText('Image placeholder')).not.toBeInTheDocument();
+  });
 
-    const featureSections = container.querySelectorAll('[data-testid="feature-section"]');
-    expect(featureSections).toHaveLength(4);
+  it('renders the SEO landing sections from supported product facts', () => {
+    const { container } = render(<HomePage />);
 
-    expect(within(section as HTMLElement).getByRole('heading', { name: 'Fonts' })).toBeInTheDocument();
-    expect(within(section as HTMLElement).getByRole('heading', { name: 'Paper styles' })).toBeInTheDocument();
-    expect(within(section as HTMLElement).getByRole('heading', { name: 'Paper colors' })).toBeInTheDocument();
-    expect(within(section as HTMLElement).getByRole('heading', { name: 'Realism effects' })).toBeInTheDocument();
+    const landingSection = screen.getByRole('heading', { name: /what text2ink does/i }).closest('section');
+    expect(landingSection).toBeInTheDocument();
 
-    // No feature page links
-    expect(within(section as HTMLElement).queryAllByRole('link')).toHaveLength(0);
-
-    // Each section has an image placeholder
-    const placeholders = within(section as HTMLElement).getAllByText('Image placeholder');
-    expect(placeholders).toHaveLength(4);
+    [
+      'What Text2Ink does',
+      'How to convert text to handwriting online',
+      'Handwriting font options',
+      'Notebook paper and page setup',
+      'Realism controls',
+      'Text boxes and page control',
+      'Export options',
+      'Responsible use and privacy',
+    ].forEach((heading) => {
+      expect(screen.getByRole('heading', { name: heading })).toBeInTheDocument();
+    });
 
     expect(screen.queryByRole('link', { name: /export handwritten notes/i })).not.toBeInTheDocument();
+    expect(screen.getAllByText(new RegExp(`${productFacts.handwritingFonts.length} built-in handwriting fonts`)).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(new RegExp(`${productFacts.paper.styles.length} paper styles`)).length).toBeGreaterThan(0);
     expect(screen.getAllByText(new RegExp(productFacts.paper.styles[0].name)).length).toBeGreaterThan(0);
     expect(screen.getByText(new RegExp(productFacts.paper.colors[0].name))).toBeInTheDocument();
+    expect(screen.getAllByText(new RegExp(productFacts.browserDraft.storageKey)).length).toBeGreaterThan(0);
     expect(screen.getByRole('heading', { name: /text2ink faq/i })).toBeInTheDocument();
-    expect(screen.getByText(/Which export formats does Text2Ink support/i)).toBeInTheDocument();
+
+    expect(container.textContent).not.toMatch(/customer reviews|star ratings?|awards?|guarantee|users served/i);
+  });
+
+  it('keeps the homepage copy deep enough for the landing search intent', () => {
+    const { container } = render(<HomePage />);
+    const main = container.querySelector('main');
+    const wordCount = main?.textContent?.trim().split(/\s+/).length ?? 0;
+
+    expect(wordCount).toBeGreaterThanOrEqual(1800);
+    expect(wordCount).toBeLessThanOrEqual(2400);
+  });
+
+  it('renders non-duplicative FAQ questions for adjacent trust details', () => {
+    render(<HomePage />);
+
+    [
+      'Can I use Text2Ink without signing in?',
+      'Where is my draft saved?',
+      'How do I remove saved Text2Ink data from my browser?',
+      'What happens when I upload a custom font or background image?',
+      'Why is export disabled when there is no text?',
+      'Can one document produce more than one exported page?',
+      'Can I change one page without changing every page?',
+      'Does Text2Ink review whether my content is allowed by school or workplace rules?',
+      'What should I check before submitting or sharing an export?',
+      'How can I report a bug or request a feature?',
+    ].forEach((question) => {
+      expect(screen.getByRole('heading', { name: question })).toBeInTheDocument();
+    });
   });
 
   it('emits WebSite, Organization, WebApplication, FAQ, and breadcrumb JSON-LD', () => {
@@ -229,5 +267,26 @@ describe('HomePage', () => {
       'BreadcrumbList',
     ]));
     expect(schemas.find((schema) => schema['@type'] === 'WebApplication')).not.toHaveProperty('aggregateRating');
+  });
+
+  it('keeps FAQ JSON-LD matched to visible FAQ content without review or rating schema', () => {
+    const { container } = render(<HomePage />);
+    const schemas = Array.from(container.querySelectorAll('script[type="application/ld+json"]'))
+      .map((script) => JSON.parse(script.textContent ?? '{}'));
+    const faqSchema = schemas.find((schema) => schema['@type'] === 'FAQPage');
+
+    expect(faqSchema?.mainEntity).toEqual(expect.arrayContaining(
+      Array.from(screen.getByRole('heading', { name: /text2ink faq/i }).closest('section')?.querySelectorAll('h3') ?? [])
+        .map((heading) => expect.objectContaining({
+          '@type': 'Question',
+          name: heading.textContent,
+          acceptedAnswer: expect.objectContaining({
+            '@type': 'Answer',
+            text: expect.any(String),
+          }),
+        }))
+    ));
+
+    expect(JSON.stringify(schemas)).not.toMatch(/Review|AggregateRating|Rating/);
   });
 });
