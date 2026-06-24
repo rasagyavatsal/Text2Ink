@@ -4,6 +4,7 @@ import { preload } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import SiteHeader from '@/components/patterns/SiteHeader';
 import SiteFooter from '@/components/patterns/SiteFooter';
+import HomeToc from '@/components/patterns/HomeToc';
 import JsonLd from '@/components/seo/JsonLd';
 import {
   buildBreadcrumbListJsonLd,
@@ -270,40 +271,47 @@ export default function HomePage() {
               </div>
             </div>
 
-        <section className={`${frameClasses} mt-10 sm:mt-16 md:mt-24`}>
-          <div className="mx-auto max-w-4xl space-y-12">
-            {landingSections.map((section) => (
-              <section key={section.id} id={section.id} className="scroll-mt-24">
-                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-4">
-                  {section.title}
-                </h2>
-                <div className="space-y-4">
-                  {section.body.map((paragraph) => (
-                    <p key={paragraph} className="text-body-lg leading-8 text-muted-foreground">
-                      {paragraph}
-                    </p>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-        </section>
+        <div className={`${frameClasses} mt-10 sm:mt-16 md:mt-24 flex gap-10`}>
+          <HomeToc
+            items={[
+              ...landingSections.map((s) => ({ id: s.id, title: s.title })),
+              { id: 'faq', title: 'FAQ' },
+            ]}
+          />
 
-        <section className={`${frameClasses} mt-10 sm:mt-16 md:mt-24`}>
-          <div className="mx-auto max-w-3xl">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground mb-6 text-center">
-              Text2Ink FAQ
-            </h2>
-            <div className="space-y-5">
-              {homeFaqs.map((faq) => (
-                <div key={faq.question} className="border-b border-border pb-5 last:border-b-0">
-                  <h3 className="font-semibold text-foreground mb-2">{faq.question}</h3>
-                  <p className="text-body leading-7 text-muted-foreground">{faq.answer}</p>
-                </div>
+          <div className="min-w-0 flex-1">
+            <div className="mx-auto max-w-3xl space-y-12 px-2 sm:px-6 md:px-10">
+              {landingSections.map((section) => (
+                <section key={section.id} id={section.id} className="scroll-mt-24">
+                  <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-4">
+                    {section.title}
+                  </h2>
+                  <div className="space-y-4">
+                    {section.body.map((paragraph) => (
+                      <p key={paragraph} className="text-body-lg leading-8 text-muted-foreground">
+                        {paragraph}
+                      </p>
+                    ))}
+                  </div>
+                </section>
               ))}
             </div>
+
+            <div id="faq" className="scroll-mt-24 mx-auto max-w-3xl px-2 sm:px-6 md:px-10 mt-16 sm:mt-20 md:mt-24">
+              <h2 className="text-3xl font-bold tracking-tight text-foreground mb-6 text-center">
+                Text2Ink FAQ
+              </h2>
+              <div className="space-y-5">
+                {homeFaqs.map((faq) => (
+                  <div key={faq.question} className="border-b border-border pb-5 last:border-b-0">
+                    <h3 className="font-semibold text-foreground mb-2">{faq.question}</h3>
+                    <p className="text-body leading-7 text-muted-foreground">{faq.answer}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        </section>
+        </div>
       </main>
 
       <footer className="border-t border-border bg-background py-footer mt-section">

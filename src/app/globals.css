@@ -98,6 +98,7 @@
 }
 
 :root {
+  scroll-behavior: smooth;
   --radius: 0.625rem;
   --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
 
