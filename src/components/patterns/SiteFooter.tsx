@@ -40,38 +40,7 @@ export default function SiteFooter() {
                     Open Editor
                   </Link>
                 </li>
-                <li>
-                  <Link
-                    href="/features/handwriting-fonts"
-                    className="block py-2 md:py-1 transition-colors hover:text-brand-accent"
-                  >
-                    Handwriting Fonts
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/features/notebook-paper-styles"
-                    className="block py-2 md:py-1 transition-colors hover:text-brand-accent"
-                  >
-                    Paper Styles
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/features/paper-colors"
-                    className="block py-2 md:py-1 transition-colors hover:text-brand-accent"
-                  >
-                    Paper Colors
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/features/realism-effects"
-                    className="block py-2 md:py-1 transition-colors hover:text-brand-accent"
-                  >
-                    Realism Effects
-                  </Link>
-                </li>
+
                 <li>
                   <Link
                     href="/contact"
