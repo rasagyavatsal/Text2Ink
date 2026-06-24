@@ -76,15 +76,12 @@ describe('HomePage', () => {
     });
     expect(heroHeading).toBeInTheDocument();
 
-    const highlightedText = within(heroHeading).getByText('Handwriting');
-    expect(highlightedText.tagName).toBe('SPAN');
     expect(heroHeading).not.toHaveClass('font-bold');
     expect(heroHeading).toHaveClass('font-normal');
-    expect(highlightedText).toHaveClass('font-bold');
-    expect(highlightedText).toHaveClass('font-[family-name:var(--font-ff-comma)]');
-    expect(highlightedText).toHaveClass('text-amber-600');
+    expect(heroHeading).toHaveClass('font-[family-name:var(--font-snake)]');
+    expect(heroHeading).toHaveClass('text-amber-600');
     expect(heroHeading).toHaveClass('whitespace-normal');
-    expect(heroHeading.querySelectorAll('span')).toHaveLength(1);
+    expect(heroHeading.querySelectorAll('span')).toHaveLength(0);
 
     const directAnswer = screen.getByTestId('home-direct-answer');
     const wordCount = directAnswer.textContent?.trim().split(/\s+/).length ?? 0;
