@@ -94,7 +94,7 @@ describe('legal pages', () => {
 
     expect(screen.getAllByRole('navigation', { name: /table of contents/i })[0]).toBeInTheDocument();
     const tocLinks = screen.getAllByRole('link', { name: tocHeading });
-    expect(tocLinks.length).toBe(2);
+    expect(tocLinks.length).toBe(1);
     expect(tocLinks[0]).toHaveAttribute('href', `#${tocHeading.toLowerCase().replaceAll(' ', '-')}`);
     expect(screen.getByRole('heading', { name: tocHeading }).closest('section')).toHaveAttribute(
       'id',
