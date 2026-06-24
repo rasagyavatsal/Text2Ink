@@ -174,43 +174,54 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Link
-              href="/features/handwriting-fonts"
-              className="block rounded-lg border border-border bg-card p-5 sm:p-6 transition-colors hover:border-brand-accent"
-            >
-              <h3 className="text-xl font-semibold mb-3">Fonts</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Choose from {productFacts.handwritingFonts.length} built-in fonts or upload .ttf and .otf font files.
-              </p>
-            </Link>
-            <Link
-              href="/features/notebook-paper-styles"
-              className="block rounded-lg border border-border bg-card p-5 sm:p-6 transition-colors hover:border-brand-accent"
-            >
-              <h3 className="text-xl font-semibold mb-3">Paper styles</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Use {productFacts.paper.styles.map((style) => style.name).join(', ')} paper with Letter, A4, A3, portrait, and landscape options.
-              </p>
-            </Link>
-            <Link
-              href="/features/paper-colors"
-              className="block rounded-lg border border-border bg-card p-5 sm:p-6 transition-colors hover:border-brand-accent"
-            >
-              <h3 className="text-xl font-semibold mb-3">Paper colors</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Pick {productFacts.paper.colors.map((color) => color.name).join(', ')} paper colors from the editor catalog.
-              </p>
-            </Link>
-            <Link
-              href="/features/realism-effects"
-              className="block rounded-lg border border-border bg-card p-5 sm:p-6 transition-colors hover:border-brand-accent"
-            >
-              <h3 className="text-xl font-semibold mb-3">Realism effects</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Toggle randomness and tune spacing, baseline, and rotation variation from their editor defaults.
-              </p>
-            </Link>
+          <div className="space-y-12">
+            <section id="handwriting-fonts" data-testid="feature-section" className="grid gap-6 md:grid-cols-2 md:items-start">
+              <div>
+                <h3 className="text-xl font-semibold mb-3">Fonts</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Choose from {productFacts.handwritingFonts.length} built-in fonts or upload .ttf and .otf font files. The font picker controls the active handwriting face, while font size, ink color, and line height shape how that handwriting is rendered on the selected paper setup.
+                </p>
+              </div>
+              <div className="rounded-lg border-2 border-dashed border-border flex items-center justify-center min-h-44 bg-muted/20">
+                <p className="text-sm text-muted-foreground">Image placeholder</p>
+              </div>
+            </section>
+
+            <section id="paper-styles" data-testid="feature-section" className="grid gap-6 md:grid-cols-2 md:items-start">
+              <div>
+                <h3 className="text-xl font-semibold mb-3">Paper styles</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Use {productFacts.paper.styles.map((style) => style.name).join(', ')} paper with Letter, A4, A3, portrait, and landscape options. Paper color, line color, line height, line tilt, margins, line offset, and custom line spacing are available where the selected paper setup exposes those controls.
+                </p>
+              </div>
+              <div className="rounded-lg border-2 border-dashed border-border flex items-center justify-center min-h-44 bg-muted/20">
+                <p className="text-sm text-muted-foreground">Image placeholder</p>
+              </div>
+            </section>
+
+            <section id="paper-colors" data-testid="feature-section" className="grid gap-6 md:grid-cols-2 md:items-start">
+              <div>
+                <h3 className="text-xl font-semibold mb-3">Paper colors</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Pick {productFacts.paper.colors.map((color) => color.name).join(', ')} paper colors from the editor catalog. Paper color is separate from ink color and line color, so each can be set independently as part of the page setup.
+                </p>
+              </div>
+              <div className="rounded-lg border-2 border-dashed border-border flex items-center justify-center min-h-44 bg-muted/20">
+                <p className="text-sm text-muted-foreground">Image placeholder</p>
+              </div>
+            </section>
+
+            <section id="realism-effects" data-testid="feature-section" className="grid gap-6 md:grid-cols-2 md:items-start">
+              <div>
+                <h3 className="text-xl font-semibold mb-3">Realism effects</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Toggle randomness and tune spacing, baseline, and rotation variation from their editor defaults. When enabled, seeded per-character offsets produce natural handwriting variation across spacing, baseline, and rotation.
+                </p>
+              </div>
+              <div className="rounded-lg border-2 border-dashed border-border flex items-center justify-center min-h-44 bg-muted/20">
+                <p className="text-sm text-muted-foreground">Image placeholder</p>
+              </div>
+            </section>
           </div>
         </section>
 
