@@ -4,7 +4,7 @@ import {
   type PaginationLineData,
   type ResolvedPageLayout,
 } from './layout/LayoutEngine';
-export { createMeasure, nextLineFrom } from './layout/textWrap';
+export { createMeasure, measureRenderedLine, nextLineFrom } from './layout/textWrap';
 
 export type PaginationRequest = {
   type: 'paginate';

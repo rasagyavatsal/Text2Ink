@@ -239,7 +239,7 @@ test("changing paper orientation does not lose text", async ({ page }) => {
   await expect(toolbar).toBeVisible({ timeout: 10_000 });
 
   // The page count must still be visible after orientation change - this
-  // confirms the pagination worker reran successfully and text was not lost.
+  // confirms pagination reran successfully and text was not lost.
   await expect(
     toolbar.locator("span").filter({ hasText: /Page \d+ of \d+/ })
   ).toBeVisible({ timeout: 15_000 });

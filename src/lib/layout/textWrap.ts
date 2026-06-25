@@ -1,22 +1,97 @@
+import { calculateRandomStyle } from '@/lib/editorHelpers';
+import type { HandwritingSettings } from '@/lib/types';
+
 const defaultMeasureFactor = 0.6;
 
-export function createMeasure(fontFamily: string, fontSize: number) {
-  try {
-    const hasOffscreen = typeof OffscreenCanvas !== 'undefined';
-    if (!hasOffscreen) {
-      return (s: string) => s.length * fontSize * defaultMeasureFactor;
-    }
+type MeasureOptions = {
+  randomness?: HandwritingSettings['randomness'];
+  lineIndex?: number;
+};
 
-    const canvas = new OffscreenCanvas(1, 1);
-    const ctx = canvas.getContext('2d');
+type GlyphMetrics = {
+  width?: number;
+  actualBoundingBoxRight?: number;
+};
+
+type TextMeasureContext = {
+  font?: string;
+  measureText: (text: string) => GlyphMetrics;
+};
+
+function safeMetric(value: number | undefined, fallback = 0) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function fallbackMeasureRenderedLine(
+  text: string,
+  fontSize: number,
+  options: MeasureOptions = {},
+) {
+  let currentX = 0;
+  let maxRight = 0;
+  for (let charIndex = 0; charIndex < text.length; charIndex++) {
+    const randomData = calculateRandomStyle(
+      charIndex,
+      options.lineIndex ?? 0,
+      options.randomness ?? { enabled: false, spacing: 0, baseline: 0, rotation: 0 },
+    );
+    currentX += randomData.spacing;
+    const charWidth = fontSize * defaultMeasureFactor;
+    currentX += charWidth;
+    maxRight = Math.max(maxRight, currentX);
+  }
+  return Math.max(0, maxRight);
+}
+
+export function measureRenderedLine(
+  text: string,
+  ctx: TextMeasureContext,
+  options: MeasureOptions = {},
+) {
+  let currentX = 0;
+  let maxRight = 0;
+
+  for (let charIndex = 0; charIndex < text.length; charIndex++) {
+    const randomData = calculateRandomStyle(
+      charIndex,
+      options.lineIndex ?? 0,
+      options.randomness ?? { enabled: false, spacing: 0, baseline: 0, rotation: 0 },
+    );
+    currentX += randomData.spacing;
+
+    const metrics = ctx.measureText(text[charIndex]);
+    const width = safeMetric(metrics.width);
+    const right = Math.max(width, safeMetric(metrics.actualBoundingBoxRight, width));
+    maxRight = Math.max(maxRight, currentX + right);
+
+    currentX += width;
+    maxRight = Math.max(maxRight, currentX);
+  }
+
+  return Math.max(0, maxRight);
+}
+
+export function createMeasure(
+  fontFamily: string,
+  fontSize: number,
+  options: MeasureOptions = {},
+) {
+  try {
+    const canvas =
+      typeof OffscreenCanvas !== 'undefined'
+        ? new OffscreenCanvas(1, 1)
+        : typeof document !== 'undefined'
+          ? document.createElement('canvas')
+          : null;
+    const ctx = canvas?.getContext('2d') as TextMeasureContext | null | undefined;
     if (!ctx) {
-      return (s: string) => s.length * fontSize * defaultMeasureFactor;
+      return (s: string) => fallbackMeasureRenderedLine(s, fontSize, options);
     }
 
     ctx.font = `400 ${fontSize}px ${fontFamily || 'cursive'}`;
-    return (s: string) => ctx.measureText(s).width;
+    return (s: string) => measureRenderedLine(s, ctx, options);
   } catch {
-    return (s: string) => s.length * fontSize * defaultMeasureFactor;
+    return (s: string) => fallbackMeasureRenderedLine(s, fontSize, options);
   }
 }
 

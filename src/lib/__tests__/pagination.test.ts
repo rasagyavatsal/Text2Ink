@@ -1,9 +1,21 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import type { PaperFormat, PaperOrientation } from '../types';
-import { paginate, nextLineFrom, createMeasure, type PaginationRequest } from '../pagination';
+import { calculateRandomStyle } from '../editorHelpers';
+import {
+  paginate,
+  nextLineFrom,
+  createMeasure,
+  measureRenderedLine,
+  type PaginationRequest,
+} from '../pagination';
+import { paginateDocument } from '../layout/LayoutEngine';
 import { withTestPaperSelection } from '@/test/paperTestHelpers';
 
 describe('pagination', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   const paginationFormatCases: Array<{
     paperFormat: PaperFormat;
     paperOrientation: PaperOrientation;
@@ -55,6 +67,28 @@ describe('pagination', () => {
       const measure = createMeasure('caveat', 20);
       expect(typeof measure).toBe('function');
       expect(measure('abc')).toBeGreaterThan(0);
+    });
+
+    it('measures rendered line width with random spacing and glyph right overhang', () => {
+      const randomness = { enabled: true, spacing: 2, baseline: 0, rotation: 0 };
+      const metricsByChar = new Map([
+        ['A', { width: 10, actualBoundingBoxRight: 10 }],
+        ['B', { width: 8, actualBoundingBoxRight: 14 }],
+      ]);
+      const ctx = {
+        measureText: vi.fn((char: string) => metricsByChar.get(char) ?? { width: 0 }),
+      };
+
+      const measured = measureRenderedLine('AB', ctx, {
+        randomness,
+        lineIndex: 7,
+      });
+
+      const spacingA = calculateRandomStyle(0, 7, randomness).spacing;
+      const spacingB = calculateRandomStyle(1, 7, randomness).spacing;
+      const expectedAdvance = spacingA + 10 + spacingB + 8;
+      const expectedInkRight = spacingA + 10 + spacingB + 14;
+      expect(measured).toBeCloseTo(Math.max(expectedAdvance, expectedInkRight), 5);
     });
   });
 
@@ -271,6 +305,55 @@ describe('pagination', () => {
       expect(res.pages[0]).toHaveLength(16);
       expect(res.pageLayouts?.[0]?.page.width).toBeCloseTo(841.89, 1);
       expect(res.pageLayouts?.[0]?.page.height).toBeCloseTo(595.28, 1);
+    });
+
+    it('wraps wide fonts earlier and narrow fonts later using canvas metrics', () => {
+      class FontAwareOffscreenCanvas {
+        width = 1;
+        height = 1;
+
+        getContext() {
+          return {
+            font: '',
+            measureText(this: { font: string }, text: string) {
+              const perCharWidth = this.font.includes('Barokah Signature')
+                ? 26
+                : this.font.includes('HoneyScript')
+                  ? 6
+                  : 10;
+              const width = text.length * perCharWidth;
+              return {
+                width,
+                actualBoundingBoxRight: width,
+              };
+            },
+          };
+        }
+      }
+      vi.stubGlobal('OffscreenCanvas', FontAwareOffscreenCanvas);
+
+      const input = {
+        text: 'abcdefghijklmnopqrstuvwxyz',
+        currentPageIndex: 0,
+        renderAllPagesForExport: true,
+        settings: {
+          ...defaultReq.settings,
+          randomness: { enabled: false, spacing: 0, baseline: 0, rotation: 0 },
+        },
+        pageSettings: defaultReq.pageSettings,
+      };
+
+      const wide = paginateDocument({
+        ...input,
+        fontFamily: "'Barokah Signature', cursive",
+      });
+      const narrow = paginateDocument({
+        ...input,
+        fontFamily: "'HoneyScript', cursive",
+      });
+
+      expect(wide.pages[0][0]?.text.length).toBeLessThan(input.text.length);
+      expect(narrow.pages[0][0]?.text).toBe(input.text);
     });
   });
 });
