@@ -225,8 +225,10 @@ export default function HomePage() {
       <main className="py-page-y flex flex-col items-center gap-section w-full">
         <div className={frameClasses}>
           <div className="text-center flex flex-col items-center gap-6 max-w-7xl mx-auto">
-            <h1 className="text-6xl sm:text-8xl md:text-9xl font-normal tracking-tight text-amber-600 dark:text-amber-300 leading-tight whitespace-normal lg:whitespace-nowrap font-[family-name:var(--font-snake)]">
-              Text to Handwriting Converter
+            <h1 className="font-normal tracking-tight leading-tight whitespace-normal lg:whitespace-nowrap text-foreground">
+              <span className="text-4xl sm:text-6xl md:text-7xl">Text to</span>{' '}
+              <span className="text-6xl sm:text-8xl md:text-9xl text-amber-600 dark:text-amber-300 font-[family-name:var(--font-snake)]">Handwriting</span>{' '}
+              <span className="text-4xl sm:text-6xl md:text-7xl">Converter</span>
             </h1>
             <p data-testid="home-direct-answer" className="text-body-lg text-muted-foreground max-w-3xl leading-8">
               {directAnswer}
