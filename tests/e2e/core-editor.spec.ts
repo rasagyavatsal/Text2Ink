@@ -5,7 +5,7 @@ import { gotoHydratedEditor, test, expect } from "./fixtures";
  *
  * Covers: /editor initial load, page preview visibility, typing into the
  * hidden "Handwriting text input", text retention, canvas visibility after
- * typing, pagination worker page count update, zoom controls, and
+ * typing, pagination page count update, zoom controls, and
  * pagination controls disabled state for single-page content.
  */
 
@@ -56,10 +56,10 @@ test("canvas preview remains visible after typing", async ({ page }) => {
 });
 
 // ---------------------------------------------------------------------------
-// /editor – pagination worker completion updates page count for short text
+// /editor - pagination completion updates page count for short text
 // ---------------------------------------------------------------------------
 
-test("pagination worker updates page count to 1 for short text", async ({
+test("pagination updates page count to 1 for short text", async ({
   page,
 }) => {
   await gotoHydratedEditor(page);
@@ -68,12 +68,12 @@ test("pagination worker updates page count to 1 for short text", async ({
   await textInput.fill("Short text");
 
   // The canvas toolbar shows "Page X of Y". For a short single-line text the
-  // pagination worker should report 1 page. Wait for the toolbar to appear
+  // Pagination should report 1 page. Wait for the toolbar to appear
   // and assert the count.
   const toolbar = page.getByTestId("canvas-toolbar");
   await expect(toolbar).toBeVisible({ timeout: 10_000 });
 
-  // "Page 1 of 1" indicates the pagination worker completed for short content.
+  // "Page 1 of 1" indicates pagination completed for short content.
   await expect(toolbar).toContainText("Page 1 of 1", { timeout: 15_000 });
 });
 

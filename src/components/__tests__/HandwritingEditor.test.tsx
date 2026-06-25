@@ -1,9 +1,18 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import * as LayoutEngine from '@/lib/layout/LayoutEngine';
 import HandwritingEditor from '../HandwritingEditor';
 import type { CanvasPreviewProps } from '../CanvasPreview';
 import { HandwritingSettings, DEFAULT_SETTINGS } from '../../lib/types';
+
+vi.mock('@/lib/layout/LayoutEngine', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/layout/LayoutEngine')>();
+  return {
+    ...actual,
+    paginateDocument: vi.fn(actual.paginateDocument),
+  };
+});
 
 vi.mock('../CanvasPreview', () => ({
   default: (props: CanvasPreviewProps) => (
@@ -76,49 +85,30 @@ globalThis.ResizeObserver = vi.fn().mockImplementation(() => ({
   disconnect: vi.fn(),
 }));
 
-function buildPagesFromText(text: string) {
-  const lines = (text || '').split('\n').map((line, index, all) => ({
-    text: line,
-    lineIndex: index,
-    hasNewline: index < all.length - 1,
-  }));
-  return [lines];
+function createDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+  return { promise, resolve, reject };
 }
 
-class MockWorker {
-  private readonly listeners = new Set<(event: MessageEvent) => void>();
-
-  postMessage = vi.fn((msg: { requestId?: number; text?: string; type?: string }) => {
-    if (msg?.type !== 'paginate') return;
-    const pages = buildPagesFromText(msg.text ?? '');
-    const event = {
-      data: {
-        type: 'pagination-result',
-        requestId: msg.requestId,
-        pages,
-        isPaginationComplete: true,
-        totalPages: pages.length,
-      },
-    } as MessageEvent;
-    setTimeout(() => {
-      this.listeners.forEach((listener) => listener(event));
-    }, 0);
+function installDocumentFonts(ready: Promise<unknown> = Promise.resolve(undefined)) {
+  const fontSet = {
+    ready,
+    load: vi.fn().mockResolvedValue([]),
+    add: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  };
+  Object.defineProperty(document, 'fonts', {
+    configurable: true,
+    value: fontSet,
   });
-
-  terminate = vi.fn();
-  addEventListener = vi.fn((type: string, listener: (event: MessageEvent) => void) => {
-    if (type === 'message') {
-      this.listeners.add(listener);
-    }
-  });
-  removeEventListener = vi.fn((type: string, listener: (event: MessageEvent) => void) => {
-    if (type === 'message') {
-      this.listeners.delete(listener);
-    }
-  });
+  return fontSet;
 }
-
-globalThis.Worker = MockWorker as any;
 
 describe('HandwritingEditor selection behavior', () => {
   const settings: HandwritingSettings = {
@@ -128,23 +118,103 @@ describe('HandwritingEditor selection behavior', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    installDocumentFonts();
+    Object.defineProperty(globalThis, 'Worker', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => {
+        throw new Error('HandwritingEditor should paginate without Worker');
+      }),
+    });
   });
 
-  function renderEditor(text = 'hello world\nSecond line') {
-    render(
+  function editorProps(text = 'hello world\nSecond line', overrideSettings: HandwritingSettings = settings) {
+    return {
+      text,
+      settings: overrideSettings,
+      onTextChange: vi.fn(),
+      onSettingsChange: vi.fn(),
+      pageSettingsByPage: [],
+      previewScale: 1,
+      currentPageIndex: 0,
+      onCurrentPageChange: vi.fn(),
+      onTotalPagesChange: vi.fn(),
+    };
+  }
+
+  function renderEditor(text = 'hello world\nSecond line', overrideSettings: HandwritingSettings = settings) {
+    return render(
       <HandwritingEditor
-        text={text}
-        settings={settings}
-        onTextChange={vi.fn()}
-        onSettingsChange={vi.fn()}
-        pageSettingsByPage={[]}
-        previewScale={1}
-        currentPageIndex={0}
-        onCurrentPageChange={vi.fn()}
-        onTotalPagesChange={vi.fn()}
+        {...editorProps(text, overrideSettings)}
       />
     );
   }
+
+  it('paginates on the main thread after fonts are ready without constructing a Worker', async () => {
+    const ready = createDeferred<undefined>();
+    const fontSet = installDocumentFonts(ready.promise);
+    const paginateDocument = vi.mocked(LayoutEngine.paginateDocument);
+    paginateDocument.mockClear();
+    const WorkerConstructor = vi.mocked(globalThis.Worker);
+
+    renderEditor();
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 80));
+    });
+    expect(paginateDocument).not.toHaveBeenCalled();
+    expect(screen.getByTestId('preview-lines')).toHaveTextContent('0');
+
+    await act(async () => {
+      ready.resolve(undefined);
+      await ready.promise;
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(screen.getByTestId('preview-lines')).toHaveTextContent('2'));
+    expect(WorkerConstructor).not.toHaveBeenCalled();
+    expect(fontSet.load).toHaveBeenCalledWith(expect.stringContaining("'Caveat'"));
+  });
+
+  it('re-paginates when font family or randomness changes', async () => {
+    const fontSet = installDocumentFonts();
+    const paginateDocument = vi.mocked(LayoutEngine.paginateDocument);
+    paginateDocument.mockClear();
+
+    const { rerender } = renderEditor('abcdefghij klmnopqrst');
+    await waitFor(() => expect(paginateDocument).toHaveBeenCalled());
+    const initialCalls = paginateDocument.mock.calls.length;
+
+    rerender(
+      <HandwritingEditor
+        {...editorProps('abcdefghij klmnopqrst', {
+          ...settings,
+          fontFamily: 'snake',
+        })}
+      />,
+    );
+    await waitFor(() => expect(paginateDocument.mock.calls.length).toBeGreaterThan(initialCalls));
+    expect(fontSet.load).toHaveBeenCalledWith(expect.stringContaining("'Snake'"));
+    const afterFontCalls = paginateDocument.mock.calls.length;
+
+    rerender(
+      <HandwritingEditor
+        {...editorProps('abcdefghij klmnopqrst', {
+          ...settings,
+          fontFamily: 'snake',
+          randomness: { enabled: true, spacing: 4, baseline: 0, rotation: 0 },
+        })}
+      />,
+    );
+    await waitFor(() => expect(paginateDocument.mock.calls.length).toBeGreaterThan(afterFontCalls));
+    expect(paginateDocument.mock.calls.at(-1)?.[0].settings.randomness).toEqual({
+      enabled: true,
+      spacing: 4,
+      baseline: 0,
+      rotation: 0,
+    });
+  });
 
   it('uses the clicked half of a character when placing the caret', async () => {
     renderEditor();
@@ -223,13 +293,14 @@ describe('HandwritingEditor selection behavior', () => {
     expect(screen.getByTestId('preview-selection')).toHaveTextContent('3:5');
   });
 
-  it('disables spellcheck on the hidden textarea', () => {
+  it('disables spellcheck on the hidden textarea', async () => {
     renderEditor();
+    await waitFor(() => expect(screen.getByTestId('preview-lines')).toHaveTextContent('2'));
     const textarea = screen.getByLabelText('Handwriting text input');
     expect(textarea.getAttribute('spellcheck')).toBe('false');
   });
 
-  it('notifies the shell when main text typing starts', () => {
+  it('notifies the shell when main text typing starts', async () => {
     const onTypingFocus = vi.fn();
     render(
       <HandwritingEditor
@@ -245,6 +316,7 @@ describe('HandwritingEditor selection behavior', () => {
         onTypingFocus={onTypingFocus}
       />
     );
+    await waitFor(() => expect(screen.getByTestId('preview-lines')).toHaveTextContent('1'));
 
     fireEvent.focus(screen.getByLabelText('Handwriting text input'));
 

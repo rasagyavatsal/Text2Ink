@@ -1,8 +1,11 @@
 import { paginateDocument } from '@/lib/layout/LayoutEngine';
 import { renderPageToCanvas as defaultRenderPageToCanvas } from '@/lib/canvasRenderer';
 import {
+  ensureHandwritingFontsReady,
+  resolveHandwritingFontFamily,
+} from '@/lib/fontResolver';
+import {
   defaultPageSettingsFromHandwritingSettings,
-  HANDWRITING_FONTS,
   type HandwritingSettings,
   type LineData,
   type PageSettings,
@@ -90,7 +93,7 @@ export class ExportEngine {
     this.#createCanvas = dependencies.createCanvas ?? (() => document.createElement('canvas'));
     this.#renderPageToCanvas = dependencies.renderPageToCanvas ?? defaultRenderPageToCanvas;
     this.#resolveFontFamily = dependencies.resolveFontFamily ?? resolveHandwritingFontFamily;
-    this.#ensureFontsReady = dependencies.ensureFontsReady ?? ensureExportFontsReady;
+    this.#ensureFontsReady = dependencies.ensureFontsReady ?? ensureHandwritingFontsReady;
     this.#deliverArtifact = dependencies.deliverArtifact ?? deliverArtifactToBrowser;
     this.#createPdfSession = dependencies.createPdfSession ?? createPdfWorkerSession;
   }
@@ -115,6 +118,7 @@ export class ExportEngine {
         lineColor: request.document.settings.lineColor,
         paperColor: request.document.settings.paperColor,
         paper: request.document.settings.paper,
+        randomness: request.document.settings.randomness,
         ruledMarginLineOffset: request.document.settings.ruledMarginLineOffset,
       },
       pageSettings: normalizedPageSettings.map((pageSettings) => ({
@@ -349,43 +353,6 @@ function getPageOrientation(width: number, height: number): 'portrait' | 'landsc
 
 function isAbortError(error: unknown): error is Error {
   return error instanceof Error && error.name === 'AbortError';
-}
-
-export function resolveHandwritingFontFamily(settings: HandwritingSettings) {
-  if (settings.fontFamily === 'custom' && settings.customFont) {
-    return `"${settings.customFont.family}", cursive`;
-  }
-
-  const font = HANDWRITING_FONTS.find((candidate) => candidate.value === settings.fontFamily);
-  if (!font) {
-    return 'cursive';
-  }
-
-  if (typeof document === 'undefined' || typeof globalThis.window === 'undefined') {
-    return 'cursive';
-  }
-
-  const variableName = /var\((--[^)]+)\)/.exec(font.className)?.[1];
-  if (!variableName) {
-    return 'cursive';
-  }
-
-  const scope = document.body ?? document.documentElement;
-  const value = globalThis.getComputedStyle(scope).getPropertyValue(variableName).trim();
-  return value || 'cursive';
-}
-
-async function ensureExportFontsReady(settings: HandwritingSettings, fontFamily: string) {
-  if (typeof document === 'undefined' || !document.fonts) {
-    return;
-  }
-
-  try {
-    await document.fonts.ready;
-    await document.fonts.load(`${settings.fontSize}px ${fontFamily}`);
-  } catch {
-    // Export can continue with browser fallback fonts when readiness probing fails.
-  }
 }
 
 async function deliverArtifactToBrowser(artifact: ExportArtifact) {

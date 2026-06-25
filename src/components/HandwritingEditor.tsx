@@ -3,17 +3,16 @@
 import React, { useRef, useCallback, useMemo, useEffect, useState } from 'react';
 import {
   HandwritingSettings,
-  HANDWRITING_FONTS,
   PageSettings,
   LineData,
   defaultPageSettingsFromHandwritingSettings,
 } from '@/lib/types';
-import type { PaginationResponse } from '@/lib/pagination';
 import {
   calculatePageStartOffsets,
   calculateLineStarts,
 } from '@/lib/editorHelpers';
-import { resolvePageLayout } from '@/lib/layout/LayoutEngine';
+import { ensureHandwritingFontsReady, resolveHandwritingFontFamily } from '@/lib/fontResolver';
+import { paginateDocument, resolvePageLayout } from '@/lib/layout/LayoutEngine';
 import CanvasPreview from './CanvasPreview';
 import TextField from './TextField/TextField';
 
@@ -84,7 +83,6 @@ export default function HandwritingEditor({
   const [isFocused, setIsFocused] = useState(false);
   const [cursorPosition, setCursorPosition] = useState(0);
   const [selectionRange, setSelectionRange] = useState({ start: 0, end: 0 });
-  const [fontMetricsVersion, setFontMetricsVersion] = useState(0);
   const [localText, setLocalText] = useState(text);
   const [lastTextProp, setLastTextProp] = useState(text);
   const [pages, setPages] = useState<LineData[][]>([[]]);
@@ -92,7 +90,6 @@ export default function HandwritingEditor({
   void isPaginationComplete;
   const [totalPages, setTotalPages] = useState(1);
   const latestPaginationRequestIdRef = useRef(0);
-  const workerRef = useRef<Worker | null>(null);
   const [isDraggingMarginLine, setIsDraggingMarginLine] = useState(false);
   const marginLineDragRef = useRef({ pageIndex: 0, pageRect: null as DOMRect | null });
   const marginLinePointerIdRef = useRef<number | null>(null);
@@ -113,25 +110,10 @@ export default function HandwritingEditor({
   }, 150);
 
   useEffect(() => {
-    if (typeof document === 'undefined') return;
-    const fonts = document.fonts;
-    if (!fonts) return;
-
-    let cancelled = false;
-    const bump = () => {
-      if (cancelled) return;
-      setFontMetricsVersion((v) => v + 1);
-    };
-
-    fonts.ready.then(bump).catch(() => {});
-    fonts.addEventListener('loadingdone', bump);
-    fonts.addEventListener('loadingerror', bump);
     return () => {
-      cancelled = true;
-      fonts.removeEventListener('loadingdone', bump);
-      fonts.removeEventListener('loadingerror', bump);
+      latestPaginationRequestIdRef.current += 1;
     };
-  }, [settings.fontFamily, settings.customFont, settings.fontSize]);
+  }, []);
 
   useEffect(() => {
     const styleId = '__text2ink_custom_font_style';
@@ -183,24 +165,8 @@ export default function HandwritingEditor({
   );
 
   const resolvedFontFamily = useMemo(() => {
-    // Recompute after the font face finishes loading so CSS variable resolution stays fresh.
-    if (fontMetricsVersion < 0) return 'cursive';
-
-    if (settings.fontFamily === 'custom' && settings.customFont) {
-      return `"${settings.customFont.family}", cursive`;
-    }
-
-    const font = HANDWRITING_FONTS.find((f) => f.value === settings.fontFamily);
-    if (!font) return 'cursive';
-    if (typeof document === 'undefined' || typeof globalThis.window === 'undefined') return 'cursive';
-
-    const varName = /var\((--[^)]+)\)/.exec(font.className)?.[1];
-    if (!varName) return 'cursive';
-
-    const scope = document.body ?? document.documentElement;
-    const value = globalThis.getComputedStyle(scope).getPropertyValue(varName).trim();
-    return value || 'cursive';
-  }, [fontMetricsVersion, settings.customFont, settings.fontFamily]);
+    return resolveHandwritingFontFamily(settings);
+  }, [settings]);
 
   const desiredPageSettings = useMemo(() => {
     const desiredLength = Math.max(pageSettingsByPage.length, currentPageIndex + 2);
@@ -236,16 +202,19 @@ export default function HandwritingEditor({
     return out;
   }, [currentPageIndex, getPageSettings, pageSettingsByPage.length]);
 
-  const debouncedRequestPagination = useDebouncedCallback(() => {
-    const worker = workerRef.current;
-    if (!worker) return;
-
+  const debouncedRequestPagination = useDebouncedCallback(async () => {
     latestPaginationRequestIdRef.current += 1;
     const requestId = latestPaginationRequestIdRef.current;
 
-    worker.postMessage({
-      type: 'paginate',
-      requestId,
+    await ensureHandwritingFontsReady(
+      settings,
+      resolvedFontFamily,
+      desiredPageSettings.map((pageSettings) => pageSettings.fontSize),
+    );
+
+    if (requestId !== latestPaginationRequestIdRef.current) return;
+
+    const result = paginateDocument({
       text: localText,
       currentPageIndex,
       renderAllPagesForExport: false,
@@ -256,42 +225,22 @@ export default function HandwritingEditor({
         lineColor: settings.lineColor,
         paperColor: settings.paperColor,
         paper: settings.paper,
+        randomness: settings.randomness,
         ruledMarginLineOffset: settings.ruledMarginLineOffset,
       },
       pageSettings: desiredPageSettings,
       fontFamily: resolvedFontFamily,
     });
+
+    if (requestId !== latestPaginationRequestIdRef.current) return;
+
+    const nextPages = result.pages as LineData[][];
+    setPages(nextPages);
+    onPagesChange?.(nextPages);
+    setIsPaginationComplete(result.isPaginationComplete);
+    onPaginationCompleteChange?.(result.isPaginationComplete);
+    setTotalPages(result.totalPages);
   }, 40);
-
-  useEffect(() => {
-    if (typeof globalThis.window === 'undefined') return;
-    if (workerRef.current) return;
-
-    const worker = new Worker(new URL('../workers/paginationWorker.ts', import.meta.url), {
-      type: 'module',
-    });
-    workerRef.current = worker;
-
-    const onMessage = (ev: MessageEvent<PaginationResponse>) => {
-      const msg = ev.data;
-      if (msg?.type !== 'pagination-result') return;
-      if (msg.requestId !== latestPaginationRequestIdRef.current) return;
-
-      const nextPages = msg.pages as LineData[][];
-      setPages(nextPages);
-      onPagesChange?.(nextPages);
-      setIsPaginationComplete(msg.isPaginationComplete);
-      onPaginationCompleteChange?.(msg.isPaginationComplete);
-      setTotalPages(msg.totalPages);
-    };
-
-    worker.addEventListener('message', onMessage);
-    return () => {
-      worker.removeEventListener('message', onMessage);
-      worker.terminate();
-      workerRef.current = null;
-    };
-  }, [onPagesChange, onPaginationCompleteChange]);
 
   useEffect(() => {
     debouncedRequestPagination();
@@ -307,6 +256,7 @@ export default function HandwritingEditor({
     settings.lineHeight,
     settings.lineColor,
     settings.paperColor,
+    settings.randomness,
     settings.ruledMarginLineOffset,
   ]);
 
