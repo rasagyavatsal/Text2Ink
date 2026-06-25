@@ -15,8 +15,10 @@ describe('types helpers', () => {
     expect(pageSettings.customBackgroundImage).toBe(DEFAULT_SETTINGS.customBackgroundImage);
     expect(pageSettings.customLineOffset).toBe(DEFAULT_SETTINGS.customLineOffset);
     expect(pageSettings.customLineSpacing).toBe(DEFAULT_SETTINGS.customLineSpacing);
+    expect(pageSettings.textHorizontalOffset).toBe(DEFAULT_SETTINGS.textHorizontalOffset);
     expect(pageSettings.inkColor).toBe(DEFAULT_SETTINGS.inkColor);
-    expect(pageSettings.lineColor).toBe(DEFAULT_SETTINGS.lineColor);
+    expect(pageSettings).not.toHaveProperty('lineColor');
+    expect(DEFAULT_SETTINGS).not.toHaveProperty('lineColor');
     expect(pageSettings.paper).toEqual({ kind: 'inherit' });
   });
 

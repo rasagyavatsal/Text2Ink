@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent, render } from '@testing-library/react';
+import { screen, fireEvent, render, within } from '@testing-library/react';
 import './settingsPanelTestMocks';
 import { renderSettingsPanel, createSettingsPanelProps } from './settingsPanelTestUtils';
 import SettingsPanel from '../SettingsPanel';
@@ -172,6 +172,7 @@ describe('SettingsPanel', () => {
     renderSettingsPanel();
 
     expect(screen.queryByText('Line Height')).not.toBeInTheDocument();
+    expect(screen.queryByText('Line Tilt')).not.toBeInTheDocument();
     expect(screen.queryByText('Top Margin')).not.toBeInTheDocument();
     expect(screen.queryByText('Bottom Margin')).not.toBeInTheDocument();
     expect(screen.queryByText('Left Margin')).not.toBeInTheDocument();
@@ -189,6 +190,8 @@ describe('SettingsPanel', () => {
     });
 
     expect(screen.getByText('Line Height')).toBeInTheDocument();
+    expect(screen.getByText('Text Position')).toBeInTheDocument();
+    expect(screen.queryByText('Line Tilt')).not.toBeInTheDocument();
     expect(screen.queryByText('Top Margin')).not.toBeInTheDocument();
     expect(screen.queryByText('Bottom Margin')).not.toBeInTheDocument();
     expect(screen.queryByText('Left Margin')).not.toBeInTheDocument();
@@ -232,15 +235,32 @@ describe('SettingsPanel', () => {
     });
 
     expect(screen.getByText('Top Margin')).toBeInTheDocument();
+    expect(screen.getByText('Line Tilt')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Auto-Detect Lines/i })).toBeInTheDocument();
-    expect(screen.getByText('Line Color')).toBeInTheDocument();
+    expect(screen.queryByText('Paper Color')).not.toBeInTheDocument();
+    expect(screen.queryByText('Text Position')).not.toBeInTheDocument();
+    expect(screen.queryByText('Line Color')).not.toBeInTheDocument();
   });
 
-  it('shows paper color and hides line color for preset-backed built-in papers', () => {
+  it('shows paper color and text position and hides line color for preset-backed built-in papers', () => {
     renderSettingsPanel();
 
     expect(screen.getByText('Paper Color')).toBeInTheDocument();
+    expect(screen.getByText('Text Position')).toBeInTheDocument();
     expect(screen.queryByText('Line Color')).not.toBeInTheDocument();
+  });
+
+  it('places built-in text position controls in the alignment section', () => {
+    const { container } = renderSettingsPanel();
+
+    const paperSection = container.querySelector('[data-section="paper"]');
+    const alignSection = container.querySelector('[data-section="align"]');
+
+    expect(paperSection).not.toBeNull();
+    expect(alignSection).not.toBeNull();
+    expect(within(paperSection as HTMLElement).getByText('Paper Color')).toBeInTheDocument();
+    expect(within(paperSection as HTMLElement).queryByText('Text Position')).not.toBeInTheDocument();
+    expect(within(alignSection as HTMLElement).getByText('Text Position')).toBeInTheDocument();
   });
 
   it('renders mobile jump controls when isMobileLayout is true and scrolls to sections', () => {

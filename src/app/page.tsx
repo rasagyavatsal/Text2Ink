@@ -70,7 +70,7 @@ const landingSections = [
     id: 'notebook-paper-and-page-setup',
     title: 'Notebook paper and page setup',
     body: [
-      `The editor includes ${paperStyleCount} paper styles: ${paperStyleNames}. Those styles can be combined with ${paperFormatNames} page sizes and ${paperOrientationNames} orientation. Paper setup also includes page-level controls such as paper color, margins, line color for generated or upload-backed paper, line tilt, line offset, and custom line spacing.`,
+      `The editor includes ${paperStyleCount} paper styles: ${paperStyleNames}. Those styles can be combined with ${paperFormatNames} page sizes and ${paperOrientationNames} orientation. Paper setup also includes page-level controls such as paper color, text position, margins, upload-backed line tilt, line offset, and custom line spacing.`,
       `Paper color is separate from ink color. The current catalog includes ${paperColorNames}, which lets you keep blue or dark ink while changing the page background. For custom paper, the editor accepts ${backgroundFormats} background images. Uploaded backgrounds can be used for forms, worksheets, branded pages, or scanned paper textures, then removed from the editor when no longer needed.`,
       'Page setup affects both appearance and pagination. Letter, A4, and A3 do not hold the same amount of handwriting, and landscape pages change the line length. Lined and ruled paper are useful when handwriting should follow rows, grid and dot grid work better for structured notes, and Cornell paper gives the page a note-taking layout with separate areas. Margins and line offsets help align handwriting with those page structures.',
     ],
@@ -225,10 +225,8 @@ export default function HomePage() {
       <main className="py-page-y flex flex-col items-center gap-section w-full">
         <div className={frameClasses}>
           <div className="text-center flex flex-col items-center gap-6 max-w-7xl mx-auto">
-            <h1 className="font-normal tracking-tight leading-tight whitespace-normal lg:whitespace-nowrap text-foreground">
-              <span className="text-4xl sm:text-6xl md:text-7xl">Text to</span>{' '}
-              <span className="text-6xl sm:text-8xl md:text-9xl text-amber-600 dark:text-amber-300 font-[family-name:var(--font-snake)]">Handwriting</span>{' '}
-              <span className="text-4xl sm:text-6xl md:text-7xl">Converter</span>
+            <h1 className="text-6xl sm:text-7xl md:text-8xl font-normal tracking-tight leading-tight whitespace-normal lg:whitespace-nowrap text-amber-600 dark:text-amber-300 font-[family-name:var(--font-snake)]">
+              Text to Handwriting Converter
             </h1>
             <p data-testid="home-direct-answer" className="text-body-lg text-muted-foreground max-w-3xl leading-8">
               {directAnswer}

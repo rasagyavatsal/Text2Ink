@@ -145,6 +145,7 @@ function normalizeHandwritingSettings(
     paperOrientation,
     ...rest
   } = settingsRecord;
+  delete rest.lineColor;
   const firstLegacyPageStyle = rawPageSettingsByPage.find(
     (pageSettings) =>
       pageSettings
@@ -182,6 +183,7 @@ function normalizePageSettings(
     paper: rawPaper,
     ...rest
   } = pageSettingsRecord;
+  delete rest.lineColor;
   delete rest.paperStyle;
 
   return {

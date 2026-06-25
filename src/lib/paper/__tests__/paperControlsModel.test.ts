@@ -4,6 +4,27 @@ import { DEFAULT_SETTINGS, defaultPageSettingsFromHandwritingSettings } from '@/
 import { resolvePageLayout } from '@/lib/layout/LayoutEngine';
 
 describe('resolvePaperControlsModel', () => {
+  it('shows color and text position controls for non-upload built-in paper', () => {
+    const settings = DEFAULT_SETTINGS;
+    const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
+    const layout = resolvePageLayout({
+      pageIndex: 0,
+      settings,
+      pageSettings,
+    });
+
+    const model = resolvePaperControlsModel({
+      settings,
+      pageSettings,
+      resolvedPaper: layout.paper,
+    });
+
+    expect(model.paperMode).toBe('preset');
+    expect(model.showPaperColorControls).toBe(true);
+    expect(model.showTextHorizontalOffsetControl).toBe(true);
+    expect(model.showLineTiltControl).toBe(false);
+  });
+
   it('identifies upload-backed paper mode and its control visibility', () => {
     // We need to set up settings that yield an upload-backed paper.
     // In DEFAULT_SETTINGS, it's a preset. Let's make it upload-backed by setting customBackgroundImage.
@@ -35,6 +56,9 @@ describe('resolvePaperControlsModel', () => {
     expect(model.showManualAlignmentControls).toBe(true);
     // If it's upload-backed, spacing is derived from calibration, so maybe line height control is false
     expect(model.showLineHeightControl).toBe(false);
+    expect(model.showPaperColorControls).toBe(false);
+    expect(model.showTextHorizontalOffsetControl).toBe(false);
+    expect(model.showLineTiltControl).toBe(true);
   });
 
   it('determines spacing controls and effective spacing value for upload-backed paper', () => {

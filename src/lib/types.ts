@@ -52,8 +52,8 @@ export interface PageSettings {
   customBackgroundImage: string | null;
   customLineOffset: number;
   customLineSpacing: number | null;
+  textHorizontalOffset: number;
   inkColor: string;
-  lineColor: string;
   paper: PagePaperSelection;
   textFields?: TextField[];
 }
@@ -75,9 +75,9 @@ export interface HandwritingSettings {
   marginRight: number;
   paper: DocumentPaperSelection;
   ruledMarginLineOffset: number;
+  textHorizontalOffset: number;
   inkColor: string;
   paperColor: string;
-  lineColor: string;
   customBackgroundImage: string | null;
   customBackgroundImages: string[];
   customLineOffset: number;
@@ -147,9 +147,9 @@ export const DEFAULT_SETTINGS: HandwritingSettings = {
     presetId: 'lined-letter-portrait',
   },
   ruledMarginLineOffset: -10,
+  textHorizontalOffset: 0,
   inkColor: '#1a365d',
   paperColor: '#fffef5',
-  lineColor: '#a8d4f0',
   customBackgroundImage: null,
   customBackgroundImages: [],
   customLineOffset: 0,
@@ -176,8 +176,8 @@ export const defaultPageSettingsFromHandwritingSettings = (
   customBackgroundImage: settings.customBackgroundImage,
   customLineOffset: settings.customLineOffset,
   customLineSpacing: settings.customLineSpacing,
+  textHorizontalOffset: settings.textHorizontalOffset,
   inkColor: settings.inkColor,
-  lineColor: settings.lineColor,
   paper: { kind: 'inherit' },
   textFields: settings.textFields || [],
 });

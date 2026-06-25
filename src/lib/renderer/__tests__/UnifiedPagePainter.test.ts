@@ -243,7 +243,7 @@ describe('UnifiedPagePainter', () => {
   });
 
   describe('paintPage - line tilt', () => {
-    it('applies line tilt rotation once at the start of text block, not per character', () => {
+    it('ignores saved line tilt for built-in paper', () => {
       const ctx = createMockCtx();
       const settings = createNonRandomSettings();
       const pageSettings = { ...defaultPageSettingsFromHandwritingSettings(settings), lineTilt: 5 };
@@ -256,7 +256,24 @@ describe('UnifiedPagePainter', () => {
 
       UnifiedPagePainter.paintPage(opts);
 
-      // Should be called once for the entire text block, not twice for 'AB'
+      expect(ctx.rotate).not.toHaveBeenCalled();
+    });
+
+    it('applies upload-backed line tilt once at the start of text block, not per character', () => {
+      const ctx = createMockCtx();
+      const settings = createNonRandomSettings({
+        customBackgroundImage: 'data:image/png;base64,page',
+      });
+      const pageSettings = { ...defaultPageSettingsFromHandwritingSettings(settings), lineTilt: 5 };
+      const opts = defaultPaintOptions({
+        ctx,
+        settings,
+        pageSettings,
+        lines: [{ text: 'AB', lineIndex: 0, hasNewline: false }],
+      });
+
+      UnifiedPagePainter.paintPage(opts);
+
       expect(ctx.rotate).toHaveBeenCalledTimes(1);
       expect(ctx.rotate).toHaveBeenCalledWith((5 * Math.PI) / 180);
     });
