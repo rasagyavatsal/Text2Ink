@@ -199,7 +199,7 @@ describe('PageRenderEngine preview — character positions respect resolved page
     expect(firstPos.x).toBeCloseTo(layout.writing.textBounds.left, 0);
   });
 
-  it('character y position starts at firstLineTop from resolved writing layout, not a fixed offset', async () => {
+  it('character hitbox y starts from the second built-in paper line', async () => {
     const settings = createPreviewSettings({ paperFormat: 'a4' as const, paperOrientation: 'portrait' as const });
     const pageSettings = {
       ...defaultPageSettingsFromHandwritingSettings(settings),
@@ -208,7 +208,7 @@ describe('PageRenderEngine preview — character positions respect resolved page
     const { firstPos, layout } = await renderCharacterPositionHelper({ settings, pageSettings, char: 'C' });
 
     expect(firstPos).toBeDefined();
-    expect(firstPos.y).toBeCloseTo(layout.writing.firstLineTop, 0);
+    expect(firstPos.y).toBeCloseTo(layout.writing.firstLineTop + layout.writing.lineHeightPx - 20, 0);
   });
 });
 

@@ -5,9 +5,10 @@ import { resolvePageLayout } from '@/lib/layout/LayoutEngine';
 import { withTestPaperSelection } from '@/test/paperTestHelpers';
 import { createMockCanvasContext, extractFillTextChars } from '@/test/canvasTestHelpers';
 
-function createMockCtx() {
+function createMockCtx(overrides?: Parameters<typeof createMockCanvasContext>[0]) {
   return createMockCanvasContext({
     canvas: { width: 0, height: 0 },
+    ...overrides,
   });
 }
 
@@ -43,6 +44,10 @@ function paintWithPaperStyle(style: PaperStyle) {
   const opts = defaultPaintOptions({ ctx, settings, pageSettings });
   UnifiedPagePainter.paintPage(opts);
   return ctx;
+}
+
+function firstTextTranslateY(ctx: ReturnType<typeof createMockCtx>) {
+  return (ctx.translate as ReturnType<typeof vi.fn>).mock.calls[0]?.[1];
 }
 
 function computeSelectionPositionsForText(
@@ -182,6 +187,105 @@ describe('UnifiedPagePainter', () => {
       expect(fillTextCalls.length).toBeGreaterThan(0);
       // The last fillStyle set before fillText should be the ink color
       expect(ctx.fillStyle).toBe('#ff0000');
+    });
+
+    it('leaves the first built-in paper line blank and starts text on the second line', () => {
+      const ctx = createMockCtx();
+      const settings = createNonRandomSettings();
+      const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
+      const resolvedLayout = resolvePageLayout({ pageIndex: 0, settings, pageSettings });
+      const expectedBaselineY = resolvedLayout.writing.firstLineTop + resolvedLayout.writing.lineHeightPx;
+
+      UnifiedPagePainter.paintPage(defaultPaintOptions({
+        ctx,
+        settings,
+        pageSettings,
+        lines: [{ text: 'A', lineIndex: 0, hasNewline: false }],
+      }));
+
+      expect(resolvedLayout.paper.sourceKind).toBe('preset-built-in');
+      expect(resolvedLayout.writing.firstLineTop).toBe(90);
+      expect(firstTextTranslateY(ctx)).toBe(expectedBaselineY);
+    });
+
+    it('keeps built-in baseline on the paper line when font size exceeds line spacing', () => {
+      const ctx = createMockCtx({
+        measureText: vi.fn().mockReturnValue({
+          width: 10,
+          fontBoundingBoxAscent: 60,
+          fontBoundingBoxDescent: 12,
+          actualBoundingBoxAscent: 58,
+          actualBoundingBoxDescent: 10,
+        }),
+      });
+      const settings = createNonRandomSettings();
+      const pageSettings = {
+        ...defaultPageSettingsFromHandwritingSettings(settings),
+        fontSize: 72,
+      };
+      const resolvedLayout = resolvePageLayout({ pageIndex: 0, settings, pageSettings });
+      const expectedBaselineY = resolvedLayout.writing.firstLineTop + resolvedLayout.writing.lineHeightPx;
+
+      UnifiedPagePainter.paintPage(defaultPaintOptions({
+        ctx,
+        settings,
+        pageSettings,
+        lines: [{ text: 'A', lineIndex: 0, hasNewline: false }],
+      }));
+
+      expect(firstTextTranslateY(ctx)).toBe(expectedBaselineY);
+    });
+
+    it('keeps built-in baseline on the paper line with tall font metrics', () => {
+      const ctx = createMockCtx({
+        measureText: vi.fn().mockReturnValue({
+          width: 10,
+          fontBoundingBoxAscent: 80,
+          fontBoundingBoxDescent: 20,
+          actualBoundingBoxAscent: 78,
+          actualBoundingBoxDescent: 18,
+        }),
+      });
+      const settings = createNonRandomSettings();
+      const pageSettings = defaultPageSettingsFromHandwritingSettings(settings);
+      const resolvedLayout = resolvePageLayout({ pageIndex: 0, settings, pageSettings });
+      const expectedBaselineY = resolvedLayout.writing.firstLineTop + resolvedLayout.writing.lineHeightPx;
+
+      UnifiedPagePainter.paintPage(defaultPaintOptions({
+        ctx,
+        settings,
+        pageSettings,
+        lines: [{ text: 'A', lineIndex: 0, hasNewline: false }],
+      }));
+
+      expect(firstTextTranslateY(ctx)).toBe(expectedBaselineY);
+    });
+
+    it('keeps upload-backed paper using existing row-centering baseline behavior', () => {
+      const ctx = createMockCtx();
+      const settings = createNonRandomSettings({
+        customBackgroundImage: 'data:image/png;base64,abc',
+      });
+      const pageSettings = {
+        ...defaultPageSettingsFromHandwritingSettings(settings),
+        customLineSpacing: 44,
+        fontSize: 24,
+      };
+      const resolvedLayout = resolvePageLayout({ pageIndex: 0, settings, pageSettings });
+      const expectedBaselineY =
+        resolvedLayout.writing.firstLineTop
+        + (resolvedLayout.writing.lineHeightPx - resolvedLayout.writing.fontSize) / 2
+        + 20;
+
+      UnifiedPagePainter.paintPage(defaultPaintOptions({
+        ctx,
+        settings,
+        pageSettings,
+        lines: [{ text: 'A', lineIndex: 0, hasNewline: false }],
+      }));
+
+      expect(resolvedLayout.paper.sourceKind).toBe('upload-backed');
+      expect(firstTextTranslateY(ctx)).toBe(expectedBaselineY);
     });
   });
 
@@ -340,7 +444,7 @@ describe('UnifiedPagePainter', () => {
         charIndex: 0,
       });
       expect(positions.mainPositions[2].y).toBe(
-        resolvedLayout.writing.firstLineTop + resolvedLayout.writing.lineHeightPx,
+        resolvedLayout.writing.firstLineTop + (resolvedLayout.writing.lineHeightPx * 2) - 20,
       );
     });
 
@@ -505,6 +609,26 @@ describe('UnifiedPagePainter', () => {
         const [, y, , height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0];
         expect(y).toBeCloseTo(pageSettings.marginTop, 1);
         expect(height).toBeCloseTo(25, 1);
+      });
+
+      it('anchors built-in caret and selection bounds to the paper-line baseline', () => {
+        const { ctx, positions, resolvedLayout } = computeSelectionPositionsForText('A');
+        const first = positions.mainPositions[0];
+        const baselineY = resolvedLayout.writing.firstLineTop + resolvedLayout.writing.lineHeightPx;
+
+        expect(resolvedLayout.paper.sourceKind).toBe('preset-built-in');
+        expect(first.selectionY).toBe(baselineY - 20);
+        expect(first.cursorY).toBe(baselineY - 20);
+        expect(first.y).toBe(baselineY - 20);
+        expect(first.height).toBe(25);
+        expect(first.selectionHeight).toBe(25);
+        expect(first.cursorHeight).toBe(25);
+
+        UnifiedPagePainter.paintSelectionOverlay(ctx, positions.mainPositions, 0, 1, '#1a365d');
+
+        const [, y, , height] = (ctx.fillRect as ReturnType<typeof vi.fn>).mock.calls[0];
+        expect(y).toBe(baselineY - 20);
+        expect(height).toBe(25);
       });
    });
 
