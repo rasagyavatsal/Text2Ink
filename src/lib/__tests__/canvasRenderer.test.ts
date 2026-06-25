@@ -6,6 +6,7 @@ import {
   type LineData,
   defaultPageSettingsFromHandwritingSettings,
 } from '../types';
+import { resolvePageLayout } from '../layout/LayoutEngine';
 import { withTestPaperSelection } from '@/test/paperTestHelpers';
 import { createMockCanvasContext, createMockCanvas, createMockImageClass } from '@/test/canvasTestHelpers';
 
@@ -104,11 +105,16 @@ describe('canvasRenderer', () => {
     expect(mockCanvas.height).toBe(Math.ceil(595.28 * scale));
   });
 
-  it('applies correct vertical centering offset', async () => {
+  it('starts built-in lined text on the second preset-authored baseline', async () => {
     const settingsNoRandom = { 
       ...mockSettings, 
       randomness: { ...mockSettings.randomness, enabled: false } 
     };
+    const layout = resolvePageLayout({
+      pageIndex: 0,
+      settings: settingsNoRandom,
+      pageSettings: mockPageSettings,
+    });
 
     await renderPageToCanvas({
       canvas: mockCanvas,
@@ -125,7 +131,7 @@ describe('canvasRenderer', () => {
     // Canonical lined paper now uses preset-authored baseline geometry.
     const translateCalls = mockCtx.translate.mock.calls;
     const yValue = translateCalls[0][1];
-    expect(yValue).toBe(103.125);
+    expect(yValue).toBe(layout.writing.firstLineTop + layout.writing.lineHeightPx);
   });
 
   it('renders built-in lined paper from the SVG background instead of synthetic guides', async () => {

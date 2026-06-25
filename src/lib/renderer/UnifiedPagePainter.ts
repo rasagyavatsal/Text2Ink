@@ -1,5 +1,5 @@
-import { HandwritingSettings, PageSettings, TextField } from '../types';
-import { LineData, calculateRandomStyle } from '../editorHelpers';
+import type { HandwritingSettings, PageSettings, PaperStyle, TextField } from '../types';
+import { calculateRandomStyle, type LineData } from '../editorHelpers';
 import { type ResolvedPageLayout, resolvePageLayout } from '../layout/LayoutEngine';
 
 export interface PaintPageOptions {
@@ -15,41 +15,115 @@ export interface PaintPageOptions {
 
 type CharacterPositionLines = Array<Pick<LineData, 'text' | 'lineIndex' | 'hasNewline'>>;
 
+interface FontMetrics {
+  ascent: number;
+  descent: number;
+}
+
+const BUILT_IN_BASELINE_PAPER_STYLES = new Set<PaperStyle>([
+  'lined',
+  'wide-lined',
+  'narrow-lined',
+  'ruled',
+  'wide-ruled',
+  'narrow-ruled',
+  'cornell',
+]);
+
+function measureMainFontMetrics(ctx: CanvasRenderingContext2D, fontSize: number): FontMetrics {
+  const sampleMetrics = ctx.measureText('Ajpqy');
+  return {
+    ascent: sampleMetrics.fontBoundingBoxAscent
+      ?? sampleMetrics.actualBoundingBoxAscent
+      ?? (fontSize * 0.85),
+    descent: sampleMetrics.fontBoundingBoxDescent
+      ?? sampleMetrics.actualBoundingBoxDescent
+      ?? (fontSize * 0.15),
+  };
+}
+
+function usesBuiltInPaperLineBaseline(layout: ResolvedPageLayout): boolean {
+  return layout.paper.sourceKind === 'preset-built-in'
+    && BUILT_IN_BASELINE_PAPER_STYLES.has(layout.paper.style);
+}
+
+function resolveLegacyCenteredBaselineOffset(
+  layout: ResolvedPageLayout,
+  fontMetrics: FontMetrics,
+): number {
+  return ((layout.writing.lineHeightPx - layout.writing.fontSize) / 2) + fontMetrics.ascent;
+}
+
+function resolveLineTopY(layout: ResolvedPageLayout, lineNumber: number): number {
+  return layout.writing.firstLineTop + (lineNumber * layout.writing.lineHeightPx);
+}
+
+function resolveLineBaselineY(opts: {
+  layout: ResolvedPageLayout;
+  lineNumber: number;
+  fontMetrics: FontMetrics;
+}): number {
+  const lineTopY = resolveLineTopY(opts.layout, opts.lineNumber);
+  if (usesBuiltInPaperLineBaseline(opts.layout)) {
+    return lineTopY + opts.layout.writing.lineHeightPx;
+  }
+
+  return lineTopY + resolveLegacyCenteredBaselineOffset(opts.layout, opts.fontMetrics);
+}
+
+function resolveLineHitbox(opts: {
+  layout: ResolvedPageLayout;
+  lineNumber: number;
+  fontMetrics: FontMetrics;
+  baselineY: number;
+}): { y: number; height: number } {
+  const lineTopY = resolveLineTopY(opts.layout, opts.lineNumber);
+  if (!usesBuiltInPaperLineBaseline(opts.layout)) {
+    return {
+      y: lineTopY,
+      height: opts.layout.writing.lineHeightPx,
+    };
+  }
+
+  return {
+    y: opts.baselineY - opts.fontMetrics.ascent,
+    height: Math.max(
+      opts.layout.writing.lineHeightPx,
+      opts.fontMetrics.ascent + opts.fontMetrics.descent,
+    ),
+  };
+}
+
 function buildCharacterPositionsForLines(opts: {
   ctx: CanvasRenderingContext2D;
   lines: CharacterPositionLines;
-  startX: number;
-  startY: number;
-  verticalCenteringOffset: number;
-  pageLineHeightPx: number;
+  layout: ResolvedPageLayout;
   settings: HandwritingSettings;
-  fontAscent: number;
-  fontDescent: number;
+  fontMetrics: FontMetrics;
   ensureCaretAnchor?: boolean;
 }): CharacterPosition[] {
   const {
     ctx,
     lines,
-    startX,
-    startY,
-    verticalCenteringOffset,
-    pageLineHeightPx,
+    layout,
     settings,
-    fontAscent,
-    fontDescent,
+    fontMetrics,
     ensureCaretAnchor = false,
   } = opts;
+  const startX = layout.writing.textBounds.left;
+  const fontHeight = fontMetrics.ascent + fontMetrics.descent;
 
   const positions: CharacterPosition[] = [];
-  let currentLineY = startY;
 
-  for (const line of lines) {
+  lines.forEach((line, lineNumber) => {
     const lineText = line.text;
     const lineIndex = line.lineIndex;
+    const baselineY = resolveLineBaselineY({ layout, lineNumber, fontMetrics });
+    const hitbox = resolveLineHitbox({ layout, lineNumber, fontMetrics, baselineY });
     let currentX = startX;
     let prevEndX = currentX;
-    let prevSelectionY = currentLineY + verticalCenteringOffset - fontAscent;
-    let prevSelectionHeight = fontAscent + fontDescent;
+    let prevSelectionY = baselineY - fontMetrics.ascent;
+    let prevSelectionHeight = fontHeight;
     let prevCursorY = prevSelectionY;
     let prevCursorHeight = prevSelectionHeight;
 
@@ -73,8 +147,8 @@ function buildCharacterPositionsForLines(opts: {
         cursorY = prevCursorY;
         cursorHeight = prevCursorHeight;
       } else {
-        cursorY = currentLineY + verticalCenteringOffset - fontAscent + randomData.baseline;
-        cursorHeight = fontAscent + fontDescent;
+        cursorY = baselineY - fontMetrics.ascent + randomData.baseline;
+        cursorHeight = fontHeight;
         selectionY = cursorY;
         selectionHeight = cursorHeight;
         prevSelectionY = selectionY;
@@ -88,9 +162,9 @@ function buildCharacterPositionsForLines(opts: {
 
       positions.push({
         x: currentX,
-        y: currentLineY,
+        y: hitbox.y,
         width: charWidth,
-        height: pageLineHeightPx,
+        height: hitbox.height,
         lineIndex,
         charIndex: charIdx,
         selectionY,
@@ -108,37 +182,37 @@ function buildCharacterPositionsForLines(opts: {
     if (line.hasNewline) {
       positions.push({
         x: currentX,
-        y: currentLineY,
+        y: hitbox.y,
         width: 0,
-        height: pageLineHeightPx,
+        height: hitbox.height,
         lineIndex,
         charIndex: lineText.length,
-        selectionY: currentLineY + verticalCenteringOffset - fontAscent,
-        selectionHeight: fontAscent + fontDescent,
+        selectionY: baselineY - fontMetrics.ascent,
+        selectionHeight: fontHeight,
         selectionX: currentX,
         selectionWidth: 0,
-        cursorY: currentLineY + verticalCenteringOffset - fontAscent,
-        cursorHeight: fontAscent + fontDescent,
+        cursorY: baselineY - fontMetrics.ascent,
+        cursorHeight: fontHeight,
       });
     }
-
-    currentLineY += pageLineHeightPx;
-  }
+  });
 
   if (ensureCaretAnchor && positions.length === 0) {
+    const baselineY = resolveLineBaselineY({ layout, lineNumber: 0, fontMetrics });
+    const hitbox = resolveLineHitbox({ layout, lineNumber: 0, fontMetrics, baselineY });
     positions.push({
       x: startX,
-      y: startY,
+      y: hitbox.y,
       width: 0,
-      height: pageLineHeightPx,
+      height: hitbox.height,
       lineIndex: 0,
       charIndex: 0,
-      selectionY: startY + verticalCenteringOffset - fontAscent,
-      selectionHeight: fontAscent + fontDescent,
+      selectionY: baselineY - fontMetrics.ascent,
+      selectionHeight: fontHeight,
       selectionX: startX,
       selectionWidth: 0,
-      cursorY: startY + verticalCenteringOffset - fontAscent,
-      cursorHeight: fontAscent + fontDescent,
+      cursorY: baselineY - fontMetrics.ascent,
+      cursorHeight: fontHeight,
     });
   }
 
@@ -174,19 +248,11 @@ export const UnifiedPagePainter = {
     }
 
     // 3. Draw main text
-    const pageLineHeightPx = writing.lineHeightPx;
-
     ctx.font = `${writing.fontSize}px ${fontFamily}`;
     ctx.fillStyle = pageSettings.inkColor;
     ctx.textBaseline = 'alphabetic';
 
-    // Compute vertical centering offset
-    const halfLeading = (pageLineHeightPx - writing.fontSize) / 2;
-    const sampleMetrics = ctx.measureText('Ajpqy');
-    const fontAscent = sampleMetrics.fontBoundingBoxAscent
-      ?? sampleMetrics.actualBoundingBoxAscent
-      ?? (writing.fontSize * 0.85);
-    const verticalCenteringOffset = halfLeading + fontAscent;
+    const fontMetrics = measureMainFontMetrics(ctx, writing.fontSize);
 
     ctx.save();
     const tilt = resolveEffectiveLineTilt(resolvedLayout, pageSettings);
@@ -194,19 +260,21 @@ export const UnifiedPagePainter = {
       ctx.rotate((tilt * Math.PI) / 180);
     }
 
-    let currentLineY = writing.firstLineTop;
-    for (const line of lines) {
+    lines.forEach((line, lineNumber) => {
+      const baselineY = resolveLineBaselineY({
+        layout: resolvedLayout,
+        lineNumber,
+        fontMetrics,
+      });
       this._drawTextLine(
         ctx,
         line.text,
         line.lineIndex,
         writing.textBounds.left,
-        currentLineY,
-        verticalCenteringOffset,
+        baselineY,
         settings,
       );
-      currentLineY += pageLineHeightPx;
-    }
+    });
     ctx.restore();
 
     // 4. Draw text fields
@@ -275,8 +343,7 @@ export const UnifiedPagePainter = {
     lineText: string,
     lineIndex: number,
     startX: number,
-    startY: number,
-    verticalCenteringOffset: number,
+    baselineY: number,
     settings: HandwritingSettings,
   ): void {
     let currentX = startX;
@@ -289,7 +356,7 @@ export const UnifiedPagePainter = {
 
       if (char !== ' ') {
         ctx.save();
-        ctx.translate(currentX, startY + verticalCenteringOffset + randomData.baseline);
+        ctx.translate(currentX, baselineY + randomData.baseline);
 
         if (randomData.rotation !== 0) {
           ctx.rotate((randomData.rotation * Math.PI) / 180);
@@ -390,29 +457,14 @@ export const UnifiedPagePainter = {
 
     ctx.font = `${resolvedLayout.writing.fontSize}px ${fontFamily}`;
 
-    // Measure font metrics once for fallback
-    const sampleMetrics = ctx.measureText('Ajpqy');
-    const fontAscent = sampleMetrics.fontBoundingBoxAscent
-      ?? sampleMetrics.actualBoundingBoxAscent
-      ?? (resolvedLayout.writing.fontSize * 0.85);
-    const fontDescent = sampleMetrics.fontBoundingBoxDescent
-      ?? sampleMetrics.actualBoundingBoxDescent
-      ?? (resolvedLayout.writing.fontSize * 0.15);
-
-    // Compute vertical centering offset (matches _drawTextLine logic)
-    const halfLeading = (resolvedLayout.writing.lineHeightPx - resolvedLayout.writing.fontSize) / 2;
-    const verticalCenteringOffset = halfLeading + fontAscent;
+    const fontMetrics = measureMainFontMetrics(ctx, resolvedLayout.writing.fontSize);
 
     const mainPositions = buildCharacterPositionsForLines({
       ctx,
       lines,
-      startX: resolvedLayout.writing.textBounds.left,
-      startY: resolvedLayout.writing.firstLineTop,
-      verticalCenteringOffset,
-      pageLineHeightPx: resolvedLayout.writing.lineHeightPx,
+      layout: resolvedLayout,
       settings,
-      fontAscent,
-      fontDescent,
+      fontMetrics,
       // Ensure we have at least one position (anchor) even if the page is empty 
       // so that the blinking caret can be rendered.
       ensureCaretAnchor: true,
