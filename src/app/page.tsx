@@ -293,6 +293,34 @@ export default function HomePage() {
                       </p>
                     ))}
                   </div>
+                  {section.id === 'handwriting-font-options' && (
+                    <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                      <div className="rounded-xl sm:rounded-2xl overflow-hidden border border-border shadow-sm bg-card flex flex-col">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src="/singlong-preview.jpg"
+                          alt="Singlong handwriting font preview"
+                          className="w-full h-auto object-cover"
+                          loading="lazy"
+                        />
+                        <div className="p-3 text-sm text-center text-muted-foreground w-full bg-muted/30 border-t border-border">
+                          Singlong on ruled medium paper
+                        </div>
+                      </div>
+                      <div className="rounded-xl sm:rounded-2xl overflow-hidden border border-border shadow-sm bg-card flex flex-col">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src="/snake-preview.jpg"
+                          alt="Snake handwriting font preview"
+                          className="w-full h-auto object-cover"
+                          loading="lazy"
+                        />
+                        <div className="p-3 text-sm text-center text-muted-foreground w-full bg-muted/30 border-t border-border">
+                          Snake on ruled medium paper
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </section>
               ))}
             </div>
