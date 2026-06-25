@@ -920,7 +920,12 @@ export default function SettingsPanel({
               {settings.customFont ? (
                 <div className="relative group">
                   <FontCard
-                    font={{ name: settings.customFont.name, value: 'custom', className: '' }}
+                    font={{
+                      name: settings.customFont.name,
+                      value: 'custom',
+                      className: '',
+                      cssFontFamily: '',
+                    }}
                     isSelected={settings.fontFamily === 'custom'}
                     onClick={() => {
                       setCustomFontError(null);

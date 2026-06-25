@@ -23,6 +23,7 @@ type DocumentLayoutSettings = Partial<
     | 'paperColor'
     | 'paper'
     | 'lineColor'
+    | 'randomness'
     | 'ruledMarginLineOffset'
   >
 > & {
@@ -191,9 +192,13 @@ export function paginateDocument(input: PaginateDocumentInput): PaginateDocument
       pageSettings,
     });
 
-    const measure = createMeasure(input.fontFamily, layout.writing.fontSize);
     const pageLines: PaginationLineData[] = [];
     for (let i = 0; i < layout.writing.linesPerPage && cursor < textLength; i++) {
+      const lineIndex = lineCounter.value;
+      const measure = createMeasure(input.fontFamily, layout.writing.fontSize, {
+        randomness: input.settings.randomness,
+        lineIndex,
+      });
       const next = nextLineFrom(input.text, cursor, layout.writing.textBounds.width, measure);
       if (!next) break;
       pageLines.push({
