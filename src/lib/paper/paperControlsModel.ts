@@ -5,6 +5,9 @@ export interface PaperControlsModel {
   paperMode: 'preset' | 'upload' | 'generated';
   showManualAlignmentControls: boolean;
   showLineHeightControl: boolean;
+  showPaperColorControls: boolean;
+  showTextHorizontalOffsetControl: boolean;
+  showLineTiltControl: boolean;
   showSpacingControls: boolean;
   isSpacingEditable: boolean;
   effectiveSpacingValue: number | null;
@@ -35,6 +38,9 @@ export function resolvePaperControlsModel(input: {
     paperMode,
     showManualAlignmentControls: resolvedPaper.capabilities.supportsManualAlignment,
     showLineHeightControl: resolvedPaper.capabilities.supportsLineHeightControl,
+    showPaperColorControls: !hasUploadBackedPaper,
+    showTextHorizontalOffsetControl: !hasUploadBackedPaper,
+    showLineTiltControl: hasUploadBackedPaper,
     showSpacingControls: hasUploadBackedPaper,
     isSpacingEditable: hasUploadBackedPaper,
     effectiveSpacingValue: hasUploadBackedPaper ? (pageSettings.customLineSpacing ?? Math.round(pageSettings.fontSize * settings.lineHeight)) : null,

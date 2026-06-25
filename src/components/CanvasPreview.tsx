@@ -5,7 +5,11 @@ import { HandwritingSettings, PageSettings } from '@/lib/types';
 import { LineData } from '@/lib/editorHelpers';
 import { resolvePageLayout } from '@/lib/layout/LayoutEngine';
 import { pageRenderEngine } from '@/lib/renderer/PageRenderEngine';
-import { UnifiedPagePainter, type CharacterPosition } from '@/lib/renderer/UnifiedPagePainter';
+import {
+  UnifiedPagePainter,
+  resolveEffectiveLineTilt,
+  type CharacterPosition,
+} from '@/lib/renderer/UnifiedPagePainter';
 
 const CANVAS_SELECTION_DRAG_THRESHOLD_PX = 6;
 
@@ -236,6 +240,7 @@ export default function CanvasPreview({
     [pageIndex, pageSettings, settings],
   );
   const { width: pageWidth, height: pageHeight } = resolvedLayout.page;
+  const effectiveLineTilt = resolveEffectiveLineTilt(resolvedLayout, pageSettings);
 
   // Cursor blink
   useEffect(() => {
@@ -302,7 +307,7 @@ export default function CanvasPreview({
             Math.max(0, localSelStart),
             Math.min(mainPositions.length, localSelEnd),
             pageSettings.inkColor,
-            pageSettings.lineTilt,
+            effectiveLineTilt,
           );
         }
 
@@ -314,7 +319,7 @@ export default function CanvasPreview({
               mainPositions,
               localCursor,
               pageSettings.inkColor,
-              pageSettings.lineTilt,
+              effectiveLineTilt,
             );
           }
         }
@@ -336,6 +341,7 @@ export default function CanvasPreview({
     lines, pageSettings, settings, pageIndex, previewScale,
     fontFamily, cursorPosition, selectionStart, selectionEnd,
     pageStartOffset, isFocused, cursorVisible, canvasRef, backgroundRevision,
+    effectiveLineTilt,
   ]);
 
   useEffect(() => {
@@ -360,7 +366,7 @@ export default function CanvasPreview({
     const positions = charPositionsRef.current;
     if (positions.length === 0) return null;
 
-    const tilt = pageSettings.lineTilt || 0;
+    const tilt = effectiveLineTilt;
     let targetX = pageX;
     let targetY = pageY;
 
@@ -373,7 +379,7 @@ export default function CanvasPreview({
     }
 
     return resolveCanvasInsertionPoint(positions, targetX, targetY);
-  }, [pageSettings.lineTilt]);
+  }, [effectiveLineTilt]);
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (didDragRef.current) {

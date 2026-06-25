@@ -22,9 +22,9 @@ type DocumentLayoutSettings = Partial<
     | 'lineHeight'
     | 'paperColor'
     | 'paper'
-    | 'lineColor'
     | 'randomness'
     | 'ruledMarginLineOffset'
+    | 'textHorizontalOffset'
   >
 > & {
   paperPresetId?: string | null;
@@ -45,7 +45,7 @@ type PageLayoutSettings = Partial<
     | 'marginBottom'
     | 'marginLeft'
     | 'paperColor'
-    | 'lineColor'
+    | 'textHorizontalOffset'
   >
 > & {
   paperStyle?: PaperStyle;

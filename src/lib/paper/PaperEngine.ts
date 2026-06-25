@@ -8,7 +8,10 @@ import {
   type PageSettings,
   defaultPageSettingsFromHandwritingSettings,
 } from '@/lib/types';
-import { buildBuiltinNotebookPaperDataUrl } from './builtinNotebookSvg';
+import {
+  BUILTIN_NOTEBOOK_GUIDE_LINE_COLOR as PAPER_GUIDE_LINE_COLOR,
+  buildBuiltinNotebookPaperDataUrl,
+} from './builtinNotebookSvg';
 import {
   NOTEBOOK_PAPER_PRESETS,
   type NotebookPaperAlignmentMetadata,
@@ -30,11 +33,11 @@ type RawDocumentPaperSettings = Partial<
     HandwritingSettings,
     | 'customBackgroundImage'
     | 'customBackgroundImages'
-    | 'lineColor'
     | 'lineHeight'
     | 'paperColor'
     | 'paper'
     | 'ruledMarginLineOffset'
+    | 'textHorizontalOffset'
   >
 > & {
   paperPresetId?: string | null;
@@ -50,12 +53,12 @@ type RawPagePaperSettings = Partial<
     | 'customLineOffset'
     | 'customLineSpacing'
     | 'fontSize'
-    | 'lineColor'
     | 'marginBottom'
     | 'marginLeft'
     | 'marginRight'
     | 'marginTop'
     | 'paperColor'
+    | 'textHorizontalOffset'
   >
 > & {
   paperStyle?: PaperStyle;
@@ -300,6 +303,10 @@ function resolvePaperMeasurementAndGeometry(
     pageSettings.customLineSpacing,
     DEFAULT_PAGE_SETTINGS.customLineSpacing,
   );
+  const textHorizontalOffsetResolution = resolveFiniteNumber(
+    pageSettings.textHorizontalOffset ?? settings.textHorizontalOffset,
+    DEFAULT_PAGE_SETTINGS.textHorizontalOffset,
+  );
   const margins = {
     top: marginTopResolution.value,
     right: marginRightResolution.value,
@@ -327,12 +334,15 @@ function resolvePaperMeasurementAndGeometry(
     lineHeightPx *= 0.8;
   }
   const lineOffset = hasUploadBackground ? customLineOffsetResolution.value : 0;
-  const textLeft =
+  const baseTextLeft =
     (style === 'ruled' || style === 'wide-ruled' || style === 'narrow-ruled') && !hasUploadBackground
       ? margins.left + ruledMarginLineOffsetResolution.value + RULED_TEXT_INSET_PX
       : margins.left;
+  const textLeft = hasUploadBackground
+    ? baseTextLeft
+    : clampTextLeft(baseTextLeft + textHorizontalOffsetResolution.value, contentBounds.right);
   const textTop = margins.top + lineOffset;
-  const textWidth = Math.max(0, pageWidth - textLeft - margins.right);
+  const textWidth = Math.max(0, contentBounds.right - textLeft);
 
   const resolutions = {
     lineHeightResolution,
@@ -343,6 +353,7 @@ function resolvePaperMeasurementAndGeometry(
     marginLeftResolution,
     customLineOffsetResolution,
     customLineSpacingResolution,
+    textHorizontalOffsetResolution,
   };
 
   const geometry = {
@@ -370,7 +381,6 @@ function resolvePaperGuideAndBackground(
   style: PaperStyle,
   geometry: ResolvedPaperGeometry,
   paperColor: string,
-  lineColor: string,
   ruledMarginLineOffset: number,
   backgroundImage: string | null
 ) {
@@ -382,7 +392,6 @@ function resolvePaperGuideAndBackground(
         pageWidth: geometry.pageWidth,
         pageHeight: geometry.pageHeight,
         paperColor,
-        lineColor,
         margins: geometry.margins,
         textTop: geometry.textTop,
         lineHeightPx: geometry.lineHeightPx,
@@ -404,7 +413,6 @@ function resolvePaperGuideAndBackground(
     : resolveGuides({
         hasUploadBackground,
         style,
-        lineColor,
         marginLeft: geometry.margins.left,
         ruledMarginLineOffset,
       });
@@ -460,10 +468,9 @@ function resolvePaperDefinition(input: ResolvePagePaperInput): PaperDefinition {
     settings.paperColor,
     DEFAULT_SETTINGS.paperColor,
   );
-  const lineColorResolution = resolveString(
-    pageSettings.lineColor,
-    settings.lineColor,
-    DEFAULT_SETTINGS.lineColor,
+  const textHorizontalOffsetResolution = resolveFiniteNumber(
+    pageSettings.textHorizontalOffset ?? settings.textHorizontalOffset,
+    DEFAULT_SETTINGS.textHorizontalOffset,
   );
 
   if (explicitBuiltinPreset) {
@@ -472,7 +479,7 @@ function resolvePaperDefinition(input: ResolvePagePaperInput): PaperDefinition {
       backgroundImage,
       fontSize: fontSizeResolution.value,
       paperColor: paperColorResolution.value,
-      lineColor: lineColorResolution.value,
+      textHorizontalOffset: textHorizontalOffsetResolution.value,
     });
   }
 
@@ -497,9 +504,9 @@ function resolvePaperDefinition(input: ResolvePagePaperInput): PaperDefinition {
     || resolutions.marginBottomResolution.incompatible
     || resolutions.marginLeftResolution.incompatible
     || paperColorResolution.incompatible
-    || lineColorResolution.incompatible
     || resolutions.customLineOffsetResolution.incompatible
-    || resolutions.customLineSpacingResolution.incompatible;
+    || resolutions.customLineSpacingResolution.incompatible
+    || resolutions.textHorizontalOffsetResolution.incompatible;
 
   const candidateBuiltinPreset = hasUploadBackground
     ? null
@@ -516,10 +523,8 @@ function resolvePaperDefinition(input: ResolvePagePaperInput): PaperDefinition {
     pageWidth: geometry.pageWidth,
     pageHeight: geometry.pageHeight,
     paperColor: paperColorResolution.value,
-    lineColor: lineColorResolution.value,
     margins: geometry.margins,
     textTop: geometry.textTop,
-    textLeft: geometry.textLeft,
     lineHeightPx: geometry.lineHeightPx,
   })
     ? candidateBuiltinPreset
@@ -531,7 +536,6 @@ function resolvePaperDefinition(input: ResolvePagePaperInput): PaperDefinition {
     style,
     geometry,
     paperColorResolution.value,
-    lineColorResolution.value,
     resolutions.ruledMarginLineOffsetResolution.value,
     backgroundImage
   );
@@ -562,7 +566,7 @@ function resolveExplicitBuiltinPresetPaper(input: {
   backgroundImage: string | null;
   fontSize: number;
   paperColor: string;
-  lineColor: string;
+  textHorizontalOffset: number;
 }): ResolvedPaper {
   if (input.backgroundImage) {
     throw new Error('Explicit built-in presets should not be resolved through upload backgrounds.');
@@ -571,9 +575,10 @@ function resolveExplicitBuiltinPresetPaper(input: {
   const margins = input.preset.alignment.writingMargins;
   const contentBounds = input.preset.alignment.contentArea;
   const textTop = input.preset.alignment.firstBaselineOffset;
-  const textLeft = input.preset.style === 'ruled'
+  const baseTextLeft = input.preset.style === 'ruled'
     ? (input.preset.alignment.ruledMarginPosition ?? contentBounds.left) + RULED_TEXT_INSET_PX
     : contentBounds.left;
+  const textLeft = clampTextLeft(baseTextLeft + input.textHorizontalOffset, contentBounds.right);
   const source = resolvePaperSource({
     hasUploadBackground: false,
     builtinPreset: input.preset,
@@ -623,12 +628,8 @@ function resolveExplicitBuiltinPresetPaper(input: {
 function resolveExplicitBuiltinPresetBackground(input: {
   preset: ResolvedBuiltinPaperPreset;
   paperColor: string;
-  lineColor: string;
 }): ResolvedPaperBackground {
-  if (
-    sameString(input.paperColor, DEFAULT_SETTINGS.paperColor)
-    && sameString(input.lineColor, DEFAULT_SETTINGS.lineColor)
-  ) {
+  if (sameString(input.paperColor, DEFAULT_SETTINGS.paperColor)) {
     return {
       kind: 'image',
       imageSrc: input.preset.assetPath,
@@ -642,7 +643,6 @@ function resolveExplicitBuiltinPresetBackground(input: {
       pageWidth: input.preset.pageSize.width,
       pageHeight: input.preset.pageSize.height,
       paperColor: input.paperColor,
-      lineColor: input.lineColor,
       margins: input.preset.alignment.writingMargins,
       textTop: input.preset.alignment.firstBaselineOffset,
       lineHeightPx: input.preset.alignment.lineSpacing,
@@ -657,7 +657,6 @@ function resolveBuiltinPresetBackground(input: {
   pageWidth: number;
   pageHeight: number;
   paperColor: string;
-  lineColor: string;
   margins: ResolvedPaperGeometry['margins'];
   textTop: number;
   lineHeightPx: number;
@@ -681,7 +680,6 @@ function resolveBuiltinPresetBackground(input: {
       pageWidth: input.pageWidth,
       pageHeight: input.pageHeight,
       paperColor: input.paperColor,
-      lineColor: input.lineColor,
       margins: input.margins,
       textTop: input.textTop,
       lineHeightPx: input.lineHeightPx,
@@ -722,7 +720,6 @@ function resolveBackgroundImage(input: {
 function resolveGuides(input: {
   hasUploadBackground: boolean;
   style: PaperStyle;
-  lineColor: string;
   marginLeft: number;
   ruledMarginLineOffset: number;
 }): ResolvedPaperGuides {
@@ -733,14 +730,14 @@ function resolveGuides(input: {
   if (input.style === 'lined' || input.style === 'wide-lined' || input.style === 'narrow-lined') {
     return {
       kind: 'lined',
-      lineColor: input.lineColor,
+      lineColor: PAPER_GUIDE_LINE_COLOR,
     };
   }
 
   if (input.style === 'ruled' || input.style === 'wide-ruled' || input.style === 'narrow-ruled') {
     return {
       kind: 'ruled',
-      lineColor: input.lineColor,
+      lineColor: PAPER_GUIDE_LINE_COLOR,
       marginLineX: input.marginLeft + input.ruledMarginLineOffset,
       marginLineColor: RULED_MARGIN_LINE_COLOR,
       marginLineWidth: RULED_MARGIN_LINE_WIDTH,
@@ -750,7 +747,7 @@ function resolveGuides(input: {
   if (input.style === 'cornell') {
     return {
       kind: 'cornell',
-      lineColor: input.lineColor,
+      lineColor: PAPER_GUIDE_LINE_COLOR,
       marginLineX: input.marginLeft + input.ruledMarginLineOffset,
       marginLineColor: RULED_MARGIN_LINE_COLOR,
       marginLineWidth: RULED_MARGIN_LINE_WIDTH,
@@ -760,14 +757,14 @@ function resolveGuides(input: {
   if (input.style === 'dot-grid') {
     return {
       kind: 'dot-grid',
-      lineColor: input.lineColor,
+      lineColor: PAPER_GUIDE_LINE_COLOR,
       alpha: GRID_GUIDE_ALPHA,
     };
   }
 
   return {
     kind: 'grid',
-    lineColor: input.lineColor,
+    lineColor: PAPER_GUIDE_LINE_COLOR,
     alpha: GRID_GUIDE_ALPHA,
   };
 }
@@ -983,10 +980,8 @@ function isCompatibleBuiltinPreset(input: {
   pageWidth: number;
   pageHeight: number;
   paperColor: string;
-  lineColor: string;
   margins: ResolvedPaperGeometry['margins'];
   textTop: number;
-  textLeft: number;
   lineHeightPx: number;
 }): input is {
   candidatePreset: ResolvedBuiltinPaperPreset;
@@ -995,10 +990,8 @@ function isCompatibleBuiltinPreset(input: {
   pageWidth: number;
   pageHeight: number;
   paperColor: string;
-  lineColor: string;
   margins: ResolvedPaperGeometry['margins'];
   textTop: number;
-  textLeft: number;
   lineHeightPx: number;
 } {
   const preset = input.candidatePreset;
@@ -1023,22 +1016,19 @@ function isCompatibleBuiltinPreset(input: {
     return false;
   }
 
-  if (
-    !sameString(input.paperColor, DEFAULT_SETTINGS.paperColor)
-    || !sameString(input.lineColor, DEFAULT_SETTINGS.lineColor)
-  ) {
+  if (!sameString(input.paperColor, DEFAULT_SETTINGS.paperColor)) {
     return false;
   }
 
-  const expectedTextLeft = input.style === 'ruled' || input.style === 'wide-ruled' || input.style === 'narrow-ruled'
-    ? (preset.alignment.ruledMarginPosition ?? input.margins.left) + RULED_TEXT_INSET_PX
-    : input.margins.left;
-
-  return sameNumber(input.textLeft, expectedTextLeft);
+  return true;
 }
 
 function sameNumber(left: number, right: number): boolean {
   return Math.abs(left - right) <= BUILTIN_PRESET_EPSILON;
+}
+
+function clampTextLeft(value: number, maxRight: number): number {
+  return Math.max(0, Math.min(maxRight, value));
 }
 
 function sameString(left: string, right: string): boolean {

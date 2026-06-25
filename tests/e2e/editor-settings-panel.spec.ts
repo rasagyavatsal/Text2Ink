@@ -1,3 +1,4 @@
+import path from "path";
 import { openDesktopEditor, test, expect } from "./fixtures";
 
 /**
@@ -5,7 +6,7 @@ import { openDesktopEditor, test, expect } from "./fixtures";
  *
  * Covers: font selection, paper styles (grid, dot-grid, ruled, cornell),
  * paper size, paper orientation, ink color, paper color swatches,
- * randomness toggle, font size slider, line tilt slider.
+ * randomness toggle, font size slider, text position slider, line tilt slider.
  *
  * Tests target the desktop settings sidebar identified by
  * data-testid="desktop-settings-panel".
@@ -22,6 +23,8 @@ test.skip(
 async function openEditor(page: Parameters<typeof test>[1]["page"]) {
   return openDesktopEditor(page);
 }
+
+const BG_FIXTURE = path.join(__dirname, "fixtures", "test-background.png");
 
 // ---------------------------------------------------------------------------
 // Font selection – select at least one built-in handwriting font
@@ -260,7 +263,25 @@ test("can adjust the font size slider in the settings panel", async ({
 });
 
 // ---------------------------------------------------------------------------
-// Line tilt slider – adjust line tilt
+// Text position slider – adjust built-in paper horizontal text offset
+// ---------------------------------------------------------------------------
+
+test("can adjust the text position slider in the settings panel", async ({
+  page,
+}) => {
+  const panel = await openEditor(page);
+
+  const textPositionSlider = panel.getByRole("slider", { name: "Text Position" });
+  await textPositionSlider.scrollIntoViewIfNeeded();
+  await textPositionSlider.focus();
+
+  await textPositionSlider.press("ArrowRight");
+
+  await expect(panel).toBeAttached();
+});
+
+// ---------------------------------------------------------------------------
+// Line tilt slider – adjust line tilt for upload-backed paper
 // ---------------------------------------------------------------------------
 
 test("can adjust the line tilt slider in the settings panel", async ({
@@ -268,9 +289,14 @@ test("can adjust the line tilt slider in the settings panel", async ({
 }) => {
   const panel = await openEditor(page);
 
-  // Line tilt slider is the second slider in the desktop panel (after Font Size)
-  const lineTiltSlider = panel.getByRole("slider").nth(1);
-  await lineTiltSlider.evaluate((el) => el.scrollIntoView());
+  const bgInput = panel.locator('input[type="file"][accept*="image/png"]');
+  await bgInput.setInputFiles(BG_FIXTURE);
+  await expect(panel.locator('img[alt^="Custom background"]').first()).toBeVisible({
+    timeout: 10_000,
+  });
+
+  const lineTiltSlider = panel.getByRole("slider", { name: "Line Tilt" });
+  await lineTiltSlider.scrollIntoViewIfNeeded();
   await lineTiltSlider.focus();
 
   await lineTiltSlider.press("ArrowRight");

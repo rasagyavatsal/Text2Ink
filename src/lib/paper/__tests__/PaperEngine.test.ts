@@ -118,6 +118,26 @@ describe('PaperEngine', () => {
     });
   });
 
+  it('shifts built-in preset text horizontally without moving preset artwork', () => {
+    const pageSettings = {
+      ...defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
+      textHorizontalOffset: 20,
+    };
+
+    const resolved = resolvePagePaper({
+      pageIndex: 0,
+      settings: DEFAULT_SETTINGS,
+      pageSettings,
+    });
+
+    expect(resolved.variant).toBe('preset');
+    expect(resolved.preset?.id).toBe('lined-letter-portrait');
+    expect(expectImageBackground(resolved)).toBe('/paper-presets/lined-letter-portrait.svg');
+    expect(resolved.geometry.textLeft).toBe(110);
+    expect(resolved.geometry.textWidth).toBe(466);
+    expect(resolved.geometry.textLeft + resolved.geometry.textWidth).toBe(resolved.geometry.contentBounds.right);
+  });
+
   it('reports preset-backed paper through a normalized source and capability contract', () => {
     const pageSettings = defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS);
 
@@ -197,7 +217,6 @@ describe('PaperEngine', () => {
         paperPresetId: 'grid-letter-portrait',
         lineHeight: 2.4,
         paperColor: '#ffffff',
-        lineColor: '#4f8ad9',
         ruledMarginLineOffset: -40,
       },
       {
@@ -206,7 +225,6 @@ describe('PaperEngine', () => {
         marginBottom: 84,
         marginLeft: 88,
         paperColor: '#f8f7ef',
-        lineColor: '#cc8899',
       },
     );
 
@@ -396,7 +414,6 @@ describe('PaperEngine', () => {
       paperPresetId: null,
       paperStyle: 'lined',
       paperColor: '#ffffff',
-      lineColor: '#4f8ad9',
     });
 
     expect(resolved.variant).toBe('legacy-fallback');

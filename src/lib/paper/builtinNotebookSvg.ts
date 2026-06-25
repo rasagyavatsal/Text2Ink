@@ -5,7 +5,6 @@ export interface NotebookPaperSvgInput {
   pageWidth: number;
   pageHeight: number;
   paperColor: string;
-  lineColor: string;
   margins: {
     top: number;
     right: number;
@@ -21,6 +20,8 @@ export interface NotebookPaperSvgOptions {
   rootWidth?: string;
   rootHeight?: string;
 }
+
+export const BUILTIN_NOTEBOOK_GUIDE_LINE_COLOR = '#a9becd';
 
 const RULED_MARGIN_LINE_COLOR = '#f39ca6';
 const REFERENCE_GRID_MINOR_LINE_FALLBACK = '#d7e2ea';
@@ -75,7 +76,7 @@ function buildHorizontalLines(input: NotebookPaperSvgInput): string {
   for (let y = input.textTop; y < maxY; y += input.lineHeightPx) {
     const lineY = formatNumber(y);
     lines.push(
-      `  <line x1="0" y1="${lineY}" x2="${formatNumber(input.pageWidth)}" y2="${lineY}" stroke="${escapeXml(input.lineColor)}" stroke-width="${strokeWidth}" stroke-opacity="0.85" />`,
+      `  <line x1="0" y1="${lineY}" x2="${formatNumber(input.pageWidth)}" y2="${lineY}" stroke="${escapeXml(BUILTIN_NOTEBOOK_GUIDE_LINE_COLOR)}" stroke-width="${strokeWidth}" stroke-opacity="0.85" />`,
     );
   }
 
@@ -104,7 +105,7 @@ function buildCornellLines(input: NotebookPaperSvgInput): string {
 function buildGridDefinitions(input: NotebookPaperSvgInput): string {
   if (input.style === 'dot-grid') {
     const dotSpacing = input.lineHeightPx * GRID_SPACING_RATIO;
-    const dotColor = mixHexColors(input.lineColor, REFERENCE_GRID_MAJOR_LINE_FALLBACK, 0.4);
+    const dotColor = mixHexColors(BUILTIN_NOTEBOOK_GUIDE_LINE_COLOR, REFERENCE_GRID_MAJOR_LINE_FALLBACK, 0.4);
     const dotRadius = formatNumber(Math.max(0.8, input.lineHeightPx * 0.02));
 
     return [
@@ -116,8 +117,8 @@ function buildGridDefinitions(input: NotebookPaperSvgInput): string {
 
   const gridSpacing = input.lineHeightPx * GRID_SPACING_RATIO;
   const majorGridSpacing = gridSpacing * GRID_MAJOR_LINE_MULTIPLIER;
-  const minorLineColor = mixHexColors(input.lineColor, REFERENCE_GRID_MINOR_LINE_FALLBACK, 0.48);
-  const majorLineColor = mixHexColors(input.lineColor, REFERENCE_GRID_MAJOR_LINE_FALLBACK, 0.12);
+  const minorLineColor = mixHexColors(BUILTIN_NOTEBOOK_GUIDE_LINE_COLOR, REFERENCE_GRID_MINOR_LINE_FALLBACK, 0.48);
+  const majorLineColor = mixHexColors(BUILTIN_NOTEBOOK_GUIDE_LINE_COLOR, REFERENCE_GRID_MAJOR_LINE_FALLBACK, 0.12);
   const minorLineWidth = formatNumber(Math.max(0.7, input.lineHeightPx * 0.0175));
   const majorLineWidth = formatNumber(Math.max(1, input.lineHeightPx * 0.025));
 
