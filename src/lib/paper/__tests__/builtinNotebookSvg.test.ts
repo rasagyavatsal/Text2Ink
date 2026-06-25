@@ -8,7 +8,6 @@ describe('buildBuiltinNotebookPaperDataUrl', () => {
       pageWidth: 612,
       pageHeight: 792,
       paperColor: '#ffffff',
-      lineColor: '#000000',
       margins: { top: 0, right: 0, bottom: 0, left: 0 },
       textTop: 50,
       lineHeightPx: 30,

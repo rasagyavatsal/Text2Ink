@@ -3,7 +3,6 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const PAPER_COLOR = '#ffffff';
-const LINE_COLOR = '#a9becd';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, '..');
@@ -21,7 +20,6 @@ for (const preset of manifest) {
       pageWidth: preset.pageSize.width,
       pageHeight: preset.pageSize.height,
       paperColor: PAPER_COLOR,
-      lineColor: LINE_COLOR,
       margins: preset.alignment.writingMargins,
       textTop: preset.alignment.firstBaselineOffset,
       lineHeightPx: preset.alignment.lineSpacing,

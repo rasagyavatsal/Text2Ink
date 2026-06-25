@@ -10,7 +10,7 @@ The public site is statically exported and served by Firebase Hosting. The conta
 - Built-in handwriting fonts, plus custom `.ttf` and `.otf` uploads.
 - Paper presets for Letter, A4, and A3 in portrait or landscape.
 - Blank, lined, ruled, grid, dot-grid, and Cornell paper styles.
-- Per-page margins, font size, ink color, paper color, line color, background images, and line calibration.
+- Per-page margins, font size, ink color, paper color, text position, background images, and line calibration.
 - Randomized spacing, baseline, and rotation controls for a less mechanical handwriting effect.
 - Browser persistence for the current editor state.
 - High-resolution export to PDF, PNG, and JPG.

@@ -19,7 +19,6 @@ describe('canvasRenderer', () => {
 
   const mockSettings: HandwritingSettings = withTestPaperSelection({
     lineHeight: 1.5,
-    lineColor: '#000000',
     paperColor: '#ffffff',
     inkColor: '#111111',
     randomness: { enabled: true, spacing: 1, baseline: 1, rotation: 1 },
@@ -44,7 +43,6 @@ describe('canvasRenderer', () => {
     marginRight: 50,
     paperColor: '#ffffff',
     inkColor: '#111111',
-    lineColor: '#000000',
     customBackgroundImage: null,
     customLineOffset: 0,
     customLineSpacing: null,

@@ -40,7 +40,6 @@ describe('pagination', () => {
       customBackgroundImage: null,
       customBackgroundImages: [],
       lineHeight: 1.5,
-      lineColor: '#a8d4f0',
       paperFormat: 'letter',
       paperOrientation: 'portrait',
       paperPresetId: null,

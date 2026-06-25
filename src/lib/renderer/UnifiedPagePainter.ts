@@ -189,7 +189,7 @@ export const UnifiedPagePainter = {
     const verticalCenteringOffset = halfLeading + fontAscent;
 
     ctx.save();
-    const tilt = pageSettings.lineTilt || 0;
+    const tilt = resolveEffectiveLineTilt(resolvedLayout, pageSettings);
     if (tilt !== 0) {
       ctx.rotate((tilt * Math.PI) / 180);
     }
@@ -503,6 +503,15 @@ export const UnifiedPagePainter = {
     ctx.restore();
   },
 };
+
+export function resolveEffectiveLineTilt(
+  resolvedLayout: ResolvedPageLayout,
+  pageSettings: Pick<PageSettings, 'lineTilt'>,
+): number {
+  return resolvedLayout.paper.sourceKind === 'upload-backed'
+    ? pageSettings.lineTilt || 0
+    : 0;
+}
 
 export interface CharacterPosition {
   x: number;

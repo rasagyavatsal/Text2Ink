@@ -1187,30 +1187,25 @@ export default function SettingsPanel({
             </div>
           </ControlRow>
 
-          <ControlRow label="Paper Color" gapClass="gap-3">
-            <div className="flex flex-wrap gap-2 p-2 bg-secondary border border-border rounded-lg">
-              {PAPER_COLORS.map((color) => (
-                <button
-                  key={color.value}
-                  onClick={() => updateSetting('paperColor', color.value)}
-                  className={`w-8 h-8 rounded-md border-2 transition-all shadow-sm ${settings.paperColor === color.value
-                    ? 'border-brand-accent scale-110'
-                    : 'border-transparent hover:border-border hover:scale-105'
-                    }`}
-                  style={{ backgroundColor: color.value }}
-                  title={color.name}
-                />
-              ))}
-            </div>
-          </ControlRow>
-
-          {paperControls.paperMode === 'upload' && (
-            <ColorPickerRow
-              label="Line Color"
-              value={settings.lineColor}
-              onChange={(value) => updateSetting('lineColor', value)}
-            />
+          {paperControls.showPaperColorControls && (
+            <ControlRow label="Paper Color" gapClass="gap-3">
+              <div className="flex flex-wrap gap-2 p-2 bg-secondary border border-border rounded-lg">
+                {PAPER_COLORS.map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => updateSetting('paperColor', color.value)}
+                    className={`w-8 h-8 rounded-md border-2 transition-all shadow-sm ${settings.paperColor === color.value
+                      ? 'border-brand-accent scale-110'
+                      : 'border-transparent hover:border-border hover:scale-105'
+                      }`}
+                    style={{ backgroundColor: color.value }}
+                    title={color.name}
+                  />
+                ))}
+              </div>
+            </ControlRow>
           )}
+
         </div>
       </div>
 
@@ -1240,15 +1235,29 @@ export default function SettingsPanel({
             />
           )}
 
-          <SliderRow
-            label="Line Tilt"
-            value={pageSettings.lineTilt}
-            onValueChange={(value) => updatePageSetting('lineTilt', value)}
-            min={-15}
-            max={15}
-            step={0.5}
-            formatValue={(value) => `${value}°`}
-          />
+          {paperControls.showTextHorizontalOffsetControl && (
+            <SliderRow
+              label="Text Position"
+              value={pageSettings.textHorizontalOffset}
+              onValueChange={(value) => updatePageSetting('textHorizontalOffset', value)}
+              min={-80}
+              max={80}
+              step={1}
+              formatValue={(value) => `${value}px`}
+            />
+          )}
+
+          {paperControls.showLineTiltControl && (
+            <SliderRow
+              label="Line Tilt"
+              value={pageSettings.lineTilt}
+              onValueChange={(value) => updatePageSetting('lineTilt', value)}
+              min={-15}
+              max={15}
+              step={0.5}
+              formatValue={(value) => `${value}°`}
+            />
+          )}
 
           {showManualAlignmentControls && (
             <div className="grid grid-cols-2 gap-x-4 gap-y-8 pt-4 border-t border-border/50">
