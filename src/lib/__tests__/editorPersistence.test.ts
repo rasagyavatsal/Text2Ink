@@ -96,6 +96,31 @@ describe('editorPersistence', () => {
     expect(loaded?.pageSettingsByPage[0]?.paper).toEqual({ kind: 'inherit' });
   });
 
+  it('drops legacy lineColor fields while hydrating editor state', () => {
+    const payload = {
+      version: 1,
+      updatedAt: Date.now(),
+      text: 'hello',
+      settings: {
+        ...DEFAULT_SETTINGS,
+        lineColor: '#123456',
+      },
+      pageSettingsByPage: [
+        {
+          ...defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
+          lineColor: '#abcdef',
+        },
+      ],
+      ui: mockState.ui,
+    };
+    vi.mocked(localStorage.getItem).mockReturnValue(JSON.stringify(payload));
+
+    const loaded = loadNormalizedEditorStateV1();
+
+    expect(loaded?.settings).not.toHaveProperty('lineColor');
+    expect(loaded?.pageSettingsByPage[0]).not.toHaveProperty('lineColor');
+  });
+
   it('rejects malformed or version mismatch payloads', () => {
     vi.mocked(localStorage.getItem).mockReturnValue(JSON.stringify({ version: 2 }));
     expect(loadEditorStateV1()).toBeNull();

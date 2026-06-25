@@ -251,7 +251,6 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
         ...pageSettings,
         inkColor: resolvedSettings.inkColor,
         paperColor: resolvedSettings.paperColor,
-        lineColor: resolvedSettings.lineColor,
       });
 
       const applyToAllPages = (prevPageSettings: PageSettings[]) =>

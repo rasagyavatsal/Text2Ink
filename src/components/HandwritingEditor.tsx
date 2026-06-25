@@ -175,12 +175,12 @@ export default function HandwritingEditor({
       customLineOffset?: number;
       customLineSpacing?: number;
       fontSize: number;
-      lineColor?: string;
       marginTop: number;
       marginRight: number;
       marginBottom: number;
       marginLeft: number;
       paperColor?: string;
+      textHorizontalOffset?: number;
     }> = [];
 
     for (let i = 0; i < desiredLength; i++) {
@@ -190,12 +190,12 @@ export default function HandwritingEditor({
         customLineOffset: ps.customLineOffset ?? undefined,
         customLineSpacing: ps.customLineSpacing ?? undefined,
         fontSize: ps.fontSize,
-        lineColor: ps.lineColor,
         marginTop: ps.marginTop,
         marginRight: ps.marginRight,
         marginBottom: ps.marginBottom,
         marginLeft: ps.marginLeft,
         paperColor: ps.paperColor,
+        textHorizontalOffset: ps.textHorizontalOffset,
       });
     }
 
@@ -222,11 +222,11 @@ export default function HandwritingEditor({
         customBackgroundImage: settings.customBackgroundImage,
         customBackgroundImages: settings.customBackgroundImages,
         lineHeight: settings.lineHeight,
-        lineColor: settings.lineColor,
         paperColor: settings.paperColor,
         paper: settings.paper,
         randomness: settings.randomness,
         ruledMarginLineOffset: settings.ruledMarginLineOffset,
+        textHorizontalOffset: settings.textHorizontalOffset,
       },
       pageSettings: desiredPageSettings,
       fontFamily: resolvedFontFamily,
@@ -254,10 +254,10 @@ export default function HandwritingEditor({
     settings.customBackgroundImages,
     settings.paper,
     settings.lineHeight,
-    settings.lineColor,
     settings.paperColor,
     settings.randomness,
     settings.ruledMarginLineOffset,
+    settings.textHorizontalOffset,
   ]);
 
   useEffect(() => {

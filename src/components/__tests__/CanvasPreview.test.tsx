@@ -24,6 +24,8 @@ vi.mock('@/lib/renderer/UnifiedPagePainter', () => ({
     paintCursorOverlay,
     paintSelectionOverlay,
   },
+  resolveEffectiveLineTilt: (layout: { paper?: { sourceKind?: string } }, pageSettings: { lineTilt?: number }) =>
+    layout.paper?.sourceKind === 'upload-backed' ? pageSettings.lineTilt ?? 0 : 0,
 }));
 
 const defaultProps = {
@@ -233,6 +235,81 @@ describe('CanvasPreview', () => {
       width: '841.89px',
       height: '595.28px',
     });
+  });
+
+  it('uses zero tilt for built-in paper overlays even when saved page tilt is nonzero', async () => {
+    const pageSettings = {
+      ...defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
+      lineTilt: 8,
+    };
+
+    render(
+      <CanvasPreview
+        {...defaultProps}
+        pageSettings={pageSettings}
+        isFocused
+        cursorPosition={1}
+        selectionStart={0}
+        selectionEnd={2}
+      />
+    );
+
+    await waitFor(() => expect(paintSelectionOverlay).toHaveBeenCalled());
+    expect(paintSelectionOverlay).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.any(Array),
+      0,
+      2,
+      pageSettings.inkColor,
+      0,
+    );
+    expect(paintCursorOverlay).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.any(Array),
+      1,
+      pageSettings.inkColor,
+      0,
+    );
+  });
+
+  it('keeps upload-backed paper tilt for overlays', async () => {
+    const settings = {
+      ...DEFAULT_SETTINGS,
+      customBackgroundImage: 'data:image/png;base64,page',
+    };
+    const pageSettings = {
+      ...defaultPageSettingsFromHandwritingSettings(settings),
+      lineTilt: 8,
+    };
+
+    render(
+      <CanvasPreview
+        {...defaultProps}
+        settings={settings}
+        pageSettings={pageSettings}
+        isFocused
+        cursorPosition={1}
+        selectionStart={0}
+        selectionEnd={2}
+      />
+    );
+
+    await waitFor(() => expect(paintSelectionOverlay).toHaveBeenCalled());
+    expect(paintSelectionOverlay).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.any(Array),
+      0,
+      2,
+      pageSettings.inkColor,
+      8,
+    );
+    expect(paintCursorOverlay).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.any(Array),
+      1,
+      pageSettings.inkColor,
+      8,
+    );
   });
 
 });
