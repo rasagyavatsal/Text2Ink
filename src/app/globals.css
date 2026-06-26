@@ -393,6 +393,31 @@
     text-transform: uppercase;
     letter-spacing: 0.1em;
   }
+
+  .landing-preview-marquee {
+    animation: landing-preview-marquee 54s linear infinite;
+  }
+
+  .landing-preview-marquee:is(:hover, :focus-within) {
+    animation-play-state: paused;
+  }
+}
+
+@keyframes landing-preview-marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-preview-marquee {
+    animation: none;
+    transform: translateX(0);
+  }
 }
 
 @font-face {
