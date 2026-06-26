@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { PRIVACY_SETTINGS_EVENT } from '@/lib/privacyConsent';
 import SiteFooter from '../SiteFooter';
 
 // Mock Version
@@ -26,6 +27,9 @@ describe('SiteFooter', () => {
     const privacyLink = screen.getByRole('link', { name: /privacy policy/i });
     expect(privacyLink).toBeInTheDocument();
     expect(privacyLink).toHaveAttribute('href', '/privacy-policy');
+
+    const privacySettingsButton = screen.getByRole('button', { name: /privacy settings/i });
+    expect(privacySettingsButton).toBeInTheDocument();
     
     // Copyright
     const currentYear = new Date().getFullYear();
@@ -87,5 +91,16 @@ describe('SiteFooter', () => {
       expect(link).toHaveClass('py-2');
       expect(link).toHaveClass('md:py-1');
     });
+  });
+
+  it('dispatches a privacy settings event from the footer control', () => {
+    const listener = vi.fn();
+    window.addEventListener(PRIVACY_SETTINGS_EVENT, listener);
+    render(<SiteFooter />);
+
+    fireEvent.click(screen.getByRole('button', { name: /privacy settings/i }));
+
+    expect(listener).toHaveBeenCalledTimes(1);
+    window.removeEventListener(PRIVACY_SETTINGS_EVENT, listener);
   });
 });

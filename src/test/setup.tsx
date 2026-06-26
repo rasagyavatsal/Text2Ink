@@ -22,6 +22,38 @@ Object.defineProperty(globalThis, 'matchMedia', {
   })),
 });
 
+function createStorageMock() {
+  let store: Record<string, string> = {};
+  return {
+    getItem: vi.fn((key: string) => store[key] ?? null),
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = value;
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete store[key];
+    }),
+    clear: vi.fn(() => {
+      store = {};
+    }),
+    key: vi.fn((index: number) => Object.keys(store)[index] ?? null),
+    get length() {
+      return Object.keys(store).length;
+    },
+  };
+}
+
+if (typeof globalThis.window !== 'undefined') {
+  const localStorageMock = createStorageMock();
+  Object.defineProperty(window, 'localStorage', {
+    configurable: true,
+    value: localStorageMock,
+  });
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    value: localStorageMock,
+  });
+}
+
 // Mock ResizeObserver
 class ResizeObserver {
   observe = vi.fn();
