@@ -72,6 +72,36 @@ describe("InquiryForm", () => {
     expect(screen.getByText("Send a message")).toBeInTheDocument()
   })
 
+  it("shows a privacy notice and policy link near submission", () => {
+    render(<InquiryForm />)
+
+    expect(
+      screen.getByText(/text2ink uses submitted details to receive and respond to your inquiry/i)
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText(/we use submitted details to receive and respond to your inquiry/i)
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole("link", { name: /privacy policy/i })).toHaveAttribute(
+      "href",
+      "/privacy-policy"
+    )
+  })
+
+  it("avoids plural-owner wording in the contact form copy", async () => {
+    const user = userEvent.setup()
+    render(<InquiryForm />)
+
+    expect(screen.getByPlaceholderText(/how can text2ink help/i)).toBeInTheDocument()
+    expect(screen.queryByPlaceholderText(/how can we help/i)).not.toBeInTheDocument()
+
+    await fillAndSubmitInquiryForm(user)
+
+    await waitFor(() => {
+      expect(screen.getByText(/a reply will be sent soon/i)).toBeInTheDocument()
+    })
+    expect(screen.queryByText(/we'll get back to you soon/i)).not.toBeInTheDocument()
+  })
+
   it("shows inline errors when submitting empty form", async () => {
     const user = userEvent.setup()
     render(<InquiryForm />)

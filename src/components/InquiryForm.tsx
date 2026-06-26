@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useState, type FormEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -125,7 +126,7 @@ export function InquiryForm() {
           <div className="space-y-2">
             <h3 className="font-semibold text-xl">Thank you</h3>
             <p className="text-body text-muted-foreground max-w-sm px-4">
-              Your inquiry has been received. We&apos;ll get back to you soon.
+              Your inquiry has been received. A reply will be sent soon.
             </p>
           </div>
           <Button variant="brand" onClick={handleReset} className="mt-6">
@@ -210,7 +211,7 @@ export function InquiryForm() {
           id="inquiry-message"
           value={formData.message}
           onChange={(e) => handleChange("message", e.target.value)}
-          placeholder="How can we help?"
+          placeholder="How can Text2Ink help?"
           rows={5}
           spellCheck={false}
           className={cn("mt-1.5 min-h-[80px] py-3! sm:py-2!", errors.message && "border-destructive")}
@@ -222,6 +223,14 @@ export function InquiryForm() {
       {errors.submit && (
         <p className="text-sm text-destructive text-center mt-2">{errors.submit}</p>
       )}
+
+      <p className="text-caption leading-5 text-muted-foreground">
+        Text2Ink uses submitted details to receive and respond to your inquiry. See the{" "}
+        <Link href="/privacy-policy" className="font-medium text-brand-accent hover:text-brand-accent-hover">
+          Privacy Policy
+        </Link>
+        .
+      </p>
 
       <Button type="submit" className="w-full mt-2 h-11! sm:h-control-lg!" size="lg" disabled={isSubmitting}>
         {isSubmitting ? "Sending..." : "Send inquiry"}
