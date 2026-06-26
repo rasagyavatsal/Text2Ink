@@ -2,6 +2,7 @@ import React from 'react';
 import fs from 'node:fs';
 import path from 'node:path';
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import HomePage, { metadata } from '../page';
 import { productFacts } from '@/lib/seo/productFacts';
@@ -17,6 +18,15 @@ const homePageSource = fs.readFileSync(
 );
 
 describe('HomePage', () => {
+  const heroPreviewImages = [
+    { src: '/preview/preview-1.jpg', width: '2481', height: '3508', alt: 'Text2Ink handwritten page preview 1' },
+    { src: '/preview/preview-2.jpg', width: '2481', height: '3508', alt: 'Text2Ink handwritten page preview 2' },
+    { src: '/preview/preview-3.jpg', width: '2481', height: '3508', alt: 'Text2Ink handwritten page preview 3' },
+    { src: '/preview/preview-4.jpg', width: '2481', height: '3508', alt: 'Text2Ink handwritten page preview 4' },
+    { src: '/preview/preview-5.jpg', width: '3508', height: '2481', alt: 'Text2Ink handwritten page preview 5' },
+    { src: '/preview/preview-6.jpg', width: '3301', height: '2551', alt: 'Text2Ink handwritten page preview 6' },
+  ] as const;
+
   it('publishes canonical homepage metadata', () => {
     expect(metadata.alternates?.canonical).toBe('https://text2ink.com/');
     expect(metadata.openGraph?.url).toBe('https://text2ink.com/');
@@ -78,10 +88,30 @@ describe('HomePage', () => {
 
     expect(heroHeading).not.toHaveClass('font-bold');
     expect(heroHeading).toHaveClass('font-normal');
-    expect(heroHeading).toHaveClass('font-[family-name:var(--font-snake)]');
-    expect(heroHeading).toHaveClass('text-amber-600');
+    expect(heroHeading).not.toHaveClass('font-[family-name:var(--font-snake)]');
+    expect(heroHeading).toHaveClass('text-foreground');
     expect(heroHeading).toHaveClass('whitespace-normal');
-    expect(heroHeading.querySelectorAll('span')).toHaveLength(0);
+
+    const headingParts = heroHeading.querySelectorAll('span');
+    expect(headingParts).toHaveLength(3);
+    expect(headingParts[0]).toHaveTextContent('Text to');
+    expect(headingParts[0]).toHaveClass('text-foreground');
+    expect(headingParts[0]).toHaveClass('text-3xl');
+    expect(headingParts[0]).toHaveClass('sm:text-4xl');
+    expect(headingParts[0]).toHaveClass('md:text-6xl');
+    expect(headingParts[0]).not.toHaveClass('font-[family-name:var(--font-snake)]');
+    expect(headingParts[1]).toHaveTextContent('Handwriting');
+    expect(headingParts[1]).toHaveClass('font-[family-name:var(--font-snake)]');
+    expect(headingParts[1]).toHaveClass('text-amber-600');
+    expect(headingParts[1]).toHaveClass('text-5xl');
+    expect(headingParts[1]).toHaveClass('sm:text-6xl');
+    expect(headingParts[1]).toHaveClass('md:text-8xl');
+    expect(headingParts[2]).toHaveTextContent('Converter');
+    expect(headingParts[2]).toHaveClass('text-foreground');
+    expect(headingParts[2]).toHaveClass('text-3xl');
+    expect(headingParts[2]).toHaveClass('sm:text-4xl');
+    expect(headingParts[2]).toHaveClass('md:text-6xl');
+    expect(headingParts[2]).not.toHaveClass('font-[family-name:var(--font-snake)]');
 
     const directAnswer = screen.getByTestId('home-direct-answer');
     const wordCount = directAnswer.textContent?.trim().split(/\s+/).length ?? 0;
@@ -97,24 +127,25 @@ describe('HomePage', () => {
     expect(ctaLinks[1]).toHaveAttribute('data-size', 'lg');
   });
 
-  it('renders the preview images grid with responsive spacing and gaps', () => {
-    const { container } = render(<HomePage />);
-    const pictures = container.querySelectorAll('picture');
-    const grid = pictures[0].closest('.grid');
-    expect(grid).toBeInTheDocument();
-    expect(grid).toHaveClass('mt-6');
-    expect(grid).toHaveClass('sm:mt-8');
-    expect(grid).toHaveClass('lg:mt-10');
-    expect(grid).toHaveClass('gap-4');
-    expect(grid).toHaveClass('sm:gap-6');
-    expect(grid).toHaveClass('md:gap-8');
+  it('renders the hero preview carousel with marquee motion', () => {
+    render(<HomePage />);
+    const carousel = screen.getByTestId('hero-preview-carousel');
+    const track = screen.getByTestId('hero-preview-carousel-track');
+
+    expect(carousel).toBeInTheDocument();
+    expect(carousel).toHaveClass('mt-6');
+    expect(carousel).toHaveClass('sm:mt-8');
+    expect(carousel).toHaveClass('lg:mt-10');
+    expect(track).toHaveClass('landing-preview-marquee');
   });
 
-  it('renders the preview image cards with responsive border radius', () => {
-    const { container } = render(<HomePage />);
-    const pictures = container.querySelectorAll('picture');
-    const firstCard = pictures[0].closest('.rounded-xl, .rounded-2xl');
-    const secondCard = pictures[1].closest('.rounded-xl, .rounded-2xl');
+  it('renders the hero preview cards with responsive border radius', () => {
+    render(<HomePage />);
+    const previewButtons = screen.getAllByTestId('hero-preview-trigger');
+    const firstCard = previewButtons[0];
+    const secondCard = previewButtons[1];
+
+    expect(previewButtons).toHaveLength(6);
     expect(firstCard).toBeInTheDocument();
     expect(firstCard).toHaveClass('rounded-xl');
     expect(firstCard).toHaveClass('sm:rounded-2xl');
@@ -129,49 +160,35 @@ describe('HomePage', () => {
     expect(screen.queryByText(/Create a handwritten document by typing your content/i)).not.toBeInTheDocument();
   });
 
-  it('renders the preview images with responsive picture sources', () => {
-    const { container } = render(<HomePage />);
-    const pictures = container.querySelectorAll('picture');
-    expect(pictures.length).toBe(2);
+  it('renders the six carousel preview images with exact dimensions', () => {
+    render(<HomePage />);
+    const previewImages = screen.getAllByTestId('hero-carousel-preview');
 
-    // Verify first picture has sources and img
-    const firstPic = pictures[0];
-    const firstSources = firstPic.querySelectorAll('source');
-    expect(firstSources.length).toBe(2);
-    expect(firstSources[0]).toHaveAttribute('type', 'image/avif');
-    expect(firstSources[0]).toHaveAttribute('media', '(min-width: 640px)');
-    expect(firstSources[0].getAttribute('srcSet')).toContain('Sample-handwriting-preview1.avif');
-    expect(firstSources[1]).toHaveAttribute('type', 'image/avif');
-    expect(firstSources[1].getAttribute('srcSet')).toContain('Sample-handwriting-preview1-mobile.avif');
-    
-    const firstImg = firstPic.querySelector('img');
-    expect(firstImg).toBeInTheDocument();
-    expect(firstImg).toHaveAttribute('src', '/Sample-handwriting-preview1.png');
-    expect(firstImg).toHaveAttribute('alt', 'Text2Ink handwritten page preview on lined notebook paper');
-    expect(firstImg).toHaveAttribute('width', '618');
-    expect(firstImg).toHaveAttribute('height', '800');
-    expect(firstImg).toHaveAttribute('loading', 'eager');
-    expect(firstImg).toHaveAttribute('fetchPriority', 'high');
+    expect(previewImages).toHaveLength(heroPreviewImages.length);
 
-    // Verify second picture
-    const secondPic = pictures[1];
-    const secondImg = secondPic.querySelector('img');
-    expect(secondImg).toBeInTheDocument();
-    expect(secondImg).toHaveAttribute('src', '/Sample-handwriting-preview2.png');
-    expect(secondImg).toHaveAttribute('alt', 'Text2Ink handwritten page preview with blue ink and notebook lines');
-    expect(secondImg).toHaveAttribute('width', '618');
-    expect(secondImg).toHaveAttribute('height', '800');
-    expect(secondImg).toHaveAttribute('loading', 'lazy');
-    expect(secondImg).not.toHaveAttribute('fetchPriority', 'high');
+    heroPreviewImages.forEach((preview, index) => {
+      expect(previewImages[index]).toHaveAttribute('src', preview.src);
+      expect(previewImages[index]).toHaveAttribute('alt', preview.alt);
+      expect(previewImages[index]).toHaveAttribute('width', preview.width);
+      expect(previewImages[index]).toHaveAttribute('height', preview.height);
+    });
+  });
+
+  it('scales landscape carousel cards wider so their height matches portrait previews', () => {
+    render(<HomePage />);
+    const previewButtons = screen.getAllByTestId('hero-preview-trigger');
+
+    expect(previewButtons[0]).toHaveClass('lg:w-[22rem]');
+    expect(previewButtons[4]).toHaveClass('lg:w-[44rem]');
+    expect(previewButtons[5]).toHaveClass('lg:w-[40rem]');
   });
 
   it('renders the preview images grid without a width constraint wrapper', () => {
-    const { container } = render(<HomePage />);
-    const pictures = container.querySelectorAll('picture');
-    const grid = pictures[0].closest('.grid');
-    expect(grid).toBeInTheDocument();
+    render(<HomePage />);
+    const carousel = screen.getByTestId('hero-preview-carousel');
+    expect(carousel).toBeInTheDocument();
     
-    let current = grid;
+    let current: Element | null = carousel;
     let hasMaxWidth = false;
     while (current && current.tagName !== 'MAIN') {
       if (current.classList && current.classList.contains('max-w-content')) {
@@ -182,6 +199,34 @@ describe('HomePage', () => {
       current = current.parentElement as Element | null;
     }
     expect(hasMaxWidth).toBe(false);
+  });
+
+  it('renders font preview cards from the preview directory with exact dimensions', () => {
+    render(<HomePage />);
+
+    const singlong = screen.getByAltText('Singlong handwriting font preview');
+    const snake = screen.getByAltText('Snake handwriting font preview');
+
+    expect(singlong).toHaveAttribute('src', '/preview/singlong-preview.jpg');
+    expect(singlong).toHaveAttribute('width', '2481');
+    expect(singlong).toHaveAttribute('height', '3508');
+    expect(snake).toHaveAttribute('src', '/preview/snake-preview.jpg');
+    expect(snake).toHaveAttribute('width', '2481');
+    expect(snake).toHaveAttribute('height', '3508');
+  });
+
+  it('opens the shared lightbox from landing previews without zoom buttons', async () => {
+    const user = userEvent.setup();
+    render(<HomePage />);
+
+    await user.click(screen.getByRole('button', { name: /open text2ink handwritten page preview 1/i }));
+
+    const dialog = await screen.findByRole('dialog', {
+      name: /text2ink handwritten page preview 1/i,
+    });
+    expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getByTestId('preview-lightbox-image')).toHaveAttribute('src', '/preview/preview-1.jpg');
+    expect(within(dialog).queryByRole('button', { name: /zoom/i })).not.toBeInTheDocument();
   });
 
   it('removes the retired feature-section placeholders', () => {
