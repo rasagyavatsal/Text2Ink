@@ -6,6 +6,7 @@ import SiteHeader from '@/components/patterns/SiteHeader';
 import SiteFooter from '@/components/patterns/SiteFooter';
 import HomeToc from '@/components/patterns/HomeToc';
 import JsonLd from '@/components/seo/JsonLd';
+import { LandingFontPreviews, LandingPreviewCarousel } from './LandingPreviews';
 import {
   buildBreadcrumbListJsonLd,
   buildFaqPageJsonLd,
@@ -224,14 +225,16 @@ export default function HomePage() {
 
       <main className="py-page-y flex flex-col items-center gap-section w-full">
         <div className={frameClasses}>
-          <div className="text-center flex flex-col items-center gap-6 max-w-7xl mx-auto">
-            <h1 className="text-6xl sm:text-7xl md:text-8xl font-normal tracking-tight leading-tight whitespace-normal lg:whitespace-nowrap text-amber-600 dark:text-amber-300 font-[family-name:var(--font-snake)]">
-              Text to Handwriting Converter
+          <div className="text-center flex flex-col items-center gap-5 sm:gap-6 max-w-7xl mx-auto">
+            <h1 className="font-normal tracking-tight leading-tight whitespace-normal lg:whitespace-nowrap text-foreground">
+              <span className="text-3xl sm:text-4xl md:text-6xl text-foreground">Text to</span>{' '}
+              <span className="text-5xl sm:text-6xl md:text-8xl font-[family-name:var(--font-snake)] text-amber-600 dark:text-amber-300">Handwriting</span>{' '}
+              <span className="text-3xl sm:text-4xl md:text-6xl text-foreground">Converter</span>
             </h1>
-            <p data-testid="home-direct-answer" className="text-body-lg text-muted-foreground max-w-3xl leading-8">
+            <p data-testid="home-direct-answer" className="text-body sm:text-body-lg text-muted-foreground max-w-3xl leading-7 sm:leading-8">
               {directAnswer}
             </p>
-            <Button variant="brand" size="lg" className="mt-2 shadow-sm" asChild>
+            <Button variant="brand" size="lg" className="shadow-sm sm:mt-2" asChild>
               <Link href="/editor">
                 Open Editor
               </Link>
@@ -239,37 +242,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="w-full px-public-gutter grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 md:gap-8 mt-6 sm:mt-8 lg:mt-10">
-          <div className="rounded-xl sm:rounded-2xl overflow-hidden border border-border shadow-sm bg-card flex items-center justify-center">
-                <picture className="w-full h-auto flex">
-                  <source srcSet="/Sample-handwriting-preview1.avif" type="image/avif" media="(min-width: 640px)" />
-                  <source srcSet="/Sample-handwriting-preview1-mobile.avif" type="image/avif" />
-                  <img
-                    src="/Sample-handwriting-preview1.png"
-                    alt="Text2Ink handwritten page preview on lined notebook paper"
-                    width={618}
-                    height={800}
-                    className="w-full h-auto object-cover"
-                    loading="eager"
-                    fetchPriority="high"
-                  />
-                </picture>
-              </div>
-              <div className="rounded-xl sm:rounded-2xl overflow-hidden border border-border shadow-sm bg-card flex items-center justify-center">
-                <picture className="w-full h-auto flex">
-                  <source srcSet="/Sample-handwriting-preview2.avif" type="image/avif" media="(min-width: 640px)" />
-                  <source srcSet="/Sample-handwriting-preview2-mobile.avif" type="image/avif" />
-                  <img
-                    src="/Sample-handwriting-preview2.png"
-                    alt="Text2Ink handwritten page preview with blue ink and notebook lines"
-                    width={618}
-                    height={800}
-                    className="w-full h-auto object-cover"
-                    loading="lazy"
-                  />
-                </picture>
-              </div>
-            </div>
+        <LandingPreviewCarousel />
 
         <div className={`${frameClasses} mt-10 sm:mt-16 md:mt-24 flex gap-10`}>
           <HomeToc
@@ -294,32 +267,7 @@ export default function HomePage() {
                     ))}
                   </div>
                   {section.id === 'handwriting-font-options' && (
-                    <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                      <div className="rounded-xl sm:rounded-2xl overflow-hidden border border-border shadow-sm bg-card flex flex-col">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src="/singlong-preview.jpg"
-                          alt="Singlong handwriting font preview"
-                          className="w-full h-auto object-cover"
-                          loading="lazy"
-                        />
-                        <div className="p-3 text-sm text-center text-muted-foreground w-full bg-muted/30 border-t border-border">
-                          Singlong on ruled medium paper
-                        </div>
-                      </div>
-                      <div className="rounded-xl sm:rounded-2xl overflow-hidden border border-border shadow-sm bg-card flex flex-col">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src="/snake-preview.jpg"
-                          alt="Snake handwriting font preview"
-                          className="w-full h-auto object-cover"
-                          loading="lazy"
-                        />
-                        <div className="p-3 text-sm text-center text-muted-foreground w-full bg-muted/30 border-t border-border">
-                          Snake on ruled medium paper
-                        </div>
-                      </div>
-                    </div>
+                    <LandingFontPreviews />
                   )}
                 </section>
               ))}

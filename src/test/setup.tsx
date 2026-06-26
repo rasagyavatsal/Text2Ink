@@ -112,7 +112,7 @@ globalThis.Image = class {
 // Mock next/image
 vi.mock('next/image', () => ({
   __esModule: true,
-  default: ({ priority, ...props }: any) => {
+  default: ({ priority, unoptimized, ...props }: any) => {
     return <img {...props} alt={props.alt || ''} data-priority={priority ? 'true' : undefined} />;
   },
 }));

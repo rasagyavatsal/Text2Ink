@@ -37,12 +37,69 @@ test("home page hero contains the expected copy", async ({ page }) => {
 // Home page – preview images
 // ---------------------------------------------------------------------------
 
-test("home page displays preview images", async ({ page }) => {
+test("home page displays carousel and font preview images", async ({ page }) => {
   await page.goto("/");
-  const preview1 = page.getByAltText("Text2Ink handwritten page preview on lined notebook paper");
-  const preview2 = page.getByAltText("Text2Ink handwritten page preview with blue ink and notebook lines");
-  await expect(preview1).toBeVisible();
-  await expect(preview2).toBeVisible();
+  const carousel = page.getByTestId("hero-preview-carousel");
+  await expect(carousel).toBeVisible();
+
+  const previews = page.getByTestId("hero-carousel-preview");
+  await expect(previews).toHaveCount(6);
+  await expect(previews.nth(0)).toHaveAttribute("src", "/preview/preview-1.jpg");
+  await expect(previews.nth(0)).toHaveAttribute("width", "2481");
+  await expect(previews.nth(0)).toHaveAttribute("height", "3508");
+  await expect(previews.nth(4)).toHaveAttribute("src", "/preview/preview-5.jpg");
+  await expect(previews.nth(4)).toHaveAttribute("width", "3508");
+  await expect(previews.nth(4)).toHaveAttribute("height", "2481");
+
+  const previewCards = page.getByTestId("hero-preview-trigger");
+  const cardSizes = await previewCards.evaluateAll((cards) =>
+    cards.map((card) => {
+      const rect = card.getBoundingClientRect();
+      return { width: rect.width, height: rect.height };
+    })
+  );
+  expect(cardSizes[4].width).toBeGreaterThan(cardSizes[0].width * 1.9);
+  expect(Math.abs(cardSizes[4].height - cardSizes[0].height)).toBeLessThanOrEqual(2);
+  expect(Math.abs(cardSizes[5].height - cardSizes[0].height)).toBeLessThanOrEqual(6);
+
+  await page.getByRole("heading", { name: "Handwriting font options" }).scrollIntoViewIfNeeded();
+  await expect(page.getByAltText("Singlong handwriting font preview")).toHaveAttribute("src", "/preview/singlong-preview.jpg");
+  await expect(page.getByAltText("Snake handwriting font preview")).toHaveAttribute("src", "/preview/snake-preview.jpg");
+});
+
+test("home page preview lightbox opens, zooms, and pans", async ({ page }, testInfo) => {
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: /open text2ink handwritten page preview 1/i })
+    .click({ force: true });
+
+  const dialog = page.getByRole("dialog", {
+    name: /text2ink handwritten page preview 1/i,
+  });
+  await expect(dialog).toBeVisible();
+
+  const viewport = page.getByTestId("preview-lightbox-viewport");
+  const lightboxImage = page.getByTestId("preview-lightbox-image");
+  await expect(lightboxImage).toHaveAttribute("src", "/preview/preview-1.jpg");
+  await expect(lightboxImage).toHaveAttribute("data-zoomed", "false");
+
+  if (testInfo.project.name === "Mobile Safari") {
+    return;
+  }
+
+  await viewport.hover();
+  await page.mouse.wheel(0, -700);
+  await expect(lightboxImage).toHaveAttribute("data-zoomed", "true");
+
+  const box = await viewport.boundingBox();
+  expect(box).not.toBeNull();
+  const startX = box!.x + box!.width / 2;
+  const startY = box!.y + box!.height / 2;
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + 80, startY + 40, { steps: 4 });
+  await page.mouse.up();
+  await expect(lightboxImage).toHaveAttribute("data-panned", "true");
 });
 
 // ---------------------------------------------------------------------------
