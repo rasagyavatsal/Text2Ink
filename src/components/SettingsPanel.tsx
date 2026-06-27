@@ -553,6 +553,78 @@ const SliderRow = ({
   );
 };
 
+const MIN_UPLOAD_MARGIN = 20;
+const MIN_UPLOAD_CONTENT_SIZE = 20;
+
+function includeCurrentSliderValue(bounds: { min: number; max: number }, current: number) {
+  const value = Number.isFinite(current) ? current : 0;
+  return {
+    min: Math.floor(Math.min(bounds.min, value)),
+    max: Math.ceil(Math.max(bounds.max, value)),
+  };
+}
+
+function resolveTextHorizontalOffsetBounds(input: {
+  currentPageIndex: number;
+  settings: HandwritingSettings;
+  pageSettings: PageSettings;
+}) {
+  const zeroOffsetLayout = resolvePageLayout({
+    pageIndex: input.currentPageIndex,
+    settings: input.settings,
+    pageSettings: {
+      ...input.pageSettings,
+      textHorizontalOffset: 0,
+    },
+  });
+  const baselineLeft = zeroOffsetLayout.writing.textBounds.left;
+  const contentRight = zeroOffsetLayout.writing.contentBounds.right;
+
+  return includeCurrentSliderValue(
+    {
+      min: -baselineLeft,
+      max: Math.max(0, contentRight - baselineLeft),
+    },
+    input.pageSettings.textHorizontalOffset,
+  );
+}
+
+function resolveUploadMarginSliderBounds(input: {
+  resolvedLayout: ReturnType<typeof resolvePageLayout>;
+  pageSettings: PageSettings;
+}) {
+  const { pageSettings, resolvedLayout } = input;
+  const maxVerticalMargin = (oppositeMargin: number) =>
+    Math.max(
+      MIN_UPLOAD_MARGIN,
+      Math.floor(resolvedLayout.page.height - oppositeMargin - MIN_UPLOAD_CONTENT_SIZE),
+    );
+  const maxHorizontalMargin = (oppositeMargin: number) =>
+    Math.max(
+      MIN_UPLOAD_MARGIN,
+      Math.floor(resolvedLayout.page.width - oppositeMargin - MIN_UPLOAD_CONTENT_SIZE),
+    );
+
+  return {
+    top: includeCurrentSliderValue(
+      { min: MIN_UPLOAD_MARGIN, max: maxVerticalMargin(pageSettings.marginBottom) },
+      pageSettings.marginTop,
+    ),
+    bottom: includeCurrentSliderValue(
+      { min: MIN_UPLOAD_MARGIN, max: maxVerticalMargin(pageSettings.marginTop) },
+      pageSettings.marginBottom,
+    ),
+    left: includeCurrentSliderValue(
+      { min: MIN_UPLOAD_MARGIN, max: maxHorizontalMargin(pageSettings.marginRight) },
+      pageSettings.marginLeft,
+    ),
+    right: includeCurrentSliderValue(
+      { min: MIN_UPLOAD_MARGIN, max: maxHorizontalMargin(pageSettings.marginLeft) },
+      pageSettings.marginRight,
+    ),
+  };
+}
+
 interface ColorPickerRowProps {
   readonly label: string;
   readonly value: string;
@@ -641,6 +713,23 @@ export default function SettingsPanel({
     [currentPageIndex, pageSettings, settings],
   );
   const resolvedPaper = resolvedLayout.paper;
+  const textHorizontalOffsetBounds = useMemo(
+    () =>
+      resolveTextHorizontalOffsetBounds({
+        currentPageIndex,
+        settings,
+        pageSettings,
+      }),
+    [currentPageIndex, pageSettings, settings],
+  );
+  const uploadMarginSliderBounds = useMemo(
+    () =>
+      resolveUploadMarginSliderBounds({
+        resolvedLayout,
+        pageSettings,
+      }),
+    [pageSettings, resolvedLayout],
+  );
 
   const paperControls = useMemo(
     () => resolvePaperControlsModel({ settings, pageSettings, resolvedPaper }),
@@ -1240,8 +1329,8 @@ export default function SettingsPanel({
               label="Text Position"
               value={pageSettings.textHorizontalOffset}
               onValueChange={(value) => updatePageSetting('textHorizontalOffset', value)}
-              min={-80}
-              max={80}
+              min={textHorizontalOffsetBounds.min}
+              max={textHorizontalOffsetBounds.max}
               step={1}
               formatValue={(value) => `${value}px`}
             />
@@ -1265,8 +1354,8 @@ export default function SettingsPanel({
                 label="Top Margin"
                 value={pageSettings.marginTop}
                 onValueChange={(value) => updatePageSetting('marginTop', value)}
-                min={20}
-                max={120}
+                min={uploadMarginSliderBounds.top.min}
+                max={uploadMarginSliderBounds.top.max}
                 step={5}
                 formatValue={(value) => `${value}px`}
                 gapClass="gap-3"
@@ -1276,8 +1365,8 @@ export default function SettingsPanel({
                 label="Bottom Margin"
                 value={pageSettings.marginBottom}
                 onValueChange={(value) => updatePageSetting('marginBottom', value)}
-                min={20}
-                max={120}
+                min={uploadMarginSliderBounds.bottom.min}
+                max={uploadMarginSliderBounds.bottom.max}
                 step={5}
                 formatValue={(value) => `${value}px`}
                 gapClass="gap-3"
@@ -1287,8 +1376,8 @@ export default function SettingsPanel({
                 label="Left Margin"
                 value={pageSettings.marginLeft}
                 onValueChange={(value) => updatePageSetting('marginLeft', value)}
-                min={20}
-                max={120}
+                min={uploadMarginSliderBounds.left.min}
+                max={uploadMarginSliderBounds.left.max}
                 step={5}
                 formatValue={(value) => `${value}px`}
                 gapClass="gap-3"
@@ -1298,8 +1387,8 @@ export default function SettingsPanel({
                 label="Right Margin"
                 value={pageSettings.marginRight}
                 onValueChange={(value) => updatePageSetting('marginRight', value)}
-                min={20}
-                max={120}
+                min={uploadMarginSliderBounds.right.min}
+                max={uploadMarginSliderBounds.right.max}
                 step={5}
                 formatValue={(value) => `${value}px`}
                 gapClass="gap-3"

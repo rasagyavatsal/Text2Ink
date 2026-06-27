@@ -35,6 +35,9 @@ function calculateMinimumTextBoxSize(text: string, fontSize: number, fontFamily:
   };
 }
 
+const textFieldChromeClassName = "border-amber-600 bg-amber-600/5 shadow-sm dark:border-amber-300 dark:bg-amber-300/10";
+const resizeHandleDotClassName = "h-2.5 w-2.5 rounded-full border-2 border-amber-600 bg-background shadow-sm transition-transform hover:scale-125 dark:border-amber-300";
+
 export default function TextField({ field, onUpdate, onDelete, scale, fontFamily, randomness, onTypingFocus }: TextFieldProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [resizeDir, setResizeDir] = useState<string | null>(null);
@@ -207,7 +210,7 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
       ref={rootRef}
       className={cn(
         "absolute border-2 border-dashed group transition-colors duration-200 rounded-lg",
-        "border-brand-accent bg-brand-accent/5 shadow-sm"
+        textFieldChromeClassName
       )}
       onPointerDown={() => {
         setIsSelected(true);
@@ -234,28 +237,28 @@ export default function TextField({ field, onUpdate, onDelete, scale, fontFamily
           className="absolute -top-[22px] -left-[22px] size-11 pointer-events-auto cursor-nwse-resize touch-none flex items-center justify-center"
           onPointerDown={(e) => handleResizeStart(e, 'nw')}
         >
-          <span className="h-2.5 w-2.5 rounded-full border-2 border-brand-accent bg-background shadow-sm transition-transform hover:scale-125" />
+          <span className={resizeHandleDotClassName} />
         </div>
         <div
           data-testid="handle-ne"
           className="absolute -top-[22px] -right-[22px] size-11 pointer-events-auto cursor-nesw-resize touch-none flex items-center justify-center"
           onPointerDown={(e) => handleResizeStart(e, 'ne')}
         >
-          <span className="h-2.5 w-2.5 rounded-full border-2 border-brand-accent bg-background shadow-sm transition-transform hover:scale-125" />
+          <span className={resizeHandleDotClassName} />
         </div>
         <div
           data-testid="handle-sw"
           className="absolute -bottom-[22px] -left-[22px] size-11 pointer-events-auto cursor-nesw-resize touch-none flex items-center justify-center"
           onPointerDown={(e) => handleResizeStart(e, 'sw')}
         >
-          <span className="h-2.5 w-2.5 rounded-full border-2 border-brand-accent bg-background shadow-sm transition-transform hover:scale-125" />
+          <span className={resizeHandleDotClassName} />
         </div>
         <div
           data-testid="handle-se"
           className="absolute -bottom-[22px] -right-[22px] size-11 pointer-events-auto cursor-nwse-resize touch-none flex items-center justify-center"
           onPointerDown={(e) => handleResizeStart(e, 'se')}
         >
-          <span className="h-2.5 w-2.5 rounded-full border-2 border-brand-accent bg-background shadow-sm transition-transform hover:scale-125" />
+          <span className={resizeHandleDotClassName} />
         </div>
 
         {/* Sides */}
