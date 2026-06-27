@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import LegalPage from '../LegalPage';
 
 vi.mock('@/components/patterns/SiteHeader', () => ({
@@ -85,6 +85,33 @@ describe('LegalPage', () => {
     expect(paragraphs?.[1]).toHaveTextContent('Paragraph 2.');
   });
 
+  it('renders dash-prefixed legal lines as bullet lists', () => {
+    const sections = [
+      {
+        id: 'sec-1',
+        title: 'Sec 1',
+        body: 'Intro paragraph.\n\n- First item\n- Second item\n\nClosing paragraph.',
+      },
+    ];
+    render(
+      <LegalPage
+        title="Test"
+        path="/test"
+        intro="Intro"
+        effectiveDate="Jan 1, 2026"
+        sections={sections}
+      />
+    );
+
+    const section = screen.getByRole('heading', { level: 2, name: 'Sec 1' }).closest('section');
+    const list = section?.querySelector('ul');
+    expect(list).toBeInTheDocument();
+    expect(list).toHaveClass('list-disc');
+    expect(within(list as HTMLElement).getByText('First item')).toBeInTheDocument();
+    expect(within(list as HTMLElement).getByText('Second item')).toBeInTheDocument();
+    expect(section?.querySelectorAll('p')).toHaveLength(2);
+  });
+
   it('uses px-public-gutter', () => {
     expect(legalPageSource).toMatch(/px-public-gutter/);
   });
@@ -98,4 +125,3 @@ describe('LegalPage', () => {
     expect(legalPageSource).toMatch(/mx-auto/);
   });
 });
-

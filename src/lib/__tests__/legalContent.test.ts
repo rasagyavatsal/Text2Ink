@@ -6,12 +6,12 @@ describe('legalContent', () => {
     expect(privacyPolicyContent).toMatchObject({
       title: 'Privacy Policy',
       path: '/privacy-policy',
-      effectiveDate: 'June 26, 2026',
+      effectiveDate: 'June 27, 2026',
     });
     expect(termsOfServiceContent).toMatchObject({
       title: 'Terms of Service',
       path: '/terms-of-service',
-      effectiveDate: 'June 26, 2026',
+      effectiveDate: 'June 27, 2026',
     });
 
     expect(privacyPolicyContent.sections.map((section) => section.id)).toEqual([
@@ -40,5 +40,23 @@ describe('legalContent', () => {
       'changes-to-these-terms',
       'contact',
     ]);
+  });
+
+  it('keeps privacy summary practical and specific to current data handling', () => {
+    const summary = privacyPolicyContent.sections.find((section) => section.id === 'summary')?.body ?? '';
+
+    expect(summary).toMatch(/No account, subscription, payment, or card details are required/i);
+    expect(summary).toMatch(/Typed text, page settings, text boxes, uploaded font data, and uploaded background images can stay in browser storage/i);
+    expect(summary).toMatch(/Contact messages, rate-limit records, and analytics events can be sent to service providers/i);
+    expect(summary).toMatch(/Firebase Analytics and Contentsquare load only after you allow analytics/i);
+  });
+
+  it('keeps terms copy free of duplicate operator wording and public placeholders', () => {
+    const termsText = termsOfServiceContent.sections.map((section) => section.body).join('\n\n');
+
+    expect(termsText.match(/operated by Rasagya Vatsal/gi)).toHaveLength(1);
+    expect(termsText).not.toMatch(/If a narrower venue clause is needed/i);
+    expect(termsText).toMatch(/Before you submit, print, upload, or share an export/i);
+    expect(termsText).toMatch(/Do not use Text2Ink to forge a signature/i);
   });
 });

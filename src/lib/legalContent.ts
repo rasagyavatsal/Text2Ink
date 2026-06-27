@@ -13,7 +13,7 @@ type LegalPageContent = {
   readonly sections: LegalSection[];
 };
 
-const effectiveDate = 'June 26, 2026';
+const effectiveDate = 'June 27, 2026';
 const sectionHeadingPattern = /^## (.+) \{#([a-z0-9-]+)\}$/;
 
 function parseLegalSections(source: string): LegalSection[] {
@@ -41,7 +41,14 @@ export const privacyPolicyContent = {
   effectiveDate,
   sections: parseLegalSections(`
 ## Summary {#summary}
-Text2Ink means the website and service operated by Rasagya Vatsal. No account or payment is required to use Text2Ink. Most editor work stays in your browser. Contact inquiries are sent to Rasagya Vatsal so Text2Ink can respond. Firebase Analytics and Contentsquare load only after you allow analytics. Text2Ink does not sell personal information.
+Text2Ink means the website and service operated by Rasagya Vatsal, an individual based in India.
+
+- No account or payment is required. No account, subscription, payment, or card details are required to use the editor.
+- Typed text, page settings, text boxes, uploaded font data, and uploaded background images can stay in browser storage under \`text2ink.editor.state\`.
+- Contact messages, rate-limit records, and analytics events can be sent to service providers as described in this policy.
+- Firebase Analytics and Contentsquare load only after you allow analytics.
+
+Text2Ink does not sell personal information.
 
 ---
 ## Information Text2Ink handles {#information-text2ink-handles}
@@ -107,7 +114,7 @@ export const termsOfServiceContent = {
   effectiveDate,
   sections: parseLegalSections(`
 ## What Text2Ink does {#what-text2ink-does}
-Text2Ink means the website and service operated by Rasagya Vatsal. Text2Ink is a web editor owned and operated by Rasagya Vatsal, an individual based in India. The editor converts typed text into handwriting-style pages, with controls for handwriting, paper, colors, margins, text boxes, backgrounds, and exports as PDF, PNG, or JPG.
+Text2Ink means the website and service operated by Rasagya Vatsal, an individual based in India. The editor converts typed text into handwriting-style pages, with controls for handwriting, paper, colors, margins, text boxes, backgrounds, and exports as PDF, PNG, or JPG.
 
 You can use the editor without creating an account or making a payment.
 
@@ -129,11 +136,15 @@ Text2Ink does not review your content for accuracy, ownership, permissions, or w
 ## Acceptable use {#acceptable-use}
 Use Text2Ink only for lawful purposes.
 
-Do not use Text2Ink to deceive someone, impersonate someone, violate academic or workplace rules, infringe another person’s rights, distribute harmful content, attack the service, abuse the contact form, or interfere with other users or the service.
+Do not use Text2Ink to forge a signature, impersonate someone, present output as another person's handwriting, violate academic or workplace rules, infringe another person's rights, distribute harmful content, attack the service, abuse the contact form, or interfere with other users or the service.
+
+When a school, workplace, client, platform, or public form has rules about handwritten submissions, checking those rules is your responsibility before using Text2Ink output.
 
 ---
 ## Exports and availability {#exports-and-availability}
 Exports are generated from your browser and editor state. You are responsible for reviewing exported files before using or submitting them.
+
+Before you submit, print, upload, or share an export, check the rendered text, page count, paper layout, text boxes, margins, visible uploads, and selected export format.
 
 Text2Ink may change, improve, limit, suspend, or discontinue parts of the service. Text2Ink aims to keep the editor useful, but does not guarantee uninterrupted availability, perfect rendering, compatibility with every browser or device, or preservation of locally saved drafts.
 
@@ -161,9 +172,9 @@ You agree to indemnify and hold Text2Ink harmless from claims, losses, liabiliti
 
 ---
 ## Governing law {#governing-law}
-Text2Ink is operated by Rasagya Vatsal, an individual based in India. Unless mandatory local law says otherwise, these terms are governed by the laws of India, without regard to conflict-of-law rules.
+Unless mandatory local law says otherwise, these terms are governed by the laws of India, without regard to conflict-of-law rules.
 
-Any dispute will be handled by courts with competent jurisdiction in India unless mandatory consumer or local law gives you different rights. If a narrower venue clause is needed, this section should be replaced with the correct state, city, or court language after legal review.
+Any dispute will be handled by courts with competent jurisdiction in India unless mandatory consumer or local law gives you different rights.
 
 ---
 ## Changes to these terms {#changes-to-these-terms}
