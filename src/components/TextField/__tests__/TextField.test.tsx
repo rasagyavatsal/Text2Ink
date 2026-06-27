@@ -488,7 +488,7 @@ describe('TextField', () => {
     expect(onTypingFocus).toHaveBeenCalled();
   });
 
-  it('uses semantic tokens for text-field chrome instead of hardcoded colors', () => {
+  it('uses hero gold classes for text-field chrome in both themes', () => {
     const { container } = render(
       <TextField
         field={mockField}
@@ -510,14 +510,21 @@ describe('TextField', () => {
     // Select to reveal more controls
     fireEvent.pointerDown(rootDiv);
 
-    // Selected state should use brand-accent
-    expect(rootDiv.className).toContain('border-brand-accent');
+    expect(rootDiv.className).toContain('border-amber-600');
+    expect(rootDiv.className).toContain('dark:border-amber-300');
+    expect(rootDiv.className).toContain('bg-amber-600/5');
+    expect(rootDiv.className).toContain('dark:bg-amber-300/10');
+    expect(rootDiv.className).not.toContain('border-brand-accent');
+    expect(rootDiv.className).not.toContain('bg-brand-accent');
 
     // Handles should not have hardcoded white or gray
     const neHandle = screen.getByTestId('handle-ne').firstElementChild as HTMLElement;
     expect(neHandle.className).not.toContain('bg-white');
     expect(neHandle.className).not.toContain('border-gray-');
+    expect(neHandle.className).toContain('border-amber-600');
+    expect(neHandle.className).toContain('dark:border-amber-300');
     expect(neHandle.className).toContain('bg-background');
+    expect(neHandle.className).not.toContain('border-brand-accent');
 
     // Hover hit areas should not use blue
     const nHandle = screen.getByTestId('handle-n');

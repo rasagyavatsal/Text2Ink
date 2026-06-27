@@ -263,6 +263,44 @@ describe('SettingsPanel', () => {
     expect(within(alignSection as HTMLElement).getByText('Text Position')).toBeInTheDocument();
   });
 
+  it('expands built-in text position range from resolved landscape paper geometry', () => {
+    const settings = withTestPaperSelection({
+      ...DEFAULT_SETTINGS,
+      paperPresetId: 'lined-a4-landscape',
+    });
+
+    renderSettingsPanel({ settings });
+
+    const textPositionSlider = screen.getByRole('slider', { name: 'Text Position' });
+    expect(Number(textPositionSlider.getAttribute('aria-valuemin'))).toBeLessThan(0);
+    expect(Number(textPositionSlider.getAttribute('aria-valuemax'))).toBeGreaterThan(80);
+  });
+
+  it('keeps saved text position values inside the rendered slider range', () => {
+    renderSettingsPanel({
+      pageSettings: {
+        ...defaultPageSettingsFromHandwritingSettings(DEFAULT_SETTINGS),
+        textHorizontalOffset: 900,
+      },
+    });
+
+    const textPositionSlider = screen.getByRole('slider', { name: 'Text Position' });
+    expect(Number(textPositionSlider.getAttribute('aria-valuemax'))).toBeGreaterThanOrEqual(900);
+  });
+
+  it('derives upload-backed margin slider ceilings from page dimensions', () => {
+    renderSettingsPanel({
+      settings: {
+        ...DEFAULT_SETTINGS,
+        customBackgroundImage: 'data:image/png;base64,page-background',
+        customBackgroundImages: ['data:image/png;base64,page-background'],
+      },
+    });
+
+    expect(Number(screen.getByRole('slider', { name: 'Top Margin' }).getAttribute('aria-valuemax'))).toBeGreaterThan(120);
+    expect(Number(screen.getByRole('slider', { name: 'Left Margin' }).getAttribute('aria-valuemax'))).toBeGreaterThan(120);
+  });
+
   it('renders mobile jump controls when isMobileLayout is true and scrolls to sections', () => {
     const scrollIntoViewMock = vi.fn();
     window.HTMLElement.prototype.scrollIntoView = scrollIntoViewMock;
