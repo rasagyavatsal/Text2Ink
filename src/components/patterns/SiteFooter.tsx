@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Version from '@/components/Version';
+import PrivacySettingsButton from '@/components/PrivacySettingsButton';
 
 export default function SiteFooter() {
   return (
@@ -73,6 +74,9 @@ export default function SiteFooter() {
                   >
                     Privacy Policy
                   </Link>
+                </li>
+                <li>
+                  <PrivacySettingsButton />
                 </li>
               </ul>
             </nav>

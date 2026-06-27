@@ -46,13 +46,13 @@ const legalRouteCases = [
   legalRouteCase(
     'Privacy Policy', PrivacyPolicyPage, privacyMetadata, 'https://text2ink.com/privacy-policy',
     /this policy explains what information text2ink handles, why it is used, and what choices you have/i,
-    'What stays in your browser|Uploads and exports|Analytics|Contact inquiries|Your choices and requests|Contact',
-    'Uploads and exports', /terms of service/i, '/terms-of-service'
+    'Summary|Information Text2Ink handles|Browser storage and editor files|Analytics and consent|Contact inquiries|Vendors and service providers|Retention|Your choices, rights, and requests|No sale of personal information|Contact',
+    'Analytics and consent', /terms of service/i, '/terms-of-service'
   ),
   legalRouteCase(
     'Terms of Service', TermsOfServicePage, termsMetadata, 'https://text2ink.com/terms-of-service',
     /these terms explain how you may use text2ink/i,
-    'What Text2Ink does|Your content|Acceptable use|Exports and availability|Changes to these terms|Contact',
+    'What Text2Ink does|Eligibility and minors|Your content and license|Acceptable use|Exports and availability|Suspension and termination|Disclaimers|Limitation of liability|Indemnity|Governing law|Changes to these terms|Contact',
     'Acceptable use', /privacy policy/i, '/privacy-policy'
   ),
 ] satisfies readonly LegalRouteCase[];
@@ -86,7 +86,7 @@ describe('legal pages', () => {
 
     expect(screen.getByRole('heading', { level: 1, name })).toBeInTheDocument();
     expect(screen.getByText(intro)).toBeInTheDocument();
-    expect(screen.getByText(/effective date: June 16, 2026/i)).toBeInTheDocument();
+    expect(screen.getByText(/effective date: June 26, 2026/i)).toBeInTheDocument();
 
     for (const heading of sectionHeadings) {
       expect(screen.getByRole('heading', { name: heading })).toBeInTheDocument();
@@ -101,6 +101,34 @@ describe('legal pages', () => {
       tocLinks[0].getAttribute('href')?.slice(1),
     );
     expect(screen.getByRole('link', { name: reciprocalLink })).toHaveAttribute('href', reciprocalHref);
+  });
+
+  it('covers the expanded Privacy Policy compliance anchors', () => {
+    render(<PrivacyPolicyPage />);
+
+    expect(screen.getByText(/no account or payment is required/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/firebase analytics and contentsquare load only after you allow analytics/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/rate-limit records include an expiresAt timestamp/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/text2ink does not sell personal information/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Text2Ink means the website and service operated by Rasagya Vatsal/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/operated by Rasagya Vatsal, an individual based in India/i).length).toBeGreaterThan(0);
+    expect(document.body.textContent).not.toMatch(/\boperator\b/i);
+    expect(document.body.textContent).not.toMatch(/\bwe\b/i);
+  });
+
+  it('covers the expanded Terms of Service anchors', () => {
+    render(<TermsOfServicePage />);
+
+    expect(screen.getByText(/you keep ownership of content you create or upload/i)).toBeInTheDocument();
+    expect(screen.getByText(/under 13/i)).toBeInTheDocument();
+    expect(screen.getByText(/provided as is/i)).toBeInTheDocument();
+    expect(screen.getByText(/not liable for indirect, incidental, special, consequential, exemplary, or punitive damages/i)).toBeInTheDocument();
+    expect(screen.getByText(/indemnify and hold text2ink harmless/i)).toBeInTheDocument();
+    expect(screen.getByText(/governed by the laws of India/i)).toBeInTheDocument();
+    expect(screen.getByText(/Text2Ink means the website and service operated by Rasagya Vatsal/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/operated by Rasagya Vatsal, an individual based in India/i).length).toBeGreaterThan(0);
+    expect(document.body.textContent).not.toMatch(/\boperator\b/i);
+    expect(document.body.textContent).not.toMatch(/\bwe\b/i);
   });
 
   it.each(legalRouteCases)('emits breadcrumb JSON-LD for $name', ({ Page }) => {
