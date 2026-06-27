@@ -86,7 +86,7 @@ describe('legal pages', () => {
 
     expect(screen.getByRole('heading', { level: 1, name })).toBeInTheDocument();
     expect(screen.getByText(intro)).toBeInTheDocument();
-    expect(screen.getByText(/effective date: June 26, 2026/i)).toBeInTheDocument();
+    expect(screen.getByText(/effective date: June 27, 2026/i)).toBeInTheDocument();
 
     for (const heading of sectionHeadings) {
       expect(screen.getByRole('heading', { name: heading })).toBeInTheDocument();
@@ -107,6 +107,9 @@ describe('legal pages', () => {
     render(<PrivacyPolicyPage />);
 
     expect(screen.getByText(/no account or payment is required/i)).toBeInTheDocument();
+    expect(screen.getByText(/no account, subscription, payment, or card details are required/i)).toBeInTheDocument();
+    expect(screen.getByText(/typed text, page settings, text boxes, uploaded font data, and uploaded background images can stay in browser storage/i)).toBeInTheDocument();
+    expect(screen.getByText(/contact messages, rate-limit records, and analytics events can be sent to service providers/i)).toBeInTheDocument();
     expect(screen.getAllByText(/firebase analytics and contentsquare load only after you allow analytics/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/rate-limit records include an expiresAt timestamp/i)).toBeInTheDocument();
     expect(screen.getAllByText(/text2ink does not sell personal information/i).length).toBeGreaterThan(0);
@@ -121,12 +124,15 @@ describe('legal pages', () => {
 
     expect(screen.getByText(/you keep ownership of content you create or upload/i)).toBeInTheDocument();
     expect(screen.getByText(/under 13/i)).toBeInTheDocument();
+    expect(screen.getByText(/before you submit, print, upload, or share an export/i)).toBeInTheDocument();
+    expect(screen.getByText(/do not use text2ink to forge a signature/i)).toBeInTheDocument();
     expect(screen.getByText(/provided as is/i)).toBeInTheDocument();
     expect(screen.getByText(/not liable for indirect, incidental, special, consequential, exemplary, or punitive damages/i)).toBeInTheDocument();
     expect(screen.getByText(/indemnify and hold text2ink harmless/i)).toBeInTheDocument();
     expect(screen.getByText(/governed by the laws of India/i)).toBeInTheDocument();
     expect(screen.getByText(/Text2Ink means the website and service operated by Rasagya Vatsal/i)).toBeInTheDocument();
     expect(screen.getAllByText(/operated by Rasagya Vatsal, an individual based in India/i).length).toBeGreaterThan(0);
+    expect(document.body.textContent).not.toMatch(/If a narrower venue clause is needed/i);
     expect(document.body.textContent).not.toMatch(/\boperator\b/i);
     expect(document.body.textContent).not.toMatch(/\bwe\b/i);
   });
