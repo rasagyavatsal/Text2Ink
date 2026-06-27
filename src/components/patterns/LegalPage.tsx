@@ -30,7 +30,7 @@ function renderLegalBody(body: string) {
 
       if (isBulletList) {
         return (
-          <ul key={index} className="list-disc space-y-2 pl-6 text-body leading-7 text-muted-foreground">
+          <ul key={index} className="list-disc space-y-2 pl-6 text-body-lg leading-8 text-muted-foreground">
             {lines.map((line) => (
               <li key={line}>{line.slice(2)}</li>
             ))}
@@ -39,7 +39,7 @@ function renderLegalBody(body: string) {
       }
 
       return (
-        <p key={index} className="text-body leading-7 text-muted-foreground">
+        <p key={index} className="text-body-lg leading-8 text-muted-foreground">
           {block}
         </p>
       );
