@@ -55,6 +55,47 @@ test("canvas preview remains visible after typing", async ({ page }) => {
   await expect(previewContainer).toBeVisible();
 });
 
+test("typing in the focused handwriting input does not jump desktop preview scroll", async ({
+  page,
+}) => {
+  await gotoHydratedEditor(page);
+
+  const previewContainer = page.getByTestId("preview-scroll-container");
+  await expect(previewContainer).toBeVisible();
+
+  const toolbar = page.getByTestId("canvas-toolbar");
+  await expect(toolbar).toBeVisible({ timeout: 10_000 });
+  const zoomInButton = toolbar.getByRole("button", { name: "Zoom in" });
+
+  for (let i = 0; i < 6; i += 1) {
+    await zoomInButton.click();
+    const canScroll = await previewContainer.evaluate(
+      (element) => element.scrollHeight > element.clientHeight + 300
+    );
+    if (canScroll) break;
+  }
+
+  await expect
+    .poll(() =>
+      previewContainer.evaluate((element) => element.scrollHeight > element.clientHeight)
+    )
+    .toBe(true);
+
+  const textInput = page.getByLabel("Handwriting text input");
+  await textInput.focus();
+  await previewContainer.evaluate((element) => {
+    element.scrollTop = Math.min(320, element.scrollHeight - element.clientHeight);
+  });
+  const beforeScrollTop = await previewContainer.evaluate((element) => element.scrollTop);
+
+  await page.keyboard.type("Scroll stays stable while typing");
+  await expect(textInput).toHaveValue("Scroll stays stable while typing");
+
+  const afterScrollTop = await previewContainer.evaluate((element) => element.scrollTop);
+  expect(afterScrollTop).toBeGreaterThanOrEqual(beforeScrollTop - 2);
+  expect(afterScrollTop).toBeLessThanOrEqual(beforeScrollTop + 2);
+});
+
 // ---------------------------------------------------------------------------
 // /editor - pagination completion updates page count for short text
 // ---------------------------------------------------------------------------
