@@ -276,8 +276,8 @@ export default function HomePage() {
               <div className="space-y-5">
                 {homeFaqs.map((faq) => (
                   <div key={faq.question} className="border-b border-border pb-5 last:border-b-0">
-                    <h3 className="font-semibold text-foreground mb-2">{faq.question}</h3>
-                    <p className="text-body leading-7 text-muted-foreground">{faq.answer}</p>
+                    <h3 className="text-body-lg leading-8 font-semibold text-foreground mb-2">{faq.question}</h3>
+                    <p className="text-body-lg leading-8 text-muted-foreground">{faq.answer}</p>
                   </div>
                 ))}
               </div>
