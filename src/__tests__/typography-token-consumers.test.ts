@@ -30,6 +30,32 @@ describe('shared typography consumers use semantic tokens', () => {
     expect(contactSource).toMatch(/text-supporting/);
   });
 
+  it('public long-form prose uses one large reading size', () => {
+    const homeSource = readSource('app/page.tsx');
+    const legalPageSource = readSource('components/patterns/LegalPage.tsx');
+
+    expect(homeSource).toMatch(
+      /<h3 className="text-body-lg leading-8 font-semibold text-foreground mb-2">\{faq\.question\}<\/h3>/
+    );
+    expect(homeSource).not.toMatch(
+      /<h3 className="font-semibold text-foreground mb-2">\{faq\.question\}<\/h3>/
+    );
+    expect(homeSource).toMatch(
+      /<p className="text-body-lg leading-8 text-muted-foreground">\{faq\.answer\}<\/p>/
+    );
+    expect(homeSource).not.toMatch(
+      /<p className="text-body leading-7 text-muted-foreground">\{faq\.answer\}<\/p>/
+    );
+
+    expect(legalPageSource).toMatch(
+      /<ul key=\{index\} className="list-disc space-y-2 pl-6 text-body-lg leading-8 text-muted-foreground">/
+    );
+    expect(legalPageSource).toMatch(
+      /<p key=\{index\} className="text-body-lg leading-8 text-muted-foreground">/
+    );
+    expect(legalPageSource).not.toMatch(/text-body leading-7 text-muted-foreground/);
+  });
+
   it('legal route hierarchy consumes shared document, section, and supporting tokens', () => {
     const privacySource = readSource('app/privacy-policy/page.tsx');
     const termsSource = readSource('app/terms-of-service/page.tsx');
