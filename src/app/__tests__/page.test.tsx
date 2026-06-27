@@ -262,9 +262,12 @@ describe('HomePage', () => {
     expect(screen.getAllByText(new RegExp(productFacts.paper.styles[0].name)).length).toBeGreaterThan(0);
     expect(screen.getByText(new RegExp(productFacts.paper.colors[0].name))).toBeInTheDocument();
     expect(screen.getAllByText(new RegExp(productFacts.browserDraft.storageKey)).length).toBeGreaterThan(0);
+    expect(screen.getByText(/use Singlong for an informal note-style page/i)).toBeInTheDocument();
+    expect(screen.getByText(/use PDF when a teacher, client, or archive needs one file with every page/i)).toBeInTheDocument();
+    expect(screen.getByText(/check the last page before exporting/i)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /text2ink faq/i })).toBeInTheDocument();
 
-    expect(container.textContent).not.toMatch(/customer reviews|star ratings?|awards?|guarantee|users served/i);
+    expect(container.textContent).not.toMatch(/customer reviews|star ratings?|awards?|guarantee|users served|the goal is to provide useful variation/i);
   });
 
   it('keeps the homepage copy deep enough for the landing search intent', () => {
@@ -273,26 +276,31 @@ describe('HomePage', () => {
     const wordCount = main?.textContent?.trim().split(/\s+/).length ?? 0;
 
     expect(wordCount).toBeGreaterThanOrEqual(1800);
-    expect(wordCount).toBeLessThanOrEqual(2400);
+    expect(wordCount).toBeLessThanOrEqual(2200);
   });
 
   it('renders non-duplicative FAQ questions for adjacent trust details', () => {
     render(<HomePage />);
 
-    [
+    const expectedQuestions = [
       'Can I use Text2Ink without signing in?',
       'Where is my draft saved?',
       'How do I remove saved Text2Ink data from my browser?',
       'What happens when I upload a custom font or background image?',
-      'Why is export disabled when there is no text?',
-      'Can one document produce more than one exported page?',
+      'Should I export as PDF, PNG, or JPG?',
+      'Can a long document export across multiple pages?',
       'Can I change one page without changing every page?',
-      'Does Text2Ink review whether my content is allowed by school or workplace rules?',
       'What should I check before submitting or sharing an export?',
-      'How can I report a bug or request a feature?',
-    ].forEach((question) => {
+    ];
+
+    expectedQuestions.forEach((question) => {
       expect(screen.getByRole('heading', { name: question })).toBeInTheDocument();
     });
+
+    const faqHeadings = screen.getByRole('heading', { name: /text2ink faq/i })
+      .closest('div')
+      ?.querySelectorAll('h3');
+    expect(faqHeadings).toHaveLength(expectedQuestions.length);
   });
 
   it('emits WebSite, Organization, WebApplication, FAQ, and breadcrumb JSON-LD', () => {

@@ -17,6 +17,35 @@ interface LegalPageProps {
   sections: Array<{ id: string; title: string; body: string }>;
 }
 
+function renderLegalBody(body: string) {
+  return body
+    .split(/\n\s*\n/)
+    .filter((block) => block.trim() !== '')
+    .map((block, index) => {
+      const lines = block
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line !== '');
+      const isBulletList = lines.length > 0 && lines.every((line) => line.startsWith('- '));
+
+      if (isBulletList) {
+        return (
+          <ul key={index} className="list-disc space-y-2 pl-6 text-body leading-7 text-muted-foreground">
+            {lines.map((line) => (
+              <li key={line}>{line.slice(2)}</li>
+            ))}
+          </ul>
+        );
+      }
+
+      return (
+        <p key={index} className="text-body leading-7 text-muted-foreground">
+          {block}
+        </p>
+      );
+    });
+}
+
 export default function LegalPage({
   title,
   path,
@@ -76,20 +105,13 @@ export default function LegalPage({
               </div>
 
               {sections.map((section) => {
-                const paragraphs = section.body
-                  .split(/\n\s*\n/)
-                  .filter((p) => p.trim() !== '');
                 return (
                   <section key={section.id} id={section.id} className="scroll-mt-24">
                     <h2 className="text-section-title font-semibold tracking-tight text-foreground mb-4">
                       {section.title}
                     </h2>
                     <div className="space-y-4">
-                      {paragraphs.map((para, index) => (
-                        <p key={index} className="text-body leading-7 text-muted-foreground">
-                          {para}
-                        </p>
-                      ))}
+                      {renderLegalBody(section.body)}
                     </div>
                   </section>
                 );
