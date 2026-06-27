@@ -434,8 +434,8 @@ export default function HandwritingEditor({
       }
 
       const textarea = textareaRef.current;
-      textarea?.focus();
       if (textarea) {
+        textarea.focus({ preventScroll: true });
         syncSelectionFromTextarea(textarea);
       }
     },
@@ -512,7 +512,7 @@ export default function HandwritingEditor({
 
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.focus();
+      textareaRef.current.focus({ preventScroll: true });
     }
   }, []);
 
@@ -760,11 +760,10 @@ export default function HandwritingEditor({
           syncSelectionFromTextarea(e.currentTarget);
         }}
         onBlur={() => setIsFocused(false)}
-        className="sr-only"
+        className="fixed left-0 top-0 h-px w-px resize-none overflow-hidden border-0 bg-transparent p-0 opacity-0 outline-none"
         aria-label="Handwriting text input"
         inputMode="text"
         spellCheck={false}
-        autoFocus
       />
 
       {visiblePage}
