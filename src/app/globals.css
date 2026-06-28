@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
 @theme inline {
+  --color-amber-600: #dd9920;
+  --color-amber-300: #dd9920;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
@@ -152,6 +154,7 @@
   --text-size-6xl: 3.75rem;
   --text-size-7xl: 4.5rem;
   --text-size-8xl: 5.5rem;
+  --text-size-9xl: 7.25rem;
 
   /* Primitive tokens: layout metrics consumed by JS */
   --metric-header-height-mobile: 60px;
