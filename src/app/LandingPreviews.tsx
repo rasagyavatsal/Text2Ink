@@ -10,36 +10,63 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 
-export type LandingPreviewImage = {
+type LandingPreviewAsset = {
   src: string;
-  alt: string;
   width: number;
   height: number;
+};
+
+export type LandingPreviewImage = {
+  previewAsset: LandingPreviewAsset;
+  lightboxAsset: LandingPreviewAsset;
+  alt: string;
   caption?: string;
 };
 
 export const heroPreviewImages: LandingPreviewImage[] = [
-  { src: '/preview/preview-1.jpg', alt: 'Text2Ink handwritten page preview 1', width: 2481, height: 3508 },
-  { src: '/preview/preview-2.jpg', alt: 'Text2Ink handwritten page preview 2', width: 2481, height: 3508 },
-  { src: '/preview/preview-3.jpg', alt: 'Text2Ink handwritten page preview 3', width: 2481, height: 3508 },
-  { src: '/preview/preview-4.jpg', alt: 'Text2Ink handwritten page preview 4', width: 2481, height: 3508 },
-  { src: '/preview/preview-5.jpg', alt: 'Text2Ink handwritten page preview 5', width: 3508, height: 2481 },
-  { src: '/preview/preview-6.jpg', alt: 'Text2Ink handwritten page preview 6', width: 3301, height: 2551 },
+  {
+    previewAsset: { src: '/preview-imgs/preview-1.avif', width: 1132, height: 1600 },
+    lightboxAsset: { src: '/lightbox-imgs/preview-1.jpg', width: 2481, height: 3508 },
+    alt: 'Text2Ink handwritten page preview 1',
+  },
+  {
+    previewAsset: { src: '/preview-imgs/preview-2.avif', width: 1132, height: 1600 },
+    lightboxAsset: { src: '/lightbox-imgs/preview-2.jpg', width: 2481, height: 3508 },
+    alt: 'Text2Ink handwritten page preview 2',
+  },
+  {
+    previewAsset: { src: '/preview-imgs/preview-3.avif', width: 1132, height: 1600 },
+    lightboxAsset: { src: '/lightbox-imgs/preview-3.jpg', width: 2481, height: 3508 },
+    alt: 'Text2Ink handwritten page preview 3',
+  },
+  {
+    previewAsset: { src: '/preview-imgs/preview-4.avif', width: 1132, height: 1600 },
+    lightboxAsset: { src: '/lightbox-imgs/preview-4.jpg', width: 2481, height: 3508 },
+    alt: 'Text2Ink handwritten page preview 4',
+  },
+  {
+    previewAsset: { src: '/preview-imgs/preview-5.avif', width: 1600, height: 1132 },
+    lightboxAsset: { src: '/lightbox-imgs/preview-5.jpg', width: 3508, height: 2481 },
+    alt: 'Text2Ink handwritten page preview 5',
+  },
+  {
+    previewAsset: { src: '/preview-imgs/preview-6.avif', width: 1600, height: 1236 },
+    lightboxAsset: { src: '/lightbox-imgs/preview-6.jpg', width: 3301, height: 2551 },
+    alt: 'Text2Ink handwritten page preview 6',
+  },
 ];
 
 export const fontPreviewImages: LandingPreviewImage[] = [
   {
-    src: '/preview/singlong-preview.jpg',
+    previewAsset: { src: '/preview-imgs/singlong-preview.avif', width: 1132, height: 1600 },
+    lightboxAsset: { src: '/lightbox-imgs/singlong-preview.jpg', width: 2481, height: 3508 },
     alt: 'Singlong handwriting font preview',
-    width: 2481,
-    height: 3508,
     caption: 'Singlong on ruled medium paper',
   },
   {
-    src: '/preview/snake-preview.jpg',
+    previewAsset: { src: '/preview-imgs/snake-preview.avif', width: 1132, height: 1600 },
+    lightboxAsset: { src: '/lightbox-imgs/snake-preview.jpg', width: 2481, height: 3508 },
     alt: 'Snake handwriting font preview',
-    width: 2481,
-    height: 3508,
     caption: 'Snake on ruled medium paper',
   },
 ];
@@ -82,11 +109,11 @@ function isZoomedValue(value: number) {
 }
 
 function getCarouselCardClassName(preview: LandingPreviewImage) {
-  if (preview.width <= preview.height) {
+  if (preview.previewAsset.width <= preview.previewAsset.height) {
     return PORTRAIT_CAROUSEL_CARD_CLASS_NAME;
   }
 
-  return preview.width / preview.height > 1.36
+  return preview.previewAsset.width / preview.previewAsset.height > 1.36
     ? WIDE_LANDSCAPE_CAROUSEL_CARD_CLASS_NAME
     : LANDSCAPE_CAROUSEL_CARD_CLASS_NAME;
 }
@@ -104,13 +131,15 @@ function PreviewImage({
   imageTestId?: string;
   eager?: boolean;
 }) {
+  const { src, width, height } = preview.previewAsset;
+
   return (
     <Image
       unoptimized
-      src={preview.src}
+      src={src}
       alt={decorative ? '' : preview.alt}
-      width={preview.width}
-      height={preview.height}
+      width={width}
+      height={height}
       sizes="(min-width: 1024px) 24rem, (min-width: 640px) 18rem, 76vw"
       loading={eager ? 'eager' : 'lazy'}
       fetchPriority={eager ? 'high' : undefined}
@@ -138,7 +167,7 @@ function PreviewCard({
   eager?: boolean;
   className?: string;
 }) {
-  const style = { aspectRatio: `${preview.width} / ${preview.height}` };
+  const style = { aspectRatio: `${preview.previewAsset.width} / ${preview.previewAsset.height}` };
   const cardClassName = cn(
     'shrink-0 overflow-hidden rounded-xl border border-border bg-card shadow-sm sm:rounded-2xl',
     className
@@ -192,6 +221,7 @@ function PreviewLightbox({
 
   const isZoomed = isZoomedValue(zoom);
   const isPanned = Math.abs(pan.x) > 0.5 || Math.abs(pan.y) > 0.5;
+  const lightboxAsset = preview?.lightboxAsset;
 
   const updateZoom = useCallback((nextZoom: number) => {
     const clampedZoom = clamp(nextZoom, MIN_ZOOM, MAX_ZOOM);
@@ -319,13 +349,13 @@ function PreviewLightbox({
           onPointerUp={handlePointerEnd}
           onPointerCancel={handlePointerEnd}
         >
-          {preview && (
+          {preview && lightboxAsset && (
             <Image
               unoptimized
-              src={preview.src}
+              src={lightboxAsset.src}
               alt={preview.alt}
-              width={preview.width}
-              height={preview.height}
+              width={lightboxAsset.width}
+              height={lightboxAsset.height}
               sizes="94vw"
               draggable={false}
               priority
@@ -366,7 +396,7 @@ export function LandingPreviewCarousel() {
             <div className="flex shrink-0 items-center gap-4 pr-4 sm:gap-6 sm:pr-6">
               {heroPreviewImages.map((preview, index) => (
                 <PreviewCard
-                  key={preview.src}
+                  key={preview.previewAsset.src}
                   preview={preview}
                   onOpen={setActivePreview}
                   triggerTestId="hero-preview-trigger"
@@ -382,7 +412,7 @@ export function LandingPreviewCarousel() {
             >
               {heroPreviewImages.map((preview) => (
                 <PreviewCard
-                  key={`${preview.src}-duplicate`}
+                  key={`${preview.previewAsset.src}-duplicate`}
                   preview={preview}
                   decorative
                   className={getCarouselCardClassName(preview)}
@@ -393,7 +423,7 @@ export function LandingPreviewCarousel() {
         </div>
       </section>
       <PreviewLightbox
-        key={activePreview?.src ?? 'hero-preview-lightbox'}
+        key={activePreview?.lightboxAsset.src ?? 'hero-preview-lightbox'}
         preview={activePreview}
         open={activePreview !== null}
         onOpenChange={(nextOpen) => {
@@ -414,7 +444,7 @@ export function LandingFontPreviews() {
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
         {fontPreviewImages.map((preview) => (
           <div
-            key={preview.src}
+            key={preview.previewAsset.src}
             className="flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm sm:rounded-2xl"
           >
             <PreviewCard
@@ -431,7 +461,7 @@ export function LandingFontPreviews() {
         ))}
       </div>
       <PreviewLightbox
-        key={activePreview?.src ?? 'font-preview-lightbox'}
+        key={activePreview?.lightboxAsset.src ?? 'font-preview-lightbox'}
         preview={activePreview}
         open={activePreview !== null}
         onOpenChange={(nextOpen) => {
