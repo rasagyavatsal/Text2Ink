@@ -16,6 +16,8 @@ type LandingPreviewAsset = {
   height: number;
 };
 
+type LandingPreviewSize = readonly [width: number, height: number];
+
 export type LandingPreviewImage = {
   previewAsset: LandingPreviewAsset;
   lightboxAsset: LandingPreviewAsset;
@@ -23,52 +25,49 @@ export type LandingPreviewImage = {
   caption?: string;
 };
 
+function createLandingPreviewAsset(src: string, [width, height]: LandingPreviewSize): LandingPreviewAsset {
+  return { src, width, height };
+}
+
+function createLandingPreviewImage(
+  id: string,
+  alt: string,
+  previewSize: LandingPreviewSize,
+  lightboxSize: LandingPreviewSize,
+  caption?: string
+): LandingPreviewImage {
+  return {
+    previewAsset: createLandingPreviewAsset(`/preview-imgs/${id}.avif`, previewSize),
+    lightboxAsset: createLandingPreviewAsset(`/lightbox-imgs/${id}.jpg`, lightboxSize),
+    alt,
+    ...(caption ? { caption } : {}),
+  };
+}
+
 export const heroPreviewImages: LandingPreviewImage[] = [
-  {
-    previewAsset: { src: '/preview-imgs/preview-1.avif', width: 1132, height: 1600 },
-    lightboxAsset: { src: '/lightbox-imgs/preview-1.jpg', width: 2481, height: 3508 },
-    alt: 'Text2Ink handwritten page preview 1',
-  },
-  {
-    previewAsset: { src: '/preview-imgs/preview-2.avif', width: 1132, height: 1600 },
-    lightboxAsset: { src: '/lightbox-imgs/preview-2.jpg', width: 2481, height: 3508 },
-    alt: 'Text2Ink handwritten page preview 2',
-  },
-  {
-    previewAsset: { src: '/preview-imgs/preview-3.avif', width: 1132, height: 1600 },
-    lightboxAsset: { src: '/lightbox-imgs/preview-3.jpg', width: 2481, height: 3508 },
-    alt: 'Text2Ink handwritten page preview 3',
-  },
-  {
-    previewAsset: { src: '/preview-imgs/preview-4.avif', width: 1132, height: 1600 },
-    lightboxAsset: { src: '/lightbox-imgs/preview-4.jpg', width: 2481, height: 3508 },
-    alt: 'Text2Ink handwritten page preview 4',
-  },
-  {
-    previewAsset: { src: '/preview-imgs/preview-5.avif', width: 1600, height: 1132 },
-    lightboxAsset: { src: '/lightbox-imgs/preview-5.jpg', width: 3508, height: 2481 },
-    alt: 'Text2Ink handwritten page preview 5',
-  },
-  {
-    previewAsset: { src: '/preview-imgs/preview-6.avif', width: 1600, height: 1236 },
-    lightboxAsset: { src: '/lightbox-imgs/preview-6.jpg', width: 3301, height: 2551 },
-    alt: 'Text2Ink handwritten page preview 6',
-  },
+  createLandingPreviewImage('preview-1', 'Text2Ink handwritten page preview 1', [1132, 1600], [2481, 3508]),
+  createLandingPreviewImage('preview-2', 'Text2Ink handwritten page preview 2', [1132, 1600], [2481, 3508]),
+  createLandingPreviewImage('preview-3', 'Text2Ink handwritten page preview 3', [1132, 1600], [2481, 3508]),
+  createLandingPreviewImage('preview-4', 'Text2Ink handwritten page preview 4', [1132, 1600], [2481, 3508]),
+  createLandingPreviewImage('preview-5', 'Text2Ink handwritten page preview 5', [1600, 1132], [3508, 2481]),
+  createLandingPreviewImage('preview-6', 'Text2Ink handwritten page preview 6', [1600, 1236], [3301, 2551]),
 ];
 
 export const fontPreviewImages: LandingPreviewImage[] = [
-  {
-    previewAsset: { src: '/preview-imgs/singlong-preview.avif', width: 1132, height: 1600 },
-    lightboxAsset: { src: '/lightbox-imgs/singlong-preview.jpg', width: 2481, height: 3508 },
-    alt: 'Singlong handwriting font preview',
-    caption: 'Singlong on ruled medium paper',
-  },
-  {
-    previewAsset: { src: '/preview-imgs/snake-preview.avif', width: 1132, height: 1600 },
-    lightboxAsset: { src: '/lightbox-imgs/snake-preview.jpg', width: 2481, height: 3508 },
-    alt: 'Snake handwriting font preview',
-    caption: 'Snake on ruled medium paper',
-  },
+  createLandingPreviewImage(
+    'singlong-preview',
+    'Singlong handwriting font preview',
+    [1132, 1600],
+    [2481, 3508],
+    'Singlong on ruled medium paper'
+  ),
+  createLandingPreviewImage(
+    'snake-preview',
+    'Snake handwriting font preview',
+    [1132, 1600],
+    [2481, 3508],
+    'Snake on ruled medium paper'
+  ),
 ];
 
 const MIN_ZOOM = 1;
