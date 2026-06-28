@@ -62,6 +62,34 @@ function useDebouncedCallback<TArgs extends unknown[]>(cb: (...args: TArgs) => v
   );
 }
 
+type SelectionDirection = 'forward' | 'backward' | 'none';
+
+interface EditorSelectionRange {
+  readonly start: number;
+  readonly end: number;
+  readonly direction: SelectionDirection;
+}
+
+function normalizeSelectionDirection(
+  start: number,
+  end: number,
+  direction: SelectionDirection | string | null,
+): SelectionDirection {
+  if (start === end) return 'none';
+  return direction === 'backward' ? 'backward' : 'forward';
+}
+
+function createSelectionRange(anchor: number, focus: number): EditorSelectionRange {
+  const start = Math.min(anchor, focus);
+  const end = Math.max(anchor, focus);
+  const direction = start === end ? 'none' : focus < anchor ? 'backward' : 'forward';
+  return { start, end, direction };
+}
+
+function getSelectionFocus(selection: EditorSelectionRange) {
+  return selection.direction === 'backward' ? selection.start : selection.end;
+}
+
 export default function HandwritingEditor({
   text,
   onTextChange,
@@ -82,7 +110,11 @@ export default function HandwritingEditor({
   const pageElsRef = useRef<(HTMLElement | null)[]>([]);
   const [isFocused, setIsFocused] = useState(false);
   const [cursorPosition, setCursorPosition] = useState(0);
-  const [selectionRange, setSelectionRange] = useState({ start: 0, end: 0 });
+  const [selectionRange, setSelectionRange] = useState<EditorSelectionRange>({
+    start: 0,
+    end: 0,
+    direction: 'none',
+  });
   const [localText, setLocalText] = useState(text);
   const [lastTextProp, setLastTextProp] = useState(text);
   const [pages, setPages] = useState<LineData[][]>([[]]);
@@ -108,6 +140,11 @@ export default function HandwritingEditor({
   const debouncedPropagateText = useDebouncedCallback((nextText: string) => {
     onTextChange(nextText);
   }, 150);
+
+  const defaultPageSettings = useMemo(
+    () => defaultPageSettingsFromHandwritingSettings(settings),
+    [settings],
+  );
 
   useEffect(() => {
     return () => {
@@ -150,8 +187,8 @@ export default function HandwritingEditor({
 
   const getPageSettings = useCallback(
     (pageIndex: number): PageSettings =>
-      pageSettingsByPage[pageIndex] ?? defaultPageSettingsFromHandwritingSettings(settings),
-    [pageSettingsByPage, settings]
+      pageSettingsByPage[pageIndex] ?? defaultPageSettings,
+    [defaultPageSettings, pageSettingsByPage]
   );
 
   const resolveLayoutForPage = useCallback(
@@ -267,25 +304,29 @@ export default function HandwritingEditor({
   const syncSelectionFromTextarea = useCallback((el: HTMLTextAreaElement) => {
     const start = el.selectionStart ?? 0;
     const end = el.selectionEnd ?? start;
-    setCursorPosition(end);
-    setSelectionRange({ start, end });
+    const selection = {
+      start,
+      end,
+      direction: normalizeSelectionDirection(start, end, el.selectionDirection),
+    };
+    setCursorPosition(getSelectionFocus(selection));
+    setSelectionRange(selection);
   }, []);
 
-  const focusTextareaWithSelection = useCallback((anchor: number, focus: number) => {
+  const focusTextareaWithSelection = useCallback((selection: EditorSelectionRange) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    textarea.setSelectionRange(anchor, focus);
+    textarea.setSelectionRange(selection.start, selection.end, selection.direction);
     textarea.focus({ preventScroll: true });
-    textarea.setSelectionRange(anchor, focus);
+    textarea.setSelectionRange(selection.start, selection.end, selection.direction);
   }, []);
 
   const updateVisibleSelection = useCallback((anchor: number, focus: number) => {
-    focusTextareaWithSelection(anchor, focus);
-    const start = Math.min(anchor, focus);
-    const end = Math.max(anchor, focus);
-    setCursorPosition(focus);
-    setSelectionRange({ start, end });
+    const selection = createSelectionRange(anchor, focus);
+    focusTextareaWithSelection(selection);
+    setCursorPosition(getSelectionFocus(selection));
+    setSelectionRange(selection);
   }, [focusTextareaWithSelection]);
 
   const handleCharMouseDown = useCallback(
@@ -328,11 +369,9 @@ export default function HandwritingEditor({
       }
 
       const newPosition = isLeftHalf ? globalCharIndex : globalCharIndex + 1;
-      focusTextareaWithSelection(newPosition, newPosition);
-      setCursorPosition(newPosition);
-      setSelectionRange({ start: newPosition, end: newPosition });
+      updateVisibleSelection(newPosition, newPosition);
     },
-    [focusTextareaWithSelection]
+    [updateVisibleSelection]
   );
 
   const handleCanvasCharShiftClick = useCallback(
@@ -475,9 +514,9 @@ export default function HandwritingEditor({
       setLocalText(nextText);
       debouncedPropagateText(nextText);
       setCursorPosition(nextCursor);
-      setSelectionRange({ start: nextCursor, end: nextCursor });
+      setSelectionRange({ start: nextCursor, end: nextCursor, direction: 'none' });
       requestAnimationFrame(() => {
-        el.setSelectionRange(nextCursor, nextCursor);
+        el.setSelectionRange(nextCursor, nextCursor, 'none');
       });
     },
     [cursorPosition, debouncedPropagateText, text]
