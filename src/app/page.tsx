@@ -36,7 +36,7 @@ const exportFormatNames = productFacts.exportFormats.map((format) => format.labe
 const randomnessControlNames = productFacts.realism.variations.map((variation) => variation.name.toLowerCase()).join(', ');
 const draftStorageKey = productFacts.browserDraft.storageKey;
 
-const directAnswer = `Text2Ink is a browser-based text to handwriting converter for turning typed or pasted text into handwriting-style notebook pages. Open the editor, choose from ${fontCount} built-in handwriting fonts or upload ${customFontFormats} fonts, pick paper style, page size, orientation, colors, margins, realism controls, and text boxes, then export the rendered pages as PDF, PNG, or JPG files. No account or payment is required.`;
+const directAnswer = 'Turn typed or pasted text into handwriting-style notebook pages. Choose a font, paper style, margins, colors, and text boxes, then export as PDF, PNG, or JPG. No sign-up required.';
 
 const landingSections = [
   {

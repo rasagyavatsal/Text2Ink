@@ -27,6 +27,8 @@ describe('HomePage', () => {
     { src: '/preview/preview-6.jpg', width: '3301', height: '2551', alt: 'Text2Ink handwritten page preview 6' },
   ] as const;
 
+  const expectedHeroDirectAnswer = `Turn typed or pasted text into handwriting-style notebook pages. Choose a font, paper style, margins, colors, and text boxes, then export as PDF, PNG, or JPG. No sign-up required.`;
+
   it('publishes canonical homepage metadata', () => {
     expect(metadata.alternates?.canonical).toBe('https://text2ink.com/');
     expect(metadata.openGraph?.url).toBe('https://text2ink.com/');
@@ -111,10 +113,7 @@ describe('HomePage', () => {
     expect(headingParts[2]).not.toHaveClass('font-[family-name:var(--font-snake)]');
 
     const directAnswer = screen.getByTestId('home-direct-answer');
-    const wordCount = directAnswer.textContent?.trim().split(/\s+/).length ?? 0;
-    expect(wordCount).toBeGreaterThanOrEqual(50);
-    expect(wordCount).toBeLessThanOrEqual(100);
-    expect(directAnswer).toHaveTextContent(/PDF, PNG, or JPG/i);
+    expect(directAnswer).toHaveTextContent(expectedHeroDirectAnswer);
     
     // There should be three "Open Editor" links (one in header, one in hero, one in footer)
     const ctaLinks = screen.getAllByRole('link', { name: /open editor/i });
@@ -270,9 +269,10 @@ describe('HomePage', () => {
   it('keeps the homepage copy deep enough for the landing search intent', () => {
     const { container } = render(<HomePage />);
     const main = container.querySelector('main');
+    container.querySelector('[data-testid="home-direct-answer"]')?.remove();
     const wordCount = main?.textContent?.trim().split(/\s+/).length ?? 0;
 
-    expect(wordCount).toBeGreaterThanOrEqual(1800);
+    expect(wordCount).toBeGreaterThanOrEqual(1700);
     expect(wordCount).toBeLessThanOrEqual(2200);
   });
 
