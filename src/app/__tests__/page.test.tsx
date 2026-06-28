@@ -86,9 +86,12 @@ describe('HomePage', () => {
     });
     expect(heroHeading).toBeInTheDocument();
 
-    expect(heroHeading).not.toHaveClass('font-bold');
-    expect(heroHeading).toHaveClass('font-normal');
-    expect(heroHeading).not.toHaveClass('font-[family-name:var(--font-snake)]');
+    expect(heroHeading).toHaveClass('font-bold');
+    expect(heroHeading).not.toHaveClass('font-normal');
+    expect(heroHeading).toHaveClass('font-[family-name:var(--font-snake)]');
+    expect(heroHeading).toHaveClass('text-6xl');
+    expect(heroHeading).toHaveClass('sm:text-8xl');
+    expect(heroHeading).toHaveClass('md:text-9xl');
     expect(heroHeading).toHaveClass('text-foreground');
     expect(heroHeading).toHaveClass('whitespace-normal');
 
@@ -96,21 +99,15 @@ describe('HomePage', () => {
     expect(headingParts).toHaveLength(3);
     expect(headingParts[0]).toHaveTextContent('Text to');
     expect(headingParts[0]).toHaveClass('text-foreground');
-    expect(headingParts[0]).toHaveClass('text-3xl');
-    expect(headingParts[0]).toHaveClass('sm:text-4xl');
-    expect(headingParts[0]).toHaveClass('md:text-6xl');
+    expect(headingParts[0]).not.toHaveClass('text-3xl');
     expect(headingParts[0]).not.toHaveClass('font-[family-name:var(--font-snake)]');
     expect(headingParts[1]).toHaveTextContent('Handwriting');
-    expect(headingParts[1]).toHaveClass('font-[family-name:var(--font-snake)]');
+    expect(headingParts[1]).not.toHaveClass('font-[family-name:var(--font-snake)]');
     expect(headingParts[1]).toHaveClass('text-amber-600');
-    expect(headingParts[1]).toHaveClass('text-5xl');
-    expect(headingParts[1]).toHaveClass('sm:text-6xl');
-    expect(headingParts[1]).toHaveClass('md:text-8xl');
+    expect(headingParts[1]).not.toHaveClass('text-5xl');
     expect(headingParts[2]).toHaveTextContent('Converter');
     expect(headingParts[2]).toHaveClass('text-foreground');
-    expect(headingParts[2]).toHaveClass('text-3xl');
-    expect(headingParts[2]).toHaveClass('sm:text-4xl');
-    expect(headingParts[2]).toHaveClass('md:text-6xl');
+    expect(headingParts[2]).not.toHaveClass('text-3xl');
     expect(headingParts[2]).not.toHaveClass('font-[family-name:var(--font-snake)]');
 
     const directAnswer = screen.getByTestId('home-direct-answer');
