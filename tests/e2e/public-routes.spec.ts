@@ -1,3 +1,4 @@
+import type { Locator } from "@playwright/test";
 import { test, expect } from "./fixtures";
 
 /**
@@ -37,6 +38,14 @@ test("home page hero contains the expected copy", async ({ page }) => {
 // Home page – preview images
 // ---------------------------------------------------------------------------
 
+async function expectImageAttributes(image: Locator, attributes: Record<"src" | "width" | "height", string>) {
+  await Promise.all(
+    Object.entries(attributes).map(([name, value]) =>
+      expect(image).toHaveAttribute(name, value)
+    )
+  );
+}
+
 test("home page displays carousel and font preview images", async ({ page }) => {
   await page.goto("/");
   const carousel = page.getByTestId("hero-preview-carousel");
@@ -44,12 +53,16 @@ test("home page displays carousel and font preview images", async ({ page }) => 
 
   const previews = page.getByTestId("hero-carousel-preview");
   await expect(previews).toHaveCount(6);
-  await expect(previews.nth(0)).toHaveAttribute("src", "/preview/preview-1.jpg");
-  await expect(previews.nth(0)).toHaveAttribute("width", "2481");
-  await expect(previews.nth(0)).toHaveAttribute("height", "3508");
-  await expect(previews.nth(4)).toHaveAttribute("src", "/preview/preview-5.jpg");
-  await expect(previews.nth(4)).toHaveAttribute("width", "3508");
-  await expect(previews.nth(4)).toHaveAttribute("height", "2481");
+  await expectImageAttributes(previews.nth(0), {
+    src: "/preview-imgs/preview-1.avif",
+    width: "1132",
+    height: "1600",
+  });
+  await expectImageAttributes(previews.nth(4), {
+    src: "/preview-imgs/preview-5.avif",
+    width: "1600",
+    height: "1132",
+  });
 
   const previewCards = page.getByTestId("hero-preview-trigger");
   const cardSizes = await previewCards.evaluateAll((cards) =>
@@ -63,8 +76,8 @@ test("home page displays carousel and font preview images", async ({ page }) => 
   expect(Math.abs(cardSizes[5].height - cardSizes[0].height)).toBeLessThanOrEqual(6);
 
   await page.getByRole("heading", { name: "Handwriting font options" }).scrollIntoViewIfNeeded();
-  await expect(page.getByAltText("Singlong handwriting font preview")).toHaveAttribute("src", "/preview/singlong-preview.jpg");
-  await expect(page.getByAltText("Snake handwriting font preview")).toHaveAttribute("src", "/preview/snake-preview.jpg");
+  await expect(page.getByAltText("Singlong handwriting font preview")).toHaveAttribute("src", "/preview-imgs/singlong-preview.avif");
+  await expect(page.getByAltText("Snake handwriting font preview")).toHaveAttribute("src", "/preview-imgs/snake-preview.avif");
 });
 
 test("home page preview lightbox opens, zooms, and pans", async ({ page }, testInfo) => {
@@ -80,7 +93,11 @@ test("home page preview lightbox opens, zooms, and pans", async ({ page }, testI
 
   const viewport = page.getByTestId("preview-lightbox-viewport");
   const lightboxImage = page.getByTestId("preview-lightbox-image");
-  await expect(lightboxImage).toHaveAttribute("src", "/preview/preview-1.jpg");
+  await expectImageAttributes(lightboxImage, {
+    src: "/lightbox-imgs/preview-1.jpg",
+    width: "2481",
+    height: "3508",
+  });
   await expect(lightboxImage).toHaveAttribute("data-zoomed", "false");
 
   if (testInfo.project.name === "Mobile Safari") {
