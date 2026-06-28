@@ -2,6 +2,10 @@
 
 - Use caveman.
 
+## Pull Request Message
+
+Write PR messages as one concise paragraph that summarizes the change and intent. Do not include validation steps.
+
 ## Validation
 
 After every task completion where code is changed, do these steps:
