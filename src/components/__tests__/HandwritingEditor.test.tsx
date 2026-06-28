@@ -18,6 +18,7 @@ vi.mock('../CanvasPreview', () => ({
   default: (props: CanvasPreviewProps) => (
     <div data-testid="canvas-preview">
       <div data-testid="preview-lines">{props.lines.length}</div>
+      <div data-testid="preview-cursor">{props.cursorPosition ?? 'null'}</div>
       <div data-testid="preview-selection">{`${props.selectionStart}:${props.selectionEnd}`}</div>
       <button
         type="button"
@@ -29,10 +30,26 @@ vi.mock('../CanvasPreview', () => ({
       />
       <button
         type="button"
+        data-testid="later-click"
+        onClick={(e) => {
+          e.stopPropagation();
+          props.onCharClick?.(8, false);
+        }}
+      />
+      <button
+        type="button"
         data-testid="shift-click"
         onClick={(e) => {
           e.stopPropagation();
           props.onCharShiftClick?.(8, true);
+        }}
+      />
+      <button
+        type="button"
+        data-testid="backward-shift-click"
+        onClick={(e) => {
+          e.stopPropagation();
+          props.onCharShiftClick?.(2, true);
         }}
       />
       <button
@@ -61,10 +78,26 @@ vi.mock('../CanvasPreview', () => ({
       />
       <button
         type="button"
+        data-testid="drag-back-start"
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          props.onCharMouseDown?.(5, false);
+        }}
+      />
+      <button
+        type="button"
         data-testid="drag-move"
         onMouseMove={(e) => {
           e.stopPropagation();
           props.onCharMouseMove?.(5, true);
+        }}
+      />
+      <button
+        type="button"
+        data-testid="drag-back-move"
+        onMouseMove={(e) => {
+          e.stopPropagation();
+          props.onCharMouseMove?.(2, true);
         }}
       />
       <button
@@ -235,6 +268,21 @@ describe('HandwritingEditor selection behavior', () => {
     expect(screen.getByTestId('preview-selection')).toHaveTextContent('3:8');
   });
 
+  it('keeps backward shift-click selection direction and caret focus', async () => {
+    renderEditor();
+    await waitFor(() => expect(screen.getByTestId('preview-lines')).toHaveTextContent('2'));
+
+    fireEvent.click(screen.getByTestId('later-click'));
+    fireEvent.click(screen.getByTestId('backward-shift-click'));
+
+    const textarea = screen.getByLabelText('Handwriting text input') as HTMLTextAreaElement;
+    expect(screen.getByTestId('preview-selection')).toHaveTextContent('2:9');
+    expect(screen.getByTestId('preview-cursor')).toHaveTextContent('2');
+    expect(textarea.selectionStart).toBe(2);
+    expect(textarea.selectionEnd).toBe(9);
+    expect(textarea.selectionDirection).toBe('backward');
+  });
+
   it('selects a word on double-click and a line on triple-click', async () => {
     renderEditor();
     await waitFor(() => expect(screen.getByTestId('preview-lines')).toHaveTextContent('2'));
@@ -291,6 +339,22 @@ describe('HandwritingEditor selection behavior', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Page 1' }));
 
     expect(screen.getByTestId('preview-selection')).toHaveTextContent('3:5');
+  });
+
+  it('keeps backward canvas drag selection direction in the hidden textarea', async () => {
+    renderEditor();
+    await waitFor(() => expect(screen.getByTestId('preview-lines')).toHaveTextContent('2'));
+
+    fireEvent.mouseDown(screen.getByTestId('drag-back-start'));
+    fireEvent.mouseMove(screen.getByTestId('drag-back-move'));
+    fireEvent.mouseUp(screen.getByTestId('drag-end'));
+
+    const textarea = screen.getByLabelText('Handwriting text input') as HTMLTextAreaElement;
+    expect(screen.getByTestId('preview-selection')).toHaveTextContent('2:6');
+    expect(screen.getByTestId('preview-cursor')).toHaveTextContent('2');
+    expect(textarea.selectionStart).toBe(2);
+    expect(textarea.selectionEnd).toBe(6);
+    expect(textarea.selectionDirection).toBe('backward');
   });
 
   it('disables spellcheck on the hidden textarea', async () => {

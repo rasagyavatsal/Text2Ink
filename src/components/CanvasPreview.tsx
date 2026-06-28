@@ -64,6 +64,14 @@ function isAbortError(error: unknown) {
   return error instanceof Error && error.name === 'AbortError';
 }
 
+interface ReadonlyRef<T> {
+  readonly current: T;
+}
+
+interface MutableRef<T> {
+  current: T;
+}
+
 export interface CanvasInsertionPoint {
   readonly index: number;
   readonly isLeftHalf: boolean;
@@ -79,6 +87,104 @@ interface CharacterLineGroup {
   readonly top: number;
   readonly bottom: number;
   readonly centerY: number;
+}
+
+interface OverlayPaintInputs {
+  readonly cursorPosition: number | null;
+  readonly selectionStart: number;
+  readonly selectionEnd: number;
+  readonly pageStartOffset: number;
+  readonly isFocused: boolean;
+  readonly cursorVisible: boolean;
+  readonly inkColor: string;
+  readonly effectiveLineTilt: number;
+}
+
+interface OverlayPaintRefs {
+  readonly canvasRef: ReadonlyRef<HTMLCanvasElement | null>;
+  readonly baseCanvasRef: ReadonlyRef<HTMLCanvasElement | null>;
+  readonly charPositionsRef: ReadonlyRef<CharacterPosition[]>;
+  readonly overlayInputsRef: ReadonlyRef<OverlayPaintInputs>;
+}
+
+interface OverlayScheduleRefs extends OverlayPaintRefs {
+  readonly overlayFrameRef: MutableRef<number | null>;
+}
+
+function paintOverlayFromRefs({
+  canvasRef,
+  baseCanvasRef,
+  charPositionsRef,
+  overlayInputsRef,
+}: OverlayPaintRefs) {
+  const canvas = canvasRef.current;
+  const baseCanvas = baseCanvasRef.current;
+  if (!canvas || !baseCanvas) return;
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(baseCanvas, 0, 0);
+  ctx.restore();
+
+  const {
+    cursorPosition,
+    selectionStart,
+    selectionEnd,
+    pageStartOffset,
+    isFocused,
+    cursorVisible,
+    inkColor,
+    effectiveLineTilt,
+  } = overlayInputsRef.current;
+  const mainPositions = charPositionsRef.current;
+
+  if (selectionStart !== selectionEnd) {
+    const localSelStart = selectionStart - pageStartOffset;
+    const localSelEnd = selectionEnd - pageStartOffset;
+    UnifiedPagePainter.paintSelectionOverlay(
+      ctx,
+      mainPositions,
+      Math.max(0, localSelStart),
+      Math.min(mainPositions.length, localSelEnd),
+      inkColor,
+      effectiveLineTilt,
+    );
+  }
+
+  if (isFocused && cursorPosition !== null && cursorVisible) {
+    const localCursor = cursorPosition - pageStartOffset;
+    if (localCursor >= 0 && localCursor <= mainPositions.length) {
+      UnifiedPagePainter.paintCursorOverlay(
+        ctx,
+        mainPositions,
+        localCursor,
+        inkColor,
+        effectiveLineTilt,
+      );
+    }
+  }
+}
+
+function scheduleOverlayPaint(refs: OverlayScheduleRefs) {
+  if (refs.overlayFrameRef.current !== null) {
+    cancelAnimationFrame(refs.overlayFrameRef.current);
+  }
+
+  refs.overlayFrameRef.current = requestAnimationFrame(() => {
+    refs.overlayFrameRef.current = null;
+    paintOverlayFromRefs(refs);
+  });
+}
+
+function cancelScheduledOverlayPaint(overlayFrameRef: MutableRef<number | null>) {
+  if (overlayFrameRef.current !== null) {
+    cancelAnimationFrame(overlayFrameRef.current);
+    overlayFrameRef.current = null;
+  }
 }
 
 function groupCharacterPositionsByLine(positions: CharacterPosition[]): CharacterLineGroup[] {
@@ -224,6 +330,8 @@ export default function CanvasPreview({
   const internalRef = useRef<HTMLCanvasElement | null>(null);
   const canvasRef = externalRef ?? internalRef;
   const charPositionsRef = useRef<CharacterPosition[]>([]);
+  const baseCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const overlayFrameRef = useRef<number | null>(null);
   const [cursorVisible, setCursorVisible] = useState(true);
   const [backgroundRevision, setBackgroundRevision] = useState(0);
   const isPointerDownRef = useRef(false);
@@ -241,6 +349,16 @@ export default function CanvasPreview({
   );
   const { width: pageWidth, height: pageHeight } = resolvedLayout.page;
   const effectiveLineTilt = resolveEffectiveLineTilt(resolvedLayout, pageSettings);
+  const overlayInputsRef = useRef<OverlayPaintInputs>({
+    cursorPosition,
+    selectionStart,
+    selectionEnd,
+    pageStartOffset,
+    isFocused,
+    cursorVisible,
+    inkColor: pageSettings.inkColor,
+    effectiveLineTilt,
+  });
 
   // Cursor blink
   useEffect(() => {
@@ -253,9 +371,46 @@ export default function CanvasPreview({
   }, [isFocused, cursorPosition]);
 
   useEffect(() => {
+    overlayInputsRef.current = {
+      cursorPosition,
+      selectionStart,
+      selectionEnd,
+      pageStartOffset,
+      isFocused,
+      cursorVisible,
+      inkColor: pageSettings.inkColor,
+      effectiveLineTilt,
+    };
+    scheduleOverlayPaint({
+      canvasRef,
+      baseCanvasRef,
+      charPositionsRef,
+      overlayInputsRef,
+      overlayFrameRef,
+    });
+  }, [
+    canvasRef,
+    cursorPosition,
+    cursorVisible,
+    effectiveLineTilt,
+    isFocused,
+    pageSettings.inkColor,
+    pageStartOffset,
+    selectionEnd,
+    selectionStart,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      cancelScheduledOverlayPaint(overlayFrameRef);
+    };
+  }, []);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const abortController = new AbortController();
+    baseCanvasRef.current = null;
 
     const renderPreviewPage = async () => {
       try {
@@ -279,6 +434,24 @@ export default function CanvasPreview({
         const mainPositions = result.characterPositions;
         charPositionsRef.current = mainPositions;
 
+        const baseCanvas = document.createElement('canvas');
+        baseCanvas.width = canvas.width;
+        baseCanvas.height = canvas.height;
+        const baseCtx = baseCanvas.getContext('2d');
+        if (baseCtx) {
+          baseCtx.setTransform(1, 0, 0, 1, 0, 0);
+          baseCtx.clearRect(0, 0, baseCanvas.width, baseCanvas.height);
+          baseCtx.drawImage(canvas, 0, 0);
+          baseCanvasRef.current = baseCanvas;
+          scheduleOverlayPaint({
+            canvasRef,
+            baseCanvasRef,
+            charPositionsRef,
+            overlayInputsRef,
+            overlayFrameRef,
+          });
+        }
+
         if (result.pendingBackground) {
           const incrementRevision = (revision: number) => revision + 1;
           const handleBackgroundLoad = () => {
@@ -297,32 +470,6 @@ export default function CanvasPreview({
             .then(handleBackgroundLoad)
             .catch(handleBackgroundError);
         }
-
-        if (selectionStart !== selectionEnd) {
-          const localSelStart = selectionStart - pageStartOffset;
-          const localSelEnd = selectionEnd - pageStartOffset;
-          UnifiedPagePainter.paintSelectionOverlay(
-            ctx,
-            mainPositions,
-            Math.max(0, localSelStart),
-            Math.min(mainPositions.length, localSelEnd),
-            pageSettings.inkColor,
-            effectiveLineTilt,
-          );
-        }
-
-        if (isFocused && cursorPosition !== null && cursorVisible) {
-          const localCursor = cursorPosition - pageStartOffset;
-          if (localCursor >= 0 && localCursor <= mainPositions.length) {
-            UnifiedPagePainter.paintCursorOverlay(
-              ctx,
-              mainPositions,
-              localCursor,
-              pageSettings.inkColor,
-              effectiveLineTilt,
-            );
-          }
-        }
       } catch (error) {
         if (isAbortError(error)) {
           return;
@@ -339,9 +486,7 @@ export default function CanvasPreview({
     };
   }, [
     lines, pageSettings, settings, pageIndex, previewScale,
-    fontFamily, cursorPosition, selectionStart, selectionEnd,
-    pageStartOffset, isFocused, cursorVisible, canvasRef, backgroundRevision,
-    effectiveLineTilt,
+    fontFamily, canvasRef, backgroundRevision,
   ]);
 
   useEffect(() => {
