@@ -222,10 +222,10 @@ export default function HomePage() {
       <main className="py-page-y flex flex-col items-center gap-section w-full">
         <div className={frameClasses}>
           <div className="text-center flex flex-col items-center gap-5 sm:gap-6 max-w-7xl mx-auto">
-            <h1 className="font-normal tracking-tight leading-tight whitespace-normal lg:whitespace-nowrap text-foreground">
-              <span className="text-3xl sm:text-4xl md:text-6xl text-foreground">Text to</span>{' '}
-              <span className="text-5xl sm:text-6xl md:text-8xl font-[family-name:var(--font-snake)] text-amber-600 dark:text-amber-300">Handwriting</span>{' '}
-              <span className="text-3xl sm:text-4xl md:text-6xl text-foreground">Converter</span>
+            <h1 className="font-bold tracking-tight leading-tight whitespace-normal lg:whitespace-nowrap text-foreground font-[family-name:var(--font-snake)] text-6xl sm:text-8xl md:text-9xl">
+              <span className="text-foreground">Text to</span>{' '}
+              <span className="text-amber-600 dark:text-amber-300">Handwriting</span>{' '}
+              <span className="text-foreground">Converter</span>
             </h1>
             <p data-testid="home-direct-answer" className="text-body sm:text-body-lg text-muted-foreground max-w-3xl leading-7 sm:leading-8">
               {directAnswer}
