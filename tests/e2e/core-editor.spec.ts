@@ -1,4 +1,5 @@
 import { gotoHydratedEditor, test, expect } from "./fixtures";
+import type { Locator, Page } from "@playwright/test";
 
 /**
  * Core Editor Writing And Canvas E2E Tests (issue #282)
@@ -13,6 +14,155 @@ test.skip(
   ({ isMobile }) => isMobile,
   "Desktop editor coverage runs on desktop projects; mobile editor behavior is covered in mobile-editor.spec.ts."
 );
+
+interface CanvasInkBounds {
+  count: number;
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+  canvasWidth: number;
+  canvasHeight: number;
+}
+
+async function getCanvasInkBounds(canvas: Locator): Promise<CanvasInkBounds | null> {
+  return canvas.evaluate((element) => {
+    const canvasElement = element as HTMLCanvasElement;
+    const context = canvasElement.getContext("2d");
+    if (!context) return null;
+
+    const { width, height } = canvasElement;
+    const pixels = context.getImageData(0, 0, width, height).data;
+    let count = 0;
+    let minX = width;
+    let minY = height;
+    let maxX = 0;
+    let maxY = 0;
+
+    for (let index = 0; index < pixels.length; index += 4) {
+      const red = pixels[index] ?? 255;
+      const green = pixels[index + 1] ?? 255;
+      const blue = pixels[index + 2] ?? 255;
+      const alpha = pixels[index + 3] ?? 0;
+      if (alpha > 0 && red < 130 && green < 140 && blue < 180) {
+        const pixelIndex = index / 4;
+        const x = pixelIndex % width;
+        const y = Math.floor(pixelIndex / width);
+        count += 1;
+        minX = Math.min(minX, x);
+        maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
+      }
+    }
+
+    if (count === 0) return null;
+
+    return {
+      count,
+      minX,
+      minY,
+      maxX,
+      maxY,
+      canvasWidth: width,
+      canvasHeight: height,
+    };
+  });
+}
+
+async function waitForCanvasTextInk(canvas: Locator): Promise<CanvasInkBounds> {
+  await expect
+    .poll(
+      async () => (await getCanvasInkBounds(canvas))?.count ?? 0,
+      { timeout: 10_000 },
+    )
+    .toBeGreaterThan(20);
+
+  const bounds = await getCanvasInkBounds(canvas);
+  expect(bounds).not.toBeNull();
+  return bounds!;
+}
+
+async function getSelectionBluePixelCount(canvas: Locator) {
+  return canvas.evaluate((element) => {
+    const canvasElement = element as HTMLCanvasElement;
+    const context = canvasElement.getContext("2d");
+    if (!context) return 0;
+
+    const { width, height } = canvasElement;
+    const pixels = context.getImageData(0, 0, width, height).data;
+    let count = 0;
+
+    for (let index = 0; index < pixels.length; index += 4) {
+      const red = pixels[index] ?? 255;
+      const green = pixels[index + 1] ?? 255;
+      const blue = pixels[index + 2] ?? 255;
+      const alpha = pixels[index + 3] ?? 0;
+      if (alpha > 0 && blue > 180 && green > 150 && red < 210 && blue > red + 20) {
+        count += 1;
+      }
+    }
+
+    return count;
+  });
+}
+
+async function getCanvasTextDragPoints(
+  canvas: Locator,
+  bounds: CanvasInkBounds,
+  direction: "forward" | "backward",
+) {
+  return canvas.evaluate(
+    (element, { bounds, direction }) => {
+      const rect = element.getBoundingClientRect();
+      const y = rect.top + (((bounds.minY + bounds.maxY) / 2) / bounds.canvasHeight) * rect.height;
+      const left = rect.left + ((bounds.minX + 1) / bounds.canvasWidth) * rect.width;
+      const right = rect.left + ((bounds.maxX - 1) / bounds.canvasWidth) * rect.width;
+      const start = direction === "forward" ? { x: left, y } : { x: right, y };
+      const end = direction === "forward" ? { x: right, y } : { x: left, y };
+      return { start, end };
+    },
+    { bounds, direction },
+  );
+}
+
+async function expectCanvasHitTarget(page: Page, point: { x: number; y: number }) {
+  const tagName = await page.evaluate(({ x, y }) => {
+    return document.elementFromPoint(x, y)?.tagName.toLowerCase();
+  }, point);
+  expect(tagName).toBe("canvas");
+}
+
+async function prepareCanvasSelectionScenario(page: Page) {
+  await gotoHydratedEditor(page);
+
+  const textInput = page.getByLabel("Handwriting text input");
+  await textInput.fill("abcdef");
+  await expect(textInput).toHaveValue("abcdef");
+
+  const canvas = page.locator('canvas[aria-label="Page 1 preview"]').first();
+  await expect(canvas).toBeVisible({ timeout: 10_000 });
+  const inkBounds = await waitForCanvasTextInk(canvas);
+  const initialSelectionPixels = await getSelectionBluePixelCount(canvas);
+
+  return { textInput, canvas, inkBounds, initialSelectionPixels };
+}
+
+async function dragRenderedTextSelection(
+  page: Page,
+  canvas: Locator,
+  bounds: CanvasInkBounds,
+  direction: "forward" | "backward",
+) {
+  const points = await getCanvasTextDragPoints(canvas, bounds, direction);
+  await expectCanvasHitTarget(page, points.start);
+  await expectCanvasHitTarget(page, points.end);
+
+  await page.mouse.move(points.start.x, points.start.y);
+  await page.mouse.down();
+  await page.mouse.move(points.end.x, points.end.y, { steps: 8 });
+  await page.mouse.up();
+}
 
 // ---------------------------------------------------------------------------
 // /editor – initial load: page preview is visible
@@ -53,6 +203,58 @@ test("canvas preview remains visible after typing", async ({ page }) => {
 
   const previewContainer = page.getByTestId("preview-scroll-container");
   await expect(previewContainer).toBeVisible();
+});
+
+test("dragging rendered canvas text forward highlights selected text", async ({
+  page,
+}) => {
+  const { textInput, canvas, inkBounds, initialSelectionPixels } =
+    await prepareCanvasSelectionScenario(page);
+
+  await dragRenderedTextSelection(page, canvas, inkBounds, "forward");
+
+  await expect
+    .poll(() =>
+      textInput.evaluate((element) => {
+        const textarea = element as HTMLTextAreaElement;
+        return textarea.selectionEnd - textarea.selectionStart;
+      })
+    )
+    .toBeGreaterThan(0);
+  await expect
+    .poll(() =>
+      textInput.evaluate((element) => (element as HTMLTextAreaElement).selectionDirection)
+    )
+    .toBe("forward");
+  await expect
+    .poll(() => getSelectionBluePixelCount(canvas))
+    .toBeGreaterThan(initialSelectionPixels + 50);
+});
+
+test("dragging rendered canvas text backward highlights selected text", async ({
+  page,
+}) => {
+  const { textInput, canvas, inkBounds, initialSelectionPixels } =
+    await prepareCanvasSelectionScenario(page);
+
+  await dragRenderedTextSelection(page, canvas, inkBounds, "backward");
+
+  await expect
+    .poll(() =>
+      textInput.evaluate((element) => {
+        const textarea = element as HTMLTextAreaElement;
+        return textarea.selectionEnd - textarea.selectionStart;
+      })
+    )
+    .toBeGreaterThan(0);
+  await expect
+    .poll(() =>
+      textInput.evaluate((element) => (element as HTMLTextAreaElement).selectionDirection)
+    )
+    .toBe("backward");
+  await expect
+    .poll(() => getSelectionBluePixelCount(canvas))
+    .toBeGreaterThan(initialSelectionPixels + 50);
 });
 
 test("typing in the focused handwriting input does not jump desktop preview scroll", async ({
