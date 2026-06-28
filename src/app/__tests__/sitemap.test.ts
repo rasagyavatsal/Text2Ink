@@ -4,7 +4,8 @@ import robots from '../robots';
 
 describe('generated metadata routes', () => {
   it('includes public, editor, legal URLs in the sitemap without retired feature routes', () => {
-    const urls = sitemap().map((entry) => entry.url);
+    const entries = sitemap();
+    const urls = entries.map((entry) => entry.url);
 
     expect(urls).toEqual(expect.arrayContaining([
       'https://text2ink.com/',
@@ -18,6 +19,9 @@ describe('generated metadata routes', () => {
     expect(urls).not.toContain('https://text2ink.com/features/paper-colors');
     expect(urls).not.toContain('https://text2ink.com/features/realism-effects');
     expect(urls).not.toContain('https://text2ink.com/features/export-handwritten-notes');
+    entries.forEach((entry) => {
+      expect(entry).not.toHaveProperty('lastModified');
+    });
   });
 
   it('publishes robots rules with the generated sitemap URL', () => {

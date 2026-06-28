@@ -10,15 +10,6 @@
     "trailingSlash": false,
     "headers": [
       {
-        "source": "**",
-        "headers": [
-          {
-            "key": "X-Robots-Tag",
-            "value": "index, follow"
-          }
-        ]
-      },
-      {
         "source": "/_next/static/**",
         "headers": [
           {
