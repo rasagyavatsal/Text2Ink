@@ -312,4 +312,44 @@ describe('CanvasPreview', () => {
     );
   });
 
+  it('repaints cursor and selection overlays without rendering the full page again', async () => {
+    const { rerender } = render(
+      <CanvasPreview
+        {...defaultProps}
+        isFocused
+        cursorPosition={0}
+        selectionStart={0}
+        selectionEnd={0}
+      />
+    );
+    await waitFor(() => expect(renderPage).toHaveBeenCalledTimes(1));
+
+    rerender(
+      <CanvasPreview
+        {...defaultProps}
+        isFocused
+        cursorPosition={1}
+        selectionStart={0}
+        selectionEnd={2}
+      />
+    );
+
+    await waitFor(() => expect(paintSelectionOverlay).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.any(Array),
+      0,
+      2,
+      defaultProps.pageSettings.inkColor,
+      0,
+    ));
+    expect(paintCursorOverlay).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.any(Array),
+      1,
+      defaultProps.pageSettings.inkColor,
+      0,
+    );
+    expect(renderPage).toHaveBeenCalledTimes(1);
+  });
+
 });
