@@ -19,12 +19,12 @@ const homePageSource = fs.readFileSync(
 
 describe('HomePage', () => {
   const heroPreviewImages = [
-    { src: '/preview/preview-1.jpg', width: '2481', height: '3508', alt: 'Text2Ink handwritten page preview 1' },
-    { src: '/preview/preview-2.jpg', width: '2481', height: '3508', alt: 'Text2Ink handwritten page preview 2' },
-    { src: '/preview/preview-3.jpg', width: '2481', height: '3508', alt: 'Text2Ink handwritten page preview 3' },
-    { src: '/preview/preview-4.jpg', width: '2481', height: '3508', alt: 'Text2Ink handwritten page preview 4' },
-    { src: '/preview/preview-5.jpg', width: '3508', height: '2481', alt: 'Text2Ink handwritten page preview 5' },
-    { src: '/preview/preview-6.jpg', width: '3301', height: '2551', alt: 'Text2Ink handwritten page preview 6' },
+    { src: '/preview-imgs/preview-1.avif', width: '1132', height: '1600', alt: 'Text2Ink handwritten page preview 1' },
+    { src: '/preview-imgs/preview-2.avif', width: '1132', height: '1600', alt: 'Text2Ink handwritten page preview 2' },
+    { src: '/preview-imgs/preview-3.avif', width: '1132', height: '1600', alt: 'Text2Ink handwritten page preview 3' },
+    { src: '/preview-imgs/preview-4.avif', width: '1132', height: '1600', alt: 'Text2Ink handwritten page preview 4' },
+    { src: '/preview-imgs/preview-5.avif', width: '1600', height: '1132', alt: 'Text2Ink handwritten page preview 5' },
+    { src: '/preview-imgs/preview-6.avif', width: '1600', height: '1236', alt: 'Text2Ink handwritten page preview 6' },
   ] as const;
 
   const expectedHeroDirectAnswer = `Turn typed or pasted text into handwriting-style notebook pages. Choose a font, paper style, margins, colors, and text boxes, then export as PDF, PNG, or JPG. No sign-up required.`;
@@ -197,18 +197,18 @@ describe('HomePage', () => {
     expect(hasMaxWidth).toBe(false);
   });
 
-  it('renders font preview cards from the preview directory with exact dimensions', () => {
+  it('renders font preview cards from the AVIF preview directory with exact dimensions', () => {
     render(<HomePage />);
 
     const singlong = screen.getByAltText('Singlong handwriting font preview');
     const snake = screen.getByAltText('Snake handwriting font preview');
 
-    expect(singlong).toHaveAttribute('src', '/preview/singlong-preview.jpg');
-    expect(singlong).toHaveAttribute('width', '2481');
-    expect(singlong).toHaveAttribute('height', '3508');
-    expect(snake).toHaveAttribute('src', '/preview/snake-preview.jpg');
-    expect(snake).toHaveAttribute('width', '2481');
-    expect(snake).toHaveAttribute('height', '3508');
+    expect(singlong).toHaveAttribute('src', '/preview-imgs/singlong-preview.avif');
+    expect(singlong).toHaveAttribute('width', '1132');
+    expect(singlong).toHaveAttribute('height', '1600');
+    expect(snake).toHaveAttribute('src', '/preview-imgs/snake-preview.avif');
+    expect(snake).toHaveAttribute('width', '1132');
+    expect(snake).toHaveAttribute('height', '1600');
   });
 
   it('opens the shared lightbox from landing previews without zoom buttons', async () => {
@@ -221,7 +221,10 @@ describe('HomePage', () => {
       name: /text2ink handwritten page preview 1/i,
     });
     expect(dialog).toBeInTheDocument();
-    expect(within(dialog).getByTestId('preview-lightbox-image')).toHaveAttribute('src', '/preview/preview-1.jpg');
+    const lightboxImage = within(dialog).getByTestId('preview-lightbox-image');
+    expect(lightboxImage).toHaveAttribute('src', '/lightbox-imgs/preview-1.jpg');
+    expect(lightboxImage).toHaveAttribute('width', '2481');
+    expect(lightboxImage).toHaveAttribute('height', '3508');
     expect(within(dialog).queryByRole('button', { name: /zoom/i })).not.toBeInTheDocument();
   });
 
