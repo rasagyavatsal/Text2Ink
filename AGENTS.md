@@ -2,9 +2,17 @@
 
 - Use caveman.
 
-## Pull Request Message
+## Commit Messages
 
-Write PR messages as one concise paragraph that summarizes the change and intent. Do not include validation steps.
+Follow Conventional Commits v1.0.0.
+
+- Use `<type>[optional scope]: <description>` as the first line.
+- Use `fix:` for bug fixes; it maps to a patch release.
+- Use `feat:` for new features; it maps to a minor release.
+- Mark breaking changes with `!` after the type/scope or a `BREAKING CHANGE:` footer; it maps to a major release.
+- Use lowercase types such as `docs:`, `test:`, `refactor:`, `perf:`, `build:`, `ci:`, and `chore:` when they fit the change.
+- Keep the description imperative, concise, and specific.
+- Use Conventional Commits for PR titles so squash merges preserve release metadata.
 
 ## Validation
 
