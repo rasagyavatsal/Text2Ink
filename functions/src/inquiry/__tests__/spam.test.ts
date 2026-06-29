@@ -21,8 +21,27 @@ describe("checkOrigin", () => {
     expect(checkOrigin(origin)).toBe(true)
   })
 
+  it("accepts Firebase Hosting preview origins", () => {
+    expect(checkOrigin("https://text2ink--preview-e2e.web.app")).toBe(true)
+    expect(checkOrigin("https://text2ink--preview-abc123.web.app")).toBe(true)
+  })
+
+  it("accepts allowed referer URLs", () => {
+    expect(checkOrigin("https://text2ink.com/contact")).toBe(true)
+  })
+
   it("rejects a disallowed origin", () => {
     expect(checkOrigin("https://evil.com")).toBe(false)
+  })
+
+  it.each([
+    "http://text2ink--preview-e2e.web.app",
+    "https://other--preview-e2e.web.app",
+    "https://text2ink--preview-e2e.web.app.evil.com",
+    "https://text2ink--preview-.web.app",
+    "not a url",
+  ])("rejects invalid preview origin %s", (origin) => {
+    expect(checkOrigin(origin)).toBe(false)
   })
 
   it("rejects missing origin", () => {
