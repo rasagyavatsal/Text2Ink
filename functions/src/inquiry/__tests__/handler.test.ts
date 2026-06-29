@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import httpMocks from "node-mocks-http"
 
 const { mockSendMail, mockRunTransaction, mockDb, createStrictMockTransaction, installDefaultTransactionMock } = vi.hoisted(() => {
-  process.env.ALLOWED_ORIGINS = "https://localhost:3000,https://text2ink.com"
+  process.env.ALLOWED_ORIGINS = "https://localhost:3000,https://text2ink.com,https://text2ink--preview-*.web.app"
   const mockSendMail = vi.fn().mockResolvedValue({})
   const mockRunTransaction = vi.fn()
 
@@ -134,6 +134,15 @@ describe("inquiry handler", () => {
     expect(mockSendMail).toHaveBeenCalledTimes(1)
     const mailOptions = mockSendMail.mock.calls[0][0]
     expect(mailOptions.replyTo).toContain("jane@example.com")
+  })
+
+  it("returns 200 for Firebase Hosting preview origins", async () => {
+    const { req, res } = createReqRes({
+      origin: "https://text2ink--preview-e2e.web.app",
+    })
+    await (inquiry as any)(req, res)
+    expect(res.statusCode).toBe(200)
+    expect(mockSendMail).toHaveBeenCalledTimes(1)
   })
 
   it("returns 429 when rate limit exceeded", async () => {

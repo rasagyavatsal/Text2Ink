@@ -24,6 +24,9 @@ import {
 /** SMTP sink REST API base URL (MailHog / mailpit) */
 const SMTP_API_BASE =
   process.env.SMTP_API_BASE ?? "http://127.0.0.1:8025";
+const INQUIRY_API_URL =
+  process.env.API_URL ?? "http://127.0.0.1:5001/text2ink/us-central1/inquiry";
+const PREVIEW_ORIGIN = "https://text2ink--preview-e2e.web.app";
 
 /** Fetch and return all messages from the local SMTP sink. */
 async function fetchCapturedEmails(): Promise<{
@@ -226,6 +229,26 @@ test.describe("real inquiry submission via emulator", () => {
     expect(rawEmail).toContain("bob@example.com");
     expect(rawEmail).toContain("Feature request");
     expect(rawEmail).toContain("Please add dark mode to the export panel.");
+  });
+
+  test("accepts Firebase Hosting preview origin through the Functions emulator", async ({
+    request,
+  }) => {
+    const response = await request.post(INQUIRY_API_URL, {
+      headers: { Origin: PREVIEW_ORIGIN },
+      data: {
+        name: "Preview Tester",
+        email: "preview@example.com",
+        topic: "General inquiry",
+        message: "This preview origin should pass the inquiry allowlist.",
+      },
+    });
+
+    expect(response.status()).toBe(200);
+
+    const mailbox = await fetchCapturedEmails();
+    expect(mailbox.total).toBeGreaterThanOrEqual(1);
+    expect(mailbox.items[0].Content.Body).toContain("Preview Tester");
   });
 
   test("shows rate-limit error after exceeding submission limit", async ({
