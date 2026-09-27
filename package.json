@@ -33,7 +33,7 @@
     "firebase": "^12.0.0",
     "inquiry-validation": "file:packages/inquiry-validation",
     "jspdf": "^4.2.1",
-    "lucide-react": "^0.562.0",
+    "lucide-react": "^1.22.0",
     "motion": "^12.41.0",
     "next": "16.2.9",
     "next-themes": "^0.4.6",
