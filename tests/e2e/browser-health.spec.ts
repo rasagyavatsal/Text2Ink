@@ -20,7 +20,7 @@ test.describe("browser health utilities", () => {
     page,
   }) => {
     const { getErrors } = attachConsoleCollector(page);
-    await page.goto("/");
+    await page.goto("/editor");
     // Inject a console error from the page context
     await page.evaluate(() => console.error("test-sentinel-error"));
     const errors = getErrors();
@@ -30,7 +30,7 @@ test.describe("browser health utilities", () => {
   test("assertNoNextJsErrorOverlay passes on a healthy page", async ({
     page,
   }) => {
-    await page.goto("/");
+    await page.goto("/editor");
     // Should not throw on a healthy page
     await assertNoNextJsErrorOverlay(page);
   });
@@ -38,7 +38,7 @@ test.describe("browser health utilities", () => {
   test("assertPageHasVisibleContent passes when the page has rendered content", async ({
     page,
   }) => {
-    await page.goto("/");
+    await page.goto("/editor");
     await assertPageHasVisibleContent(page);
   });
 
@@ -46,7 +46,7 @@ test.describe("browser health utilities", () => {
     page,
   }) => {
     // Should not throw for a valid route
-    await navigateAndHealthCheck(page, "/");
+    await navigateAndHealthCheck(page, "/editor");
   });
 
   test("DESKTOP_VIEWPORT has expected dimensions", () => {

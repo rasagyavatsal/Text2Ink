@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor, act } from '@testing-library/react'
 import React, { type ReactNode } from 'react';
 import RootEditorPageClient from '../RootEditorPageClient';
 import EditorPage, { metadata } from '../page';
-import { productFacts } from '@/lib/seo/productFacts';
+import { webApplicationFeatureList } from '@/lib/seo/productFacts';
 import {
   getMobileSheetAnchorHeight,
   type MobileEditorSheetChange,
@@ -132,15 +132,14 @@ describe('Root editor page', () => {
     Object.defineProperty(globalThis, 'innerHeight', { configurable: true, writable: true, value: 900 });
   });
 
-  it('renders editor shell and contact navigation on root route', () => {
+  it('renders the editor shell with export controls', () => {
     render(<RootEditorPageClient />);
 
     const exportButton = screen.getByRole('button', { name: /export/i });
     expect(exportButton).toHaveAttribute('data-size', 'chrome');
     expect(exportButton.className).toContain('h-control-md');
     expect(exportButton.className).toContain('min-w-[7.5rem]');
-    expect(screen.getByRole('link', { name: /contact/i })).toHaveAttribute('href', '/contact');
-    expect(screen.getByRole('link', { name: /contact/i })).toHaveAttribute('data-size', 'chrome');
+    expect(screen.queryByRole('link', { name: /contact/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /text2ink home/i })).not.toBeInTheDocument();
     expect(screen.getByTestId('settings-panel')).toBeInTheDocument();
     expect(screen.getByTestId('handwriting-editor')).toBeInTheDocument();
@@ -149,7 +148,7 @@ describe('Root editor page', () => {
   it('keeps page-level top controls out of a banner on the editor route', () => {
     const { container } = render(<RootEditorPageClient />);
 
-    expect(screen.getByRole('link', { name: /contact/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /contact/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('banner')).not.toBeInTheDocument();
     expect(container.querySelector('header')).not.toBeInTheDocument();
   });
@@ -166,19 +165,15 @@ describe('Root editor page', () => {
     expect(container.querySelector('main')).toContainElement(screen.getByTestId('preview-scroll-container'));
   });
 
-  it('keeps the home logo in mobile page-level top controls', async () => {
+  it('shows the logo in mobile page-level top controls without a removed route link', async () => {
     mockMatchMedia(true);
     Object.defineProperty(globalThis, 'innerWidth', { configurable: true, writable: true, value: 390 });
     Object.defineProperty(globalThis, 'innerHeight', { configurable: true, writable: true, value: 844 });
 
     render(<RootEditorPageClient />);
 
-    const homeLink = await screen.findByRole('link', { name: /text2ink home/i });
-
-    expect(homeLink).toHaveAttribute('href', '/');
-    expect(homeLink.className).not.toContain('ring-border');
-    expect(homeLink.className).not.toContain('bg-background/90');
-    expect(screen.getByAltText(/text2ink logo/i)).toBeInTheDocument();
+    expect(await screen.findByAltText(/text2ink logo/i)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /text2ink home/i })).not.toBeInTheDocument();
   });
 
   it('removes legacy landing and mobile-blocker copy from root route', () => {
@@ -213,7 +208,7 @@ describe('Root editor page', () => {
     const structuredData = JSON.parse(script?.innerHTML ?? '{}');
     expect(structuredData.url).toBe('https://text2ink.com/editor');
     expect(structuredData.featureList).toEqual(expect.arrayContaining([
-      `${productFacts.handwritingFonts.length} built-in handwriting fonts`,
+      webApplicationFeatureList[0],
       'Custom .ttf and .otf font upload',
       'PDF, PNG, and JPG exports',
     ]));

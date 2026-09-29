@@ -15,13 +15,9 @@ describe('SettingsPanel', () => {
   it('renders the compact inspector sections with "Add Text Box" button', () => {
     renderSettingsPanel();
 
-    const homeLink = screen.getByRole('link', { name: /text2ink home/i });
     const logo = screen.getByAltText(/text2ink logo/i);
 
-    expect(homeLink).toBeInTheDocument();
-    expect(homeLink.className).toContain('h-16');
-    expect(homeLink.className).toContain('w-16');
-    expect(homeLink.className).not.toContain('ring-border');
+    expect(screen.queryByRole('link', { name: /text2ink home/i })).not.toBeInTheDocument();
     expect(logo).toBeInTheDocument();
     expect(logo.className).toContain('h-14');
     expect(logo.className).toContain('w-14');
@@ -39,10 +35,9 @@ describe('SettingsPanel', () => {
     expect(addTextBoxButton).toBeInTheDocument();
   });
 
-  it('can hide the home logo link', () => {
-    renderSettingsPanel({ showHomeLink: false });
+  it('can hide the logo', () => {
+    renderSettingsPanel({ showLogo: false });
 
-    expect(screen.queryByRole('link', { name: /text2ink home/i })).not.toBeInTheDocument();
     expect(screen.queryByAltText(/text2ink logo/i)).not.toBeInTheDocument();
   });
 
@@ -148,7 +143,7 @@ describe('SettingsPanel', () => {
     const mobileProps = createSettingsPanelProps({
       idPrefix: 'mobile-settings',
       isMobileLayout: true,
-      showHomeLink: false,
+      showLogo: false,
     });
     const { container } = render(
       <>

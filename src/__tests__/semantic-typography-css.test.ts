@@ -26,10 +26,10 @@ function getClassRule(css: string, className: string): string | null {
 }
 
 describe('semantic typography utilities', () => {
-  it('emits landing-page heading and supporting-copy utilities into compiled CSS', async () => {
-    const css = await compileCssFor(['text-display-title', 'text-body-lg']);
+  it('emits editor section heading and supporting-copy utilities into compiled CSS', async () => {
+    const css = await compileCssFor(['text-section-title', 'text-body-lg']);
 
-    const displayTitleRule = getClassRule(css, 'text-display-title');
+    const displayTitleRule = getClassRule(css, 'text-section-title');
     const bodyLgRule = getClassRule(css, 'text-body-lg');
 
     expect(displayTitleRule).toBeTruthy();
@@ -41,9 +41,6 @@ describe('semantic typography utilities', () => {
 
   it('emits the issue-defined semantic typography classes with their intended tokens', async () => {
     const classesByToken = new Map([
-      ['text-display-title', '--type-display-title-size'],
-      ['text-page-title', '--type-page-title-size'],
-      ['text-document-title', '--type-document-title-size'],
       ['text-section-title', '--type-section-title-size'],
       ['text-overlay-title', '--type-overlay-title-size'],
       ['text-body-lg', '--type-body-lg-size'],

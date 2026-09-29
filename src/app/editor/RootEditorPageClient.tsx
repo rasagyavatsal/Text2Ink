@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import NextImage from 'next/image';
-import Link from 'next/link';
 import HandwritingEditor from '@/components/HandwritingEditor';
 import SettingsPanel from '@/components/SettingsPanel';
 import ExportModal from '@/components/ExportModal';
@@ -435,7 +434,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       isPaginationComplete={isPaginationComplete}
       pages={pages}
       onClearAll={handleClearAll}
-      showHomeLink
+      showLogo
       isMobileLayout={false}
       idPrefix="desktop-settings"
     />
@@ -456,7 +455,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       isPaginationComplete={isPaginationComplete}
       pages={pages}
       onClearAll={handleClearAll}
-      showHomeLink={false}
+      showLogo={false}
       isMobileLayout={true}
       idPrefix="mobile-settings"
     />
@@ -475,11 +474,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
       }`}
     >
       {isMobileEditorLayout ? (
-        <Link
-          href="/"
-          aria-label="Text2Ink home"
-          className="flex h-11 w-11 items-center justify-center transition-transform hover:scale-[1.03]"
-        >
+        <div className="flex h-11 w-11 items-center justify-center">
           <NextImage
             src="/logo-without-background.png"
             alt="Text2Ink logo"
@@ -488,7 +483,7 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
             loading="eager"
             className="h-9 w-9 object-contain"
           />
-        </Link>
+        </div>
       ) : null}
       <div className="flex items-center gap-chrome bg-background/80 backdrop-blur-md p-1.5 rounded-xl border border-border/50 shadow-sm">
         <ThemePicker
@@ -506,11 +501,6 @@ function RootEditorShell({ initialState, persistState }: RootEditorShellProps) {
         >
           <Download className="w-4 h-4 mr-2" />
           Export
-        </Button>
-        <Button variant="ghost" size="chrome" asChild className="hidden sm:inline-flex">
-          <Link href="/contact">
-            Contact
-          </Link>
         </Button>
       </div>
     </div>

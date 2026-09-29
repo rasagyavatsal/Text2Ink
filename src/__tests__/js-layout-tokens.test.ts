@@ -15,29 +15,17 @@ function readSource(relPath: string): string {
 }
 
 describe('JS layout tokens as CSS custom properties', () => {
-  it('defines header height tokens', () => {
-    expect(allProps.has('--metric-header-height-mobile')).toBe(true);
-    expect(allProps.has('--metric-header-height-desktop')).toBe(true);
-  });
-
   it('defines mobile sheet metric tokens', () => {
     expect(allProps.has('--metric-sheet-handle-height')).toBe(true);
     expect(allProps.has('--metric-desktop-breakpoint')).toBe(true);
   });
 
-  it('header height tokens have valid pixel values', () => {
-    const mobile = allProps.get('--metric-header-height-mobile');
-    const desktop = allProps.get('--metric-header-height-desktop');
-    expect(mobile).toMatch(/^\d+px$/);
-    expect(desktop).toMatch(/^\d+px$/);
-  });
 });
 
 describe('JS sources consume CSS tokens', () => {
-  it('RootEditorPageClient reads header height from CSS tokens', () => {
+  it('RootEditorPageClient spans the viewport without a page header', () => {
     const source = readSource('app/editor/RootEditorPageClient.tsx');
-    expect(source).not.toMatch(/isMobileEditorLayout\s*\?\s*60\s*:\s*68/);
-    expect(source).toMatch(/getComputedStyle|--metric-header-height/);
+    expect(source).toMatch(/const headerHeight = 0/);
   });
 
   it('mobileEditorSheet reads desktop breakpoint from CSS token', () => {

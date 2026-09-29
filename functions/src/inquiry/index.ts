@@ -1,6 +1,0 @@
-export { inquiry } from "./handler"
-export { validateInquiry, ALLOWED_TOPICS } from "./validation"
-export type { InquiryPayload, Topic, ValidationResult } from "./validation"
-export { checkHoneypot, checkOrigin, ALLOWED_ORIGINS } from "./spam"
-export { hashIdentifier, checkRateLimit, LIMITS } from "./rateLimit"
-export { sendInquiryEmail } from "./email"

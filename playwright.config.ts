@@ -1,5 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const port = Number(process.env.PLAYWRIGHT_PORT ?? 3000);
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || `http://localhost:${port}`;
+
 /**
  * Playwright E2E configuration.
  * Tests are located in tests/e2e/.
@@ -25,7 +28,7 @@ export default defineConfig({
   /* Shared settings for all projects */
   use: {
     /* Base URL to use in actions like `await page.goto('/')` */
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3000",
+    baseURL,
     /* Collect trace when retrying the failed test */
     trace: "on-first-retry",
     /* Capture screenshot on failure */
@@ -61,8 +64,8 @@ export default defineConfig({
   ],
   /* Run the Next.js dev server before starting the tests */
   webServer: {
-    command: "npm run dev",
-    url: "http://localhost:3000",
+    command: `npm run dev -- --port ${port}`,
+    url: `${baseURL}/editor`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

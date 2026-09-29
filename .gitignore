@@ -20,10 +20,6 @@
 /.next/
 /out/
 
-# Firebase
-.firebase/
-firebase-debug.log
-
 # production
 /build
 
@@ -52,7 +48,6 @@ docs/ui-inquiry-design-system-refactor-spec.md
 /.antigravitycli
 .ralph/
 PROMPT.md
-firestore-debug.log
 
 # Local agent instructions
 /AGENTS.md

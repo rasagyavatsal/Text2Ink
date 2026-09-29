@@ -4,7 +4,6 @@ import {
   Dancing_Script,
 } from "next/font/google";
 import "./globals.css";
-import FirebaseAnalytics from "./firebase-analytics";
 import { siteFacts } from "@/lib/seo/productFacts";
 
 const siteDescription = "Create handwriting-style notes from typed text with Text2Ink.";
@@ -95,7 +94,6 @@ export default function RootLayout({
           enableSystem
           enableColorScheme
         >
-          <FirebaseAnalytics />
           {children}
         </ThemeProvider>
       </body>
