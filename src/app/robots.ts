@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: '*',
-      allow: '/editor',
+      allow: '/',
     },
     sitemap: canonicalUrl('/sitemap.xml'),
     host: canonicalUrl('/').replace(/\/$/, ''),

@@ -65,7 +65,7 @@ export default defineConfig({
   /* Run the Next.js dev server before starting the tests */
   webServer: {
     command: `npm run dev -- --port ${port}`,
-    url: `${baseURL}/editor`,
+    url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

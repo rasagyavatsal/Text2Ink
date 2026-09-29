@@ -13,7 +13,7 @@ export async function waitForHydratedEditor(page: Page): Promise<void> {
 }
 
 export async function gotoHydratedEditor(page: Page): Promise<void> {
-  await page.goto("/editor");
+  await page.goto("/");
   await waitForHydratedEditor(page);
 }
 

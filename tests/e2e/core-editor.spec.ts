@@ -4,7 +4,7 @@ import type { Locator, Page } from "@playwright/test";
 /**
  * Core Editor Writing And Canvas E2E Tests (issue #282)
  *
- * Covers: /editor initial load, page preview visibility, typing into the
+ * Covers: / initial load, page preview visibility, typing into the
  * hidden "Handwriting text input", text retention, canvas visibility after
  * typing, pagination page count update, zoom controls, and
  * pagination controls disabled state for single-page content.
@@ -165,10 +165,10 @@ async function dragRenderedTextSelection(
 }
 
 // ---------------------------------------------------------------------------
-// /editor – initial load: page preview is visible
+// / – initial load: page preview is visible
 // ---------------------------------------------------------------------------
 
-test("/editor page preview is visible on initial load", async ({ page }) => {
+test("/ page preview is visible on initial load", async ({ page }) => {
   await gotoHydratedEditor(page);
   // The preview scroll container wraps the HandwritingEditor canvas.
   const previewContainer = page.getByTestId("preview-scroll-container");
@@ -176,7 +176,7 @@ test("/editor page preview is visible on initial load", async ({ page }) => {
 });
 
 // ---------------------------------------------------------------------------
-// /editor – type into the hidden "Handwriting text input"
+// / – type into the hidden "Handwriting text input"
 // ---------------------------------------------------------------------------
 
 test("typed text is retained in the Handwriting text input", async ({
@@ -192,7 +192,7 @@ test("typed text is retained in the Handwriting text input", async ({
 });
 
 // ---------------------------------------------------------------------------
-// /editor – canvas/page preview remains visible after typing
+// / – canvas/page preview remains visible after typing
 // ---------------------------------------------------------------------------
 
 test("canvas preview remains visible after typing", async ({ page }) => {
@@ -299,7 +299,7 @@ test("typing in the focused handwriting input does not jump desktop preview scro
 });
 
 // ---------------------------------------------------------------------------
-// /editor - pagination completion updates page count for short text
+// / - pagination completion updates page count for short text
 // ---------------------------------------------------------------------------
 
 test("pagination updates page count to 1 for short text", async ({
@@ -321,7 +321,7 @@ test("pagination updates page count to 1 for short text", async ({
 });
 
 // ---------------------------------------------------------------------------
-// /editor – zoom in and zoom out controls update the displayed zoom value
+// / – zoom in and zoom out controls update the displayed zoom value
 // ---------------------------------------------------------------------------
 
 test("zoom in control increases the displayed zoom percentage", async ({
@@ -362,7 +362,7 @@ test("zoom out control decreases the displayed zoom percentage", async ({
 });
 
 // ---------------------------------------------------------------------------
-// /editor – previous page and next page disabled state for single-page content
+// / – previous page and next page disabled state for single-page content
 // ---------------------------------------------------------------------------
 
 test("previous page button is disabled for single-page content", async ({

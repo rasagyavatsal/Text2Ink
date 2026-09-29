@@ -185,8 +185,8 @@ describe('Root editor page', () => {
   });
 
   it('publishes self-canonical editor metadata', () => {
-    expect(metadata.alternates?.canonical).toBe('https://text2ink.com/editor');
-    expect(metadata.openGraph?.url).toBe('https://text2ink.com/editor');
+    expect(metadata.alternates?.canonical).toBe('https://text2ink.com/');
+    expect(metadata.openGraph?.url).toBe('https://text2ink.com/');
   });
 
   it('renders an accessible H1 and intro in the editor route HTML', () => {
@@ -206,7 +206,7 @@ describe('Root editor page', () => {
     expect(script).toBeInTheDocument();
 
     const structuredData = JSON.parse(script?.innerHTML ?? '{}');
-    expect(structuredData.url).toBe('https://text2ink.com/editor');
+    expect(structuredData.url).toBe('https://text2ink.com/');
     expect(structuredData.featureList).toEqual(expect.arrayContaining([
       webApplicationFeatureList[0],
       'Custom .ttf and .otf font upload',

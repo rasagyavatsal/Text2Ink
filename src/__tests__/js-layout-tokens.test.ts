@@ -24,7 +24,7 @@ describe('JS layout tokens as CSS custom properties', () => {
 
 describe('JS sources consume CSS tokens', () => {
   it('RootEditorPageClient spans the viewport without a page header', () => {
-    const source = readSource('app/editor/RootEditorPageClient.tsx');
+    const source = readSource('app/(editor)/RootEditorPageClient.tsx');
     expect(source).toMatch(/const headerHeight = 0/);
   });
 

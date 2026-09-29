@@ -22,7 +22,7 @@ const FONT_FIXTURE = path.join(__dirname, "fixtures", "test-font.ttf");
 const BG_FIXTURE = path.join(__dirname, "fixtures", "test-background.png");
 
 // ---------------------------------------------------------------------------
-// Helper: open /editor, wait for the desktop settings panel to be present
+// Helper: open /, wait for the desktop settings panel to be present
 // ---------------------------------------------------------------------------
 async function openEditor(page: Parameters<typeof test>[1]["page"]) {
   return openDesktopEditor(page);

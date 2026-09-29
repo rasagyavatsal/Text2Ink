@@ -45,7 +45,7 @@ export interface ConsoleCollector {
  * @example
  * ```ts
  * const { getErrors } = attachConsoleCollector(page);
- * await page.goto("/editor");
+ * await page.goto("/");
  * expect(getErrors()).toHaveLength(0);
  * ```
  */
@@ -143,7 +143,7 @@ export async function assertPageHasVisibleContent(
  * `attachConsoleCollector` before calling this function.
  *
  * @param page  The Playwright `Page` object.
- * @param route The application route to navigate to (e.g. `"/editor"`).
+ * @param route The application route to navigate to (e.g. `"/"`).
  */
 export async function navigateAndHealthCheck(
   page: Page,

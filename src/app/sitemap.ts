@@ -5,7 +5,7 @@ export const dynamic = 'force-static';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [{
-    url: canonicalUrl('/editor'),
+    url: canonicalUrl('/'),
     changeFrequency: 'weekly',
     priority: 1,
   }];

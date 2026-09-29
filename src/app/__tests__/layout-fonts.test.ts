@@ -21,7 +21,7 @@ describe('route font loading', () => {
 
   it('loads handwriting Google font variables only in the editor route layout', () => {
     const editorLayoutSource = fs.readFileSync(
-      path.resolve(__dirname, '../editor/layout.tsx'),
+      path.resolve(__dirname, '../(editor)/layout.tsx'),
       'utf-8',
     );
 
