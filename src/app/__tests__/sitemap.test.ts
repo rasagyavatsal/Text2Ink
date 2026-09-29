@@ -3,22 +3,11 @@ import sitemap from '../sitemap';
 import robots from '../robots';
 
 describe('generated metadata routes', () => {
-  it('includes public, editor, legal URLs in the sitemap without retired feature routes', () => {
+  it('lists only the root editor route', () => {
     const entries = sitemap();
     const urls = entries.map((entry) => entry.url);
 
-    expect(urls).toEqual(expect.arrayContaining([
-      'https://text2ink.com/',
-      'https://text2ink.com/editor',
-      'https://text2ink.com/contact',
-      'https://text2ink.com/terms-of-service',
-      'https://text2ink.com/privacy-policy',
-    ]));
-    expect(urls).not.toContain('https://text2ink.com/features/handwriting-fonts');
-    expect(urls).not.toContain('https://text2ink.com/features/notebook-paper-styles');
-    expect(urls).not.toContain('https://text2ink.com/features/paper-colors');
-    expect(urls).not.toContain('https://text2ink.com/features/realism-effects');
-    expect(urls).not.toContain('https://text2ink.com/features/export-handwritten-notes');
+    expect(urls).toEqual(['https://text2ink.com/']);
     entries.forEach((entry) => {
       expect(entry).not.toHaveProperty('lastModified');
     });

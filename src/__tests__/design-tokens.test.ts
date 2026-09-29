@@ -53,10 +53,9 @@ const primitiveTokenGroups = createTokenGroups({
     --text-size-xl --text-size-2xl --text-size-3xl --text-size-4xl
     --text-size-5xl --text-size-6xl --text-size-7xl
   `,
-  'width scale': '--width-panel --width-content',
+  'width scale': '--width-panel',
   'typography tokens': `
-    --type-brand-mark-size --type-display-title-size --type-page-title-size
-    --type-document-title-size --type-section-title-size --type-overlay-title-size
+    --type-section-title-size --type-overlay-title-size
     --type-body-lg-size --type-body-size --type-supporting-size --type-caption-size
   `,
   'breakpoint scale': '--breakpoint-sm --breakpoint-md --breakpoint-lg --breakpoint-xl',
@@ -64,10 +63,9 @@ const primitiveTokenGroups = createTokenGroups({
 
 const semanticTokenGroups = createTokenGroups({
   'layout tokens': `
-    --layout-panel-width --layout-content-width --layout-document-width --layout-header-height
+    --layout-panel-width
     --layout-controls-gap --layout-chrome-gap --layout-chrome-padding-y
-    --layout-footer-padding-y --layout-page-padding-x --layout-page-padding-y
-    --layout-section-rhythm --layout-public-gutter
+    --layout-page-padding-x --layout-page-padding-y --layout-section-rhythm
   `,
   'surface tokens': `
     --surface-page-padding --surface-card-padding --surface-section-gap
@@ -90,10 +88,9 @@ const semanticTokenPrefixes = cssNameList(`
 
 const expectedThemeTokens = cssNameList(`
   --spacing-panel --spacing-section --spacing-controls --spacing-chrome
-  --spacing-chrome-y --spacing-footer --spacing-page-x --spacing-page-y
-  --spacing-public-gutter --height-control-sm --height-control-md --height-control-lg --height-input
-  --width-panel --container-content --container-document --text-label --text-brand-mark
-  --text-display-title --text-page-title --text-document-title --text-section-title
+  --spacing-chrome-y --spacing-page-x --spacing-page-y
+  --height-control-sm --height-control-md --height-control-lg --height-input
+  --width-panel --text-label --text-section-title
   --text-overlay-title --text-body-lg --text-body --text-supporting --text-caption
 `);
 

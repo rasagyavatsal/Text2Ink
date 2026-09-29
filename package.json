@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
     "lint": "eslint",
     "generate:paper-presets": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/generate-paper-presets.mjs",
     "type-check": "tsc --noEmit",
@@ -13,11 +12,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:emulator": "node scripts/run-e2e-emulator.mjs",
-    "test:coverage": "vitest run --coverage",
-    "dev:emulator": "API_URL=http://127.0.0.1:5001/text2ink/us-central1/inquiry next dev",
-    "deploy": "npm run build && firebase deploy",
-    "deploy:preview": "npm run build && firebase hosting:channel:deploy preview"
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.18",
@@ -30,14 +25,11 @@
     "@radix-ui/react-switch": "^1.2.6",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "firebase": "^12.0.0",
-    "inquiry-validation": "file:packages/inquiry-validation",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.22.0",
     "motion": "^12.41.0",
     "next": "16.2.9",
     "next-themes": "^0.4.6",
-    "nodemailer": "^9.0.1",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "react-modal-sheet": "^5.6.0",
@@ -50,7 +42,6 @@
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/node": "^26",
-    "@types/nodemailer": "^8.0.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",

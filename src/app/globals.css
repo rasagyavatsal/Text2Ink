@@ -57,10 +57,8 @@
   --spacing-controls: var(--layout-controls-gap);
   --spacing-chrome: var(--layout-chrome-gap);
   --spacing-chrome-y: var(--layout-chrome-padding-y);
-  --spacing-footer: var(--layout-footer-padding-y);
   --spacing-page-x: var(--layout-page-padding-x);
   --spacing-page-y: var(--layout-page-padding-y);
-  --spacing-public-gutter: var(--layout-public-gutter);
 
   /* Height: semantic tokens available as h-* utilities */
   --height-control-sm: var(--control-height-sm);
@@ -70,10 +68,6 @@
 
   /* Width: semantic tokens available as w-* utilities */
   --width-panel: var(--panel-width);
-
-  /* Container: semantic tokens available as max-w-* utilities */
-  --container-content: var(--layout-content-width);
-  --container-document: var(--layout-document-width);
 
   /* Inset: semantic tokens available as left-*, right-*, top-*, bottom-* utilities */
   --inset-panel: var(--panel-width);
@@ -87,10 +81,6 @@
 
   /* Text size: tokens available as text-* utilities */
   --text-label: var(--text-size-2xs);
-  --text-brand-mark: var(--type-brand-mark-size);
-  --text-display-title: var(--type-display-title-size);
-  --text-page-title: var(--type-page-title-size);
-  --text-document-title: var(--type-document-title-size);
   --text-section-title: var(--type-section-title-size);
   --text-overlay-title: var(--type-overlay-title-size);
   --text-body-lg: var(--type-body-lg-size);
@@ -131,8 +121,6 @@
 
   /* Primitive tokens: width scale */
   --width-panel: 24rem;
-  --width-content: 72rem;
-  --width-document: 64rem;
 
   /* Primitive tokens: breakpoint scale */
   --breakpoint-sm: 640px;
@@ -157,8 +145,6 @@
   --text-size-9xl: 7.25rem;
 
   /* Primitive tokens: layout metrics consumed by JS */
-  --metric-header-height-mobile: 60px;
-  --metric-header-height-desktop: 68px;
   --metric-sheet-handle-height: 44px;
   --metric-desktop-breakpoint: 1280px;
   --z-editor-sheet: 10000;
@@ -167,17 +153,12 @@
 
   /* Semantic tokens: layout intent */
   --layout-panel-width: var(--width-panel);
-  --layout-content-width: var(--width-content);
-  --layout-document-width: var(--width-document);
-  --layout-header-height: var(--size-control-lg);
   --layout-controls-gap: var(--space-4);
   --layout-chrome-gap: var(--space-3);
   --layout-chrome-padding-y: var(--space-3);
-  --layout-footer-padding-y: var(--space-6);
   --layout-page-padding-x: var(--space-4);
   --layout-page-padding-y: var(--space-12);
   --layout-section-rhythm: var(--space-12);
-  --layout-public-gutter: clamp(var(--space-4), 2vw, var(--space-10));
 
   /* Semantic tokens: surface intent */
   --surface-page-padding: var(--layout-page-padding-x);
@@ -198,10 +179,6 @@
   --panel-gap: var(--space-6);
 
   /* Semantic tokens: typography intent */
-  --type-brand-mark-size: var(--text-size-2xl);
-  --type-display-title-size: var(--text-size-5xl);
-  --type-page-title-size: var(--text-size-3xl);
-  --type-document-title-size: var(--text-size-4xl);
   --type-section-title-size: var(--text-size-2xl);
   --type-overlay-title-size: var(--text-size-lg);
   --type-body-lg-size: var(--text-size-lg);
@@ -274,14 +251,9 @@
   :root {
     --layout-chrome-gap: var(--space-4);
     --layout-chrome-padding-y: var(--space-4);
-    --layout-footer-padding-y: var(--space-8);
     --layout-page-padding-x: var(--space-6);
     --layout-page-padding-y: var(--space-16);
     --layout-section-rhythm: var(--space-16);
-    --type-brand-mark-size: var(--text-size-3xl);
-    --type-display-title-size: var(--text-size-6xl);
-    --type-page-title-size: var(--text-size-4xl);
-    --type-document-title-size: var(--text-size-5xl);
     --type-body-lg-size: var(--text-size-xl);
   }
 }
@@ -289,7 +261,6 @@
 @media (min-width: 768px) {
   :root {
     --layout-page-padding-y: var(--space-20);
-    --type-display-title-size: var(--text-size-7xl);
   }
 }
 
@@ -397,30 +368,6 @@
     letter-spacing: 0.1em;
   }
 
-  .landing-preview-marquee {
-    animation: landing-preview-marquee 54s linear infinite;
-  }
-
-  .landing-preview-marquee:is(:hover, :focus-within) {
-    animation-play-state: paused;
-  }
-}
-
-@keyframes landing-preview-marquee {
-  from {
-    transform: translateX(0);
-  }
-
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .landing-preview-marquee {
-    animation: none;
-    transform: translateX(0);
-  }
 }
 
 @font-face {

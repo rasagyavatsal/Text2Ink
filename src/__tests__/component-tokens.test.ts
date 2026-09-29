@@ -55,7 +55,7 @@ describe('Component Library token consumption', () => {
 
 describe('route and shared component token consumption', () => {
   describe('RootEditorPageClient.tsx', () => {
-    const source = readAppFile('editor/RootEditorPageClient.tsx');
+    const source = readAppFile('(editor)/RootEditorPageClient.tsx');
 
     it('uses token-based panel width instead of hardcoded w-96', () => {
       expect(source).not.toMatch(/w-96\b/);

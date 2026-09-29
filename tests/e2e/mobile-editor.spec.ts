@@ -45,7 +45,7 @@ async function disableNextDevToolsPointerInterception(page: Page) {
 }
 
 // ---------------------------------------------------------------------------
-// Helper: open /editor at mobile viewport, wait for preview to be visible.
+// Helper: open / at mobile viewport, wait for preview to be visible.
 // ---------------------------------------------------------------------------
 async function openMobileEditor(page: Page) {
   await page.setViewportSize(MOBILE_VIEWPORT);
@@ -108,7 +108,7 @@ async function expectElementTopmostAtCenter(locator: ReturnType<Page["locator"]>
     .toBe(true);
 }
 
-async function expectHandleTopmost(page: Page, name: string | RegExp = /editor controls/i) {
+async function expectHandleTopmost(page: Page, name: string | RegExp = / controls/i) {
   const handle = page.getByRole("button", { name });
   await expectElementTopmostAtCenter(handle);
   return handle;

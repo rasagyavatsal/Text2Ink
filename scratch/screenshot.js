@@ -10,9 +10,6 @@ const viewports = [
 ];
 
 const paths = [
-  { name: 'home', url: 'http://localhost:3000/' },
-  { name: 'contact', url: 'http://localhost:3000/contact' },
-  { name: 'terms', url: 'http://localhost:3000/terms-of-service' },
   { name: 'editor', url: 'http://localhost:3000/editor' }
 ];
 

@@ -10,7 +10,7 @@ import {
 import RootEditorPageClient from './RootEditorPageClient';
 import './editor.css';
 
-const canonical = canonicalUrl('/editor');
+const canonical = canonicalUrl('/');
 const editorTitle = 'Handwriting Editor - Create Realistic Handwritten Notes';
 const editorDescription = 'Use the Text2Ink handwriting editor to convert text into handwriting-style pages. Customize fonts, paper styles, colors, margins, text boxes, randomness, and export as PDF, PNG, or JPG.';
 

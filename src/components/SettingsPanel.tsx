@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import NextImage from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -670,7 +669,7 @@ interface SettingsPanelProps {
   readonly isPaginationComplete: boolean;
   readonly pages: LineData[][];
   readonly onClearAll: () => void;
-  readonly showHomeLink?: boolean;
+  readonly showLogo?: boolean;
   readonly isMobileLayout?: boolean;
   readonly idPrefix?: string;
 }
@@ -683,7 +682,7 @@ export default function SettingsPanel({
   currentPageIndex,
   onApplyToAllPages,
   onClearAll,
-  showHomeLink = true,
+  showLogo = true,
   isMobileLayout = false,
   idPrefix,
 }: SettingsPanelProps) {
@@ -932,13 +931,9 @@ export default function SettingsPanel({
 
   return (
     <div ref={panelRef} className="p-6 space-y-6">
-      {showHomeLink ? (
+      {showLogo ? (
         <div className="flex items-center">
-          <Link
-            href="/"
-            aria-label="Text2Ink home"
-            className="flex h-16 w-16 items-center justify-center transition-transform hover:scale-[1.03]"
-          >
+          <div className="flex h-16 w-16 items-center justify-center">
             <NextImage
               src="/logo-without-background.png"
               alt="Text2Ink logo"
@@ -947,7 +942,7 @@ export default function SettingsPanel({
               loading="eager"
               className="h-14 w-14 object-contain"
             />
-          </Link>
+          </div>
         </div>
       ) : null}
 
