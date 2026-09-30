@@ -65,7 +65,6 @@ export const metadata: Metadata = {
     icon: "/logo-192.png",
     apple: "/logo-192.png",
   },
-  manifest: "/manifest.json",
   category: "technology",
 };
 
