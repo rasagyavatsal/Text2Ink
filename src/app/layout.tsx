@@ -4,27 +4,8 @@ import {
   Dancing_Script,
 } from "next/font/google";
 import "./globals.css";
-import { siteFacts } from "@/lib/seo/productFacts";
 
 const siteDescription = "Create handwriting-style notes from typed text with Text2Ink.";
-const siteKeywords = [
-  "text to handwriting",
-  "handwriting converter",
-  "convert text to handwriting",
-  "handwritten notes generator",
-  "text to handwritten notes",
-  "handwriting font generator",
-  "realistic handwriting",
-  "handwriting simulator",
-  "digital handwriting",
-  "handwritten text converter",
-  "assignment handwriting",
-  "notes generator",
-  "handwriting maker",
-  "text to cursive",
-  "handwriting online",
-  "free handwriting converter"
-];
 
 const inter = Inter({
   variable: "--font-inter",
@@ -40,32 +21,15 @@ const dancingScript = Dancing_Script({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteFacts.canonicalBaseUrl),
   title: {
     default: "Text2Ink",
     template: "%s | Text2Ink",
   },
   description: siteDescription,
-  keywords: siteKeywords,
-  authors: [{ name: siteFacts.siteName }],
-  creator: siteFacts.siteName,
-  publisher: siteFacts.siteName,
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
   icons: {
     icon: "/logo-192.png",
     apple: "/logo-192.png",
   },
-  category: "technology",
 };
 
 export const viewport: Viewport = {
